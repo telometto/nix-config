@@ -1,12 +1,10 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, ... }:
-let
-  vars = import ../vars/vars.nix;
-in
+{ config, lib, pkgs, myVars, ... }:
+
 {
-  users.users."${vars.serverUser}" = {
+  users.users.${myVars.server.user} = {
     isNormalUser = true;
-    description = "${username}";
+    description = myVars.server.user;
     extraGroups = [ "wheel" "networkmanager" "libvirtd" ];
 
     packages = with pkgs; [
@@ -14,8 +12,8 @@ in
     ];
 
     openssh.authorizedKeys.keys = [
-      "${vars.openSSHPubKey}"
-      "${vars.openSSHGPGPubKey}"
+      myVars.server.openSSHPubKey
+      myVars.server.openSSHGPGPubKey
     ];
   };
 }
