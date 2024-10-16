@@ -44,40 +44,71 @@
     #nixarr.url = "github:rasmus-kirk/nixarr";
   };
 
-  outputs = inputs@{
-        self,
-        nixpkgs,
-        home-manager,
-        lanzaboote,
-        agenix,
-        microvm,
-        #vpn-confinement, # works
-        #nixarr,
-        ... 
-  }: let
-    vars = import ./vars/vars.nix;
-  in {
-    nixosConfigurations = {
-      homeserver = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
+  outputs =
+    inputs@{ self
+    , nixpkgs
+    , home-manager
+    , lanzaboote
+    , agenix
+    , microvm
+    , #vpn-confinement, # works
+      #nixarr,
+      ...
+    }:
+    let
+      myVars = import "${self}/vars/vars.nix";
+    in
+    {
+      nixosConfigurations = {
+        homeserver = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
 
-        modules = [
-          ./hosts/server/configuration.nix
+          modules = [
+            ./hosts/server/configuration.nix
 
-          # Start Home Manager configuration
-          home-manager.nixosModules.home-manager {
-            home-manager = {
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              users."${vars.serverUser}" = import ./modules/home/defaults.nix;
-            };
-          }
-        ];
+            # Start Home Manager configuration
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                
+                extraSpecialArgs = { inherit myVars; };
 
-        specialArgs = {
-          inherit inputs;
+                users.${myVars.server.user} = import ./modules/server/home/home.nix;
+              };
+            }
+          ];
+
+          specialArgs = {
+            inherit inputs myVars;
+          };
+        };
+
+        stinkpad = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+
+          modules = [
+            ./hosts/laptop/configuration.nix
+
+            # Start Home Manager configuration
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+
+                extraSpecialArgs = { inherit myVars; };
+
+                users.${myVars.laptop.user} = import ./modules/laptop/home/home.nix;
+              };
+            }
+          ];
+
+          specialArgs = {
+            inherit inputs myVars;
+          };
         };
       };
     };
-  };
 }
