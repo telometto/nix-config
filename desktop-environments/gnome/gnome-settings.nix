@@ -21,6 +21,8 @@
       hardware.bolt.enable = true;
 
       xserver = {
+        enable = true; # Enable the X11 windowing system
+
         desktopManager = {
           gnome = {
             enable = true;
@@ -29,6 +31,13 @@
               autoSuspend = false;
             };
           };
+        };
+
+        # Enable the GNOME Desktop Environment
+        displayManager = {
+          gdm = { enable = true; };
+
+          gnome = { enable = true; };
         };
       };
     };
