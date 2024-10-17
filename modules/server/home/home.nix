@@ -40,7 +40,7 @@
       enable = true;
       enableCompletion = true;
       enableVteIntegration = true; # Enable VTE integration to track current directory
-      historyControl = "erasedups"; # Remove duplicates in history
+      historyControl = [ "erasedups" ]; # Remove duplicates in history
     };
 
     bat = {
