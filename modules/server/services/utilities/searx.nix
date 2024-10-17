@@ -19,5 +19,5 @@
     };
   };
 
-  environment.systemPackages = with pkgs; [ searx ];
+  environment.systemPackages = with pkgs; [ searxng ];
 }
