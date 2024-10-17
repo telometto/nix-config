@@ -8,16 +8,16 @@
 
     packages = with pkgs; [
       # Your packages here
-      #atuin
-      #bash
-      #bat
+      atuin
+      bash
+      bat
       #blesh
-      #eza
-      #fzf
-      #git
-      #gnupg
-      #zoxide
+      direnv
+      eza
+      fzf
+      nix-direnv
       sqlite
+      zoxide
     ];
   };
 
@@ -39,11 +39,20 @@
     bash = {
       enable = true;
       enableCompletion = true;
-      #completion.enable = true;
+      enableVteIntegration = true; # Enable VTE integration to track current directory
+      historyControl = "erasedups"; # Remove duplicates in history
     };
 
     bat = {
       enable = true;
+    };
+
+    direnv = {
+      enable = true;
+      enableBashIntegration = true;
+      enableZshIntegration = true;
+
+      nix-direnv.enable = true;
     };
 
     eza = {
@@ -79,13 +88,6 @@
       enable = true;
     };
 
-    #gnupg = {
-    #  agent = {
-    #   enable = true;
-    #   enableSSHSupport = true;
-    #  };
-    #};
-
     micro = {
       enable = true;
 
@@ -97,6 +99,22 @@
         hltaberrors = true;
         tabtospaces = true;
       };
+    };
+
+    tmux = {
+      enable = true;
+      clock24 = true;
+      mouse = true;
+
+      #plugins = {
+      #  dracula = {
+      #    enable = true;
+      #  };
+      #
+      #  gruvbox = {
+      #    enable = true;
+      #  };
+      #};
     };
 
     zoxide = {
