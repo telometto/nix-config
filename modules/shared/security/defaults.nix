@@ -15,4 +15,18 @@
       enable = true;
     };
   };
+  
+  environment.systemPackages = with pkgs; [
+    # apparmor-related packages
+    apparmor-bin-utils
+    apparmor-kernel-patches
+    apparmor-pam
+    apparmor-parser
+    apparmor-profiles
+    apparmor-utils
+    libapparmor
+
+    # polkit-related packages
+    polkit
+  ];
 }

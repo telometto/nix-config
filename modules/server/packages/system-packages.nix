@@ -3,78 +3,49 @@
 
 {
   environment.systemPackages = with pkgs; [
-    apparmor-bin-utils
-    apparmor-kernel-patches
-    apparmor-pam
-    apparmor-parser
-    apparmor-profiles
-    apparmor-utils
-    libapparmor
-    bash-completion
-    bat
-    btop
-    cockpit
-    coreutils-full
-    curl
-    eza
-    ffmpeg
-    git # Required by flakes
-    gnupg
-    kexec-tools
-    microcodeIntel
-    linuxHeaders
-    nftables
-    lanzaboote-tool # Required for Secure Boot
-    lm_sensors
-    micro
-    fastfetch
-    nettools
-    libnfs
-    nfs-utils
-    p7zip
-    pipx
-    podman
-    podman-compose
-    podman-tui
-    poetry
-    realmd
-    rng-tools
-    rsync
-    smartmontools
-    tmux
-    tmuxPlugins.dracula
-    tmuxPlugins.gruvbox
-    tree
-    wireguard-tools
-    wget
-    xclip
-    sanoid
-    shadow # Required by rootless podman on ZFS
-    zfs
-    zfstools
-    zsh
-    zsh-autocomplete
-    atuin
-    blesh
-    cloudflared
-    cloudflare-dyndns
+    # Shell utilities
+    bash-completion  # Bash command completion
+    zsh  # Z shell
+    zsh-autocomplete  # Zsh command autocompletion
+    blesh  # bash-autocompleter
 
-    docker
-    docker-client
-    docker-compose
-    docker-compose-language-service
-    docker-gc
+    # System utilities
+    coreutils-full  # GNU core utilities
+    curl  # Command line tool for transferring data with URLs
+    eza  # Modern replacement for 'ls'
+    ffmpeg  # Multimedia framework for handling video, audio, and other multimedia files
+    kexec-tools  # Tools for loading a new kernel
+    microcodeIntel  # Intel CPU microcode updates
+    linuxHeaders  # Linux kernel headers
+    nftables  # Netfilter tables for packet filtering
+    lm_sensors  # Hardware monitoring
+    micro  # Terminal-based text editor
+    fastfetch  # Neofetch-like tool for displaying system information
+    nettools  # Network tools like ifconfig, netstat, etc.
+    p7zip  # File archiver with high compression ratio
+    realmd  # Discover and join identity domains
+    rng-tools  # Random number generator tools
+    rsync  # Fast, versatile, remote (and local) file-copying tool
+    smartmontools  # Control and monitor storage systems using S.M.A.R.T.
+    tree  # Display directories as trees
+    wget  # Network downloader
+    xclip  # Command line interface to the X11 clipboard
 
-    containerd
-    k3s
+    # Development tools
+    git  # Version control system, required by flakes
+    pipx  # Install and run Python applications in isolated environments
+    poetry  # Python dependency management and packaging
+    tmux  # Terminal multiplexer
+    tmuxPlugins.dracula  # Dracula theme for tmux
+    tmuxPlugins.gruvbox  # Gruvbox theme for tmux
 
-    (wrapHelm kubernetes-helm {
-      plugins = with pkgs.kubernetes-helmPlugins; [
-        helm-secrets
-        helm-diff
-        helm-s3
-        helm-git
-      ];
-    })
+    # Networking tools
+    wireguard-tools  # Tools for the WireGuard VPN
+    cloudflared  # Cloudflare's DoH and DoT client
+    cloudflare-dyndns  # Dynamic DNS client for Cloudflare
+
+    # Monitoring tools
+    bat  # Cat clone with syntax highlighting and Git integration
+    btop  # Resource monitor
   ];
 }

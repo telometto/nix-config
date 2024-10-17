@@ -14,4 +14,6 @@
       };
     };
   };
+
+  environment.systemPackages = with pkgs; [ scrutiny ];
 }

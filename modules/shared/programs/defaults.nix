@@ -8,4 +8,6 @@
       enableSSHSupport = true;
     };
   };
+
+  environment.systemPackages = with pkgs; [ gnupg ];
 }

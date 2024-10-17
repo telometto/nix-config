@@ -16,4 +16,12 @@
       backend = "docker";
     };
   };
+
+  environment.systemPackages = with pkgs; [
+    docker
+    docker-client
+    docker-compose
+    docker-compose-language-service
+    docker-gc
+  ];
 }

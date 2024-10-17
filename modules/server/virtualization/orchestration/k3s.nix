@@ -53,4 +53,18 @@
       # 8472 # k3s, flannel: required if using multi-node for inter-node networking
     ];
   };
+
+  environment.systemPackages = with pkgs; [
+    containerd
+    k3s
+
+    (wrapHelm kubernetes-helm {
+      plugins = with pkgs.kubernetes-helmPlugins; [
+        helm-secrets
+        helm-diff
+        helm-s3
+        helm-git
+      ];
+    })
+  ];
 }

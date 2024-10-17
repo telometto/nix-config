@@ -12,4 +12,9 @@
       enable = true;
     };
   };
+
+  environment.systemPackages = with pkgs; [
+    libnfs
+    nfs-utils
+  ];
 }

@@ -7,4 +7,6 @@
     openFirewall = true;
     authKeyFile = myVars.general.tsKeyFile;
   };
+
+  environment.systemPackages = with pkgs; [ tailscale ];
 }

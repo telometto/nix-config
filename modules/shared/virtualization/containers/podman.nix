@@ -19,4 +19,11 @@
       backend = "podman"; # Sets the backend to podman
     };
   };
+
+  environment.systemPackages = with pkgs; [
+    podman
+    podman-compose
+    podman-tui
+    shadow # Required by rootless podman on ZFS
+  ];
 }

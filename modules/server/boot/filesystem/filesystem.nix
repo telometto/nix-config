@@ -18,4 +18,10 @@
       trim.enable = true;
     };
   };
+
+  environment.systemPackages = with pkgs; [
+    zfs
+    zfstools
+    sanoid # ZFS snapshot management
+  ];
 }
