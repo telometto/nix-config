@@ -22,6 +22,8 @@
 
   console = {
     keyMap = "no";
+    useXkbConfig = true; # use xkb.options in tty
+    # font = "";
   };
 
   services = {
@@ -29,6 +31,7 @@
       xkb = {
         layout = "no";
         variant = "";
+        # options = "eurosign:e,caps:escape";
       };
     };
   };
