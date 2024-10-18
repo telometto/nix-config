@@ -5,7 +5,7 @@
   networking = {
     useNetworkd = true;
     useDHCP = false; # Defaults to true; disabled for systemd-networkd
-    networkmanager.enable = false;
+    #networkmanager.enable = false;
   };
 
   systemd.network = {
