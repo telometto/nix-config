@@ -27,12 +27,10 @@
     ../../modules/shared/networking/ssh/defaults.nix
     ../../modules/shared/networking/systemd/defaults.nix
     ../../modules/shared/networking/tailscale/defaults.nix
-    ../../modules/server/networking/systemd/systemd-networking.nix # Server-specific
-    ../../modules/server/networking/tailscale/tailscale.nix # Server-specific
-    ../../modules/server/networking/vlan/vlans.nix # Server-specific
+    ../../modules/laptop/networking/tailscale/tailscale.nix # Laptop-specific
 
     # Packages
-    ../../modules/server/packages/system-packages.nix # Server-specific
+    ../../modules/laptop/packages/system-packages.nix # Laptop-specific
 
     # System
     ../../modules/shared/nix/defaults.nix
@@ -46,22 +44,15 @@
     ../../modules/shared/security/secureboot/lanzaboote.nix
 
     # Services
-    ../../modules/shared/services/utilities/atuin.nix
-    ../../modules/shared/services/utilities/printing.nix
-    ../../modules/server/services/media/plex.nix # Server-specific
-    ../../modules/server/services/utilities/cockpit.nix # Server-specific
-    #../../modules/server/services/utilities/firefly.nix # Server-specific; not created yet
-    ../../modules/server/services/utilities/scrutiny.nix # Server-specific
-    ../../modules/server/services/utilities/searx.nix # Server-specific
+    #../../modules/shared/services/utilities/atuin.nix
+    ../../modules/shared/services/utilities/fwupd.nix
+    ../../modules/laptop/services/utilities/printing.nix # Laptop-specific
 
     # Virtualization
     ../../modules/shared/virtualization/containers/docker.nix
     ../../modules/shared/virtualization/containers/podman.nix
-    ../../modules/shared/virtualization/vm/microvm.nix
-    ../../modules/shared/virtualization/vm/vm.nix
-    ../../modules/server/virtualization/containers/docker.nix # Server-specific
-    ../../modules/server/virtualization/containers/podman.nix # Server-specific
-    ../../modules/server/virtualization/orchestration/k3s.nix # Server-specific
+    ../../modules/laptop/virtualization/containers/docker.nix # Laptop-specific
+    ../../modules/laptop/virtualization/containers/podman.nix # Laptop-specific
 
     # Users
     ../../users/main-user.nix
@@ -72,8 +63,8 @@
     hostId = myVars.laptop.hostId;
 
     # Pick only one of the below networking options.
-    # networking.wireless.enable = true; # Enables wireless support via wpa_supplicant.
-    # networking.networkmanager.enable = true; # Easiest to use and most distros use this by default.
+    # wireless = { enable = true; }; # Enables wireless support via wpa_supplicant.
+    networkmanager = { enable = true; }; # Easiest to use and most distros use this by default.
   };
 
   nixpkgs = {
