@@ -3,7 +3,7 @@
 
   inputs = {
     # Nixpkgs repos
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable"; # "github:NixOS/nixpkgs/nixos-24.05"
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
@@ -12,8 +12,8 @@
 
     # Home Manager repo
     home-manager = {
-      #url = "github:nix-community/home-manager/release-24.05";
-      url = "github:nix-community/home-manager/master";
+      #url = "github:nix-community/home-manager/release-24.05"; # Stable
+      url = "github:nix-community/home-manager/master"; # Unstable
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -72,7 +72,7 @@
               home-manager = {
                 useGlobalPkgs = true;
                 useUserPackages = true;
-                
+
                 extraSpecialArgs = { inherit myVars; };
 
                 users.${myVars.server.user} = import ./modules/server/home/home.nix;
