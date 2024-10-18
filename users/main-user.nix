@@ -4,7 +4,7 @@
 {
   users.users.${myVars.laptop.user} = {
     isNormalUser = true;
-    description = myVars.laptop.user;
+    description = myVars.laptop.description;
     extraGroups = [ "wheel" "networkmanager" "libvirtd" ];
 
     packages = with pkgs; [
