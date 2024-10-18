@@ -9,6 +9,8 @@
   };
 
   services = {
+    hardware.bolt.enable = true;
+
     gnome = {
       core-developer-tools.enable = true;
       core-os-services.enable = true;
@@ -18,26 +20,22 @@
       gnome-online-accounts.enable = true;
       gnome-settings-daemon.enable = true;
       sushi.enable = true;
-      hardware.bolt.enable = true;
+    };
 
-      xserver = {
-        enable = true; # Enable the X11 windowing system
+    xserver = {
+      enable = true; # Enable the X11 windowing system
 
-        desktopManager = {
-          gnome = {
-            enable = true;
-            gdm = {
-              enable = true;
-              autoSuspend = false;
-            };
-          };
+      desktopManager = {
+        gnome = {
+          enable = true;
         };
+      };
 
-        # Enable the GNOME Desktop Environment
-        displayManager = {
-          gdm = { enable = true; };
-
-          gnome = { enable = true; };
+      # Enable the GNOME Desktop Environment
+      displayManager = {
+        gdm = {
+          enable = true;
+          autoSuspend = false;
         };
       };
     };
