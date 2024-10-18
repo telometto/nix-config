@@ -15,7 +15,7 @@
       enable = true;
     };
   };
-  
+
   environment.systemPackages = with pkgs; [
     # apparmor-related packages
     apparmor-bin-utils
