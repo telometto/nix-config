@@ -21,7 +21,7 @@
   };
 
   console = {
-    keyMap = "no";
+    #keyMap = "no";
     useXkbConfig = true; # use xkb.options in tty
     # font = "";
   };
