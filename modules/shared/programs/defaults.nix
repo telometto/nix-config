@@ -2,10 +2,14 @@
 { config, lib, pkgs, ... }:
 
 {
-  programs.gnupg = {
-    agent = {
-      enable = true;
-      enableSSHSupport = true;
+  programs = {
+    #mtr = { enable = true; };
+
+    gnupg = {
+      agent = {
+        enable = true;
+        enableSSHSupport = true;
+      };
     };
   };
 
