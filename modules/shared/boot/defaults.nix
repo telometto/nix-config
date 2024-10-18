@@ -13,6 +13,11 @@
       };
     };
 
+    plymouth = {
+      enable = true;
+      #theme = "bgrt";
+    };
+
     kernel = {
       sysctl = {
         "net.core.wmem_max" = 7500000; # for cloudflared tunnel
