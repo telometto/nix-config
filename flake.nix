@@ -48,6 +48,7 @@
     inputs@{ self
     , nixpkgs
     , home-manager
+    , nixos-hardware
     , lanzaboote
     , agenix
     , microvm
