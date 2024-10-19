@@ -30,6 +30,9 @@
     tree # Display directories as trees
     wget # Network downloader
     xclip # Command line interface to the X11 clipboard
+    usbutils # USB device related utilities
+    udiskie # Removable disk automounter
+    udisks # Disk management service
 
     # Development tools
     git # Version control system, required by flakes
