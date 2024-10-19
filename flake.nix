@@ -101,7 +101,10 @@
 
                 extraSpecialArgs = { inherit myVars; };
 
-                users.${myVars.laptop.user} = import ./modules/laptop/home/home.nix;
+                users = {
+                  ${myVars.laptop.user} = import ./modules/laptop/home/home.nix;
+                  ${myVars.extraUsers.user} = import ./users/extra/home/home.nix;
+                };
               };
             }
           ];
