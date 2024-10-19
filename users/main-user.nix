@@ -12,7 +12,7 @@
     ];
 
     openssh.authorizedKeys.keys = [
-      myVars.laptop.openSSHPubKey
+      #myVars.laptop.openSSHPubKey
       myVars.laptop.openSSHGPGPubKey
     ];
   };
