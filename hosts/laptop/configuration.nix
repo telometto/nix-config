@@ -19,6 +19,9 @@
     # Environment
     ../../modules/shared/environment/defaults.nix
 
+    # Hardware
+    ../../modules/laptop/hardware/hardware.nix
+
     # Localization
     ../../modules/shared/i18n/defaults.nix
 
@@ -37,6 +40,7 @@
 
     # Programs
     ../../modules/shared/programs/defaults.nix
+    ../../modules/laptop/programs/steam.nix
 
     # Security
     ../../modules/shared/security/defaults.nix
@@ -45,8 +49,10 @@
 
     # Services
     #../../modules/shared/services/utilities/atuin.nix
+    ../../modules/shared/services/utilities/flatpak.nix
     ../../modules/shared/services/utilities/fwupd.nix
     ../../modules/laptop/services/utilities/printing.nix # Laptop-specific
+    ../../modules/laptop/services/utilities/usb.nix
 
     # Virtualization
     ../../modules/shared/virtualization/containers/docker.nix
