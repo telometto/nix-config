@@ -14,10 +14,21 @@
       #blesh
       direnv
       eza
+      #firefox
       fzf
       nix-direnv
       sqlite
       zoxide
+
+      # VS Code
+      nixd # Nix language server for VS Code
+      nixpkgs-fmt # Nix language formatter
+      (vscode-with-extensions.override {
+        vscodeExtensions = with vscode-extensions; [
+          jnoortheen.nix-ide
+          pkief.material-icon-theme
+        ];
+      })
     ];
   };
 
@@ -32,7 +43,7 @@
       enableZshIntegration = true;
 
       #settings = {
-      # key_path = "/opt/sec/atuin-file"
+      #  key_path = "/opt/sec/atuin-file";
       #};
     };
 
@@ -74,6 +85,10 @@
       enable = true;
 
       tmux.enableShellIntegration = true;
+    };
+
+    firefox = {
+      enable = true;
     };
 
     git = {
