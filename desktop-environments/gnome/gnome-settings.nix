@@ -40,4 +40,11 @@
       };
     };
   };
+
+  environment.gnome.excludePackages = (with pkgs; [
+    gnome-tour
+    gnome-builder
+  ]) ++ (with pkgs.gnome; [
+    gnome-maps
+  ]);
 }
