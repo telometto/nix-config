@@ -76,7 +76,7 @@
 
                 extraSpecialArgs = { inherit myVars; };
 
-                users.${myVars.mainUsers.server.user} = import ./users/main/home/home.nix;
+                users.${myVars.mainUsers.server.user} = import ./users/server/home/home.nix;
               };
             }
           ];
