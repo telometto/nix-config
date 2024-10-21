@@ -13,9 +13,6 @@
     ../../modules/shared/boot/defaults.nix
     ../../modules/shared/boot/filesystem/defaults.nix
 
-    # Desktop Environment
-    ../../desktop-environments/gnome/gnome-settings.nix
-
     # Environment
     ../../modules/shared/environment/defaults.nix
 
@@ -62,7 +59,9 @@
 
     # Users
     ../../users/main-user.nix
-  ];
+  ]
+  ++ lib.optional myVars.general.enableGnome ../../desktop-environments/gnome/gnome-settings.nix
+  ++ lib.optional myVars.general.enableKDE ../../desktop-environments/kde/kde-settings.nix;
 
   networking = {
     hostName = myVars.laptop.hostname;
