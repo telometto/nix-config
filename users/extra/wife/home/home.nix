@@ -19,6 +19,7 @@
       eza
       #firefox
       fzf
+      kdeconnect
       nix-direnv
       sqlite
       zoxide
