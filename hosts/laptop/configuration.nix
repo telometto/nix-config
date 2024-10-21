@@ -58,7 +58,8 @@
     ../../modules/laptop/virtualization/containers/podman.nix # Laptop-specific
 
     # Users
-    ../../users/main-user.nix
+    ../../users/main/main-user.nix
+    ../../users/extra/extra-users.nix
   ]
   ++ lib.optional myVars.general.enableGnome ../../desktop-environments/gnome/gnome-settings.nix
   ++ lib.optional myVars.general.enableKDE ../../desktop-environments/kde/kde-settings.nix;
