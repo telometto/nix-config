@@ -5,8 +5,8 @@
   services.plex = {
     enable = true;
     openFirewall = true;
-    user = myVars.server.user; # If not set, the service will run as user "plex"
-    dataDir = myVars.server.plexDataDir; # If not set, the service will use the default data directory
+    user = myVars.mainUsers.server.user; # If not set, the service will run as user "plex"
+    dataDir = myVars.mainUsers.server.plexDataDir; # If not set, the service will use the default data directory
   };
 
   environment.systemPackages = with pkgs; [ plex ];
