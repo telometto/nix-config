@@ -6,6 +6,7 @@
     settings = {
       experimental-features = [ "nix-command" "flakes" ];
       auto-optimise-store = true;
+      download-buffer-size = 536870912;
     };
 
     gc = {
@@ -13,5 +14,9 @@
       dates = lib.mkDefault "weekly";
       options = lib.mkDefault "--delete-older-than 7d";
     };
+
+    #extraOptions = ''
+    #  download-buffer-size = 536870912
+    #'';
   };
 }
