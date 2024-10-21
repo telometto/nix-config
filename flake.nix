@@ -76,7 +76,7 @@
 
                 extraSpecialArgs = { inherit myVars; };
 
-                users.${myVars.server.user} = import ./modules/server/home/home.nix;
+                users.${myVars.mainUsers.server.user} = import ./users/main/home/home.nix;
               };
             }
           ];
@@ -102,8 +102,9 @@
                 extraSpecialArgs = { inherit myVars; };
 
                 users = {
-                  ${myVars.laptop.user} = import ./modules/laptop/home/home.nix;
-                  ${myVars.extraUsers.user} = import ./users/extra/home/home.nix;
+                  ${myVars.mainUsers.laptop.user} = import ./users/main/home/home.nix;
+                  ${myVars.extraUsers.wife.user} = import ./users/extra/wife/home/home.nix;
+                  ${myVars.extraUsers.brother-one.user} = import ./users/extra/brother-one/home/home.nix;
                 };
               };
             }
