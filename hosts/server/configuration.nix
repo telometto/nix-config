@@ -42,7 +42,7 @@
 
     # Services
     ../../modules/shared/services/utilities/atuin.nix
-    ../../modules/shared/services/utilities/printing.nix
+    ../../modules/server/services/utilities/printing.nix
     ../../modules/server/services/media/plex.nix # Server-specific
     ../../modules/server/services/utilities/cockpit.nix # Server-specific
     #../../modules/server/services/utilities/firefly.nix # Server-specific; not created yet
@@ -59,7 +59,7 @@
     ../../modules/server/virtualization/orchestration/k3s.nix # Server-specific
 
     # Users
-    ../../users/server.nix
+    ../../users/server/server.nix
   ];
 
   networking = {
