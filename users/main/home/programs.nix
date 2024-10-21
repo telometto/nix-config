@@ -1,77 +1,7 @@
 { config, lib, pkgs, myVars, ... }:
 
 {
-  home = {
-    username = myVars.extraUsers.user;
-    homeDirectory = "/home/${myVars.extraUsers.user}";
-    stateVersion = "24.05";
-
-    packages = with pkgs; [
-      # Your packages here
-      atuin
-      bash
-      bat
-      #blesh
-      direnv
-      eza
-      #firefox
-      fzf
-      nix-direnv
-      sqlite
-      zoxide
-    ];
-  };
-
-  dconf = {
-    enable = true;
-
-    settings = {
-      "org/gnome/desktop/interface" = {
-        color-scheme = "prefer-dark";
-        clock-show-weekday = true;
-        font-antialiasing = "rgba";
-        gtk-theme = "Adwaita-dark";
-      };
-
-      "org/gnome/desktop/datetime" = {
-        automatic-timezone = true;
-        automatic-timezone-guess = true;
-        automatic-timezone-guess-geoclue = true;
-      };
-
-      "org/gnome/desktop/peripherals/mouse" = {
-        #speed = "-0.5";
-        accel-profile = "flat";
-      };
-
-      "org/gtk/Settings/FileChooser" = {
-        sort-directories-first = true;
-      };
-
-      "org/gnome/desktop/wm/preferences" = {
-        button-layout = "appmenu:minimize,maximize,close";
-      };
-
-      "org/gnome/desktop/calendar" = {
-        show-weekdate = true;
-      };
-
-      "org/gnome/system/proxy" = {
-        mode = "auto";
-      };
-
-      "org/gnome/settings-daemon/plugins.color" = {
-        night-light-enabled = true;
-        night-light-schedule-automatic = true;
-      };
-    };
-  };
-
   programs = {
-    home-manager = {
-      enable = true;
-    };
-
     atuin = {
       enable = true;
       enableBashIntegration = true;
@@ -124,6 +54,34 @@
 
     firefox = {
       enable = true;
+
+      languagePacks = [ "nb-NO" "it-IT" "en-US" ];
+
+      policies = {
+        DisableTelemetry = true;
+        DisableFirefoxStudies = true;
+        DisablePocket = true;
+        DisableFirefoxAccounts = false;
+        OverrideFirstRunPage = "";
+        OverridePostUpdatePage = "";
+        DontCheckDefaultBrowser = true;
+        DisplayBookmarksToolbar = "always";
+        DisplayMenuBar = "default-off";
+        SearchBar = "unified";
+
+        EnableTrackingProtection = {
+          Value = true;
+          Locked = true;
+          Cryptomining = true;
+          Fingerprinting = true;
+        };
+      };
+    };
+
+    floorp = {
+      enable = true;
+
+      languagePacks = [ "nb-NO" "it-IT" "en-US" ];
     };
 
     git = {
