@@ -2,8 +2,7 @@
 
 {
   home = {
-    username = myVars.server.user;
-    homeDirectory = "/home/${myVars.server.user}";
+    username = myVars.mainUsers.server.user;
     stateVersion = "24.05";
 
     packages = with pkgs; [
