@@ -21,7 +21,7 @@
 
     # Utilities configuration
     ./services/utilities/cockpit.nix
-    ./services/utilities/firefly.nix
+    #./services/utilities/firefly.nix
     ./services/utilities/printing.nix
     ./services/utilities/sanoid.nix
     ./services/utilities/scrutiny.nix
