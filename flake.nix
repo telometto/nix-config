@@ -45,6 +45,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    disko = {
+      url = "github:nix-community/disko/latest";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Nixarr repo (test)
     #nixarr.url = "github:rasmus-kirk/nixarr";
   };
@@ -85,37 +90,6 @@
                 users.${myVars.mainUsers.server.user} = import ./users/server/home/home.nix;
               };
             }
-
-#            crowdsec.nixosModules.crowdsec
-#
-#            ({ pkgs, lib, ... }: {
-#              services.crowdsec = {
-#                enable = true;
-#
-#                enrollKeyFile = "/opt/sec/crowdsec-file";
-#
-#                settings = {
-#                  api.server = {
-#                    listen_url = "127.0.0.1:9998";
-#                  };
-#                };
-#              };
-#            })
-#
-#            crowdsec.nixosModules.crowdsec-firewall-bouncer
-#
-#            ({ pkgs, lib, ... }: {
-#              nixpkgs.overlays = [ crowdsec.overlays.default ];
-#
-#              services.crowdsec-firewall-bouncer = {
-#                enable = true;
-#
-#                settings = {
-#                  api_key = "a2aCfCdapZ3NdhlXfXhWB5KAwTs52q5r4EadFfPt";
-#                  api_url = "http://localhost:9998";
-#                };
-#              };
-#            })
           ];
 
           specialArgs = {
