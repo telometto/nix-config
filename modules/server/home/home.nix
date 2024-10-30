@@ -8,15 +8,8 @@
     packages = with pkgs; [
       # Your packages here
       atuin
-      bash
-      bat
       #blesh
-      direnv
-      eza
-      fzf
-      nix-direnv
       sqlite
-      zoxide
     ];
   };
 
