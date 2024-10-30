@@ -4,6 +4,7 @@
 {
   environment.systemPackages = with pkgs; [
     # Shell utilities
+    bash # Bourne Again SHell
     bash-completion # Bash command completion
     zsh # Z shell
     zsh-autocomplete # Zsh command autocompletion
@@ -50,5 +51,10 @@
     # Monitoring tools
     bat # Cat clone with syntax highlighting and Git integration
     btop # Resource monitor
+
+    direnv
+    fzf
+    nix-direnv
+    zoxide
   ];
 }
