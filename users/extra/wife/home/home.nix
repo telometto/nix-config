@@ -19,7 +19,7 @@
       eza
       #firefox
       fzf
-      kdeconnect
+      plasma5Packages.kdeconnect-kde
       nix-direnv
       sqlite
       zoxide
