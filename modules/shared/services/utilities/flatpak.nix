@@ -2,6 +2,8 @@
 { config, lib, pkgs, ... }:
 
 {
+  xdg.portal.enable = true; # Needs to be enabled for Flatpak to work
+
   services.flatpak = {
     enable = true;
   };
