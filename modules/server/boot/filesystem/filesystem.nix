@@ -15,6 +15,17 @@
   services = {
     zfs = {
       autoScrub.enable = true;
+
+      autoSnapshot = {
+        enable = true;
+
+        monthly = 4;
+        weekly = 7;
+        daily = 2;
+
+        flags = "-u";
+      };
+
       trim.enable = true;
     };
   };
