@@ -31,12 +31,17 @@
     # VPN confinement repo
     vpn-confinement = {
       url = "github:Maroka-chan/VPN-Confinement";
-      inputs.nixpkgs.follows = "nixpkgs";
+#      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # MicroVM repo
     microvm = {
       url = "github:astro/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    crowdsec = {
+      url = "git+https://codeberg.org/kampka/nix-flake-crowdsec.git";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -52,6 +57,7 @@
     , lanzaboote
     , agenix
     , microvm
+    #, crowdsec
     , #vpn-confinement, # works
       #nixarr,
       ...
@@ -79,6 +85,37 @@
                 users.${myVars.mainUsers.server.user} = import ./users/server/home/home.nix;
               };
             }
+
+#            crowdsec.nixosModules.crowdsec
+#
+#            ({ pkgs, lib, ... }: {
+#              services.crowdsec = {
+#                enable = true;
+#
+#                enrollKeyFile = "/opt/sec/crowdsec-file";
+#
+#                settings = {
+#                  api.server = {
+#                    listen_url = "127.0.0.1:9998";
+#                  };
+#                };
+#              };
+#            })
+#
+#            crowdsec.nixosModules.crowdsec-firewall-bouncer
+#
+#            ({ pkgs, lib, ... }: {
+#              nixpkgs.overlays = [ crowdsec.overlays.default ];
+#
+#              services.crowdsec-firewall-bouncer = {
+#                enable = true;
+#
+#                settings = {
+#                  api_key = "a2aCfCdapZ3NdhlXfXhWB5KAwTs52q5r4EadFfPt";
+#                  api_url = "http://localhost:9998";
+#                };
+#              };
+#            })
           ];
 
           specialArgs = {
