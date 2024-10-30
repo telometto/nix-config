@@ -4,6 +4,7 @@
     # Boot defaults
     ./boot/defaults.nix
     ./boot/filesystem/defaults.nix
+    ./boot/filesystem/disko/disko.nix
 
     # Env defaults
     ./environment/defaults.nix
@@ -30,7 +31,7 @@
 
     # Services defaults
     ./services/utilities/atuin.nix
-    ./services/utilities/flatpak.nix
+    #./services/utilities/flatpak.nix
     ./services/utilities/fwupd.nix
 
     # Virtualization defaults
