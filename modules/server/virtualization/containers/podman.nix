@@ -7,7 +7,8 @@
       storage = {
         settings = {
           storage = {
-            driver = "zfs"; # Sets the storage driver to zfs
+            #driver = "zfs"; # Sets the storage driver to zfs; does not work?
+            driver = "overlay";
           };
         };
       };
