@@ -31,7 +31,7 @@
     # VPN confinement repo
     vpn-confinement = {
       url = "github:Maroka-chan/VPN-Confinement";
-#      inputs.nixpkgs.follows = "nixpkgs";
+#      inputs.nixpkgs.follows = "nixpkgs"; # Not needed anymore
     };
 
     # MicroVM repo
@@ -62,7 +62,7 @@
     , lanzaboote
     , agenix
     , microvm
-    #, crowdsec
+    , crowdsec
     , #vpn-confinement, # works
       #nixarr,
       ...
