@@ -4,7 +4,7 @@
     # Boot defaults
     ./boot/defaults.nix
     ./boot/filesystem/defaults.nix
-    ./boot/filesystem/disko/disko.nix
+    #./boot/filesystem/disko/disko.nix
 
     # Env defaults
     ./environment/defaults.nix
@@ -26,6 +26,7 @@
 
     # Security defaults
     ./security/defaults.nix
+    ./security/crowdsec/crowdsec.nix
     ./security/secrets/agenix.nix
     ./security/secureboot/lanzaboote.nix
 
