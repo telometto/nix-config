@@ -26,7 +26,7 @@
 
     # Security defaults
     ./security/defaults.nix
-    ./security/crowdsec/crowdsec.nix
+    #./security/crowdsec/crowdsec.nix
     ./security/secrets/agenix.nix
     ./security/secureboot/lanzaboote.nix
 
