@@ -28,6 +28,7 @@
     ./security/defaults.nix
     #./security/crowdsec/crowdsec.nix
     ./security/secrets/agenix.nix
+    ./security/secrets/sops-nix.nix
     ./security/secureboot/lanzaboote.nix
 
     # Services defaults
