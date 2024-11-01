@@ -34,6 +34,11 @@
 #      inputs.nixpkgs.follows = "nixpkgs"; # Not needed anymore
     };
 
+    sops = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # MicroVM repo
     microvm = {
       url = "github:astro/microvm.nix";
@@ -61,9 +66,10 @@
     , nixos-hardware
     , lanzaboote
     , agenix
+    #, sops-nix
     , microvm
-    , crowdsec
-    , #vpn-confinement, # works
+    #, crowdsec
+    , #vpn-confinement,
       #nixarr,
       ...
     }:
@@ -73,7 +79,7 @@
     {
       nixosConfigurations = {
         homeserver = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
+          system = myVars.general.system;
 
           modules = [
             ./hosts/server/configuration.nix
@@ -98,7 +104,7 @@
         };
 
         stinkpad = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
+          system = myVars.general.system;
 
           modules = [
             ./hosts/laptop/configuration.nix
