@@ -1,31 +1,41 @@
 { config, pkgs, lib, inputs, myVars, ... }:
 
 {
-  import = [
+  imports = [
     inputs.crowdsec.nixosModules.crowdsec
     inputs.crowdsec.nixosModules.crowdsec-firewall-bouncer  
   ];
 
   nixpkgs.overlays = [ inputs.crowdsec.overlays.default ];
 
-  services.crowdsec = {
-    enable = true;
+  services = {
+    crowdsec = {
+      enable = true;
 
-    enrollKeyFile = "/opt/sec/crowdsec-file";
+      enrollKeyFile = "/opt/sec/crowdsec-file";
 
-    settings = {
-      api.server = {
-        listen_url = "127.0.0.1:9998";
+      settings = {
+        api.server = {
+          listen_url = "127.0.0.1:9998";
+        };
       };
+
+      acquisitions = [
+        {
+          name = "crowdsecurity/linux";
+          mode = "bouncer";
+          bouncer = "my-bouncer";
+        }
+      ];
     };
-  };
 
-  services.crowdsec-firewall-bouncer = {
-    enable = true;
-
-    settings = {
-      api_key = myVars.general.crowdsecApiKey;
-      api_url = "http://localhost:9998";
+    crowdsec-firewall-bouncer = {
+      enable = true;
+    
+      settings = {
+        api_key = myVars.general.crowdsecApiKey;
+        api_url = "http://localhost:9998";
+      };
     };
   };
 
