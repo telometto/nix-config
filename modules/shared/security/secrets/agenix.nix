@@ -1,7 +1,7 @@
-{ config, inputs, lib, pkgs, ... }:
+{ config, inputs, lib, pkgs, myVars, ... }:
 
 {
   imports = [ inputs.agenix.nixosModules.default ];
 
-  #environment.systemPackages = [ inputs.agenix.packages."${system}".default ];
+  environment.systemPackages = [ inputs.agenix.packages."${myVars.general.system}".default ];
 }
