@@ -66,7 +66,7 @@
     , nixos-hardware
     , lanzaboote
     , agenix
-    #, sops-nix
+    , sops-nix
     , microvm
     #, crowdsec
     , #vpn-confinement,
