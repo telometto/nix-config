@@ -31,10 +31,9 @@
     # VPN confinement repo
     vpn-confinement = {
       url = "github:Maroka-chan/VPN-Confinement";
-#      inputs.nixpkgs.follows = "nixpkgs"; # Not needed anymore
     };
 
-    sops = {
+    sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -66,12 +65,12 @@
     , nixos-hardware
     , lanzaboote
     , agenix
-    , sops-nix
+    #, sops-nix
     , microvm
     #, crowdsec
-    , #vpn-confinement,
-      #nixarr,
-      ...
+    #, #vpn-confinement
+    #, nixarr
+    , ...
     }:
     let
       myVars = import "${self}/vars/vars.nix";
