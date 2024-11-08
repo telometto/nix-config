@@ -3,7 +3,7 @@
 {
   services = {
     xserver = {
-      enable = true;
+      enable = false; # Disables the X11 server; enables Wayland
     };
 
     displayManager = {
