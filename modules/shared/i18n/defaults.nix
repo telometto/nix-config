@@ -7,6 +7,8 @@
   i18n = {
     defaultLocale = "en_US.UTF-8";
 
+    supportedLocales = [ "all" ];
+
     extraLocaleSettings = {
       LC_ADDRESS = "nb_NO.UTF-8";
       LC_IDENTIFICATION = "nb_NO.UTF-8";
