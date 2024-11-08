@@ -56,5 +56,6 @@
     fzf
     nix-direnv
     zoxide
+    glibcLocales
   ];
 }
