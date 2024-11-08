@@ -102,6 +102,31 @@
           };
         };
 
+        snowfall = nixpkgs.lib.nixosSystem {
+          system = myVars.general.system;
+
+          modules = [
+            ./hosts/desktop/configuration.nix
+
+            # Start Home Manager configuration
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+
+                extraSpecialArgs = { inherit myVars; };
+
+                users.${myVars.mainUsers.desktop.user} = import ./users/main/home/home.nix;
+              };
+            }
+          ];
+
+          specialArgs = {
+            inherit inputs myVars;
+          };
+        };
+
         stinkpad = nixpkgs.lib.nixosSystem {
           system = myVars.general.system;
 
