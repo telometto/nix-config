@@ -3,10 +3,10 @@
 
 {
   users.users = {
-    ${myVars.mainUsers.laptop.user} = {
-      isNormalUser = myVars.mainUsers.laptop.isNormalUser;
-      description = myVars.mainUsers.laptop.description;
-      extraGroups = myVars.mainUsers.laptop.extraGroups;
+    ${myVars.mainUsers.desktop.user} = {
+      isNormalUser = myVars.mainUsers.desktop.isNormalUser;
+      description = myVars.mainUsers.desktop.description;
+      extraGroups = myVars.mainUsers.desktop.extraGroups;
   
       packages = with pkgs; [
         # Your packages here
