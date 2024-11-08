@@ -12,7 +12,7 @@
       };
     };
 
-    oci-containers = lib.mkIf (config.virtualisation.docker.enable && !config.virtualisation.podman.enable) {
+    oci-containers = { # lib.mkIf (config.virtualisation.docker.enable && !config.virtualisation.podman.enable) {
       backend = "docker";
     };
   };
