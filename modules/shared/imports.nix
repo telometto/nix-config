@@ -4,7 +4,7 @@
     # Boot defaults
     ./boot/defaults.nix
     ./boot/filesystem/defaults.nix
-    #./boot/filesystem/disko/disko.nix
+    ./boot/filesystem/disko/disko.nix
 
     # Env defaults
     ./environment/defaults.nix
@@ -28,13 +28,14 @@
     ./security/defaults.nix
     #./security/crowdsec/crowdsec.nix
     ./security/secrets/agenix.nix
-    ./security/secrets/sops-nix.nix
+    #./security/secrets/sops-nix.nix
     ./security/secureboot/lanzaboote.nix
 
     # Services defaults
     ./services/utilities/atuin.nix
-    #./services/utilities/flatpak.nix
     ./services/utilities/fwupd.nix
+    ./services/utilities/usb.nix
+    ./services/utilities/zram.nix
 
     # Virtualization defaults
     #./virtualization/containers/docker.nix
