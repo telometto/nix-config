@@ -15,7 +15,7 @@
       defaultNetwork.settings.dns_enabled = true; # Enables DNS
     };
 
-    oci-containers = lib.mkIf (!config.virtualisation.docker.enable && config.virtualisation.podman.enable) {
+    oci-containers = { # lib.mkIf (!config.virtualisation.docker.enable && config.virtualisation.podman.enable) {
       backend = "podman"; # Sets the backend to podman
     };
   };
