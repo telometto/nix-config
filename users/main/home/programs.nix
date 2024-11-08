@@ -81,7 +81,7 @@
     floorp = {
       enable = true;
 
-      languagePacks = [ "nb-NO" "it-IT" "en-US" ];
+      #languagePacks = [ "nb-NO" "it-IT" "en-US" ];
     };
 
     git = {
@@ -93,6 +93,10 @@
     };
 
     gpg = {
+      enable = true;
+    };
+
+    mangohud = {
       enable = true;
     };
 
