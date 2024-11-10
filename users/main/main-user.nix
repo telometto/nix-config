@@ -7,6 +7,7 @@
       isNormalUser = myVars.mainUsers.desktop.isNormalUser;
       description = myVars.mainUsers.desktop.description;
       extraGroups = myVars.mainUsers.desktop.extraGroups;
+      shell = pkgs.zsh;
   
       packages = with pkgs; [
         # Your packages here
