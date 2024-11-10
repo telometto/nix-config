@@ -1,15 +1,18 @@
 { config, lib, pkgs, myVars, ... }:
-
+#let
+#  p10kconf = config.lib.file.mkOutOfStoreSymlink;
+#in
 {
   imports = [
-    ./kde.nix
+    # ./gnome.nix # Enables GNOME
+    ./kde.nix # Enables KDE
 
     ./programs.nix
     ./services.nix
     ./xdg.nix
   ];
-  # ++ lib.optional myVars.general.enableGnome ./gnome.nix
-  # ++ lib.optional myVars.general.enableKDE ./kde.nix;
+
+  programs.home-manager.enable = true; # Enable home-manager
 
   home = {
     username = myVars.mainUsers.desktop.user;
@@ -17,43 +20,48 @@
 
     packages = with pkgs; [
       # Utils
-      atuin
+      atuin # History manager
       #blesh
-      #deja-dup
-      gparted
-      meld
-      polychromatic
-      variety
+      #deja-dup # Backup tool
+      gparted # Partition manager
+      meld # Diff tool
+      polychromatic # GUI for OpenRazer
+      variety # Wallpaper changer
+      zsh-powerlevel10k
 
       # Gaming
-      steam
+      steam # Steam client
       #mangohud
 
       # Media
-      texlivePackages.scheme-full
-      mpv
+      #mpv # Media player
 
       # Internet
-      brave
-      protonmail-desktop
-      thunderbird
+      brave # Web browser
+      protonmail-desktop # ProtonMail client
+      thunderbird # Email client
 
       # Social
-      discord
-      element-desktop
+      discord # Discord client
+      element-desktop # Matrix client
+      teams # Microsoft Teams client
 
-      # VS Code
+      # Development
       nixd # Nix language server for VS Code
       nixpkgs-fmt # Nix language formatter
-      (vscode-with-extensions.override {
-        vscodeExtensions = with vscode-extensions; [
-          jnoortheen.nix-ide
-          pkief.material-icon-theme
-          github.copilot
-        ];
-      })
+      vscode # Visual Studio Code
+      
+      texliveFull # LaTeX
+
+      ## Declaratively configure VS Code with extensions
+      ## NOTE: Settings will not be synced
+      #(vscode-with-extensions.override {
+      #  vscodeExtensions = with vscode-extensions; [
+      #    jnoortheen.nix-ide
+      #    pkief.material-icon-theme
+      #    github.copilot
+      #  ];
+      #})
     ];
   };
-
-  programs.home-manager.enable = true;
 }
