@@ -1,6 +1,8 @@
 { config, lib, pkgs, myVars, ... }:
 
 {
+  security.rtkit.enable = true;
+
   # Enable sound.
   hardware.pulseaudio.enable = false; # Default: true
   # OR
