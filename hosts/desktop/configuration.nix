@@ -8,7 +8,8 @@
 { config, lib, pkgs, myVars, ... }:
 
 {
-  imports = [ # Include the results of the hardware scan.
+  imports = [
+    # Include the results of the hardware scan.
     ./hardware-configuration.nix # DO NOT TOUCH
 
     # Import shared configurations
@@ -33,8 +34,12 @@
     wireless = { enable = false; }; # Enables wireless support via wpa_supplicant.
     networkmanager = { enable = false; }; # Easiest to use and most distros use this by default.
 
-    firewall = { enable = true; };
+    # Firewall-related
+    firewall = { enable = true; }; # Enable the firewall
+    nftables = { enable = true; }; # Use nftables instead of iptables
   };
+
+  programs.zsh = { enable = true; };
 
   security.rtkit.enable = true;
 
@@ -73,6 +78,10 @@
   *
   * For more information, see `man configuration.nix` or https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion
   */
-  system.stateVersion = "24.05"; # Did you read the comment?
+
+  system = {
+    # copySystemConfiguration = true; # Unsupported with Flakes enabled
+    stateVersion = "24.05"; # Did you read the comment?
+  };
 
 }
