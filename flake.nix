@@ -89,6 +89,7 @@
               home-manager = {
                 useGlobalPkgs = true;
                 useUserPackages = true;
+                backupFileExtension = "hm-backup";
 
                 extraSpecialArgs = { inherit myVars; };
 
@@ -114,6 +115,7 @@
               home-manager = {
                 useGlobalPkgs = true;
                 useUserPackages = true;
+                backupFileExtension = "hm-backup";
 
                 extraSpecialArgs = { inherit myVars; };
 
@@ -139,6 +141,7 @@
               home-manager = {
                 useGlobalPkgs = true;
                 useUserPackages = true;
+                backupFileExtension = "hm-backup";
 
                 extraSpecialArgs = { inherit myVars; };
 
