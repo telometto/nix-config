@@ -1,7 +1,10 @@
 { config, lib, pkgs, myVars, ... }:
 
 {
-  imports = [ ./programs.nix ];
+  imports = [
+    ./programs.nix
+    ./services.nix
+  ];
 
   home = {
     username = myVars.mainUsers.server.user;
