@@ -3,8 +3,9 @@
 
 {
   networking = {
-    firewall = {
-      enable = false;
+    firewall = rec {
+      allowedTCPPortRanges = [{ from = 1714; to = 1764; }];
+      allowedUDPPortRanges = allowedTCPPortRanges;
 
       allowedTCPPorts = [
         # 6443 # k3s; required so that pods can reach the API server (running on port 6443 by default)
