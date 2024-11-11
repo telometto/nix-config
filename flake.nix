@@ -65,15 +65,15 @@
     , nixos-hardware
     , lanzaboote
     , agenix
-    #, sops-nix
+      #, sops-nix
     , microvm
-    #, crowdsec
-    #, #vpn-confinement
-    #, nixarr
+      #, crowdsec
+      #, #vpn-confinement
+      #, nixarr
     , ...
     }:
     let
-      myVars = import "${self}/vars/vars.nix";
+      myVars = import ./common/vars/vars.nix;
     in
     {
       nixosConfigurations = {
@@ -93,7 +93,7 @@
 
                 extraSpecialArgs = { inherit myVars; };
 
-                users.${myVars.mainUsers.server.user} = import ./users/server/home/home.nix;
+                users.${myVars.mainUsers.server.user} = import ./common/users/server/home/home.nix;
               };
             }
           ];
@@ -119,7 +119,7 @@
 
                 extraSpecialArgs = { inherit myVars; };
 
-                users.${myVars.mainUsers.desktop.user} = import ./users/main/home/home.nix;
+                users.${myVars.mainUsers.desktop.user} = import ./common/users/main/home/home.nix;
               };
             }
           ];
@@ -146,9 +146,9 @@
                 extraSpecialArgs = { inherit myVars; };
 
                 users = {
-                  ${myVars.mainUsers.laptop.user} = import ./users/main/home/home.nix;
-                  ${myVars.extraUsers.wife.user} = import ./users/extra/wife/home/home.nix;
-                  ${myVars.extraUsers.brother-one.user} = import ./users/extra/brother-one/home/home.nix;
+                  ${myVars.mainUsers.laptop.user} = import ./common/users/main/home/home.nix;
+                  ${myVars.extraUsers.wife.user} = import ./common/users/extra/wife/home/home.nix;
+                  ${myVars.extraUsers.brother-one.user} = import ./common/users/extra/brother-one/home/home.nix;
                 };
               };
             }
