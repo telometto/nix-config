@@ -28,7 +28,7 @@
     "/run/media/${myVars.mainUsers.desktop.user}/samsung" = {
       device = "/dev/disk/by-uuid/e7e653c3-361c-4fb2-a65e-13fdcb1e6e25";
       fsType = "btrfs";
-      options = [ "defaults" ];
+      options = [ "defaults" "nofail" ];
     };
 
     "/run/media/${myVars.mainUsers.desktop.user}/personal/shares" = {
@@ -45,6 +45,8 @@
 
   # Services
   services = {
+    rpcbind = { enable = true; };
+
     btrfs = {
       autoScrub = {
         enable = true;
