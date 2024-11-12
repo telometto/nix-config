@@ -1,7 +1,5 @@
 { config, inputs, lib, pkgs, ... }:
 
 {
-  imports = [
-    nixarr.nixosModules.default
-  ];
+  imports = [ nixarr.nixosModules.default ];
 }
