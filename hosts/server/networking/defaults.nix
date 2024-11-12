@@ -15,8 +15,20 @@
       allowedTCPPortRanges = [ ];
       allowedUDPPortRanges = [ ];
 
-      allowedTCPPorts = [ ];
-      allowedUDPPorts = [ ];
+      allowedTCPPorts = [
+        # Start of NFS ports
+        111
+        2049 # NFSv4
+        4000 # statd
+        4001 # lockd
+        4002 # mountd
+        20048
+        # End of NFS ports
+
+        28981 # Paperless
+      ];
+
+      allowedUDPPorts = allowedTCPPorts;
     };
 
     nftables = { enable = false; }; # Use nftables instead of iptables
