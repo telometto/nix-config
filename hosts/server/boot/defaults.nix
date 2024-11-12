@@ -31,6 +31,13 @@
 
     nfs.server = {
       enable = true;
+
+      lockdPort = 4001;
+      mountdPort = 4002;
+      statdPort = 4000;
+
+      extraNfsdConfig = '''';
+
       exports = ''
         /flash_temp/nfsshare 192.168.2.100 (rw,async,no_subtree_check)
       '';
@@ -41,9 +48,10 @@
   fileSystems = {
     "/flash_temp" = {
       device = "/flash_temp/nfsshare";
-      #fsType = "zfs"; # Defaults to auto
-      options = [ "defaults" ];
+      # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
+      options = [ "bind" ];
     };
+
   };
 
   environment.systemPackages = with pkgs; [
