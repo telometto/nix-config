@@ -11,10 +11,7 @@
       enableZshIntegration = true;
       enableScDaemon = false; # Smartcard
 
-      sshKeys = [
-        "B77831B9FEB4A078E8C0A92F5CD3DD364C2622F6"
-        "996F55B91321C075EFDAE2EAE4CFE39EBD1747E6"
-      ];
+      sshKeys = [ "727A831B39D2FAC421617C2C203BF5C382E3B60A" ];
     };
 
     #kdeconnect.enable = true; # Plasma 5
