@@ -30,6 +30,8 @@
 
     ./packages/defaults.nix
 
+    ../../modules/services/backups/borg.nix
+    ../../modules/services/documents/paperless.nix
     #../../modules/services/finance/firefly.nix
     ../../modules/services/internet/searx.nix
     #../../modules/services/media/immich.nix
