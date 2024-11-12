@@ -1,9 +1,9 @@
-/*
+/**
  * Host-specific system configuration defaults
  * Edit this configuration file to define what should be installed on
  * your system.  Help is available in the configuration.nix(5) man page
  * and in the NixOS manual (accessible by running ‘nixos-help’).
-*/
+ */
 
 { config, lib, pkgs, myVars, ... }:
 
@@ -12,36 +12,27 @@
     # Include the results of the hardware scan.
     ./hardware-configuration.nix # DO NOT TOUCH
 
-    # Import shared configurations
-    ../../modules/shared/imports.nix
-    ../../modules/shared/services/utilities/flatpak.nix
+    # Import common configurations
+    ../../common/imports.nix
+
+    # Import modules configurations
+    ../../modules/imports.nix
 
     # Desktop manager
-    ../../desktop-environments/kde/kde-settings.nix
-    # ../../desktop-environments/gnome/gnome-settings.nix
+    ../../modules/desktop-environments/kde/kde-settings.nix
+    # ../../modules/desktop-environments/gnome/gnome-settings.nix
 
-    # Import the default configuration for the desktop
-    ../../modules/desktop/imports.nix
+    # Desktop-specific settings
+    ./boot/defaults.nix
 
-    # Users
-    ../../users/main/main-user.nix
+    ./networking/defaults.nix
+    ./networking/systemd/systemd-networking.nix
+    ./networking/tailscale/tailscale.nix
+
+    ./packages/system-packages.nix
+
+    ../../common/users/main/main-user.nix
   ];
-
-  networking = {
-    hostName = myVars.desktop.hostname;
-    hostId = myVars.desktop.hostId;
-
-    wireless = { enable = false; }; # Enables wireless support via wpa_supplicant.
-    networkmanager = { enable = false; }; # Easiest to use and most distros use this by default.
-
-    # Firewall-related
-    firewall = { enable = true; }; # Enable the firewall
-    nftables = { enable = true; }; # Use nftables instead of iptables
-  };
-
-  programs.zsh = { enable = true; };
-
-  security.rtkit.enable = true;
 
   # Allow unfree packages
   nixpkgs = {
