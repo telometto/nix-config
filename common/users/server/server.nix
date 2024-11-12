@@ -6,6 +6,7 @@
     isNormalUser = myVars.mainUsers.server.isNormalUser;
     description = myVars.mainUsers.server.description;
     extraGroups = myVars.mainUsers.server.extraGroups;
+    shell = pkgs.zsh;
 
     packages = with pkgs; [
       # Your packages here
