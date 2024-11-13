@@ -39,6 +39,8 @@
     k3s = {
       enable = true;
       role = "server";
+      disableAgent = true; # Disable the agent on the server node; it's not needed
+      gracefulNodeShutdown = true; 
       extraFlags = toString [ "--container-runtime-endpoint unix:///run/containerd/containerd.sock" ];
     };
   };
