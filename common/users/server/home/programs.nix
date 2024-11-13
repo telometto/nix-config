@@ -77,6 +77,25 @@
       };
     };
 
+    ssh = {
+      enable = true;
+
+      addKeysToAgent = "yes";
+      #controlMaster = "auto";
+      #controlPath = "/some/path/%r@%h:%p";
+      #controlPersist = "yes";
+      compression = true;
+      #extraConfig = ""; # Strings concatenated with "\n"
+      #extraOptionOverrides = ""; # Attribute set of strings
+      forwardAgent = true;
+      #hashKnownHosts = true;
+      #includes = [ ]; # List of strings
+      #matchBlocks = { }; # Attribute set of attribute sets
+      #serverAliveCountMax = 1; # Positive integer
+      #serverAliveInterval = 1;
+      #userKnownHostsFile = ""; # String
+    };
+
     tmux = {
       enable = true;
       clock24 = true;
