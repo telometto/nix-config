@@ -3,7 +3,7 @@
 {
   imports = [
     ./programs.nix
-    #./services.nix
+    ./services.nix
   ];
 
   programs.home-manager.enable = true;
