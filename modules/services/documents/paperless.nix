@@ -15,9 +15,10 @@
     consumptionDir = "/tank/apps/nixos/paperless-ngx/consumption";
     mediaDir = "/tank/apps/nixos/paperless-ngx/media";
     dataDir = "/tank/apps/nixos/paperless-ngx/data";
-    passwordFile = myVars.paperless.passwordFile;
+    passwordFile = myVars.general.paperlessFile;
 
-    settings = {
+    /* The following configuration does not work
+      settings = {
       PAPERLESS_OCR_LANGUAGE = "eng+nor+ita";
       #PAPERLESS_OCR_LANGUAGES = "eng+nor+ita";
 
@@ -32,7 +33,8 @@
       };
 
       PAPERLESS_TIKA_ENABLED = true;
-    };
+      };
+    */
   };
 
   environment.systemPackages = with pkgs; [ paperless-ngx ];
