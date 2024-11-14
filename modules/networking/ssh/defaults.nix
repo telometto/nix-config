@@ -21,6 +21,7 @@
       X11Forwarding = true;
       PermitRootLogin = "no";
       PasswordAuthentication = false;
+      UsePAM = true;
     };
 
     openFirewall = true;
