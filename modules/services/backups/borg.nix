@@ -8,7 +8,7 @@
         environment.BORG_RSH = "ssh -i ${myVars.general.borgRsh}";
         repo = myVars.general.borgRepo;
         compression = "zstd,8";
-        startAt = "hourly";
+        startAt = "daily";
         # user = myVars.mainUsers.server.user;
 
         encryption = {
