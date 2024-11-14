@@ -268,7 +268,7 @@ in
 
         plugins = [
           #"autoenv"
-          "chucknorris"
+          #"chucknorris" # Depends on strfile (from fortune)
           "colored-man-pages"
           "colorize"
           "command-not-found"
