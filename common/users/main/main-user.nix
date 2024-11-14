@@ -13,7 +13,7 @@
     ];
 
     openssh.authorizedKeys.keys = [
-      #myVars.general.openSSHPubKey
+      myVars.general.openSSHPubKey
       myVars.general.openSSHGPGPubKey
     ];
   };
