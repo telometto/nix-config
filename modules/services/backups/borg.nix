@@ -5,11 +5,16 @@
     jobs = {
       homeserver = {
         paths = myVars.general.testPath;
-        encryption = { mode = "repokey-blake2"; };
-        #environment.BORG_RSH = myVars.general.borgRsh;
+        environment.BORG_RSH = "ssh -i ${myVars.general.borgRsh}";
         repo = myVars.general.borgRepo;
-        compression = "auto,lz4";
-        startAt = "daily";
+        compression = "zstd,8";
+        startAt = "hourly";
+        # user = myVars.mainUsers.server.user;
+
+        encryption = {
+          mode = "repokey-blake2";
+          passCommand = "cat ${myVars.general.borgPassPath}";
+        };
       };
     };
   };
