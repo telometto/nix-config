@@ -19,9 +19,17 @@
     gnupg = {
       agent = {
         enable = true;
-        enableSSHSupport = true;
+
+        enableSSHSupport = false;
+
+        settings = {
+          default-cache-ttl = 34560000; # 400 days
+          max-cache-ttl = 34560000; # 400 days
+        };
       };
     };
+
+    ssh = { startAgent = true; };
 
     zsh = { enable = true; };
   };
