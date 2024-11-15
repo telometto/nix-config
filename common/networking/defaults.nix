@@ -26,4 +26,16 @@
 
     openFirewall = true;
   };
+
+  programs = {
+    ssh = {
+      startAgent = true;
+      enableAskPassword = true;
+    };
+  };
+
+  environment.systemPackages = with pkgs; [
+    gnupg
+    zsh
+  ];
 }
