@@ -236,9 +236,9 @@ in
       enableZshIntegration = true;
 
       # TODO: Declaratively configure Zellij
-      settings = {
-        theme = "gruvbox-dark";
-      };
+      # settings = {
+      #   theme = "gruvbox-dark";
+      # };
     };
 
     zoxide = {
@@ -277,7 +277,6 @@ in
 
         plugins = [
           #"autoenv"
-          "chucknorris" # Depends on strfile (from fortune)
           "colored-man-pages"
           "colorize"
           "command-not-found"
