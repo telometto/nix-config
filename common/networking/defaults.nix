@@ -18,11 +18,13 @@
     enable = true;
 
     settings = {
-      X11Forwarding = true;
+      X11Forwarding = false;
       PermitRootLogin = "no";
       PasswordAuthentication = false;
       UsePAM = true;
     };
+
+    # extraConfig = "X11UseLocalhost no";
 
     openFirewall = true;
   };
@@ -31,11 +33,30 @@
     ssh = {
       startAgent = true;
       enableAskPassword = true;
+      forwardX11 = false;
+      setXAuthLocation = false;
+
+      /*
+      extraConfig = ''
+        Host *
+          ForwardAgent yes
+          AddKeysToAgent yes
+          Compression yes
+          ServerAliveInterval 0
+          ServerAliveCountMax 3
+          HashKnownHosts no
+          UserKnownHostsFile ~/.ssh/known_hosts
+          ControlMaster no
+          ControlPath ~/.ssh/master-%r@%n:%p
+          ControlPersist no
+      '';
+      */
     };
   };
 
   environment.systemPackages = with pkgs; [
     gnupg
+    # xorg.xauth
     zsh
   ];
 }
