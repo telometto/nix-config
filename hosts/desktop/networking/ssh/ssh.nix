@@ -14,5 +14,5 @@
 { config, lib, pkgs, ... }:
 
 {
-  programs.ssh = { askPassword = pkgs.lib.mkForce "${pkgs.ksshaskpass.out}/bin/ksshaskpass"; };
+  programs.ssh = { askPassword = "${pkgs.ksshaskpass.out}/bin/ksshaskpass"; };
 }
