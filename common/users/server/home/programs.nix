@@ -118,7 +118,12 @@
       };
     };
 
-    ssh = {
+    /*
+
+      # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
+      # For now, resorting to non-home-manager configuration
+
+      ssh = {
       enable = true;
 
       addKeysToAgent = "yes";
@@ -135,7 +140,8 @@
       #serverAliveCountMax = 1; # Positive integer
       #serverAliveInterval = 1;
       #userKnownHostsFile = ""; # String
-    };
+      };
+    */
 
     tmux = {
       enable = true;
