@@ -74,5 +74,6 @@
     google-fonts # Collection of Google Fonts
     nerdfonts # Patched fonts with a high number of glyphs/icons
     ibm-plex # IBM Plex font family
+    meslo-lgs-nf # Meslo Nerd Font patched for Powerlevel10k
   ];
 }
