@@ -29,7 +29,6 @@
 
     # Networking imports
     ./networking/defaults.nix
-    ./networking/ssh/defaults.nix
     ./networking/systemd/defaults.nix
     ./networking/tailscale/defaults.nix
 

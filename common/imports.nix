@@ -15,6 +15,9 @@
     # Localization
     ./i18n/defaults.nix
 
+    # Networking
+    ./networking/defaults.nix
+
     # Nix
     ./nix/defaults.nix
 
