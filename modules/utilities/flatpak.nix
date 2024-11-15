@@ -9,7 +9,13 @@
 
 lib.mkIf (config.networking.hostName != myVars.server.hostname)
 {
-  xdg.portal.enable = true; # Needs to be enabled for Flatpak to work
+  xdg.portal = {
+    enable = true; # Needs to be enabled for Flatpak to work
+
+    wlr.enable = true; # Enable Wayland support
+
+    extraPortals = with pkgs; [ xdg-desktop-portal-wlr ];
+  };
 
   services.flatpak = { enable = true; };
 
