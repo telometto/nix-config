@@ -13,11 +13,5 @@
   environment.systemPackages = with pkgs; [
     # System utilities
     microcode-amd # AMD CPU microcode updates
-    yaru-theme # Yaru theme for Ubuntu
-
-    # System tools
-    deja-dup # Backup tool
-    restic # Enables restic in deja-dup
-    vorta # Backup software
   ];
 }

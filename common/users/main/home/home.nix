@@ -20,7 +20,6 @@
       # Utils
       atuin # History manager
       #blesh
-      #deja-dup # Backup tool
       gparted # Partition manager
       meld # Diff tool
       polychromatic # GUI for OpenRazer
@@ -28,7 +27,6 @@
       zsh-powerlevel10k
 
       # Gaming
-      steam # Steam client
       #mangohud
 
       # Media
@@ -53,6 +51,12 @@
 
       # Misc
       fortune # Random quotes
+      yaru-theme # Yaru theme for Ubuntu
+
+      # System tools
+      # deja-dup # Backup tool; use Flatpak instead
+      # restic # Does not enable restic in deja-dup
+      vorta # Backup software
 
       ## Declaratively configure VS Code with extensions
       ## NOTE: Settings will not be synced
