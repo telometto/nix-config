@@ -39,9 +39,8 @@ in
   };
 
   console = {
-    #keyMap = "no";
     useXkbConfig = true; # use xkb.options in tty
-    # font = "";
+    # font = "FiraCode";
   };
 
   services = {
