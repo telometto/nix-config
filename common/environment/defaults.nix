@@ -10,8 +10,12 @@
     variables = {
       # Set the default editor
       EDITOR = "micro";
+
       # Set the default pager
       #PAGER = "less";
+
+      # Set the SSH_ASKPASS_REQUIRE
+      SSH_ASKPASS_REQUIRE = "prefer";
     };
   };
 }
