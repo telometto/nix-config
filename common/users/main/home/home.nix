@@ -51,6 +51,9 @@
 
       texliveFull # LaTeX
 
+      # Misc
+      fortune # Random quotes
+
       ## Declaratively configure VS Code with extensions
       ## NOTE: Settings will not be synced
       #(vscode-with-extensions.override {
