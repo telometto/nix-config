@@ -170,7 +170,12 @@ in
       # TODO: Declaratively configure mpv
     };
 
-    ssh = {
+    /*
+      # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
+      # For now, resorting to non-home-manager configuration
+
+
+      ssh = {
       enable = true;
 
       addKeysToAgent = "yes";
@@ -187,7 +192,8 @@ in
       #serverAliveCountMax = 1; # Positive integer
       #serverAliveInterval = 1;
       #userKnownHostsFile = ""; # String
-    };
+      };
+    */
 
     /*
       thunderbird = {
@@ -195,7 +201,7 @@ in
 
       # TODO: Declaratively configure Thunderbird
       };
-      */
+    */
 
     tmux = {
       enable = true;
@@ -230,6 +236,9 @@ in
       enableZshIntegration = true;
 
       # TODO: Declaratively configure Zellij
+      settings = {
+        theme = "gruvbox-dark";
+      };
     };
 
     zoxide = {
@@ -268,7 +277,7 @@ in
 
         plugins = [
           #"autoenv"
-          #"chucknorris" # Depends on strfile (from fortune)
+          "chucknorris" # Depends on strfile (from fortune)
           "colored-man-pages"
           "colorize"
           "command-not-found"
