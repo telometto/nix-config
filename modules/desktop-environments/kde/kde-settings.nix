@@ -23,5 +23,15 @@
     };
   };
 
+  security.pam.services = {
+    sddm = {
+      kwallet.enable = true;
+    };
+
+    kwallet = {
+      kwallet.enable = true;
+    };
+  };
+
   #environment.plasma6.excludePackages = with pkgs.kdePackages; [ ];
 }
