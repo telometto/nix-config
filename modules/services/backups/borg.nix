@@ -19,5 +19,32 @@
     };
   };
 
-  environment.systemPackages = with pkgs; [ borgbackup ];
+  /* Template; on hold
+    services.borgmatic = {
+    enable = true;
+
+    configurations = {};
+
+    settings = {
+      repositories = [
+        {
+          label = "flash";
+          path = "";
+        }
+        {
+          label = "tank";
+          path = "";
+        }
+      ];
+
+      source_directories = [
+        "/home/${myVars.mainUsers.server.user}"
+        "/flash_temp"
+        "/tank"
+      ];
+    };
+    };
+  */
+
+  environment.systemPackages = with pkgs; [ borgbackup borgmatic ];
 }
