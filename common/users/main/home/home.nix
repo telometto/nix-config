@@ -52,6 +52,7 @@
       # Misc
       fortune # Random quotes
       yaru-theme # Yaru theme for Ubuntu
+      spotify # Music streaming
 
       # System tools
       # deja-dup # Backup tool; use Flatpak instead
