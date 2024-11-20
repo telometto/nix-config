@@ -12,7 +12,7 @@
  * This allows for hostname-specific customizations.
  */
 
-{ config, lib, myVars, ... }:
+{ config, lib, ... }:
 
 {
   imports = [

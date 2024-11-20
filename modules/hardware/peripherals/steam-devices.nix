@@ -5,9 +5,9 @@
  * for Steam devices are loaded and available on the system.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
-lib.mkIf (config.networking.hostName != myVars.server.hostname && config.programs.steam.enable)
+lib.mkIf (config.networking.hostName != "blizzard" && config.programs.steam.enable)
 {
   hardware.steam-hardware.enable = true;
 }

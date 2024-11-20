@@ -5,7 +5,7 @@
   removable disk automounting, and disk management services respectively.
 */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   # Enable USB support.

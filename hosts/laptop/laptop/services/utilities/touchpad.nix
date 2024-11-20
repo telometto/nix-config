@@ -1,4 +1,4 @@
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   # Enable touchpad support (enabled default in most desktopManager).

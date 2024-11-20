@@ -5,9 +5,9 @@
  * option to install Flatpak system-wide by uncommenting the relevant line.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
-lib.mkIf (config.networking.hostName != myVars.server.hostname)
+lib.mkIf (config.networking.hostName != "blizzard")
 {
   xdg.portal = {
     enable = true; # Needs to be enabled for Flatpak to work

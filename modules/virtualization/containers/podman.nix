@@ -14,11 +14,11 @@
  * - `environment.systemPackages`: Installs necessary packages including Podman, Podman Compose, Podman TUI, and Shadow.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 let
   # TODO: Change desktop root fs to btrfs
   STORAGEDRIVER =
-    if config.networking.hostName == myVars.desktop.hostname then
+    if config.networking.hostName == "snowfall" then
       "overlay" # When TODO has been implemented, change this to "btrfs"
     else
       "overlay"; # Fallback driver

@@ -7,9 +7,9 @@
  * - `environment.systemPackages = with pkgs; [ openrazer-daemon ];` adds the OpenRazer daemon to the system packages.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
-lib.mkIf (config.networking.hostName == myVars.desktop.hostname)
+lib.mkIf (config.networking.hostName ==  "snowfall")
 {
   hardware = {
     openrazer = {

@@ -1,7 +1,7 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
-lib.mkIf (config.networking.hostName != myVars.server.hostname)
+lib.mkIf (config.networking.hostName != "blizzard")
 {
   programs.virt-manager = {
     enable = true;

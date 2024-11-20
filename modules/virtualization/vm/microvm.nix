@@ -10,7 +10,7 @@
  * To use this configuration, place it in the appropriate directory within your NixOS configuration structure.
  */
 
-{ config, inputs, lib, pkgs, myVars, ... }:
+{ config, inputs, lib, pkgs, ... }:
 
 {
   imports = [

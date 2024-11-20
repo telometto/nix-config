@@ -22,7 +22,7 @@
   - Includes libnfs and nfs-utils for NFS support.
 */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   # Bootloader
@@ -48,7 +48,7 @@
       };
     };
 
-    plymouth = lib.mkIf (config.networking.hostName != myVars.server.hostname) {
+    plymouth = lib.mkIf (config.networking.hostName != "blizzard") {
       enable = true;
 
       theme = "rings";
@@ -78,7 +78,7 @@
       # It's still possible to open the bootloader list by pressing any key
       # It will just not appear on screen unless a key is pressed
       loader.timeout = 0;
-    */
+      */
   };
 
   services = {

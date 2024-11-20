@@ -16,7 +16,7 @@
  *     - `support32Bit`: Enables 32-bit ALSA support.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   security.rtkit.enable = true;

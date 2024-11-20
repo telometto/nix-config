@@ -19,12 +19,12 @@
  *   - enable32Bit: Enables 32-bit graphics support.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   stableRelease = false; # Set this to true to enable the stable release
 in
-lib.mkIf (config.networking.hostName == myVars.desktop.hostname)
+lib.mkIf (config.networking.hostName == "snowfall")
 {
   hardware = {
     opengl =
