@@ -1,4 +1,4 @@
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   #environment.etc."paperlessFile".text = "admin";
@@ -15,7 +15,7 @@
     consumptionDir = "/tank/apps/nixos/paperless-ngx/consumption";
     mediaDir = "/tank/apps/nixos/paperless-ngx/media";
     dataDir = "/tank/apps/nixos/paperless-ngx/data";
-    passwordFile = myVars.general.paperlessFile;
+    passwordFile = config.sops.secrets.paperlessKeyFilePath.path;
 
     /* The following configuration does not work
       settings = {
