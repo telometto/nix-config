@@ -10,7 +10,9 @@
 */
 
 { config, lib, pkgs, myVars, ... }:
-
+let
+  DRIVE_BASE_PATH = "/run/media/${myVars.desktop.user}";
+in
 {
   # Bootloader
   boot = {
@@ -19,19 +21,19 @@
 
   # Filesystems
   fileSystems = {
-    "/run/media/${myVars.mainUsers.desktop.user}/personal" = {
+    "${DRIVE_BASE_PATH}/personal" = {
       device = "/dev/disk/by-uuid/76177a35-e3a1-489f-9b21-88a38a0c1d3e";
       fsType = "btrfs";
       options = [ "defaults" ];
     };
 
-    "/run/media/${myVars.mainUsers.desktop.user}/samsung" = {
+    "${DRIVE_BASE_PATH}/samsung" = {
       device = "/dev/disk/by-uuid/e7e653c3-361c-4fb2-a65e-13fdcb1e6e25";
       fsType = "btrfs";
       options = [ "defaults" "nofail" ];
     };
 
-    "/run/media/${myVars.mainUsers.desktop.user}/personal/shares" = {
+    "${DRIVE_BASE_PATH}/personal/shares" = {
       device = "192.168.2.100:/flash_temp/nfsshare";
       fsType = "nfs";
       options = [
