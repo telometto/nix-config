@@ -1,19 +1,18 @@
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   services.borgbackup = {
     jobs = {
       homeserver = {
-        paths = myVars.general.testPath;
-        environment.BORG_RSH = "ssh -i ${myVars.general.borgRsh}";
-        repo = myVars.general.borgRepo;
+        paths = config.sops.secrets.testPath.path;
+        environment.BORG_RSH = "ssh -i ${config.sops.secrets.borgRshFilePath.path}";
+        repo = "ssh://${config.sops.secrets.general.borgRepo.path}";
         compression = "zstd,8";
         startAt = "daily";
-        # user = myVars.mainUsers.server.user;
 
         encryption = {
           mode = "repokey-blake2";
-          passCommand = "cat ${myVars.general.borgPassPath}";
+          passCommand = "cat ${config.sops.secrets.borgKeyFilePath.path}";
         };
       };
     };
@@ -38,7 +37,7 @@
       ];
 
       source_directories = [
-        "/home/${myVars.mainUsers.server.user}"
+        "/home/${config.sops.secrets.users.admins.server.username}"
         "/flash_temp"
         "/tank"
       ];
