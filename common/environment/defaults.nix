@@ -12,10 +12,13 @@
       EDITOR = "micro";
 
       # Set the default pager
-      #PAGER = "less";
+      # PAGER = "less";
 
       # Set the SSH_ASKPASS_REQUIRE
       SSH_ASKPASS_REQUIRE = "prefer";
+
+      # Git configuration
+      # GIT_SSH_COMMAND = "ssh -i /etc/ssh/ssh_host_ed25519_key";
     };
   };
 }
