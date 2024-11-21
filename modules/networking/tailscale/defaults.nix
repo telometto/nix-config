@@ -7,13 +7,13 @@
  * - authKeyFile: The path to the Tailscale authentication key file.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   services.tailscale = {
     enable = true;
     openFirewall = true;
-    authKeyFile = myVars.general.tsKeyFile;
+    authKeyFile = config.sops.secrets.tsKeyFilePath.path;
   };
 
   environment.systemPackages = with pkgs; [ tailscale ];
