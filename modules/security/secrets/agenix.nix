@@ -1,11 +1,11 @@
-{ config, inputs, lib, pkgs, myVars, ... }:
+{ config, inputs, lib, pkgs, ... }:
 
 {
   imports = [ inputs.agenix.nixosModules.default ];
 
   #age.identityPaths = [
-  #  "/home/${myVars.mainUsers.server.user}/secrets/mySecret.age"
+  #  "/home/${}/secrets/mySecret.age"
   #];
 
-  environment.systemPackages = [ inputs.agenix.packages."${myVars.general.system}".default ];
+  environment.systemPackages = [ inputs.agenix.packages."x86_64-linux".default ];
 }
