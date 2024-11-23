@@ -1,20 +1,9 @@
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   services = {
     xserver = {
       enable = false; # Enables or disables the X11 server
-    };
-
-    greetd = {
-      enable = false;
-
-      # settings = {
-      #   default_session = {
-      #     user = myVars.mainUsers.desktop.user;
-      #     command = "$HOME/.wayland-session";
-      #   };
-      # };
     };
 
     displayManager = {
@@ -35,11 +24,6 @@
   };
 
   security.pam.services = {
-    # greetd = {
-    # enableAppArmor = true;
-    # kwallet.enable = true;
-    # };
-
     sddm = {
       enableAppArmor = true;
       gnupg.enable = true;
