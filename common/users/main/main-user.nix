@@ -2,10 +2,10 @@
 { config, lib, pkgs, myVars, ... }:
 
 {
-  users.users.${myVars.mainUsers.desktop.user} = {
-    isNormalUser = myVars.mainUsers.desktop.isNormalUser;
-    description = myVars.mainUsers.desktop.description;
-    extraGroups = myVars.mainUsers.desktop.extraGroups;
+  users.users."${myVars.users.admin.user}" = {
+    description = myVars.users.admin.description;
+    isNormalUser = myVars.users.admin.isNormalUser;
+    extraGroups = lib.concatLists myVars.users.admin.extraGroups (lib.mkIf config.networking.hostName == myVars.systems.desktop.hostname [ "openrazer" ]);
     shell = pkgs.zsh;
 
     packages = with pkgs; [
@@ -13,8 +13,8 @@
     ];
 
     openssh.authorizedKeys.keys = [
-      myVars.general.openSSHPubKey
-      myVars.general.openSSHGPGPubKey
+      myVars.users.admin.sshPubKey
+      myVars.users.admin.gpgSshPubKey
     ];
   };
 }

@@ -11,7 +11,7 @@
 
 { config, lib, pkgs, myVars, ... }:
 let
-  DRIVE_BASE_PATH = "/run/media/${myVars.desktop.user}";
+  DRIVE_BASE_PATH = "/run/media/${myVars.users.admin.user}";
 in
 {
   # Bootloader

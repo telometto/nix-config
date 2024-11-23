@@ -9,7 +9,7 @@
   programs.home-manager.enable = true;
 
   home = {
-    username = myVars.mainUsers.server.user;
+    username = myVars.systems.server.adminUser.user;
     stateVersion = "24.05";
 
     packages = with pkgs; [

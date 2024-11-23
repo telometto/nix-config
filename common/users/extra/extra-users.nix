@@ -13,8 +13,8 @@
       ];
 
       openssh.authorizedKeys.keys = [
-        myVars.admin.sshPubKey
-        myVars.admin.gpgSshPubKey
+        myVars.users.admin.sshPubKey
+        myVars.users.admin.gpgSshPubKey
       ];
     };
 
@@ -28,8 +28,8 @@
       ];
 
       openssh.authorizedKeys.keys = [
-        myVars.admin.sshPubKey
-        myVars.admin.gpgSshPubKey
+        myVars.users.admin.sshPubKey
+        myVars.users.admin.gpgSshPubKey
       ];
     };
 
@@ -43,8 +43,8 @@
       ];
 
       openssh.authorizedKeys.keys = [
-        myVars.admin.sshPubKey
-        myVars.admin.gpgSshPubKey
+        myVars.users.admin.sshPubKey
+        myVars.users.admin.gpgSshPubKey
       ];
     };
   };

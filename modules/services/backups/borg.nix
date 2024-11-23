@@ -1,12 +1,12 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, myVars, ... }:
 
 {
-  services.borgbackup = {
+  services.borgbackup = lib.mkIf (config.networking.hostName == myVars.systems.server.hostname) {
     jobs = {
       homeserver = {
-        paths = config.sops.secrets.testPath.path;
-        environment.BORG_RSH = "ssh -i ${config.sops.secrets.borgRshFilePath.path}";
-        repo = "ssh://${config.sops.secrets.general.borgRepo.path}";
+        paths = "/home/${myVars.server.adminUser.user}/borgtest";
+        environment.BORG_RSH = "ssh -i $(cat${config.sops.secrets.borgRshFilePath.path})";
+        repo = "ssh://$(cat ${config.sops.secrets.borgRepo.path})";
         compression = "zstd,8";
         startAt = "daily";
 

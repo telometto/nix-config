@@ -3,7 +3,7 @@
 {
   environment = {
     variables = {
-      KUBECONFIG = "/home/${myVars.server.user}/.kube/config";
+      KUBECONFIG = "/home/${myVars.server.adminUser.user}/.kube/config";
     };
   };
 }

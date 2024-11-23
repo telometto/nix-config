@@ -5,6 +5,8 @@
     # ./gnome.nix # Enables GNOME
     ./kde.nix # Enables KDE
 
+    ../../../security/secrets/sops-home.nix
+
     ./programs.nix
     ./services.nix
     ./xdg.nix
@@ -13,7 +15,7 @@
   programs.home-manager.enable = true; # Enable home-manager
 
   home = {
-    username = myVars.mainUsers.desktop.user;
+    username = myVars.users.admin.user;
     stateVersion = "24.05";
 
     packages = with pkgs; [

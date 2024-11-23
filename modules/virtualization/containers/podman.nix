@@ -18,7 +18,7 @@
 let
   # TODO: Change desktop root fs to btrfs
   STORAGEDRIVER =
-    if config.networking.hostName == myVars.desktop.hostname then
+    if config.networking.hostName == myVars.systems.desktop.hostname then
       "overlay" # When TODO has been implemented, change this to "btrfs"
     else
       "overlay"; # Fallback driver
