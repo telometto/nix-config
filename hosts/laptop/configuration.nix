@@ -6,72 +6,72 @@
 
 {
   imports = [
-    # Include the results of the hardware scan
-    ./hardware-configuration.nix
+    ### 0. Desktop-specific settings
+    # 0.0 Include the results of the hardware scan
+    ./hardware-configuration.nix # DO NOT TOUCH
 
-    # Boot configuration
-    ../../modules/shared/boot/defaults.nix
-    ../../modules/shared/boot/filesystem/defaults.nix
+    # 0.1 Hardware
+    ./hardware/hardware.nix
 
-    # Environment
-    ../../modules/shared/environment/defaults.nix
+    # 0.2 Networking
+    ./networking/defaults.nix
+    ./networking/tailscale/tailscale.nix
 
-    # Hardware
-    ../../modules/laptop/hardware/hardware.nix
+    # 0.3 System ackages
+    ./packages/system-packages.nix
 
-    # Localization
-    ../../modules/shared/i18n/defaults.nix
+    ### 1. Import common configurations
+    ../../common/imports.nix
 
-    # Networking
-    ../../modules/shared/networking/defaults.nix
-    ../../modules/shared/networking/ssh/defaults.nix
-    ../../modules/shared/networking/systemd/defaults.nix
-    ../../modules/shared/networking/tailscale/defaults.nix
-    ../../modules/laptop/networking/tailscale/tailscale.nix # Laptop-specific
-
-    # Packages
-    ../../modules/laptop/packages/system-packages.nix # Laptop-specific
-
-    # System
-    ../../modules/shared/nix/defaults.nix
-
-    # Programs
-    ../../modules/shared/programs/defaults.nix
-    ../../modules/laptop/programs/steam.nix
-
-    # Security
-    ../../modules/shared/security/defaults.nix
-    ../../modules/shared/security/secrets/agenix.nix
-    ../../modules/shared/security/secureboot/lanzaboote.nix
-
-    # Services
-    #../../modules/shared/services/utilities/atuin.nix
-    ../../modules/shared/services/utilities/flatpak.nix
-    ../../modules/shared/services/utilities/fwupd.nix
-    ../../modules/laptop/services/utilities/printing.nix # Laptop-specific
-    ../../modules/laptop/services/utilities/usb.nix
-
-    # Virtualization
-    ../../modules/shared/virtualization/containers/docker.nix
-    ../../modules/shared/virtualization/containers/podman.nix
-    ../../modules/laptop/virtualization/containers/docker.nix # Laptop-specific
-    ../../modules/laptop/virtualization/containers/podman.nix # Laptop-specific
-
-    # Users
-    ../../users/main/main-user.nix
+    # 1.1 Users
+    ../../common/users/main/main-user.nix
     ../../users/extra/extra-users.nix
-  ]
-  ++ lib.optional myVars.general.enableGnome ../../desktop-environments/gnome/gnome-settings.nix
-  ++ lib.optional myVars.general.enableKDE ../../desktop-environments/kde/kde-settings.nix;
 
-  networking = {
-    hostName = myVars.laptop.hostname;
-    hostId = myVars.laptop.hostId;
+    ### 2. Import modules
+    # 2.1 Desktop managers
+    # ../../modules/desktop-environments/kde/kde-settings.nix
+    ../../modules/desktop-environments/gnome/gnome-settings.nix
 
-    # Pick only one of the below networking options.
-    # wireless = { enable = true; }; # Enables wireless support via wpa_supplicant.
-    networkmanager = { enable = true; }; # Easiest to use and most distros use this by default.
-  };
+    # 2.2 Boot/filesystem
+    # ../../modules/boot/disko/disko.nix # On hold
+
+    # 2.3 Hardware
+    ../../modules/hardware/audio/sound.nix
+    # ../../modules/hardware/peripherals/razer.nix
+    ../../modules/hardware/peripherals/steam-devices.nix
+    ../../modules/hardware/printers/printing.nix
+    # ../../modules/hardware/peripherals/touchpad.nix
+    ../../modules/hardware/video/amdgpu.nix
+
+    # 2.4 Networking
+    ../../modules/networking/defaults.nix
+    ../../modules/networking/systemd/defaults.nix
+    ../../modules/networking/tailscale/defaults.nix
+    # ../../modules/networking/vpn/vpn-confinement.nix
+
+    # 2.5 Programs
+    ../../modules/programs/steam.nix
+    ../../modules/programs/virt-manager.nix
+
+    # 2.6 Security
+    ../../modules/security/defaults.nix
+    # ../../modules/security/crowdsec/crowdsec.nix
+    # ../../modules/security/secrets/agenix.nix
+    ../../modules/security/secrets/sops-nix.nix
+    ../../modules/security/secureboot/lanzaboote.nix
+
+    # 2.7 Services
+    # None for desktop (for now)
+
+    # 2.8 Utilities
+    ../../modules/utilities/flatpak.nix
+
+    # 2.9 Virtualization
+    ../../modules/virtualization/containers/docker.nix
+    ../../modules/virtualization/containers/podman.nix
+    ../../modules/virtualization/vm/microvm.nix
+    ../../modules/virtualization/vm/vm.nix
+  ];
 
   nixpkgs = {
     config = {
