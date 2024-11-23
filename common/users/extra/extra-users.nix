@@ -3,35 +3,48 @@
 
 {
   users.users = {
-    ${myVars.extraUsers.wife.user} = {
-      isNormalUser = myVars.extraUsers.wife.isNormalUser;
-      description = myVars.extraUsers.wife.description;
-      extraGroups = myVars.extraUsers.wife.extraGroups;
-  
+    ${myVars.users.wife.user} = {
+      isNormalUser = myVars.users.wife.isNormalUser;
+      description = myVars.users.wife.description;
+      extraGroups = myVars.users.wife.extraGroups;
+
       packages = with pkgs; [
         # Your packages here
       ];
-  
+
       openssh.authorizedKeys.keys = [
-        #myVars.general.openSSHPubKey
-        myVars.general.openSSHGPGPubKey
+        myVars.admin.sshPubKey
+        myVars.admin.gpgSshPubKey
       ];
     };
-  };
 
-  users.users = {
-    ${myVars.extraUsers.brother-one.user} = {
-      isNormalUser = myVars.extraUsers.brother-one.isNormalUser;
-      description = myVars.extraUsers.brother-one.description;
-      extraGroups = myVars.extraUsers.brother-one.extraGroups;
-  
+    ${myVars.luke.user} = {
+      isNormalUser = myVars.users.luke.isNormalUser;
+      description = myVars.users.luke.description;
+      extraGroups = myVars.users.luke.extraGroups;
+
       packages = with pkgs; [
         # Your packages here
       ];
-  
+
       openssh.authorizedKeys.keys = [
-        #myVars.general.openSSHPubKey
-        myVars.general.openSSHGPGPubKey
+        myVars.admin.sshPubKey
+        myVars.admin.gpgSshPubKey
+      ];
+    };
+
+    ${myVars.frankie.user} = {
+      isNormalUser = myVars.users.frankie.isNormalUser;
+      description = myVars.users.frankie.description;
+      extraGroups = myVars.users.frankie.extraGroups;
+
+      packages = with pkgs; [
+        # Your packages here
+      ];
+
+      openssh.authorizedKeys.keys = [
+        myVars.admin.sshPubKey
+        myVars.admin.gpgSshPubKey
       ];
     };
   };
