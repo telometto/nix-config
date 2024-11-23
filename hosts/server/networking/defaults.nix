@@ -2,8 +2,8 @@
 
 {
   networking = {
-    hostName = myVars.server.hostname;
-    hostId = myVars.server.hostId;
+    hostName = myVars.systems.server.hostname;
+    hostId = myVars.systems.server.hostId;
 
     wireless = { enable = false; }; # Enables wireless support via wpa_supplicant.
     networkmanager = { enable = false; }; # Easiest to use and most distros use this by default.
