@@ -7,7 +7,6 @@
 
 { config, lib, pkgs, myVars, ... }:
 
-lib.mkIf (config.networking.hostName != myVars.server.hostname)
 {
   xdg.portal = {
     enable = true; # Needs to be enabled for Flatpak to work

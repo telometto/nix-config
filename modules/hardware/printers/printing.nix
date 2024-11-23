@@ -5,7 +5,6 @@
 
 { config, lib, pkgs, myVars, ... }:
 
-lib.mkIf (config.networking.hostName != myVars.server.hostname)
 {
   services.printing = {
     enable = true; # Default: false

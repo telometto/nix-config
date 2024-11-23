@@ -9,7 +9,6 @@
 
 { config, lib, pkgs, myVars, ... }:
 
-lib.mkIf (config.networking.hostName ==  myVars.desktop.hostname)
 {
   hardware = {
     openrazer = {

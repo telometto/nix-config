@@ -7,7 +7,6 @@
 
 { config, lib, pkgs, myVars, ... }:
 
-lib.mkIf (config.networking.hostName != myVars.server.hostname && config.programs.steam.enable)
 {
   hardware.steam-hardware.enable = true;
 }

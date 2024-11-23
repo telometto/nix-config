@@ -24,7 +24,6 @@
 let
   stableRelease = false; # Set this to true to enable the stable release
 in
-lib.mkIf (config.networking.hostName == myVars.desktop.hostname)
 {
   hardware = {
     opengl =
