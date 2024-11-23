@@ -9,29 +9,72 @@
 
 {
   imports = [
-    # Include the results of the hardware scan.
+    ### 0. Desktop-specific settings
+    # 0.0 Include the results of the hardware scan
     ./hardware-configuration.nix # DO NOT TOUCH
 
-    # Import common configurations
-    ../../common/imports.nix
-
-    # Import modules configurations
-    ../../modules/imports.nix
-
-    # Desktop manager
-    ../../modules/desktop-environments/kde/kde-settings.nix
-    # ../../modules/desktop-environments/gnome/gnome-settings.nix
-
-    # Desktop-specific settings
+    # 0.1 Boot
     ./boot/defaults.nix
 
+    # 0.2 Networking
     ./networking/defaults.nix
+    ./networking/ssh/ssh.nix
     ./networking/systemd/systemd-networking.nix
     ./networking/tailscale/tailscale.nix
 
+    # 0.3 System ackages
     ./packages/system-packages.nix
 
+    ### 1. Import common configurations
+    ../../common/imports.nix
+
+    # 1.1 Users
     ../../common/users/main/main-user.nix
+
+    ### 2. Import modules
+    # 2.1 Desktop managers
+    ../../modules/desktop-environments/kde/kde-settings.nix
+    # ../../modules/desktop-environments/gnome/gnome-settings.nix
+
+    # 2.2 Boot/filesystem
+    # ../../modules/boot/disko/disko.nix # On hold
+
+    # 2.3 Hardware
+    ../../modules/hardware/audio/sound.nix
+    ../../modules/hardware/peripherals/razer.nix
+    ../../modules/hardware/peripherals/steam-devices.nix
+    ../../modules/hardware/printers/printing.nix
+    # ../../modules/hardware/peripherals/touchpad.nix
+    ../../modules/hardware/video/amdgpu.nix
+
+    # 2.4 Networking
+    ../../modules/networking/defaults.nix
+    ../../modules/networking/systemd/defaults.nix
+    ../../modules/networking/tailscale/defaults.nix
+    # ../../modules/networking/vpn/vpn-confinement.nix
+
+    # 2.5 Programs
+    ../../modules/programs/steam.nix
+    ../../modules/programs/virt-manager.nix
+
+    # 2.6 Security
+    ../../modules/security/defaults.nix
+    # ../../modules/security/crowdsec/crowdsec.nix
+    # ../../modules/security/secrets/agenix.nix
+    ../../modules/security/secrets/sops-nix.nix
+    ../../modules/security/secureboot/lanzaboote.nix
+
+    # 2.7 Services
+    # None for desktop (for now)
+
+    # 2.8 Utilities
+    ../../modules/utilities/flatpak.nix
+
+    # 2.9 Virtualization
+    ../../modules/virtualization/containers/docker.nix
+    ../../modules/virtualization/containers/podman.nix
+    ../../modules/virtualization/vm/microvm.nix
+    ../../modules/virtualization/vm/vm.nix
   ];
 
   # Allow unfree packages
