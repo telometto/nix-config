@@ -1,12 +1,12 @@
 { config, lib, pkgs, myVars, ... }:
 
 {
-  imports = [ ./programs.nix ]
-    ++ lib.optional myVars.general.enableGnome ./gnome.nix
-    ++ lib.optional myVars.general.enableKDE ./kde.nix;
+  imports = [
+    ./programs.nix
+  ];
 
   home = {
-    username = myVars.extraUsers.brother-one.user;
+    username = myVars.users.luke.user;
     stateVersion = "24.05";
 
     packages = with pkgs; [
