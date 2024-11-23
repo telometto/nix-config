@@ -47,7 +47,7 @@ in
     xserver = {
       xkb = {
         layout = "no";
-        variant = "";
+        variant = ""; # Example: "variant = dvorak";
         # options = "eurosign:e,caps:escape";
       };
     };
