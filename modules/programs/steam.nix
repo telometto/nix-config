@@ -1,7 +1,7 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, myVars, ... }:
 
-lib.mkIf (config.networking.hostName != "blizzard")
+lib.mkIf (config.networking.hostName != myVars.server.hostname)
 {
   #hardware.steam-hardware.enable = true;
 

@@ -22,7 +22,7 @@
   - Includes libnfs and nfs-utils for NFS support.
 */
 
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, myVars, ... }:
 
 {
   # Bootloader
@@ -48,7 +48,7 @@
       };
     };
 
-    plymouth = lib.mkIf (config.networking.hostName != "blizzard") {
+    plymouth = lib.mkIf (config.networking.hostName != myVars.server.hostname) {
       enable = true;
 
       theme = "rings";

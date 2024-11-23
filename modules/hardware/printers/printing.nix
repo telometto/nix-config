@@ -3,9 +3,9 @@
  * It enables the printing service by default.
  */
 
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, myVars, ... }:
 
-lib.mkIf (config.networking.hostName != "blizzard")
+lib.mkIf (config.networking.hostName != myVars.server.hostname)
 {
   services.printing = {
     enable = true; # Default: false
