@@ -6,8 +6,6 @@
     kdePackages.kate
     kdePackages.kdeconnect-kde
     kdePackages.kcalc
-    kdePackages.kwallet-pam
-    kdePackages.ksshaskpass
   ];
 
   #qt = {
