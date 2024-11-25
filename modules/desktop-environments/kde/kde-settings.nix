@@ -23,7 +23,28 @@
     };
   };
 
+  programs.ssh = { askPassword = "${pkgs.ksshaskpass.out}/bin/ksshaskpass"; };
+
   security.pam.services = {
+    login = {
+      gnupg = { enable = true; };
+
+      kwallet = {
+        enable = true;
+        #package = pkgs.kdePackages.kwallet-pam;
+      };
+    };
+
+/*
+    kde = {
+      allowNullPassword = true;
+
+      kwallet = {
+        enable = true;
+        #package = pkgs.kdePackages.kwallet-pam;
+      };
+    };
+*/
     sddm = {
       enableAppArmor = true;
       gnupg.enable = true;
@@ -36,6 +57,14 @@
       kwallet.enable = true;
     };
   };
+
+  environment.systemPackages = with pkgs; [
+    # Your KDE packages here
+    kdePackages.kwallet
+    kdePackages.kwalletmanager
+    kdePackages.kwallet-pam
+    kdePackages.ksshaskpass
+  ];
 
   #environment.plasma6.excludePackages = with pkgs.kdePackages; [ ];
 }
