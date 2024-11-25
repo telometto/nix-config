@@ -28,22 +28,24 @@
     # 0.4 System packages
     ./packages/defaults.nix
 
+    # 0.5 Utilities
     #./utilities/filesystem/filebrowser.nix
     ./utilities/filesystem/sanoid.nix
     ./utilities/filesystem/scrutiny.nix
     ./utilities/monitoring/cockpit.nix
 
+    # 0.6 Virtualization
     ./virtualization/orchestration/k3s.nix
 
     ### 1. Import common configurations
     ../../common/imports.nix
 
     # 1.1 Users
-    ../../common/users/main/main-user.nix
+    ../../common/users/server/server.nix
 
     ### 2. Import modules
     # 2.1 Desktop managers
-    ../../modules/desktop-environments/kde/kde-settings.nix
+    # ../../modules/desktop-environments/kde/kde-settings.nix
     # ../../modules/desktop-environments/gnome/gnome-settings.nix
 
     # 2.2 Boot/filesystem
@@ -64,8 +66,8 @@
     # ../../modules/networking/vpn/vpn-confinement.nix
 
     # 2.5 Programs
-    ../../modules/programs/steam.nix
-    ../../modules/programs/virt-manager.nix
+    # ../../modules/programs/steam.nix
+    # ../../modules/programs/virt-manager.nix
 
     # 2.6 Security
     ../../modules/security/defaults.nix
@@ -75,10 +77,17 @@
     ../../modules/security/secureboot/lanzaboote.nix
 
     # 2.7 Services
-    # None for desktop (for now)
+    ../../modules/services/backups/borg.nix
+    ../../modules/services/documents/paperless.nix
+    # ../../modules/services/finance/firefly.nix # Not yet created
+    ../../modules/services/internet/searx.nix
+    # ../../modules/services/media/immich.nix # Not in use; using k3s
+    # ../../modules/services/media/nixarr.nix # Not in use; using k3s
+    ../../modules/services/media/plex.nix
+    # ../../modules/services/monitoring/prometheus.nix # On hold
 
     # 2.8 Utilities
-    ../../modules/utilities/flatpak.nix
+    # ../../modules/utilities/flatpak.nix
 
     # 2.9 Virtualization
     ../../modules/virtualization/containers/docker.nix
