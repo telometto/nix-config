@@ -51,7 +51,7 @@
     plymouth = lib.mkIf (config.networking.hostName != myVars.systems.server.hostname) {
       enable = true;
 
-      theme = "bgrt"; # Change to "rings" and uncomment the themePackages block to use the "rings" theme
+      theme = "spinner"; # Change to "rings" and uncomment the themePackages block to use the "rings" theme
       # themePackages = with pkgs; [
       #   # By default we would install all themes
       #   (adi1090x-plymouth-themes.override {
