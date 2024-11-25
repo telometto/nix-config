@@ -38,6 +38,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # mySecrets = {
+    #   url = "git+ssh://git@gitlab.com/telometto/nix-secrets.git?ref=main&shallow=1";
+    #   flake = false;
+    # };
+
     # MicroVM repo
     microvm = {
       url = "github:astro/microvm.nix";
@@ -61,15 +66,17 @@
   outputs =
     inputs@{ self
     , nixpkgs
+    , nixpkgs-stable
+      # , nixpkgs-unstable
     , home-manager
     , nixos-hardware
     , lanzaboote
     , agenix
     , sops-nix
     , microvm
-      #, crowdsec
-      #, #vpn-confinement
-      #, nixarr
+      # , crowdsec
+      # , vpn-confinement
+      # , nixarr
     , ...
     }:
     let
@@ -77,8 +84,8 @@
     in
     {
       nixosConfigurations = {
-        homeserver = nixpkgs.lib.nixosSystem {
-          system = myVars.general.system;
+        blizzard = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
 
           modules = [
             ./hosts/server/configuration.nix
@@ -87,13 +94,15 @@
             home-manager.nixosModules.home-manager
             {
               home-manager = {
+                sharedModules = [ inputs.sops-nix.homeManagerModules.sops ];
+
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 backupFileExtension = "hm-backup";
 
                 extraSpecialArgs = { inherit myVars; };
 
-                users.${myVars.mainUsers.server.user} = import ./common/users/server/home/home.nix;
+                users.${myVars.users.admin.user} = import ./common/users/server/home/home.nix;
               };
             }
           ];
@@ -104,7 +113,7 @@
         };
 
         snowfall = nixpkgs.lib.nixosSystem {
-          system = myVars.general.system;
+          system = "x86_64-linux";
 
           modules = [
             ./hosts/desktop/configuration.nix
@@ -113,13 +122,15 @@
             home-manager.nixosModules.home-manager
             {
               home-manager = {
+                sharedModules = [ inputs.sops-nix.homeManagerModules.sops ];
+
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 backupFileExtension = "hm-backup";
 
                 extraSpecialArgs = { inherit myVars; };
 
-                users.${myVars.mainUsers.desktop.user} = import ./common/users/main/home/home.nix;
+                users.${myVars.users.admin.user} = import ./common/users/main/home/home.nix;
               };
             }
           ];
@@ -130,7 +141,7 @@
         };
 
         stinkpad = nixpkgs.lib.nixosSystem {
-          system = myVars.general.system;
+          system = "x86_64-linux";
 
           modules = [
             ./hosts/laptop/configuration.nix
@@ -146,9 +157,10 @@
                 extraSpecialArgs = { inherit myVars; };
 
                 users = {
-                  ${myVars.mainUsers.laptop.user} = import ./common/users/main/home/home.nix;
-                  ${myVars.extraUsers.wife.user} = import ./common/users/extra/wife/home/home.nix;
-                  ${myVars.extraUsers.brother-one.user} = import ./common/users/extra/brother-one/home/home.nix;
+                  ${myVars.users.admin.user} = import ./common/users/main/home/home.nix;
+                  ${myVars.users.wife.user} = import ./common/users/extra/wife/home/home.nix;
+                  ${myVars.users.luke.user} = import ./common/users/extra/luke/home/home.nix;
+                  ${myVars.users.frankie.user} = import ./common/users/extra/frankie/home/home.nix;
                 };
               };
             }
