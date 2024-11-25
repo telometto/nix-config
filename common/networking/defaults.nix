@@ -57,6 +57,5 @@
   environment.systemPackages = with pkgs; [
     gnupg
     # xorg.xauth
-    zsh
   ];
 }
