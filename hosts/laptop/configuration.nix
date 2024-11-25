@@ -25,7 +25,7 @@
 
     # 1.1 Users
     ../../common/users/main/main-user.nix
-    ../../users/extra/extra-users.nix
+    ../../common/users/extra/extra-users.nix
 
     ### 2. Import modules
     # 2.1 Desktop managers
