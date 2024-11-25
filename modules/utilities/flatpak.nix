@@ -13,7 +13,12 @@
 
     wlr.enable = true; # Enable Wayland support
 
-    extraPortals = with pkgs; [ xdg-desktop-portal-wlr ];
+    configPackages = [ pkgs.xdg-desktop-portal-kde ];
+
+    extraPortals = with pkgs; [
+      xdg-desktop-portal-wlr
+      xdg-desktop-portal-gtk
+    ];
   };
 
   services.flatpak = { enable = true; };
