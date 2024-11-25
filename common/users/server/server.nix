@@ -2,10 +2,11 @@
 { config, lib, pkgs, myVars, ... }:
 
 {
-  users.users.${myVars.systems.server.adminUser.user} = {
-    isNormalUser = myVars.systems.server.adminUser.isNormalUser;
-    description = myVars.systems.server.adminUser.description;
-    extraGroups = myVars.systems.server.adminUser.extraGroups;
+  users.users.${myVars.users.admin.user} = {
+    isNormalUser = myVars.users.admin.isNormalUser;
+    description = myVars.users.admin.description;
+    extraGroups = myVars.users.admin.extraGroups;
+    hashedPassword = myVars.users.admin.hashedPassword;
     shell = pkgs.zsh;
 
     packages = with pkgs; [
