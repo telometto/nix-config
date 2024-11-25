@@ -18,7 +18,6 @@
 
     # 0.2 Networking
     ./networking/defaults.nix
-    ./networking/ssh/ssh.nix
     ./networking/systemd/systemd-networking.nix
     ./networking/tailscale/tailscale.nix
 
