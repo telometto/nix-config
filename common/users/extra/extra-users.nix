@@ -18,7 +18,7 @@
       ];
     };
 
-    ${myVars.luke.user} = {
+    ${myVars.users.luke.user} = {
       isNormalUser = myVars.users.luke.isNormalUser;
       description = myVars.users.luke.description;
       extraGroups = myVars.users.luke.extraGroups;
@@ -33,7 +33,7 @@
       ];
     };
 
-    ${myVars.frankie.user} = {
+    ${myVars.users.frankie.user} = {
       isNormalUser = myVars.users.frankie.isNormalUser;
       description = myVars.users.frankie.description;
       extraGroups = myVars.users.frankie.extraGroups;
