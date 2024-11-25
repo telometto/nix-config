@@ -1,12 +1,12 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, myVars, ... }:
 
 {
   services.plex = {
     enable = true;
     openFirewall = true;
-    user = config.sops.secrets.serverAdminUser.path; # If not set, the service will run as user "plex"
-    dataDir = config.sops.secrets.plexDataDir.path; # If not set, the service will use the default data directory
+    user = myVars.users.admin.user; # If not set, the service will run as user "plex"
+    dataDir = /tank/apps/mediastack/nixos/plex; # If not set, the service will use the default data directory
   };
 
   environment.systemPackages = with pkgs; [ plex ];
