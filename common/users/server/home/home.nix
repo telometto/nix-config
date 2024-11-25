@@ -2,6 +2,8 @@
 
 {
   imports = [
+    ../../../security/secrets/sops-home.nix
+
     ./programs.nix
     ./services.nix
   ];
@@ -9,7 +11,7 @@
   programs.home-manager.enable = true;
 
   home = {
-    username = myVars.systems.server.adminUser.user;
+    username = myVars.users.admin.user;
     stateVersion = "24.05";
 
     packages = with pkgs; [
