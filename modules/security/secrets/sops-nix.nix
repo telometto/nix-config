@@ -34,6 +34,7 @@
       crowdsecApiKey = { };
       sshPubKey = { };
       gpgSshPubKey = { };
+      searxSecretKey = { };
     };
   };
 
