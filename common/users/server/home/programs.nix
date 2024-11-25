@@ -105,6 +105,28 @@
       };
     };
 
+    keychain = {
+      enable = true;
+
+      enableBashIntegration = true;
+      enableZshIntegration = true;
+
+      # agents = [ "ssh" ];
+
+      # inheritType = "any";
+
+      keys = [
+        "zeno-blizzard"
+        "borg-blizzard"
+      ];
+
+      extraFlags = [
+        "--noask"
+        "--nogui"
+        "--quiet"
+      ];
+    };
+
     micro = {
       enable = true;
 
