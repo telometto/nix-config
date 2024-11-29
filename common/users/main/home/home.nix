@@ -3,6 +3,7 @@
 {
   imports = [
     # ./gnome.nix # Enables GNOME
+    ./hyprland.nix # Enables Hyprland
     ./kde.nix # Enables KDE
 
     ../../../security/secrets/sops-home.nix
@@ -39,11 +40,13 @@
       brave # Web browser
       protonmail-desktop # ProtonMail client
       thunderbird # Email client
+      yt-dlp # YouTube downloader
 
       # Social
       discord # Discord client
       element-desktop # Matrix client
       teams-for-linux # Microsoft Teams client
+      weechat # IRC client
 
       # Development
       nixd # Nix language server for VS Code
