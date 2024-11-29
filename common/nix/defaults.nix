@@ -15,6 +15,7 @@
 {
   nix = {
     settings = {
+      trusted-users = [ "root" "@wheel" ]; # Trusted users; mainly for colmena
       experimental-features = [ "nix-command" "flakes" ]; # Enable Nix command and flakes
       auto-optimise-store = true; # Automatically optimise the Nix store
       download-buffer-size = 536870912; # 512MB download buffer size
