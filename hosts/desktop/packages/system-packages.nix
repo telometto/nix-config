@@ -13,5 +13,6 @@
   environment.systemPackages = with pkgs; [
     # System utilities
     microcode-amd # AMD CPU microcode updates
+    protonvpn-gui # ProtonVPN GUI client
   ];
 }
