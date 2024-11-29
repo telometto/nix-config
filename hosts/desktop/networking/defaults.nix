@@ -6,7 +6,7 @@
     hostId = myVars.systems.desktop.hostId;
 
     wireless = { enable = false; }; # Enables wireless support via wpa_supplicant.
-    networkmanager = { enable = false; }; # Easiest to use and most distros use this by default.
+    networkmanager = { enable = true; }; # Easiest to use and most distros use this by default.
 
     # Firewall-related
     firewall = rec {
