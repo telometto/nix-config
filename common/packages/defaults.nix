@@ -69,6 +69,7 @@
     nix-direnv # Integration of direnv with Nix
     zoxide # Smarter cd command
     sbctl # Secure Boot key manager
+    colmena # Remote management tool
 
     # Fonts and Themes
     google-fonts # Collection of Google Fonts
