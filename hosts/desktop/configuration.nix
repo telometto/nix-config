@@ -18,7 +18,7 @@
 
     # 0.2 Networking
     ./networking/defaults.nix
-    ./networking/systemd/systemd-networking.nix
+    # ./networking/systemd/systemd-networking.nix
     ./networking/tailscale/tailscale.nix
 
     # 0.3 System ackages
@@ -32,8 +32,10 @@
 
     ### 2. Import modules
     # 2.1 Desktop managers
-    ../../modules/desktop-environments/kde/kde-settings.nix
     # ../../modules/desktop-environments/gnome/gnome-settings.nix
+    ../../modules/desktop-environments/hyprland/cachix.nix # Hyprland Cachix
+    ../../modules/desktop-environments/hyprland/hyprland.nix
+    ../../modules/desktop-environments/kde/kde-settings.nix
 
     # 2.2 Boot/filesystem
     # ../../modules/boot/disko/disko.nix # On hold
@@ -51,6 +53,7 @@
     ../../modules/networking/systemd/defaults.nix
     ../../modules/networking/tailscale/defaults.nix
     # ../../modules/networking/vpn/vpn-confinement.nix
+    ../../modules/networking/vpn/pvpn-systemd.nix # On hold
 
     # 2.5 Programs
     ../../modules/programs/steam.nix
