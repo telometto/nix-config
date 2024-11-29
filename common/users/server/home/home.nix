@@ -11,7 +11,7 @@
   programs.home-manager.enable = true;
 
   home = {
-    username = myVars.users.admin.user;
+    username = myVars.users.serverAdmin.user; # Change this back upon reformatting
     stateVersion = "24.05";
 
     packages = with pkgs; [

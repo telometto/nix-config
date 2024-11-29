@@ -2,11 +2,11 @@
 { config, lib, pkgs, myVars, ... }:
 
 {
-  users.users.${myVars.users.admin.user} = {
-    isNormalUser = myVars.users.admin.isNormalUser;
-    description = myVars.users.admin.description;
-    extraGroups = myVars.users.admin.extraGroups;
-    hashedPassword = myVars.users.admin.hashedPassword;
+  users.users.${myVars.users.serverAdmin.user} = {
+    isNormalUser = myVars.users.serverAdmin.isNormalUser;
+    description = myVars.users.serverAdmin.description;
+    extraGroups = myVars.users.serverAdmin.extraGroups;
+    hashedPassword = myVars.users.serverAdmin.hashedPassword;
     shell = pkgs.zsh;
 
     packages = with pkgs; [
@@ -14,8 +14,8 @@
     ];
 
     openssh.authorizedKeys.keys = [
-      myVars.users.admin.sshPubKey
-      myVars.users.admin.gpgSshPubKey
+      myVars.users.serverAdmin.sshPubKey
+      myVars.users.serverAdmin.gpgSshPubKey
     ];
   };
 }
