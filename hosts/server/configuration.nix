@@ -83,6 +83,8 @@
     ../../modules/services/internet/searx.nix
     # ../../modules/services/media/immich.nix # Not in use; using k3s
     # ../../modules/services/media/nixarr.nix # Not in use; using k3s
+    ../../modules/services/media/ombi.nix
+    ../../modules/services/media/tautulli.nix
     ../../modules/services/media/plex.nix
     # ../../modules/services/monitoring/prometheus.nix # On hold
 
