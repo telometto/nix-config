@@ -73,8 +73,13 @@
 
     # Fonts and Themes
     google-fonts # Collection of Google Fonts
-    nerdfonts # Patched fonts with a high number of glyphs/icons
     ibm-plex # IBM Plex font family
     meslo-lgs-nf # Meslo Nerd Font patched for Powerlevel10k
+    # Nerd fonts
+    nerd-fonts.ubuntu
+    nerd-fonts.inconsolata
+    nerd-fonts.mononoki
+    nerd-fonts.fira-code
+    nerd-fonts.tinos
   ];
 }
