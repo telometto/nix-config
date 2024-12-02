@@ -35,6 +35,8 @@
       sshPubKey = { };
       gpgSshPubKey = { };
       searxSecretKey = { };
+
+      wireguardKeyFile = { };
     };
   };
 
