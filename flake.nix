@@ -93,7 +93,7 @@
       hostConfigs = {
         snowfall = [ ./hosts/desktop/configuration.nix ];
         blizzard = [ ./hosts/server/configuration.nix ];
-        stinkpad = [ ./hosts/laptop/configuration.nix ];
+        avalanche = [ ./hosts/laptop/configuration.nix ];
       };
     in
     {
@@ -111,7 +111,7 @@
 
         # snowfall = ./hosts/desktop;
         blizzard = ./hosts/server;
-        # stinkpad = ./hosts/laptop;
+        # avalanche = ./hosts/laptop;
       };
 
       nixosConfigurations = {
@@ -166,7 +166,7 @@
           specialArgs = { inherit inputs myVars; };
         };
 
-        stinkpad = nixpkgs.lib.nixosSystem {
+        avalanche = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
 
           modules = [
@@ -188,7 +188,7 @@
                 };
               };
             }
-          ] ++ hostConfigs.stinkpad;
+          ] ++ hostConfigs.avalanche;
 
           specialArgs = {
             inherit inputs myVars;
