@@ -10,11 +10,12 @@
  * - `nix.gc.options`: Deletes generations older than 7 days during garbage collection.
  */
 
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, myVars, ... }:
 
 {
   nix = {
     settings = {
+      access-tokens = myVars.nix.access-tokens;
       trusted-users = [ "root" "@wheel" ]; # Trusted users; mainly for colmena
       experimental-features = [ "nix-command" "flakes" ]; # Enable Nix command and flakes
       auto-optimise-store = true; # Automatically optimise the Nix store
