@@ -20,17 +20,14 @@
 
 { config, lib, pkgs, ... }:
 
-let
-  enableSystemdNetworking = !config.networking.networkmanager.enable;
-in
 {
   networking = {
-    useNetworkd = enableSystemdNetworking; # Defaults to false
-    useDHCP = !enableSystemdNetworking; # Defaults to true; disabled for systemd-networkd
+    useNetworkd = lib.mkDefault true; # Default: false
+    useDHCP = lib.mkDefault true; # Defaults to true; disabled for systemd-networkd
   };
 
   systemd.network = {
-    enable = enableSystemdNetworking; # Defaults to false
+    enable = lib.mkDefault true; # Default: to false
   };
 
   services.resolved = {
