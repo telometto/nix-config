@@ -40,6 +40,8 @@
       icons = "always";
 
       extraOptions = [
+        "--color=always"
+        "--group"
         "--group-directories-first"
         "--header"
         "--long"
