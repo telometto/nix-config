@@ -39,19 +39,20 @@
     ../../modules/hardware/audio/sound.nix
     # ../../modules/hardware/peripherals/razer.nix
     ../../modules/hardware/peripherals/steam-devices.nix
-    ../../modules/hardware/printers/printing.nix
     # ../../modules/hardware/peripherals/touchpad.nix
-    ../../modules/hardware/video/amdgpu.nix
+    ../../modules/hardware/printers/printing.nix
+    # ../../modules/hardware/video/amdgpu.nix
 
     # 2.4 Networking
     ../../modules/networking/defaults.nix
     ../../modules/networking/systemd/defaults.nix
     ../../modules/networking/tailscale/defaults.nix
+    # ../../modules/networking/vpn/pvpn-systemd.nix
     # ../../modules/networking/vpn/vpn-confinement.nix
 
     # 2.5 Programs
     ../../modules/programs/steam.nix
-    ../../modules/programs/virt-manager.nix
+    # ../../modules/programs/virt-manager.nix
 
     # 2.6 Security
     ../../modules/security/defaults.nix
@@ -61,7 +62,7 @@
     ../../modules/security/secureboot/lanzaboote.nix
 
     # 2.7 Services
-    # None for desktop (for now)
+    # None for laptop (for now)
 
     # 2.8 Utilities
     ../../modules/utilities/flatpak.nix
@@ -69,8 +70,8 @@
     # 2.9 Virtualization
     ../../modules/virtualization/containers/docker.nix
     ../../modules/virtualization/containers/podman.nix
-    ../../modules/virtualization/vm/microvm.nix
-    ../../modules/virtualization/vm/vm.nix
+    # ../../modules/virtualization/vm/microvm.nix
+    # ../../modules/virtualization/vm/vm.nix
   ];
 
   nixpkgs = {
@@ -108,4 +109,3 @@
   system.stateVersion = "24.05"; # Did you read the comment?
 
 }
-
