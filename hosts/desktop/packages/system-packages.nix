@@ -14,5 +14,6 @@
     # System utilities
     microcode-amd # AMD CPU microcode updates
     protonvpn-gui # ProtonVPN GUI client
+    plex-desktop # Plex media player for desktop
   ];
 }
