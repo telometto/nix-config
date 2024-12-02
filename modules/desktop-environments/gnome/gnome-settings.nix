@@ -42,7 +42,7 @@
   };
 
   security.pam.services = {
-     gdm = {
+    gdm = {
       enableAppArmor = true;
       gnupg.enable = true;
       enableGnomeKeyring = true;
