@@ -2,11 +2,13 @@
 { config, lib, pkgs, myVars, ... }:
 
 {
-  users.users = {
+  users.extraUsers = {
     ${myVars.users.wife.user} = {
       isNormalUser = myVars.users.wife.isNormalUser;
       description = myVars.users.wife.description;
       extraGroups = myVars.users.wife.extraGroups;
+      hashedPassword = myVars.users.wife.hashedPassword;
+      shell = pkgs.zsh;
 
       packages = with pkgs; [
         # Your packages here
@@ -22,6 +24,8 @@
       isNormalUser = myVars.users.luke.isNormalUser;
       description = myVars.users.luke.description;
       extraGroups = myVars.users.luke.extraGroups;
+      hashedPassword = myVars.users.luke.hashedPassword;
+      shell = pkgs.zsh;
 
       packages = with pkgs; [
         # Your packages here
@@ -37,6 +41,8 @@
       isNormalUser = myVars.users.frankie.isNormalUser;
       description = myVars.users.frankie.description;
       extraGroups = myVars.users.frankie.extraGroups;
+      hashedPassword = myVars.users.frankie.hashedPassword;
+      shell = pkgs.zsh;
 
       packages = with pkgs; [
         # Your packages here
