@@ -8,7 +8,7 @@
 
     settings = {
       server = {
-        secret_key = config.sops.secrets.searxSecretKey.path;
+        secret_key = config.sops.secrets."general/searxSecretKey".path; # config.sops.secrets.searxSecretKey.path;
         port = 7777;
         bind_address = "0.0.0.0"; # Listen on all interfaces
       };

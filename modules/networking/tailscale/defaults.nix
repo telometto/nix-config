@@ -13,7 +13,7 @@
   services.tailscale = {
     enable = true;
     openFirewall = true;
-    authKeyFile = config.sops.secrets.tsKeyFilePath.path;
+    authKeyFile = config.sops.secrets."general/tsKeyFilePath".path;
   };
 
   environment.systemPackages = with pkgs; [ tailscale ];

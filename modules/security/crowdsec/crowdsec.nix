@@ -33,7 +33,7 @@
       enable = true;
     
       settings = {
-        api_key = config.sops.secrets.crowdsecApiKey.path;
+        api_key = config.sops.secrets."general/crowdsec".path; # config.sops.secrets.crowdsecApiKey.path;
         api_url = "http://localhost:9998";
       };
     };
@@ -47,7 +47,7 @@
         set -o pipefail
 
         if ! cscli bouncers list | grep -q "my-bouncer"; then
-          cscli bouncers add "my-bouncer" --key "${config.sops.secrets.crowdsecApiKey.path}"
+          cscli bouncers add "my-bouncer" --key "${config.sops.secrets."general/crowdsec".path}"
         fi
       '';
     in ["${script}/bin/register-bouncer"];
