@@ -39,7 +39,7 @@
     # Nix Secrets repo
     nix-secrets = {
       url = "git+ssh://git@github.com/telometto/nix-secrets.git";
-      flake = false;
+      # flake = false;
     };
 
     # MicroVM repo
