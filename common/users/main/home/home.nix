@@ -1,5 +1,7 @@
 { config, lib, pkgs, myVars, ... }:
-
+let
+  DEFAULT_LANG = "nb_NO.UTF-8";
+in
 {
   imports = [
     # ./gnome.nix # Enables GNOME
@@ -18,6 +20,44 @@
   home = {
     username = myVars.users.admin.user;
     stateVersion = "24.05";
+
+    enableDebugInfo = true;
+    preferXdgDirectories = true;
+
+    # sessionPath = [
+    #   # Extra paths; e.g. "/home/${config.home.username}/.local/bin"
+    # ];
+
+    # sessionVariables = {
+    #   # Example: Set the default editor
+    #   # EDITOR = "nvim";
+    # };
+
+    # shellAliases = {
+    #   # Example: Add an alias for `ls`
+    #   # ls = "ls --color=auto";
+    # };
+
+    # Localization
+    # language = {
+    #   address = DEFAULT_LANG;
+    #   base = "en_US.UTF-8";
+    #   collate = DEFAULT_LANG;
+    #   ctype = DEFAULT_LANG;
+    #   measurement = DEFAULT_LANG;
+    #   messages = DEFAULT_LANG;
+    #   monetary = DEFAULT_LANG;
+    #   name = DEFAULT_LANG;
+    #   numeric = DEFAULT_LANG;
+    #   paper = DEFAULT_LANG;
+    #   telephone = DEFAULT_LANG;
+    #   time = DEFAULT_LANG;
+    # };
+
+    keyboard = {
+      layout = "no";
+      # variant = "";
+    };
 
     packages = with pkgs; [
       # Utils
