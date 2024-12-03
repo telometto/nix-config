@@ -396,10 +396,40 @@
         "type": "github"
       }
     },
+    "hyprgraphics": {
+      "inputs": {
+        "hyprutils": [
+          "hyprland",
+          "hyprutils"
+        ],
+        "nixpkgs": [
+          "hyprland",
+          "nixpkgs"
+        ],
+        "systems": [
+          "hyprland",
+          "systems"
+        ]
+      },
+      "locked": {
+        "lastModified": 1733248371,
+        "narHash": "sha256-FFLJzFTyNhS7tBEEECx0B8Ye/bpmxhFVEKlECgMLc6c=",
+        "owner": "hyprwm",
+        "repo": "hyprgraphics",
+        "rev": "cc95e5babc6065bc3ab4cd195429a9900836ef13",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hyprwm",
+        "repo": "hyprgraphics",
+        "type": "github"
+      }
+    },
     "hyprland": {
       "inputs": {
         "aquamarine": "aquamarine",
         "hyprcursor": "hyprcursor",
+        "hyprgraphics": "hyprgraphics",
         "hyprland-protocols": "hyprland-protocols",
         "hyprlang": "hyprlang",
         "hyprutils": "hyprutils",
@@ -410,11 +440,11 @@
         "xdph": "xdph"
       },
       "locked": {
-        "lastModified": 1733157082,
-        "narHash": "sha256-rmJkUKyvaejRaQeEOpInjGjQv6rgFkm2uJ2iVlMEuOk=",
+        "lastModified": 1733252304,
+        "narHash": "sha256-+ftuV8k/tAh5w4S7RKFrefGzAypko2Tut8iubjXdA0s=",
         "owner": "hyprwm",
         "repo": "Hyprland",
-        "rev": "92186898c0ca1b3f72922b72c4af1723f0d9b888",
+        "rev": "320144ae7288fe23686935ebb235d9fe0c900862",
         "type": "github"
       },
       "original": {
@@ -578,11 +608,11 @@
     },
     "nix-secrets": {
       "locked": {
-        "lastModified": 1733251246,
-        "narHash": "sha256-pQPjl7LLmWhzn37hmrjyGUvulQQD5RRvIsiH1fk/Vh8=",
+        "lastModified": 1733251767,
+        "narHash": "sha256-1whwWEIDuIDTZ4zhOspdbFkQzc2pqswtOvKmUEm1ryQ=",
         "ref": "refs/heads/main",
-        "rev": "3518847fb73889dcb94da55b8ad172d5213adcac",
-        "revCount": 10,
+        "rev": "dbc6e1546d266674c5e25e509dc09fa3ff1b7a34",
+        "revCount": 11,
         "type": "git",
         "url": "ssh://git@github.com/telometto/nix-secrets.git"
       },
