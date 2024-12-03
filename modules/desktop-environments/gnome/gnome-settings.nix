@@ -41,13 +41,29 @@
     };
   };
 
+  programs.ssh = {
+    # askPassword = "${pkgs.seahorse.out}/libexec/seahorse/ssh-askpass"; # Not correct?
+    askPassword = "${pkgs.seahorse.out}/bin/seahorse";
+  };
+
   security.pam.services = {
     gdm = {
       enableAppArmor = true;
       gnupg.enable = true;
       enableGnomeKeyring = true;
     };
+
+    login = {
+      enableAppArmor = true;
+      gnupg.enable = true;
+      enableGnomeKeyring = true;
+    };
   };
+
+  environment.systemPackages = with pkgs; [
+    seahorse
+    gnome-keyring
+  ];
 
   environment.gnome.excludePackages = (with pkgs; [
     gnome-tour
