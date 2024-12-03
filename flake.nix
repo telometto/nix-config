@@ -39,7 +39,7 @@
     # Nix Secrets repo
     nix-secrets = {
       url = "git+ssh://git@github.com/telometto/nix-secrets.git";
-      # flake = false;
+      flake = true;
     };
 
     # MicroVM repo
@@ -81,6 +81,7 @@
     , lanzaboote
     , agenix
     , sops-nix
+    , nix-secrets
     , microvm
       # , crowdsec
       # , vpn-confinement
