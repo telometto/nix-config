@@ -4,7 +4,8 @@
   imports = [ inputs.sops-nix.nixosModules.sops ];
 
   sops = {
-    defaultSopsFile = ./secrets/secrets.yaml;
+    # defaultSopsFile = ./secrets/secrets.yaml;
+    defaultSopsFile = ../../../../nix-secrets/secrets/secrets.yaml;
     defaultSopsFormat = "yaml"; # Default format for sops files
 
     age = {
@@ -14,29 +15,77 @@
     };
 
     secrets = {
-      serverAdminUser = { };
+      ## [ON HOLD] Nested secrets in JSON format do no pass manifest validation; see https://github.com/Mic92/sops-nix/issues/604
+      ## Start JSON format
+      # "users/admins/username" = { };
+      # "users/admins/description" = { };
+      # "users/admins/password" = { };
+      # "users/regulars/luke" = { };
+      # "users/regulars/frankie" = { };
+      # "users/regulars/wife" = { };
+      # "devices/desktop/ = { };
+      # "devices/laptop/ = { };
+      # "devices/server/ = { };
+      # "general/ssh/pubKeys.mainPubKey" = { };
+      # "general/gpg/pubKeys.mainSshPubKey" = { };
+      # "general/paths/tailscaleKeyFile" = { };
+      # "general/paths/paperlessKeyFile" = { };
+      # "general/paths/borgKeyFile" = { };
+      # "general/paths/borgRsh" = { };
+      # "general/paths/testPath" = { };
+      # "general/paths/plexDataDir" = { };
+      # "general/apiKeys/crowdsec" = { };
+      # "general/apiKeys/wireguardPrivKey" = { };
+      # "general/repos/borgRepo" = { };
+      # "general/passwords/searxSecretKey" = { };
+      # "general/tokens/github.nix-secrets" = { };
+      # "general/tokens/github.rate-limit" = { };
+      # "general/tokens/gitlab.nix-secrets" = { };
+      # "general/tokens/gitlab.full-access" = { };
 
-      desktopAdminUser = { };
-      desktopAdminDesc = { };
+      # Start YAML format
+      "users/admin/username" = { };
+      "users/admin/description" = { };
 
-      laptopAdminUser = { };
-      laptopAdminDesc = { };
+      "users/luke/username" = { };
+      "users/luke/description" = { };
+      "users/frankie/username" = { };
+      "users/frankie/description" = { };
+      "users/wife/username" = { };
+      "users/wife/description" = { };
 
-      tsKeyFilePath = { };
-      paperlessKeyFilePath = { };
+      "desktop/hostname" = { };
+      "desktop/hostId" = { };
 
-      borgKeyFilePath = { };
-      borgRshFilePath = { };
-      borgRepo = { };
+      "laptop/hostname" = { };
+      "laptop/hostId" = { };
 
-      plexDataDir = { };
-      testPath = { };
-      crowdsecApiKey = { };
-      sshPubKey = { };
-      gpgSshPubKey = { };
-      searxSecretKey = { };
+      "server/hostname" = { };
+      "server/hostId" = { };
 
-      wireguardKeyFile = { };
+      "general/tsKeyFilePath" = { };
+      "general/paperlessKeyFilePath" = { };
+      "general/borgKeyFilePath" = { };
+      "general/borgRshFilePath" = { };
+      "general/borgRepo" = { };
+      "general/plexDataDir" = { };
+      "general/testPath" = { };
+      "general/crowdsecApiKey" = { };
+      "general/sshPubKey" = { };
+      "general/gpgSshPubKey" = { };
+      "general/searxSecretKey" = { };
+      "general/wireguardKeyFile" = { };
+
+      "tokens/github-rl" = { };
+      "tokens/github-ns" = { };
+      "tokens/gitlab-fa" = { };
+      "tokens/gitlab-ns" = { };
+
+      "git/github-prim-email" = { };
+      "git/github-email" = { };
+      "git/github-signingkey" = { };
+      "git/gitlab-email" = { };
+      "git/gitlab-signingkey" = { };
     };
   };
 
