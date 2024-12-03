@@ -15,7 +15,12 @@
 {
   nix = {
     settings = {
-      access-tokens = myVars.nix.access-tokens;
+      access-tokens = [
+        "github.com=${config.sops.secrets."tokens/github-rl".path}" # GitHub rate limit
+        "github.com=${config.sops.secrets."tokens/github-ns".path}" # GitHub nix-secrets
+        "gitlab.com=${config.sops.secrets."tokens/gitlab-fa".path}" # Full-access token
+        "gitlab.com=${config.sops.secrets."tokens/gitlab-ns".path}" # Nix-secrets token
+      ];
       trusted-users = [ "root" "@wheel" ]; # Trusted users; mainly for colmena
       experimental-features = [ "nix-command" "flakes" ]; # Enable Nix command and flakes
       auto-optimise-store = true; # Automatically optimise the Nix store
