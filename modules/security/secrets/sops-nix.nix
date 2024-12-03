@@ -5,7 +5,7 @@
 
   sops = {
     # defaultSopsFile = ./secrets/secrets.yaml;
-    defaultSopsFile = ../../../../nix-secrets/secrets/secrets.yaml;
+    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile; #"${inputs.nix-secrets.path}/nix-secrets/secrets/secrets.yaml";
     defaultSopsFormat = "yaml"; # Default format for sops files
 
     age = {
