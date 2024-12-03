@@ -42,6 +42,8 @@ in
       icons = "always";
 
       extraOptions = [
+        "--color=always"
+        "--group"
         "--group-directories-first"
         "--header"
         "--long"
@@ -90,12 +92,36 @@ in
       enable = true;
 
       userName = "telometto";
-      userEmail = "65364211+telometto@users.noreply.github.com";
+      userEmail = config.sops.secrets."git/github-prim-email".path;
 
-      signing = {
-        signByDefault = true;
-        key = "0x5A5BF29378C3942B";
-      };
+      includes = [
+        {
+          condition = "gitdir:~/.versioncontrol/github/";
+
+          contents = {
+            user.name = "telometto";
+            user.email = config.sops.secrets."git/github-email".path;
+            user.signingKey = config.sops.secrets."git/github-signingkey".path;
+
+            commit.gpgSign = true;
+
+            core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
+          };
+        }
+        {
+          condition = "gitdir:~/.versioncontrol/gitlab/";
+
+          contents = {
+            user.name = "telometto";
+            user.email = config.sops.secrets."git/gitlab-email".path;
+            user.signingKey = config.sops.secrets."git/gitlab-signingkey".path;
+
+            commit.gpgSign = true;
+
+            core.sshCommand = "ssh -i ~/.ssh/gitlabkey";
+          };
+        }
+      ];
 
       diff-so-fancy = {
         enable = true;
@@ -147,6 +173,30 @@ in
       };
     };
 
+    keychain = {
+      enable = true;
+
+      enableBashIntegration = true;
+      enableZshIntegration = true;
+
+      # agents = [ "ssh" ];
+
+      # inheritType = "any";
+
+      keys = [
+        "id_ed25519"
+        "gitlabkey"
+        # "ssh_host_ed25519_key"
+        "testkey"
+      ];
+
+      # extraFlags = [
+      #   # "--eval"
+      #   "--noask"
+      #   "--quiet"
+      # ];
+    };
+
     mangohud = {
       enable = true;
     };
@@ -174,7 +224,6 @@ in
       # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
       # For now, resorting to non-home-manager configuration
 
-
       ssh = {
       enable = true;
 
@@ -193,7 +242,7 @@ in
       #serverAliveInterval = 1;
       #userKnownHostsFile = ""; # String
       };
-    */
+        */
 
     /*
       thunderbird = {
@@ -201,7 +250,7 @@ in
 
       # TODO: Declaratively configure Thunderbird
       };
-    */
+        */
 
     tmux = {
       enable = true;
@@ -228,7 +277,7 @@ in
 
       # TODO: Declaratively configure Visual Studio Code
       };
-      */
+        */
 
     zellij = {
       enable = true;
@@ -272,8 +321,6 @@ in
 
       oh-my-zsh = {
         enable = true;
-
-        #theme = "powerlevel10k";
 
         plugins = [
           #"autoenv"
