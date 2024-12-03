@@ -25,6 +25,11 @@
 
     ssh-agent = { enable = true; };
 
+    gnome-keyring = {
+      enable = true;
+      # components = [ "secrets" "ssh" ];
+    };
+
     #kdeconnect.enable = true; # Plasma 5
   };
 }
