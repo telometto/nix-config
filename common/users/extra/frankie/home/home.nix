@@ -1,5 +1,7 @@
 { config, lib, pkgs, myVars, ... }:
-
+let
+  DEFAULT_LANG = "it_IT.UTF-8";
+in
 {
   imports = [
     ./gnome.nix # Enables GNOME
@@ -18,6 +20,26 @@
   home = {
     username = myVars.users.frankie.user;
     stateVersion = "24.05";
+
+    # Localization
+    language = {
+      address = DEFAULT_LANG;
+      base = DEFAULT_LANG;
+      collate = DEFAULT_LANG;
+      ctype = DEFAULT_LANG;
+      measurement = DEFAULT_LANG;
+      messages = DEFAULT_LANG;
+      monetary = DEFAULT_LANG;
+      name = DEFAULT_LANG;
+      numeric = DEFAULT_LANG;
+      paper = DEFAULT_LANG;
+      telephone = DEFAULT_LANG;
+      time = DEFAULT_LANG;
+    };
+    keyboard = {
+      layout = "no";
+      # variant = "";
+    };
 
     packages = with pkgs; [
       # Utils
