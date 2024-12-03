@@ -36,10 +36,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # mySecrets = {
-    #   url = "git+ssh://git@gitlab.com/telometto/nix-secrets.git?ref=main&shallow=1";
-    #   flake = false;
-    # };
+    # Nix Secrets repo
+    nix-secrets = {
+      url = "git+ssh://git@github.com/telometto/nix-secrets.git";
+      flake = false;
+    };
 
     # MicroVM repo
     microvm = {
