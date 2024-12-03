@@ -72,9 +72,9 @@
       # Git
       "git/github-prim-email" = { path = "${config.sops.defaultSymlinkPath}/git/github-prim-email"; };
       "git/github-email" = { path = "${config.sops.defaultSymlinkPath}/git/github-email"; };
-      "git/github-signingkey" = { path = "${config.sops.defaultSymlinkPath}/git/github-signingkey"; };
+      # "git/github-signingkey" = { path = "${config.sops.defaultSymlinkPath}/git/github-signingkey"; };
       "git/gitlab-email" = { path = "${config.sops.defaultSymlinkPath}/git/gitlab-email"; };
-      "git/gitlab-signingkey" = { path = "${config.sops.defaultSymlinkPath}/git/gitlab-signingkey"; };
+      # "git/gitlab-signingkey" = { path = "${config.sops.defaultSymlinkPath}/git/gitlab-signingkey"; };
     };
   };
 }

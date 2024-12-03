@@ -83,9 +83,9 @@
 
       "git/github-prim-email" = { };
       "git/github-email" = { };
-      "git/github-signingkey" = { };
+      # "git/github-signingkey" = { };
       "git/gitlab-email" = { };
-      "git/gitlab-signingkey" = { };
+      # "git/gitlab-signingkey" = { };
     };
   };
 
