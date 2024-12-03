@@ -90,7 +90,7 @@
     , ...
     }:
     let
-      myVars = inputs.nix-secrets.vars.varsFile;
+      myVars = import (inputs.nix-secrets.vars.varsFile);
 
       hostConfigs = {
         snowfall = [ ./hosts/desktop/configuration.nix ];
