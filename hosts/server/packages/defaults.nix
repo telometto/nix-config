@@ -9,5 +9,7 @@
     # Networking tools
     cloudflared # Cloudflare's DoH and DoT client
     cloudflare-dyndns # Dynamic DNS client for Cloudflare
+
+    gcr_4 # GNOME crypto services
   ];
 }
