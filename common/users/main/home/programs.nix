@@ -101,7 +101,7 @@ in
           contents = {
             user.name = "telometto";
             user.email = config.sops.secrets."git/github-email".path;
-            user.signingKey = config.sops.secrets."git/github-signingkey".path;
+            user.signingKey = "0x5A5BF29378C3942B";
 
             commit.gpgSign = true;
 
@@ -114,7 +114,7 @@ in
           contents = {
             user.name = "telometto";
             user.email = config.sops.secrets."git/gitlab-email".path;
-            user.signingKey = config.sops.secrets."git/gitlab-signingkey".path;
+            user.signingKey = "0xB7103B8A59566994";
 
             commit.gpgSign = true;
 
