@@ -4,7 +4,7 @@
   services.borgbackup = lib.mkIf (config.networking.hostName == VARS.systems.server.hostname) {
     jobs = {
       homeserver = {
-        paths = "/home/${VARS.users.serverAdmin.user}/borgtest";
+        paths = "/home/${VARS.users.serverAdmin.user}";
         environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.serverAdmin.user}/.ssh/borg-blizzard";
         repo = "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo";
         compression = "zstd,8";
