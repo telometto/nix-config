@@ -74,6 +74,27 @@
     # ../../modules/virtualization/vm/vm.nix
   ];
 
+  system = {
+    autoUpgrade = {
+      enable = true;
+
+      flake = "github:telometto/nix-config";
+      operation = "boot";
+      flags = [ ];
+      dates = "daily";
+
+      rebootWindow = {
+        lower = "02:30";
+        upper = "05:30";
+      };
+
+      persistent = true;
+      allowReboot = true;
+      fixedRandomDelay = true;
+      randomizedDelaySec = "20min";
+    };
+  };
+
   nixpkgs = {
     config = {
       allowUnfree = true;
