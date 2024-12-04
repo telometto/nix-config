@@ -23,6 +23,8 @@ let
 in
 {
   systemd.network = {
+    wait-online.enable = false;
+
     networks = {
       "40-${INTERFACE}" = {
         matchConfig.Name = INTERFACE;
