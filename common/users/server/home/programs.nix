@@ -113,15 +113,9 @@
       enableBashIntegration = true;
       enableZshIntegration = true;
 
-      # agents = [ "ssh" ];
-
-      # inheritType = "any";
-
       keys = [
         "borg-blizzard"
-        "borgkey"
-        "hserv-borg"
-        "sops-home-blizzard"
+        "sops-hm-blizzard"
         "zeno-blizzard"
       ];
 
