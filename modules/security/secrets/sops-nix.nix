@@ -31,7 +31,6 @@
       # "general/paths/tailscaleKeyFile" = { };
       # "general/paths/paperlessKeyFile" = { };
       # "general/paths/borgKeyFile" = { };
-      # "general/paths/borgRsh" = { };
       # "general/paths/testPath" = { };
       # "general/paths/plexDataDir" = { };
       # "general/apiKeys/crowdsec" = { };
@@ -66,7 +65,6 @@
       "general/tsKeyFilePath" = { };
       "general/paperlessKeyFilePath" = { };
       "general/borgKeyFilePath" = { };
-      "general/borgRshFilePath" = { };
       "general/borgRepo" = { };
       "general/plexDataDir" = { };
       "general/testPath" = { };

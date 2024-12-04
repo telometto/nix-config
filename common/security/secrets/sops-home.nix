@@ -53,7 +53,6 @@
       "general/tsKeyFilePath" = { path = "${config.sops.defaultSymlinkPath}/general/tsKeyFilePath"; };
       "general/paperlessKeyFilePath" = { path = "${config.sops.defaultSymlinkPath}/general/paperlessKeyFilePath"; };
       "general/borgKeyFilePath" = { path = "${config.sops.defaultSymlinkPath}/general/borgKeyFilePath"; };
-      "general/borgRshFilePath" = { path = "${config.sops.defaultSymlinkPath}/general/borgRshFilePath"; };
       "general/borgRepo" = { path = "${config.sops.defaultSymlinkPath}/general/borgRepo"; };
       "general/testPath" = { path = "${config.sops.defaultSymlinkPath}/general/testPath"; };
       "general/plexDataDir" = { path = "${config.sops.defaultSymlinkPath}/general/plexDataDir"; };
