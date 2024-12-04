@@ -118,15 +118,18 @@
       # inheritType = "any";
 
       keys = [
-        "zeno-blizzard"
         "borg-blizzard"
+        "borgkey"
+        "hserv-borg"
+        "sops-home-blizzard"
+        "zeno-blizzard"
       ];
 
-      extraFlags = [
-        "--noask"
-        "--nogui"
-        "--quiet"
-      ];
+      # extraFlags = [
+      #   "--noask"
+      #   "--nogui"
+      #   "--quiet"
+      # ];
     };
 
     micro = {
