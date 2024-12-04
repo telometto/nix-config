@@ -2,7 +2,7 @@
 
 {
   imports = [
-    ../../../security/secrets/sops-home.nix
+    ../../../../../common/security/secrets/sops-home.nix
 
     ./programs.nix
     ./services.nix
