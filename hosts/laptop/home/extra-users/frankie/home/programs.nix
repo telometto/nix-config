@@ -91,38 +91,6 @@ in
     git = {
       enable = true;
 
-      userName = "telometto";
-      userEmail = config.sops.secrets."git/github-prim-email".path;
-
-      includes = [
-        {
-          condition = "gitdir:~/.versioncontrol/github/";
-
-          contents = {
-            user.name = "telometto";
-            user.email = config.sops.secrets."git/github-email".path;
-            user.signingKey = "0x5A5BF29378C3942B";
-
-            commit.gpgSign = true;
-
-            core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
-          };
-        }
-        {
-          condition = "gitdir:~/.versioncontrol/gitlab/";
-
-          contents = {
-            user.name = "telometto";
-            user.email = config.sops.secrets."git/gitlab-email".path;
-            user.signingKey = "0xB7103B8A59566994";
-
-            commit.gpgSign = true;
-
-            core.sshCommand = "ssh -i ~/.ssh/gitlabkey";
-          };
-        }
-      ];
-
       diff-so-fancy = {
         enable = true;
       };
@@ -178,24 +146,6 @@ in
 
       enableBashIntegration = true;
       enableZshIntegration = true;
-
-      # agents = [ "ssh" ];
-
-      # inheritType = "any";
-
-      keys = [
-        "id_ed25519"
-        "gitlabkey"
-        # "ssh_host_ed25519_key"
-        "testkey"
-        "zeno-avalanche"
-      ];
-
-      extraFlags = [
-        # "--eval"
-        "--noask"
-        "--quiet"
-      ];
     };
 
     mangohud = {
@@ -217,78 +167,19 @@ in
 
     mpv = {
       enable = true;
-
-      # TODO: Declaratively configure mpv
     };
-
-    /*
-      # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
-      # For now, resorting to non-home-manager configuration
-
-      ssh = {
-      enable = true;
-
-      addKeysToAgent = "yes";
-      #controlMaster = "auto";
-      #controlPath = "/some/path/%r@%h:%p";
-      #controlPersist = "yes";
-      compression = true;
-      #extraConfig = ""; # Strings concatenated with "\n"
-      #extraOptionOverrides = ""; # Attribute set of strings
-      forwardAgent = true;
-      #hashKnownHosts = true;
-      #includes = [ ]; # List of strings
-      #matchBlocks = { }; # Attribute set of attribute sets
-      #serverAliveCountMax = 1; # Positive integer
-      #serverAliveInterval = 1;
-      #userKnownHostsFile = ""; # String
-      };
-        */
-
-    /*
-      thunderbird = {
-      enable = true;
-
-      # TODO: Declaratively configure Thunderbird
-      };
-        */
 
     tmux = {
       enable = true;
+
       clock24 = true;
       mouse = false;
-
-      #plugins = {
-      #  dracula = {
-      #    enable = true;
-      #  };
-      #
-      #  gruvbox = {
-      #    enable = true;
-      #  };
-      #};
     };
-
-    /*
-      vscode = {
-      enable = true;
-
-      enableUpdateCheck = false; # Disable update checks
-      mutableExtensionsDir = true; # Allow extensions to be installed in the user's home directory
-
-      # TODO: Declaratively configure Visual Studio Code
-      };
-        */
 
     zellij = {
       enable = true;
       enableBashIntegration = true;
       enableZshIntegration = true;
-
-      # TODO: Declaratively configure Zellij
-      # settings = {
-      #   theme = "gruvbox-dark";
-      # };
     };
 
     zoxide = {
@@ -324,12 +215,10 @@ in
         enable = true;
 
         plugins = [
-          #"autoenv"
           "colored-man-pages"
           "colorize"
           "command-not-found"
           "common-aliases"
-          # "copybuffer"
           "direnv"
           "git"
           "emoji"
@@ -344,8 +233,6 @@ in
           "tmux"
           "vscode"
           "zoxide"
-          #"zsh-autosuggestions"
-          #"zsh-syntax-highlighting"
         ];
       };
     };
