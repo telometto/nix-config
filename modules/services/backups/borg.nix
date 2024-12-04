@@ -6,7 +6,7 @@
       homeserver = {
         paths = "/home/${VARS.users.serverAdmin.user}/borgtest";
         # environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i ${config.sops.secrets.borgRshFilePath.path}";
-        environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i ${config.sops.secrets."general.borgRshFilePath".path}";
+        environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i ${config.sops.secrets."general/borgRshFilePath".path}";
         repo = "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo";
         compression = "zstd,8";
         startAt = "daily";
