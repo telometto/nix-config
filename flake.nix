@@ -176,6 +176,8 @@
             home-manager.nixosModules.home-manager
             {
               home-manager = {
+                sharedModules = [ inputs.sops-nix.homeManagerModules.sops ];
+
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 backupFileExtension = "hm-backup";
