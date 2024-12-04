@@ -136,7 +136,7 @@
 
                 extraSpecialArgs = { inherit inputs VARS; };
 
-                users.${VARS.users.admin.user} = import ./common/users/main/home/home.nix;
+                users.${VARS.users.admin.user} = import ./hosts/desktop/home/admin/home/home.nix;
               };
             }
           ] ++ hostConfigs.snowfall;
@@ -160,7 +160,7 @@
 
                 extraSpecialArgs = { inherit inputs VARS; };
 
-                users.${VARS.users.serverAdmin.user} = import ./common/users/server/home/home.nix;
+                users.${VARS.users.serverAdmin.user} = import ./hosts/server/home/admin/home/home.nix;
               };
             }
           ] ++ hostConfigs.blizzard;
@@ -183,10 +183,10 @@
                 extraSpecialArgs = { inherit inputs VARS; };
 
                 users = {
-                  ${VARS.users.admin.user} = import ./common/users/main/home/home.nix;
-                  ${VARS.users.wife.user} = import ./common/users/extra/wife/home/home.nix;
-                  ${VARS.users.luke.user} = import ./common/users/extra/luke/home/home.nix;
-                  ${VARS.users.frankie.user} = import ./common/users/extra/frankie/home/home.nix;
+                  ${VARS.users.admin.user} = import ./hosts/laptop/home/admin/home/home.nix;
+                  ${VARS.users.wife.user} = import ./hosts/laptop/home/extra-users/wife/home/home.nix;
+                  ${VARS.users.luke.user} = import ./hosts/laptop/home/extra-users/luke/home/home.nix;
+                  ${VARS.users.frankie.user} = import ./hosts/laptop/home/extra-users/frankie/home/home.nix;
                 };
               };
             }
