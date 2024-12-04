@@ -28,6 +28,7 @@
 
   systemd.network = {
     enable = lib.mkDefault true; # Default: to false
+    wait-online.enable = lib.mkDefault true;
   };
 
   services.resolved = {
