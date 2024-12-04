@@ -12,8 +12,8 @@
 
         encryption = {
           mode = "repokey-blake2";
-          # passCommand = "cat ${config.sops.secrets.borgKeyFilePath.path}";
-          passCommand = "cat ${config.sops.secrets."general/borgKeyFilePath".path}";
+          # passCommand = "cat ${config.sops.secrets."general/borgKeyFilePath".path}";
+          passCommand = "cat /opt/sec/borg-file";
         };
       };
     };
