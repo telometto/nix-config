@@ -105,7 +105,7 @@
       flake = "github:telometto/nix-config";
       operation = "boot";
       flags = [ ];
-      dates = "daily";
+      dates = "weekly";
 
       rebootWindow = {
         lower = "04:00";
