@@ -118,12 +118,6 @@
         "sops-hm-blizzard"
         "zeno-blizzard"
       ];
-
-      # extraFlags = [
-      #   "--noask"
-      #   "--nogui"
-      #   "--quiet"
-      # ];
     };
 
     micro = {
