@@ -1,4 +1,4 @@
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
   imports = [
@@ -11,7 +11,7 @@
   programs.home-manager.enable = true;
 
   home = {
-    username = myVars.users.serverAdmin.user; # Change this back upon reformatting
+    username = VARS.users.serverAdmin.user; # Change this back upon reformatting
     stateVersion = "24.05";
 
     packages = with pkgs; [

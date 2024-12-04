@@ -7,7 +7,7 @@
  * - `environment.systemPackages = with pkgs; [ openrazer-daemon ];` adds the OpenRazer daemon to the system packages.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
   hardware = {

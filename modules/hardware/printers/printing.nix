@@ -3,7 +3,7 @@
  * It enables the printing service by default.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
   services.printing = {

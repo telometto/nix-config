@@ -5,7 +5,7 @@
  * for Steam devices are loaded and available on the system.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
   hardware.steam-hardware.enable = true;

@@ -1,5 +1,5 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
   #hardware.steam-hardware.enable = true;

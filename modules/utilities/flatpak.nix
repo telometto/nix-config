@@ -5,7 +5,7 @@
  * option to install Flatpak system-wide by uncommenting the relevant line.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
   xdg.portal = {

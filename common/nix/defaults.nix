@@ -10,7 +10,7 @@
  * - `nix.gc.options`: Deletes generations older than 7 days during garbage collection.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
   nix = {

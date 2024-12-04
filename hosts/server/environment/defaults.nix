@@ -1,9 +1,9 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 {
   environment = {
     variables = {
-      KUBECONFIG = "/home/${myVars.users.serverAdmin.user}/.kube/config";
+      KUBECONFIG = "/home/${VARS.users.serverAdmin.user}/.kube/config";
     };
   };
 }

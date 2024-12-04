@@ -1,4 +1,4 @@
-{ config, lib, pkgs, myVars, name, nodes, ... }:
+{ config, lib, pkgs, VARS, name, nodes, ... }:
 {
   imports = [ ./configuration.nix ];
 

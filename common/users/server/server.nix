@@ -1,12 +1,12 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
-  users.users.${myVars.users.serverAdmin.user} = {
-    isNormalUser = myVars.users.serverAdmin.isNormalUser;
-    description = myVars.users.serverAdmin.description;
-    extraGroups = myVars.users.serverAdmin.extraGroups;
-    hashedPassword = myVars.users.serverAdmin.hashedPassword;
+  users.users.${VARS.users.serverAdmin.user} = {
+    isNormalUser = VARS.users.serverAdmin.isNormalUser;
+    description = VARS.users.serverAdmin.description;
+    extraGroups = VARS.users.serverAdmin.extraGroups;
+    hashedPassword = VARS.users.serverAdmin.hashedPassword;
     shell = pkgs.zsh;
 
     packages = with pkgs; [
@@ -14,8 +14,8 @@
     ];
 
     openssh.authorizedKeys.keys = [
-      myVars.users.serverAdmin.sshPubKey
-      myVars.users.serverAdmin.gpgSshPubKey
+      VARS.users.serverAdmin.sshPubKey
+      VARS.users.serverAdmin.gpgSshPubKey
     ];
   };
 }

@@ -9,9 +9,9 @@
  * - System Packages: Installs necessary packages for NFS and Btrfs support.
 */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 let
-  DRIVE_BASE_PATH = "/run/media/${myVars.users.admin.user}";
+  DRIVE_BASE_PATH = "/run/media/${VARS.users.admin.user}";
 in
 {
   # Bootloader

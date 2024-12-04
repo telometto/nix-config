@@ -1,4 +1,4 @@
-{ config, lib, pkgs, inputs, myVars, ... }:
+{ config, lib, pkgs, inputs, VARS, ... }:
 
 {
   programs.hyprland = {

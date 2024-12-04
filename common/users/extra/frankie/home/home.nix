@@ -1,4 +1,4 @@
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 let
   DEFAULT_LANG = "it_IT.UTF-8";
 in
@@ -18,7 +18,7 @@ in
   programs.home-manager.enable = true; # Enable home-manager
 
   home = {
-    username = myVars.users.frankie.user;
+    username = VARS.users.frankie.user;
     stateVersion = "24.05";
 
     # Localization

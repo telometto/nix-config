@@ -1,10 +1,10 @@
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
-  services.borgbackup = lib.mkIf (config.networking.hostName == myVars.systems.server.hostname) {
+  services.borgbackup = lib.mkIf (config.networking.hostName == VARS.systems.server.hostname) {
     jobs = {
       homeserver = {
-        paths = "/home/${myVars.users.serverAdmin.user}/borgtest";
+        paths = "/home/${VARS.users.serverAdmin.user}/borgtest";
         # environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i ${config.sops.secrets.borgRshFilePath.path}";
         environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i ${config.sops.secrets."general.borgRshFilePath".path}";
         repo = "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo";

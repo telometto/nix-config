@@ -1,12 +1,12 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
-  users.users.${myVars.users.admin.user} = {
-    description = myVars.users.admin.description;
-    isNormalUser = myVars.users.admin.isNormalUser;
-    extraGroups = myVars.users.admin.extraGroups ++ lib.optionals (config.networking.hostName == myVars.systems.desktop.hostname) [ "openrazer" ];
-    hashedPassword = myVars.users.admin.hashedPassword;
+  users.users.${VARS.users.admin.user} = {
+    description = VARS.users.admin.description;
+    isNormalUser = VARS.users.admin.isNormalUser;
+    extraGroups = VARS.users.admin.extraGroups ++ lib.optionals (config.networking.hostName == VARS.systems.desktop.hostname) [ "openrazer" ];
+    hashedPassword = VARS.users.admin.hashedPassword;
     shell = pkgs.zsh;
 
     packages = with pkgs; [
@@ -14,8 +14,8 @@
     ];
 
     openssh.authorizedKeys.keys = [
-      myVars.users.admin.sshPubKey
-      myVars.users.admin.gpgSshPubKey
+      VARS.users.admin.sshPubKey
+      VARS.users.admin.gpgSshPubKey
     ];
   };
 }

@@ -1,4 +1,4 @@
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 let
   DEFAULT_LANG = "it_IT.UTF-8";
 in
@@ -18,7 +18,7 @@ in
   programs.home-manager.enable = true; # Enable home-manager
 
   home = {
-    username = myVars.users.luke.user;
+    username = VARS.users.luke.user;
     stateVersion = "24.05";
 
     # Localization

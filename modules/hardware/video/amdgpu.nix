@@ -19,7 +19,7 @@
  *   - enable32Bit: Enables 32-bit graphics support.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 let
   stableRelease = false; # Set this to true to enable the stable release

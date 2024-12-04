@@ -22,7 +22,7 @@
   - Includes libnfs and nfs-utils for NFS support.
 */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
   # Bootloader
@@ -48,7 +48,7 @@
       };
     };
 
-    plymouth = lib.mkIf (config.networking.hostName != myVars.systems.server.hostname) {
+    plymouth = lib.mkIf (config.networking.hostName != VARS.systems.server.hostname) {
       enable = true;
 
       theme = "spinner"; # Change to "rings" and uncomment the themePackages block to use the "rings" theme
@@ -61,9 +61,9 @@
     };
 
     # Enable "Silent Boot"
-    consoleLogLevel = lib.mkIf (config.networking.hostName != myVars.systems.server.hostname) 0;
-    initrd.verbose = lib.mkIf (config.networking.hostName != myVars.systems.server.hostname) false;
-    kernelParams = lib.mkIf (config.networking.hostName != myVars.systems.server.hostname) [
+    consoleLogLevel = lib.mkIf (config.networking.hostName != VARS.systems.server.hostname) 0;
+    initrd.verbose = lib.mkIf (config.networking.hostName != VARS.systems.server.hostname) false;
+    kernelParams = lib.mkIf (config.networking.hostName != VARS.systems.server.hostname) [
       "quiet"
       "splash"
       "boot.shell_on_fail"
@@ -76,7 +76,7 @@
     # Hide the OS choice for bootloaders.
     # It's still possible to open the bootloader list by pressing any key
     # It will just not appear on screen unless a key is pressed
-    loader.timeout = lib.mkIf (config.networking.hostName != myVars.systems.server.hostname) 0;
+    loader.timeout = lib.mkIf (config.networking.hostName != VARS.systems.server.hostname) 0;
   };
 
   services = {

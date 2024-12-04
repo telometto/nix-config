@@ -1,4 +1,4 @@
-{ config, lib, pkgs, inputs, myVars, ... }:
+{ config, lib, pkgs, inputs, VARS, ... }:
 # let
 #   PATH = config.sops.defaultSymlinkPath;
 # in

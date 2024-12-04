@@ -1,4 +1,4 @@
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 let
   LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
 in

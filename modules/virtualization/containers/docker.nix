@@ -12,25 +12,25 @@
  * - `environment.systemPackages`: Installs Docker-related packages.
  */
 
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 let
   isPodmanEnabled = !config.virtualisation.podman.enable;
 
-  DRIVE_BASE_PATH = "/run/media/${myVars.users.admin.user}";
+  DRIVE_BASE_PATH = "/run/media/${VARS.users.admin.user}";
 
   # TODO: Change desktop root fs to btrfs
   STORAGEDRIVER =
-    if config.networking.hostName == myVars.systems.desktop.hostname then
+    if config.networking.hostName == VARS.systems.desktop.hostname then
       "overlay2" # See TODO; when this has been implemented, change this to "btrfs"
-    else if config.networking.hostName == myVars.systems.server.hostname then
+    else if config.networking.hostName == VARS.systems.server.hostname then
       "zfs"
     else
       "overlay2"; # Fallback driver
 
   ROOTPATH =
-    if config.networking.hostName == myVars.systems.desktop.hostname then
+    if config.networking.hostName == VARS.systems.desktop.hostname then
       "${DRIVE_BASE_PATH}/personal"
-    else if config.networking.hostName == myVars.systems.server.hostname then
+    else if config.networking.hostName == VARS.systems.server.hostname then
       "/tank/containers"
     else
       "${config.home.homeDirectory}/.containers"; # Fallback path

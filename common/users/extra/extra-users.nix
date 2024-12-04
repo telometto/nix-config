@@ -1,13 +1,13 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, myVars, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
   users.extraUsers = {
-    ${myVars.users.wife.user} = {
-      isNormalUser = myVars.users.wife.isNormalUser;
-      description = myVars.users.wife.description;
-      extraGroups = myVars.users.wife.extraGroups;
-      hashedPassword = myVars.users.wife.hashedPassword;
+    ${VARS.users.wife.user} = {
+      isNormalUser = VARS.users.wife.isNormalUser;
+      description = VARS.users.wife.description;
+      extraGroups = VARS.users.wife.extraGroups;
+      hashedPassword = VARS.users.wife.hashedPassword;
       shell = pkgs.zsh;
 
       packages = with pkgs; [
@@ -15,16 +15,16 @@
       ];
 
       openssh.authorizedKeys.keys = [
-        myVars.users.admin.sshPubKey
-        myVars.users.admin.gpgSshPubKey
+        VARS.users.admin.sshPubKey
+        VARS.users.admin.gpgSshPubKey
       ];
     };
 
-    ${myVars.users.luke.user} = {
-      isNormalUser = myVars.users.luke.isNormalUser;
-      description = myVars.users.luke.description;
-      extraGroups = myVars.users.luke.extraGroups;
-      hashedPassword = myVars.users.luke.hashedPassword;
+    ${VARS.users.luke.user} = {
+      isNormalUser = VARS.users.luke.isNormalUser;
+      description = VARS.users.luke.description;
+      extraGroups = VARS.users.luke.extraGroups;
+      hashedPassword = VARS.users.luke.hashedPassword;
       shell = pkgs.zsh;
 
       packages = with pkgs; [
@@ -32,16 +32,16 @@
       ];
 
       openssh.authorizedKeys.keys = [
-        myVars.users.admin.sshPubKey
-        myVars.users.admin.gpgSshPubKey
+        VARS.users.admin.sshPubKey
+        VARS.users.admin.gpgSshPubKey
       ];
     };
 
-    ${myVars.users.frankie.user} = {
-      isNormalUser = myVars.users.frankie.isNormalUser;
-      description = myVars.users.frankie.description;
-      extraGroups = myVars.users.frankie.extraGroups;
-      hashedPassword = myVars.users.frankie.hashedPassword;
+    ${VARS.users.frankie.user} = {
+      isNormalUser = VARS.users.frankie.isNormalUser;
+      description = VARS.users.frankie.description;
+      extraGroups = VARS.users.frankie.extraGroups;
+      hashedPassword = VARS.users.frankie.hashedPassword;
       shell = pkgs.zsh;
 
       packages = with pkgs; [
@@ -49,8 +49,8 @@
       ];
 
       openssh.authorizedKeys.keys = [
-        myVars.users.admin.sshPubKey
-        myVars.users.admin.gpgSshPubKey
+        VARS.users.admin.sshPubKey
+        VARS.users.admin.gpgSshPubKey
       ];
     };
   };

@@ -90,7 +90,7 @@
     , ...
     }:
     let
-      myVars = import (inputs.nix-secrets.vars.varsFile);
+      VARS = import (inputs.nix-secrets.vars.varsFile);
 
       hostConfigs = {
         snowfall = [ ./hosts/desktop/configuration.nix ];
@@ -108,7 +108,7 @@
             overlays = [ ];
           };
 
-          specialArgs = { inherit inputs myVars; };
+          specialArgs = { inherit inputs VARS; };
         };
 
         # snowfall = ./hosts/desktop;
@@ -134,14 +134,14 @@
                 useUserPackages = true;
                 backupFileExtension = "hm-backup";
 
-                extraSpecialArgs = { inherit inputs myVars; };
+                extraSpecialArgs = { inherit inputs VARS; };
 
-                users.${myVars.users.admin.user} = import ./common/users/main/home/home.nix;
+                users.${VARS.users.admin.user} = import ./common/users/main/home/home.nix;
               };
             }
           ] ++ hostConfigs.snowfall;
 
-          specialArgs = { inherit inputs myVars; };
+          specialArgs = { inherit inputs VARS; };
         };
 
         blizzard = nixpkgs.lib.nixosSystem {
@@ -158,14 +158,14 @@
                 useUserPackages = true;
                 backupFileExtension = "hm-backup";
 
-                extraSpecialArgs = { inherit myVars; };
+                extraSpecialArgs = { inherit VARS; };
 
-                users.${myVars.users.serverAdmin.user} = import ./common/users/server/home/home.nix;
+                users.${VARS.users.serverAdmin.user} = import ./common/users/server/home/home.nix;
               };
             }
           ] ++ hostConfigs.blizzard;
 
-          specialArgs = { inherit inputs myVars; };
+          specialArgs = { inherit inputs VARS; };
         };
 
         avalanche = nixpkgs.lib.nixosSystem {
@@ -180,20 +180,20 @@
                 useUserPackages = true;
                 backupFileExtension = "hm-backup";
 
-                extraSpecialArgs = { inherit inputs myVars; };
+                extraSpecialArgs = { inherit inputs VARS; };
 
                 users = {
-                  ${myVars.users.admin.user} = import ./common/users/main/home/home.nix;
-                  ${myVars.users.wife.user} = import ./common/users/extra/wife/home/home.nix;
-                  ${myVars.users.luke.user} = import ./common/users/extra/luke/home/home.nix;
-                  ${myVars.users.frankie.user} = import ./common/users/extra/frankie/home/home.nix;
+                  ${VARS.users.admin.user} = import ./common/users/main/home/home.nix;
+                  ${VARS.users.wife.user} = import ./common/users/extra/wife/home/home.nix;
+                  ${VARS.users.luke.user} = import ./common/users/extra/luke/home/home.nix;
+                  ${VARS.users.frankie.user} = import ./common/users/extra/frankie/home/home.nix;
                 };
               };
             }
           ] ++ hostConfigs.avalanche;
 
           specialArgs = {
-            inherit inputs myVars;
+            inherit inputs VARS;
           };
         };
       };
