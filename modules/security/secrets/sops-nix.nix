@@ -88,12 +88,16 @@
       # "git/gitlab-signingkey" = { };
     };
 
+    # templates."access-tokens".content = ''
+    #   access-tokens =
+    #     github.com=${config.sops.placeholder."tokens/github-rl"}
+    #     github.com=${config.sops.placeholder."tokens/github-ns"}
+    #     gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}
+    #     gitlab.com=${config.sops.placeholder."tokens/gitlab-ns"}
+    # '';
+
     templates."access-tokens".content = ''
-      access-tokens =
-        github.com=${config.sops.placeholder."tokens/github-rl"}
-        github.com=${config.sops.placeholder."tokens/github-ns"}
-        gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}
-        gitlab.com=${config.sops.placeholder."tokens/gitlab-ns"}
+      access-tokens = "github.com=${config.sops.placeholder."tokens/github-ns"}"
     '';
   };
 
