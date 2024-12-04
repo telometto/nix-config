@@ -100,7 +100,7 @@
 
   system = {
     autoUpgrade = {
-      enable = false;
+      enable = true;
 
       flake = "github:telometto/nix-config";
       operation = "boot";
