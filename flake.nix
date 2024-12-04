@@ -158,7 +158,7 @@
                 useUserPackages = true;
                 backupFileExtension = "hm-backup";
 
-                extraSpecialArgs = { inherit VARS; };
+                extraSpecialArgs = { inherit inputss VARS; };
 
                 users.${VARS.users.serverAdmin.user} = import ./common/users/server/home/home.nix;
               };
