@@ -1,5 +1,5 @@
 {
-  description = "A simple NixOS flake";
+  description = "Full-deployment NixOS flake";
 
   inputs = {
     # Nixpkgs repos
@@ -84,7 +84,7 @@
     , nix-secrets
     , microvm
       # , crowdsec
-      # , vpn-confinement
+    , vpn-confinement
     , hyprland
       # , nixarr
     , ...
