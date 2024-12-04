@@ -76,5 +76,13 @@
       "git/gitlab-email" = { path = "${config.sops.defaultSymlinkPath}/git/gitlab-email"; };
       # "git/gitlab-signingkey" = { path = "${config.sops.defaultSymlinkPath}/git/gitlab-signingkey"; };
     };
+
+    # templates."access-tokens".content = ''
+    #   access-tokens =
+    #     github.com=${config.sops.placeholder."tokens/github-rl"}
+    #     github.com=${config.sops.placeholder."tokens/github-ns"}
+    #     gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}
+    #     gitlab.com=${config.sops.placeholder."tokens/gitlab-ns"}
+    # '';
   };
 }
