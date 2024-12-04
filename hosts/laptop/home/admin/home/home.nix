@@ -65,7 +65,6 @@ in
       #blesh
       gparted # Partition manager
       meld # Diff tool
-      polychromatic # GUI for OpenRazer
       variety # Wallpaper changer
       zsh-powerlevel10k
 
