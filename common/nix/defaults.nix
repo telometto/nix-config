@@ -15,12 +15,7 @@
 {
   nix = {
     settings = {
-      access-tokens = [
-        "github.com=${config.sops.secrets."tokens/github-rl".path}" # GitHub rate limit
-        "github.com=${config.sops.secrets."tokens/github-ns".path}" # GitHub nix-secrets
-        "gitlab.com=${config.sops.secrets."tokens/gitlab-fa".path}" # Full-access token
-        "gitlab.com=${config.sops.secrets."tokens/gitlab-ns".path}" # Nix-secrets token
-      ];
+      # access-tokens = [ ]; # Access tokens for Nix; see extraOptions
       trusted-users = [ "root" "@wheel" ]; # Trusted users; mainly for colmena
       experimental-features = [ "nix-command" "flakes" ]; # Enable Nix command and flakes
       auto-optimise-store = true; # Automatically optimise the Nix store
@@ -32,5 +27,10 @@
       dates = lib.mkDefault "weekly"; # Run garbage collection weekly
       options = lib.mkDefault "--delete-older-than 7d"; # Delete generations older than 7 days
     };
+
+    # nix.settings.access-tokens cannot read secrets from sops-nix, thus the following workaround
+    extraOptions = ''
+      !include ${config.sops.templates."access-tokens".path}
+    '';
   };
 }
