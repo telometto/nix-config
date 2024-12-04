@@ -13,7 +13,8 @@
     age = {
       sshKeyPaths = [
         "${config.home.homeDirectory}/.ssh/id_ed25519"
-        "${config.home.homeDirectory}/.ssh/sops-home-blizzard"
+        "${config.home.homeDirectory}/.ssh/sops-hm-blizzard"
+        "${config.home.homeDirectory}/.ssh/zeno-avalanche"
       ];
 
       keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
