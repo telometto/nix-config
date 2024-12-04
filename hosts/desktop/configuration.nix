@@ -79,6 +79,8 @@
     ../../modules/virtualization/vm/vm.nix
   ];
 
+  systemd.network.wait-online.enable = false;
+
   # Allow unfree packages
   nixpkgs = {
     config = {
