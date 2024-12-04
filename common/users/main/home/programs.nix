@@ -188,13 +188,14 @@ in
         "gitlabkey"
         # "ssh_host_ed25519_key"
         "testkey"
+        "zeno-avalanche"
       ];
 
-      # extraFlags = [
-      #   # "--eval"
-      #   "--noask"
-      #   "--quiet"
-      # ];
+      extraFlags = [
+        # "--eval"
+        "--noask"
+        "--quiet"
+      ];
     };
 
     mangohud = {
