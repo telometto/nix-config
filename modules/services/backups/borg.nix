@@ -5,7 +5,7 @@
     jobs = {
       homeserver = {
         paths = "/home/${VARS.users.serverAdmin.user}/borgtest";
-        environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i ~/.ssh/borg-blizzard";
+        environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.serverAdmin.user}/.ssh/borg-blizzard";
         repo = "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo";
         compression = "zstd,8";
         startAt = "daily";
