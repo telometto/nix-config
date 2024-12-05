@@ -25,9 +25,9 @@
             };
 
             # config.toml does not get declaratively edited; needs to be done manually
-            containerd = {
-              snapshotter = "zfs";
-            };
+            # containerd = {
+            #   snapshotter = "zfs";
+            # };
           };
         };
     };
