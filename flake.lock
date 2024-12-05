@@ -252,11 +252,11 @@
         "systems": "systems_5"
       },
       "locked": {
-        "lastModified": 1726560853,
-        "narHash": "sha256-X6rJYSESBVr3hBoH0WbKE5KvhPU5bloyZ2L4K60/fPQ=",
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "c1dfcf08411b08f6b8615f7d8971a2bfa81d5e8a",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
         "type": "github"
       },
       "original": {
@@ -440,11 +440,11 @@
         "xdph": "xdph"
       },
       "locked": {
-        "lastModified": 1733369810,
-        "narHash": "sha256-veg37osP0Nmby/Bt7mdqD6k+Co3wO4jwnth0B2Z7vHU=",
+        "lastModified": 1733427350,
+        "narHash": "sha256-sasR3Jo4Rdo/3MJWCFzAgmhQ8s8VZ0c9+yxiW7GX8QY=",
         "owner": "hyprwm",
         "repo": "Hyprland",
-        "rev": "ceef4fb3a5efe1617790f56e2701846a21c2533d",
+        "rev": "a7a6eedc2139564abc1fe09feee1ff32b53e1081",
         "type": "github"
       },
       "original": {
@@ -593,11 +593,11 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1733284567,
-        "narHash": "sha256-zxBh56jKE6AXhiUoktY6cOHPUTyqXWbI/Pyh5sSC5B4=",
+        "lastModified": 1733426532,
+        "narHash": "sha256-k1g5MbTrURnYeb2XPwz3uLLKZJon7khTig2KvGv5pgs=",
         "owner": "astro",
         "repo": "microvm.nix",
-        "rev": "0ab757d2d3e3214b0034b00f9cc3dcdba0b8c563",
+        "rev": "5f0ab7953380a565c4e02083669bc529036970c7",
         "type": "github"
       },
       "original": {
@@ -612,11 +612,12 @@
         "narHash": "sha256-WcqoYLAks2grWsnCpTxnA3HUKfqI4Z3owMVExiuPhD4=",
         "ref": "refs/heads/main",
         "rev": "74136d9d7ca59bf2767c06ee77a6bebf931645e2",
-        "revCount": 19,
+        "shallow": true,
         "type": "git",
         "url": "ssh://git@github.com/telometto/nix-secrets.git"
       },
       "original": {
+        "shallow": true,
         "type": "git",
         "url": "ssh://git@github.com/telometto/nix-secrets.git"
       }
@@ -852,11 +853,11 @@
     "spectrum": {
       "flake": false,
       "locked": {
-        "lastModified": 1729945407,
-        "narHash": "sha256-iGNMamNOAnVTETnIVqDWd6fl74J8fLEi1ejdZiNjEtY=",
+        "lastModified": 1733308308,
+        "narHash": "sha256-+RcbMAjSxV1wW5UpS9abIG1lFZC8bITPiFIKNnE7RLs=",
         "ref": "refs/heads/main",
-        "rev": "f1d94ee7029af18637dbd5fdf4749621533693fa",
-        "revCount": 764,
+        "rev": "80c9e9830d460c944c8f730065f18bb733bc7ee2",
+        "revCount": 792,
         "type": "git",
         "url": "https://spectrum-os.org/git/spectrum"
       },
