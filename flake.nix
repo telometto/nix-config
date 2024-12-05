@@ -160,7 +160,7 @@
 
                 extraSpecialArgs = { inherit inputs VARS; };
 
-                users.${VARS.users.serverAdmin.user} = import ./hosts/server/home/admin/home/home.nix;
+                users.${VARS.users.admin.user} = import ./hosts/server/home/admin/home/home.nix;
               };
             }
           ] ++ hostConfigs.blizzard;

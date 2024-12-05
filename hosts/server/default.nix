@@ -5,7 +5,7 @@
   deployment = {
     targetHost = "192.168.2.100";
     targetPort = 22;
-    targetUser = myvars.users.serverAdmin.user;
+    targetUser = myvars.users.admin.user;
     buildOnTarget = true;
 
     # sshOptions = [ ];
