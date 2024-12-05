@@ -5,7 +5,7 @@
   virtualisation = {
     # k3s-related; more info at https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/networking/cluster/k3s/docs/examples/STORAGE.md
     containerd = {
-      enable = false;
+      enable = true;
 
       settings =
         let
@@ -34,10 +34,10 @@
   };
 
   services = {
-    # rpcbind.enable = false; # Required for NFS on k3s
+    rpcbind.enable = lib.mkDefault true; # Required for NFS on k3s
 
     k3s = {
-      enable = false;
+      enable = true;
 
       role = "server";
       gracefulNodeShutdown = { enable = true; };
