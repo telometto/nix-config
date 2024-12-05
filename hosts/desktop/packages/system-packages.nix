@@ -17,5 +17,6 @@
     plex-desktop # Plex media player for desktop
     distrobox # Distrobox containers
     distrobox-tui # Distrobox terminal UI
+    fuse3
   ];
 }
