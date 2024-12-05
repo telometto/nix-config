@@ -15,5 +15,7 @@
     microcode-amd # AMD CPU microcode updates
     protonvpn-gui # ProtonVPN GUI client
     plex-desktop # Plex media player for desktop
+    distrobox # Distrobox containers
+    distrobox-tui # Distrobox terminal UI
   ];
 }
