@@ -8,7 +8,7 @@
 
     zfs = {
       forceImportRoot = false;
-      extraPools = [ "tank" "flash_temp" ];
+      # extraPools = [ "tank" "flash_temp" ];
     };
   };
 
@@ -30,7 +30,7 @@
     };
 
     nfs.server = {
-      enable = true;
+      enable = false;
 
       lockdPort = 4001;
       mountdPort = 4002;
@@ -45,14 +45,13 @@
   };
 
   #  NFS sharing
-  fileSystems = {
-    "/flash_temp" = {
-      device = "/flash_temp/nfsshare";
-      # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
-      options = [ "bind" ];
-    };
-
-  };
+  # fileSystems = {
+  #   "/flash_temp" = {
+  #     device = "/flash_temp/nfsshare";
+  #     # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
+  #     options = [ "bind" ];
+  #   };
+  # };
 
   environment.systemPackages = with pkgs; [
     zfs
