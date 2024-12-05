@@ -70,6 +70,7 @@
     zoxide # Smarter cd command
     sbctl # Secure Boot key manager
     colmena # Remote management tool
+    lsof
 
     # Fonts and Themes
     google-fonts # Collection of Google Fonts
