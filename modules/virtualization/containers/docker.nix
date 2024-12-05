@@ -22,16 +22,16 @@ let
   STORAGEDRIVER =
     if config.networking.hostName == VARS.systems.desktop.hostname then
       "overlay2" # See TODO; when this has been implemented, change this to "btrfs"
-    else if config.networking.hostName == VARS.systems.server.hostname then
-      "zfs"
+    # else if config.networking.hostName == VARS.systems.server.hostname then
+    #   "zfs"
     else
       "overlay2"; # Fallback driver
 
   ROOTPATH =
     if config.networking.hostName == VARS.systems.desktop.hostname then
       "${DRIVE_BASE_PATH}/personal"
-    else if config.networking.hostName == VARS.systems.server.hostname then
-      "/tank/containers"
+    # else if config.networking.hostName == VARS.systems.server.hostname then
+    #   "/tank/containers"
     else
       "${config.home.homeDirectory}/.containers"; # Fallback path
 in
