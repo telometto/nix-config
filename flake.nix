@@ -83,119 +83,93 @@
     , sops-nix
     , nix-secrets
     , microvm
-      # , crowdsec
+    , crowdsec
     , vpn-confinement
     , hyprland
       # , nixarr
     , ...
     }:
     let
+      # Import variables from Nix-Secrets
       VARS = import (inputs.nix-secrets.vars.varsFile);
 
+      # Host-specific base configurations
       hostConfigs = {
         snowfall = [ ./hosts/desktop/configuration.nix ];
         blizzard = [ ./hosts/server/configuration.nix ];
         avalanche = [ ./hosts/laptop/configuration.nix ];
       };
+
+      # Common Home Manager configuration generator
+      mkHomeManagerConfig = { extraSharedModules ? [ ], extraUsers ? { } }:
+        {
+          home-manager = {
+            sharedModules = ([ inputs.sops-nix.homeManagerModules.sops ] ++ extraSharedModules);
+            useGlobalPkgs = true;
+            useUserPackages = true;
+            backupFileExtension = "hm-backup";
+            extraSpecialArgs = { inherit inputs VARS; };
+            users = extraUsers;
+          };
+        };
+
+      # Helper to build a nixosSystem configuration
+      mkNixosSystem = { systemName, modules, extraSharedModules ? [ ], extraUsers ? { } }:
+        nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            # Include Home Manager module
+            home-manager.nixosModules.home-manager
+            (mkHomeManagerConfig {
+              extraSharedModules = extraSharedModules;
+              extraUsers = extraUsers;
+            })
+          ] ++ modules;
+          specialArgs = { inherit inputs VARS; };
+        };
+
     in
     {
       colmena = {
         meta = {
-          # name = "homelab";
-          # description = "My colmena homelab";
           nixpkgs = import nixpkgs {
             system = "x86_64-linux";
             overlays = [ ];
           };
-
           specialArgs = { inherit inputs VARS; };
         };
 
-        # snowfall = ./hosts/desktop;
+        snowfall = ./hosts/desktop;
         blizzard = ./hosts/server;
-        # avalanche = ./hosts/laptop;
+        avalanche = ./hosts/laptop;
       };
 
       nixosConfigurations = {
-        snowfall = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-
-          modules = [
-            # Start Home Manager configuration
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                sharedModules = [
-                  inputs.sops-nix.homeManagerModules.sops
-                  inputs.hyprland.homeManagerModules.default
-                ];
-
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                backupFileExtension = "hm-backup";
-
-                extraSpecialArgs = { inherit inputs VARS; };
-
-                users.${VARS.users.admin.user} = import ./hosts/desktop/home/admin/home/home.nix;
-              };
-            }
-          ] ++ hostConfigs.snowfall;
-
-          specialArgs = { inherit inputs VARS; };
+        snowfall = mkNixosSystem {
+          systemName = "snowfall";
+          modules = hostConfigs.snowfall;
+          extraSharedModules = [ inputs.hyprland.homeManagerModules.default ];
+          extraUsers = {
+            ${VARS.users.admin.user} = import ./hosts/desktop/home/admin/home/home.nix;
+          };
         };
 
-        blizzard = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-
-          modules = [
-            # Start Home Manager configuration
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                sharedModules = [ inputs.sops-nix.homeManagerModules.sops ];
-
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                backupFileExtension = "hm-backup";
-
-                extraSpecialArgs = { inherit inputs VARS; };
-
-                users.${VARS.users.admin.user} = import ./hosts/server/home/admin/home/home.nix;
-              };
-            }
-          ] ++ hostConfigs.blizzard;
-
-          specialArgs = { inherit inputs VARS; };
+        blizzard = mkNixosSystem {
+          systemName = "blizzard";
+          modules = hostConfigs.blizzard;
+          extraUsers = {
+            ${VARS.users.admin.user} = import ./hosts/server/home/admin/home/home.nix;
+          };
         };
 
-        avalanche = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-
-          modules = [
-            # Start Home Manager configuration
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                sharedModules = [ inputs.sops-nix.homeManagerModules.sops ];
-
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                backupFileExtension = "hm-backup";
-
-                extraSpecialArgs = { inherit inputs VARS; };
-
-                users = {
-                  ${VARS.users.admin.user} = import ./hosts/laptop/home/admin/home/home.nix;
-                  ${VARS.users.wife.user} = import ./hosts/laptop/home/extra-users/wife/home/home.nix;
-                  ${VARS.users.luke.user} = import ./hosts/laptop/home/extra-users/luke/home/home.nix;
-                  ${VARS.users.frankie.user} = import ./hosts/laptop/home/extra-users/frankie/home/home.nix;
-                };
-              };
-            }
-          ] ++ hostConfigs.avalanche;
-
-          specialArgs = {
-            inherit inputs VARS;
+        avalanche = mkNixosSystem {
+          systemName = "avalanche";
+          modules = hostConfigs.avalanche;
+          extraUsers = {
+            ${VARS.users.admin.user} = import ./hosts/laptop/home/admin/home/home.nix;
+            ${VARS.users.wife.user} = import ./hosts/laptop/home/extra-users/wife/home/home.nix;
+            ${VARS.users.luke.user} = import ./hosts/laptop/home/extra-users/luke/home/home.nix;
+            ${VARS.users.frankie.user} = import ./hosts/laptop/home/extra-users/frankie/home/home.nix;
           };
         };
       };
