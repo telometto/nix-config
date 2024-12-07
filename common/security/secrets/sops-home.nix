@@ -4,8 +4,7 @@
 # in
 {
   sops = {
-    # defaultSopsFile = ./secrets/secrets.yaml;
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile; #"${inputs.nix-secrets.secrets.secretsFile}/nix-secrets/secrets/secrets.yaml";
+    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
     defaultSopsFormat = "yaml"; # Default format for sops files
     defaultSymlinkPath = "/run/user/1000/secrets";
     defaultSecretsMountPoint = "/run/user/1000/secrets.d";
