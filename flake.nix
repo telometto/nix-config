@@ -114,9 +114,9 @@
         };
 
       # Helper to build a nixosSystem configuration
-      mkNixosSystem = { systemName, modules, extraSharedModules ? [ ], extraUsers ? { } }:
+      mkNixosSystem = { systemName, systemType ? "x86_64-linux", modules, extraSharedModules ? [ ], extraUsers ? { } }:
         nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
+          system = systemType;
           modules = [
             # Include Home Manager module
             home-manager.nixosModules.home-manager
@@ -141,7 +141,7 @@
 
         snowfall = ./hosts/desktop;
         blizzard = ./hosts/server;
-        # avalanche = ./hosts/laptop;
+        avalanche = ./hosts/laptop;
       };
 
       nixosConfigurations = {
