@@ -1,4 +1,5 @@
 /**
+ * NOT IN USE due to the use of NetworkManager
  * This Nix expression configures systemd-networkd for a desktop system.
  * It sets up a network interface with DHCP and IPv6 privacy extensions enabled.
  *
