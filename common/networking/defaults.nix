@@ -56,6 +56,7 @@
 
   environment.systemPackages = with pkgs; [
     gnupg
+    openssh
     # xorg.xauth
   ];
 }
