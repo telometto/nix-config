@@ -9,7 +9,7 @@
     zfs = {
       forceImportRoot = false;
       forceImportAll = false;
-      # extraPools = [ "tank" "flash_temp" ]; # Commented out for testing
+      # extraPools = [ "tank" "flash_temp" ];
     };
   };
 
@@ -47,28 +47,28 @@
   };
 
   # NFS sharing
-  fileSystems = {
-    "/tank" = {
-      device = "tank";
-      mountPoint = "/tank";
-      fsType = "zfs";
-      neededForBoot = true;
-    };
+  # fileSystems = {
+  #   "/tank" = {
+  #     device = "tank";
+  #     mountPoint = "/tank";
+  #     fsType = "zfs";
+  #     neededForBoot = false;
+  #   };
 
-    "/flash_temp" = {
-      device = "flash_temp";
-      mountPoint = "/flash_temp";
-      fsType = "zfs";
-      neededForBoot = true;
-    };
+  #   "/flash_temp" = {
+  #     device = "flash_temp";
+  #     mountPoint = "/flash_temp";
+  #     fsType = "zfs";
+  #     neededForBoot = false;
+  #   };
 
-    # Commented out for testing
-    # "/flash_temp" = {
-    #   device = "/flash_temp/nfsshare";
-    #   # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
-    #   options = [ "bind" ];
-    # };
-  };
+  # Commented out for testing
+  # "/flash_temp" = {
+  #   device = "/flash_temp/nfsshare";
+  #   # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
+  #   options = [ "bind" ];
+  # };
+  # };
 
   environment.systemPackages = with pkgs; [
     zfs
