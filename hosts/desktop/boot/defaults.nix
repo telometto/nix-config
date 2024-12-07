@@ -47,7 +47,7 @@ in
 
   # Services
   services = {
-    rpcbind = { enable = lib.mkDefault true; };
+    rpcbind = { enable = lib.mkOptionDefault true; };
 
     btrfs = {
       autoScrub = {

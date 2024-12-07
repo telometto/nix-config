@@ -34,7 +34,7 @@
   };
 
   services = {
-    rpcbind.enable = lib.mkDefault true; # Required for NFS on k3s
+    rpcbind.enable = lib.mkOptionDefault true; # Required for NFS on k3s
 
     k3s = {
       enable = true;
