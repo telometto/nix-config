@@ -30,12 +30,12 @@
 
     # 0.5 Utilities
     #./utilities/filesystem/filebrowser.nix
-    ./utilities/filesystem/sanoid.nix
+    # ./utilities/filesystem/sanoid.nix
     ./utilities/filesystem/scrutiny.nix
     ./utilities/monitoring/cockpit.nix
 
     # 0.6 Virtualization
-    # ./virtualization/orchestration/k3s.nix
+    ./virtualization/orchestration/k3s.nix
 
     ### 1. Import common configurations
     ../../common/imports.nix
@@ -75,28 +75,27 @@
     # ../../modules/security/secrets/agenix.nix
     ../../modules/security/secrets/sops-nix.nix
     ../../modules/security/secureboot/lanzaboote.nix
-    /*
-      # 2.7 Services
-      ../../modules/services/backups/borg.nix
-      ../../modules/services/documents/paperless.nix
-      # ../../modules/services/finance/firefly.nix # Not yet created
-      ../../modules/services/internet/searx.nix
-      # ../../modules/services/media/immich.nix # Not in use; using k3s
-      # ../../modules/services/media/nixarr.nix # Not in use; using k3s
-      ../../modules/services/media/ombi.nix
-      ../../modules/services/media/tautulli.nix
-      ../../modules/services/media/plex.nix
-      # ../../modules/services/monitoring/prometheus.nix # On hold
 
-      # 2.8 Utilities
-      # ../../modules/utilities/flatpak.nix
+    # 2.7 Services
+    ../../modules/services/backups/borg.nix
+    ../../modules/services/documents/paperless.nix
+    # ../../modules/services/finance/firefly.nix # Not yet created
+    ../../modules/services/internet/searx.nix
+    # ../../modules/services/media/immich.nix # Not in use; using k3s
+    # ../../modules/services/media/nixarr.nix # Not in use; using k3s
+    ../../modules/services/media/ombi.nix
+    ../../modules/services/media/tautulli.nix
+    ../../modules/services/media/plex.nix
+    # ../../modules/services/monitoring/prometheus.nix # On hold
 
-      # 2.9 Virtualization
-      ../../modules/virtualization/containers/docker.nix
-      ../../modules/virtualization/containers/podman.nix
-      ../../modules/virtualization/vm/microvm.nix
-      ../../modules/virtualization/vm/vm.nix
-    */
+    # 2.8 Utilities
+    # ../../modules/utilities/flatpak.nix
+
+    # 2.9 Virtualization
+    ../../modules/virtualization/containers/docker.nix
+    ../../modules/virtualization/containers/podman.nix
+    ../../modules/virtualization/vm/microvm.nix
+    ../../modules/virtualization/vm/vm.nix
   ];
 
   system = {
