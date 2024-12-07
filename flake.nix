@@ -141,7 +141,7 @@
 
         snowfall = ./hosts/desktop;
         blizzard = ./hosts/server;
-        avalanche = ./hosts/laptop;
+        # avalanche = ./hosts/laptop;
       };
 
       nixosConfigurations = {
