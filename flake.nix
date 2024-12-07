@@ -38,7 +38,7 @@
 
     # Nix Secrets repo
     nix-secrets = {
-      url = "git+ssh://git@github.com/telometto/nix-secrets.git?shallow=1";
+      url = "git+ssh://git@github.com/telometto/nix-secrets.git";
       flake = true;
     };
 
