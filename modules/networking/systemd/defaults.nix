@@ -22,13 +22,13 @@
 
 {
   networking = {
-    useNetworkd = lib.mkOptionDefault true; # Default: false
-    useDHCP = lib.mkOptionDefault true; # Defaults to true; disabled for systemd-networkd
+    useNetworkd = lib.mkDefault true; # Default: false
+    useDHCP = lib.mkDefault true; # Defaults to true; disabled for systemd-networkd
   };
 
   systemd.network = {
-    enable = lib.mkOptionDefault true; # Default: to false
-    wait-online.enable = lib.mkOptionDefault true;
+    enable = lib.mkDefault true; # Default: to false
+    wait-online.enable = lib.mkDefault true;
   };
 
   services.resolved = {
