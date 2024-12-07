@@ -14,8 +14,6 @@
 
 {
   programs = {
-    #mtr = { enable = true; }; # traceroute and ping in a single tool
-
     gnupg = {
       agent = {
         enable = true;
@@ -30,6 +28,8 @@
     };
 
     zsh = { enable = true; };
+
+    #mtr = { enable = true; }; # traceroute and ping in a single tool
   };
 
   environment.systemPackages = with pkgs; [
