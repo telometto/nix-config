@@ -18,7 +18,7 @@
 
     # 0.2 Networking
     ./networking/defaults.nix
-    # ./networking/systemd/systemd-networking.nix
+    # ./networking/systemd/systemd-networking.nix # See comment in file
     ./networking/tailscale/tailscale.nix
 
     # 0.3 System ackages
@@ -78,8 +78,6 @@
     ../../modules/virtualization/vm/microvm.nix
     ../../modules/virtualization/vm/vm.nix
   ];
-
-  systemd.network.wait-online.enable = false;
 
   # Allow unfree packages
   nixpkgs = {
