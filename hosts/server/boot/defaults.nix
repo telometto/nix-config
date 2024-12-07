@@ -9,7 +9,7 @@
     zfs = {
       forceImportRoot = false;
       forceImportAll = false;
-      # extraPools = [ "tank" "flash_temp" ];
+      extraPools = [ "tank" "flash_temp" ];
     };
   };
 
