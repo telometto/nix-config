@@ -22,7 +22,7 @@
     # 0.3 Networking
     ./networking/defaults.nix
     ./networking/systemd/systemd-networking.nix
-    # ./networking/tailscale/tailscale.nix
+    ./networking/tailscale/tailscale.nix
     ./networking/vlan/vlans.nix
 
     # 0.4 System packages
@@ -62,7 +62,7 @@
     # 2.4 Networking
     ../../modules/networking/defaults.nix
     ../../modules/networking/systemd/defaults.nix
-    # ../../modules/networking/tailscale/defaults.nix
+    ../../modules/networking/tailscale/defaults.nix
     # ../../modules/networking/vpn/vpn-confinement.nix
 
     # 2.5 Programs
