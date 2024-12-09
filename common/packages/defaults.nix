@@ -71,12 +71,12 @@
     sbctl # Secure Boot key manager
     colmena # Remote management tool
     lsof
+  ];
 
-    # Fonts and Themes
+  fonts.packages = with pkgs; [
     google-fonts # Collection of Google Fonts
     ibm-plex # IBM Plex font family
     meslo-lgs-nf # Meslo Nerd Font patched for Powerlevel10k
-    # Nerd fonts
     nerd-fonts.ubuntu
     nerd-fonts.inconsolata
     nerd-fonts.mononoki
