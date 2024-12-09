@@ -4,9 +4,9 @@ let
 in
 {
   imports = [
-    ./gnome.nix # Enables GNOME
-    # ./hyprland.nix # Enables Hyprland
-    # ./kde.nix # Enables KDE
+    # ./gnome.nix # Enables GNOME
+    ./hyprland.nix # Enables Hyprland
+    ./kde.nix # Enables KDE
 
     # ../../../../../common/security/secrets/sops-home.nix
 
@@ -18,7 +18,7 @@ in
   programs.home-manager.enable = true; # Enable home-manager
 
   home = {
-    username = VARS.users.luke.user;
+    username = VARS.users.frankie.user;
     stateVersion = "24.05";
 
     # Localization
