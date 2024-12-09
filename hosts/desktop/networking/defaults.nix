@@ -19,8 +19,8 @@
       allowedUDPPortRanges = allowedTCPPortRanges;
     };
 
-    systemd.network.wait-online.enable = lib.mkForce false;
-
     nftables = { enable = true; }; # Use nftables instead of iptables
   };
+
+  systemd.network.wait-online.enable = lib.mkForce false;
 }
