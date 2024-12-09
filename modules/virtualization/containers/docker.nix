@@ -29,7 +29,7 @@ let
 
   ROOTPATH =
     if config.networking.hostName == VARS.systems.desktop.hostname then
-      "${DRIVE_BASE_PATH}/personal"
+      "${DRIVE_BASE_PATH}/personal/.containers"
     # else if config.networking.hostName == VARS.systems.server.hostname then
     #   "/tank/containers"
     else
