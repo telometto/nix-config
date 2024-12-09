@@ -8,8 +8,6 @@
     wireless = { enable = false; }; # Enables wireless support via wpa_supplicant.
     networkmanager = { enable = true; }; # Easiest to use and most distros use this by default.
 
-    systemd.network.wait-online.enable = false;
-
     # Firewall-related
     firewall = rec {
       enable = true;
@@ -20,6 +18,8 @@
 
       allowedUDPPortRanges = allowedTCPPortRanges;
     };
+
+    systemd.network.wait-online.enable = lib.mkForce false;
 
     nftables = { enable = true; }; # Use nftables instead of iptables
   };
