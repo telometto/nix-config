@@ -10,11 +10,29 @@
 { config, lib, pkgs, ... }:
 
 {
-  services.tailscale = {
-    enable = true;
-    openFirewall = true;
-    authKeyFile = config.sops.secrets."general/tsKeyFilePath".path;
+  services = {
+    tailscale = {
+      enable = true;
+      openFirewall = true;
+      authKeyFile = config.sops.secrets."general/tsKeyFilePath".path;
+    };
+
+    # Snippet below is to optimize the performance of subnet routers and exit nodes
+    networkd-dispatcher = {
+      enable = true;
+
+      rules."50-tailscale" = {
+        onState = [ "routable" ];
+        script = ''
+          ${lib.getExe ethtool} -K eth0 rx-udp-gro-forwarding on rx-gro-list off
+        '';
+      };
+    };
   };
 
-  environment.systemPackages = with pkgs; [ tailscale ];
+  environment.systemPackages = with pkgs; [
+    networkd-dispatcher
+    tailscale
+    ethtool
+  ];
 }
