@@ -93,6 +93,10 @@ in
 
       userName = "telometto";
       userEmail = config.sops.secrets."git/github-prim-email".path;
+      # signing = {
+      #   key = "0x5A5BF29378C3942B";
+      #   signByDefault = true;
+      # };
 
       includes = [
         {
@@ -103,9 +107,9 @@ in
             user.email = config.sops.secrets."git/github-email".path;
             user.signingKey = "0x5A5BF29378C3942B";
 
-            commit.gpgSign = true;
+            # commit.gpgSign = true;
 
-            core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
+            # core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
           };
         }
         {
@@ -116,12 +120,17 @@ in
             user.email = config.sops.secrets."git/gitlab-email".path;
             user.signingKey = "0xB7103B8A59566994";
 
-            commit.gpgSign = true;
+            # commit.gpgSign = true;
 
-            core.sshCommand = "ssh -i ~/.ssh/gitlabkey";
+            # core.sshCommand = "ssh -i ~/.ssh/gitlabkey";
           };
         }
       ];
+
+      extraConfig = {
+        commit.gpgSign = true;
+        # gpg.format = "ssh";
+      };
 
       diff-so-fancy = {
         enable = true;
