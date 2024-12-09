@@ -71,6 +71,9 @@
     sbctl # Secure Boot key manager
     colmena # Remote management tool
     lsof
+
+    ethtool
+    networkd-dispatcher
   ];
 
   fonts.packages = with pkgs; [
