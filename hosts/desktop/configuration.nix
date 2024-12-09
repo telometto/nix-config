@@ -29,6 +29,7 @@
 
     # 1.1 Users
     ./home/admin/defaults.nix
+    ./home/extra-users/defaults.nix
 
     ### 2. Import modules
     # 2.1 Desktop managers
