@@ -17,7 +17,11 @@
       openFirewall = true;
 
       authKeyFile = config.sops.secrets."general/tsKeyFilePath".path;
-      # authKeyParameters.preauthorized = true;
+      authKeyParameters = {
+        preauthorized = true;
+        ephemeral = false;
+      };
+
       extraUpFlags = [ "--reset" ];
     };
 
