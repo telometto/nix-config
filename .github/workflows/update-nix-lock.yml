@@ -11,6 +11,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@main # v4
+      - uses: webfactory/ssh-agent@main
+        with:
+          ssh-private-key: ${{ secrets.GH_ACTIONS }}
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main # v14
       # https://status.nixos.org shows the last update time
