@@ -15,8 +15,10 @@
       enable = true;
 
       openFirewall = true;
-      authKeyFile = "/opt/sec/ts-file";# config.sops.secrets."general/tsKeyFilePath".path;
+
+      authKeyFile = config.sops.secrets."general/tsKeyFilePath".path;
       authKeyParameters.preauthorized = true;
+      extraUpFlags = [ "--reset" ];
     };
 
     # Snippet below is to optimize the performance of subnet routers and exit nodes
