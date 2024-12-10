@@ -31,13 +31,13 @@ jobs:
             automated
             automerge
             dependencies
-          nix-options: "--access-tokens github.com=${{ secrets.GH_TOKEN_FOR_UPDATES }}"
-          token: ${{ secrets.GH_TOKEN_FOR_UPDATES }}
+          nix-options: "--access-tokens github.com=${{ secrets.TESTING }}"
+          token: ${{ secrets.TESTING }}
       - name: Create compare URLs
         uses: actions/github-script@main # v7.0.1
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
         with:
-          github-token: ${{ secrets.GH_TOKEN_FOR_UPDATES }}
+          github-token: ${{ secrets.TESTING }}
           script: |
             const comment = require('.github/scripts/comment')
             const compare = require('.github/scripts/compare')
