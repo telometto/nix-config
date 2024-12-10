@@ -13,8 +13,10 @@
   services = {
     tailscale = {
       enable = true;
+
       openFirewall = true;
-      authKeyFile = config.sops.secrets."general/tsKeyFilePath".path;
+      authKeyFile = "/opt/sec/ts-file";# config.sops.secrets."general/tsKeyFilePath".path;
+      authKeyParameters.preauthorized = true;
     };
 
     # Snippet below is to optimize the performance of subnet routers and exit nodes
