@@ -4,7 +4,6 @@
 {
   services.tailscale = {
     extraUpFlags = [
-      "--reset"
       "--ssh"
       "--advertise-routes=192.168.2.0/24"
     ];
