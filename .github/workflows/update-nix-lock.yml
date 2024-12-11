@@ -11,6 +11,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 */4 * * *" # Every 4 hours
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   lockfile:
@@ -62,3 +65,19 @@ jobs:
             }
 
             await comment({ github, context, header, body, issueNumber })
+
+  dependabot:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'telometto/nix-config'
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@main
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Enable auto-merge for Dependabot PRs
+        if: contains(steps.metadata.outputs.dependency-names, 'my-dependency') && steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GH_TOKEN: ${{secrets.TESTING}}
