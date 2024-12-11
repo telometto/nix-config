@@ -47,7 +47,8 @@ jobs:
         uses: actions/github-script@main
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
         with:
-          github-token: ${{ secrets.TESTING }}
+          # github-token: ${{ secrets.TESTING }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const comment = require('.github/scripts/comment')
             const compare = require('.github/scripts/compare')
