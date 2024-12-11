@@ -16,7 +16,7 @@
     ./i18n/defaults.nix
 
     # Networking
-    ./networking/defaults.nix
+    ./networking/ssh/defaults.nix
 
     # Nix
     ./nix/defaults.nix
