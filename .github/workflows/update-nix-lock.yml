@@ -11,6 +11,7 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 */4 * * *" # Every 4 hours
+
 permissions:
   contents: write
   pull-requests: write
@@ -68,12 +69,16 @@ jobs:
 
   dependabot:
     runs-on: ubuntu-latest
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    if: (github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || github.event.pull_request.user.login == 'telometto' || github.actor == 'telometto') && github.repository == 'owner/my_repo'
     steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@main
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
       - name: Enable auto-merge for Dependabot PRs
+        # if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
-          # GitHub provides this variable in the CI env. You don't
-          # need to add anything to the secrets vault.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
