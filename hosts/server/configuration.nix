@@ -88,10 +88,13 @@
     ../../modules/services/media/plex.nix
     # ../../modules/services/monitoring/prometheus.nix # On hold
 
-    # 2.8 Utilities
+    # 2.8 System
+    ../../modules/system/defaults.nix
+
+    # 2.9 Utilities
     # ../../modules/utilities/flatpak.nix
 
-    # 2.9 Virtualization
+    # 2.10 Virtualization
     ../../modules/virtualization/containers/docker.nix
     ../../modules/virtualization/containers/podman.nix
     ../../modules/virtualization/vm/microvm.nix
