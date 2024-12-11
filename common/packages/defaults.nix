@@ -70,7 +70,7 @@
     zoxide # Smarter cd command
     sbctl # Secure Boot key manager
     colmena # Remote management tool
-    lsof
+    lsof # List open files
   ];
 
   fonts.packages = with pkgs; [
