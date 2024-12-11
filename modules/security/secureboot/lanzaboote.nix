@@ -11,7 +11,7 @@
   };
 
   environment.systemPackages = with pkgs; [
-    pkgs.sbctl
-    pkgs.lanzaboote-tool # Required for Secure Boot
+    sbctl
+    lanzaboote-tool # Required for Secure Boot
   ];
 }
