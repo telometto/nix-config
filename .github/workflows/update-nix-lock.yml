@@ -68,7 +68,8 @@ jobs:
 
   dependabot:
     runs-on: ubuntu-latest
-    if: (github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'telometto') && github.repository == 'telometto/nix-config'
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    # if: (github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'telometto') && github.repository == 'telometto/nix-config'
     steps:
       - name: Dependabot metadata
         id: metadata
