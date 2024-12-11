@@ -47,6 +47,7 @@
         # "net.ipv6.conf.all.forwarding" = 1; # Tailscale optimization: enable ipv6 forwarding
       };
     };
+  };
 
   services = {
     fstrim = {
