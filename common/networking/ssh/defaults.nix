@@ -17,6 +17,8 @@
   services.openssh = {
     enable = true;
 
+    banner = "Testing stuff";
+
     settings = {
       X11Forwarding = false;
       PermitRootLogin = "no";
@@ -36,7 +38,6 @@
       forwardX11 = false;
       setXAuthLocation = false;
 
-      /*
       extraConfig = ''
         Host *
           ForwardAgent yes
@@ -50,7 +51,6 @@
           ControlPath ~/.ssh/master-%r@%n:%p
           ControlPersist no
       '';
-      */
     };
   };
 
