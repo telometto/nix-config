@@ -1,5 +1,7 @@
 { config, lib, pkgs, VARS, ... }:
-
+let
+  INTERFACE = "enp5s0";
+in
 {
   networking = {
     hostName = VARS.systems.desktop.hostname;
@@ -20,7 +22,33 @@
     };
 
     nftables = { enable = true; }; # Use nftables instead of iptables
+
+    useNetworkd = lib.mkForce false;
+    useDHCP = lib.mkForce true;
   };
 
-  systemd.network.wait-online.enable = lib.mkForce false;
+  ## Not in use, due to networkmanager being enabled and compatibility with certain VPNs.
+  ## Here for reference.
+  # systemd.network = {
+  #   enable = lib.mkForce true;
+
+  #   wait-online.enable = lib.mkForce false;
+
+  #   networks = {
+  #     "40-${INTERFACE}" = {
+  #       matchConfig.Name = INTERFACE;
+
+  #       networkConfig = {
+  #         DHCP = "yes";
+  #         IPv6PrivacyExtensions = "kernel";
+  #         #IPv6AcceptRA = true;
+  #         #LinkLocalAddressing = "no"; # VLAN
+  #       };
+
+  #       linkConfig = {
+  #         RequiredForOnline = "routable";
+  #       };
+  #     };
+  #   };
+  # };
 }
