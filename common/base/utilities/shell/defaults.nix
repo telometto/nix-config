@@ -2,7 +2,6 @@
 
 {
   programs = {
-    atuin = { enable = false; };
     zsh = { enable = true; };
   };
 
