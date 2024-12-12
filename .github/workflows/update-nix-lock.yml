@@ -11,14 +11,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 */4 * * *" # Every 4 hours
-  pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled, edited, closed]
-    branches:
-      - main
-
-permissions:
-  contents: write
-  pull-requests: write
 
 jobs:
   lockfile:
@@ -51,7 +43,6 @@ jobs:
         uses: actions/github-script@main
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
         with:
-          # github-token: ${{ secrets.TESTING }}
           github-token: ${{ secrets.TESTING }}
           script: |
             const comment = require('.github/scripts/comment')
@@ -71,19 +62,3 @@ jobs:
             }
 
             await comment({ github, context, header, body, issueNumber })
-
-  dependabot:
-    runs-on: ubuntu-latest
-    if: (github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || github.event.pull_request.user.login == 'telometto' || github.actor == 'telometto') && github.repository == 'telometto/nix-config'
-    steps:
-      # - name: Dependabot metadata
-      #   id: metadata
-      #   uses: dependabot/fetch-metadata@main
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Enable auto-merge for Dependabot PRs
-        # if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
-        run: gh pr merge --auto --merge "$PR_URL"
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
