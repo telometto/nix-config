@@ -137,7 +137,7 @@
                 extraSpecialArgs = { inherit inputs VARS; };
 
                 users.${VARS.users.admin.user} = import ./hosts/desktop/home/users/admin/home.nix;
-                users.${VARS.users.admin.user} = import ./hosts/desktop/home/users/extra/frankie/home.nix;
+                users.${VARS.users.frankie.user} = import ./hosts/desktop/home/users/extra/frankie/home.nix;
               };
             }
           ] ++ hostConfigs.snowfall;
