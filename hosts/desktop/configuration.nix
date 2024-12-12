@@ -29,12 +29,12 @@
 
     # 1.1 Users
     # 1.1.1 Admin
-    ./home/users/admin/home.nix
+    ../../common/users/admin/admin.nix
 
     # 1.1.2 Extra
-    ./home/users/extra/frankie/home.nix
-    ./home/users/extra/luke/home.nix
-    ./home/users/extra/wife/home.nix
+    # ../../common/users/extra/frankie/home.nix
+    # ../../common/users/extra/luke/home.nix
+    # ../../common/users/extra/wife/home.nix
 
     ### 2. Import modules
     # 2.1 Desktop managers
@@ -45,7 +45,7 @@
 
     # 2.2 Boot/filesystem
     # ../../modules/boot/base/disko/disko.nix # On hold
-    ../../modules/boot/base/plymouth/plymouth.nix
+    ../../modules/base/boot/plymouth/plymouth.nix
 
     # 2.3 Hardware
     ../../modules/base/hardware/audio/sound.nix
