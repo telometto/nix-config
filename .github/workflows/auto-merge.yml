@@ -2,9 +2,10 @@ name: Auto-merge Dependabot PRs
 on:
   workflow_dispatch:
   schedule:
-    - cron: "5 */4 * * *" # Every 4 hours
+    - cron: "5 */4 * * *" # Every 4 hours (at 5 minutes past the hour)
   pull_request:
-    types: [ assigned, unassigned, labeled, unlabeled, opened, edited, closed, reopened, synchronize, converted_to_draft, locked, unlocked, ready_for_review, review_requested, review_request_removed, auto_merge_enabled, auto_merge_disabled ]
+    types: [ opened, synchronize ]
+    # types: [ assigned, unassigned, labeled, unlabeled, opened, edited, closed, reopened, synchronize, converted_to_draft, locked, unlocked, ready_for_review, review_requested, review_request_removed, auto_merge_enabled, auto_merge_disabled ]
 
 permissions:
   contents: write
