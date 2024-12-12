@@ -1,11 +1,14 @@
-# This GitHub Actions workflow automates the update of Nix lock file in the repository.
-# It utilizes an SSH agent with deploy keys to access and update from private repositories.
-# The workflow step "Create compare URLs" requires two scripts to exist within the specified folders to function correctly.
-#
-# **Usage:**
-# - Ensure that the necessary deploy keys are configured for SSH access to private repositories.
-# - Place the required scripts for generating compare URLs in the appropriate folders.
-# - The workflow runs on a scheduled basis and commits any updates to the Nix lock files.
+# GitHub Actions workflow to automate updating the Nix flake.lock file
+# Triggered manually or every 4 hours via cron schedule
+# Steps:
+# 1. **SSH Agent Setup**: Uses `webfactory/ssh-agent` to set up SSH access with deploy keys (ensure the deploy key is added to the repository settings)
+# 2. **Checkout Repository**: Checks out the repository using `actions/checkout`
+# 3. **Install Nix**: Installs Nix with `DeterminateSystems/nix-installer-action`
+# 4. **Update flake.lock**: Updates the `flake.lock` file using `DeterminateSystems/update-flake-lock`, creating or updating a pull request with specified commit message, PR body, title, and labels
+# 5. **Create Compare URLs**: If a pull request is created or updated, runs a script using `actions/github-script` to add a comment with compare URLs
+# Notes:
+# - Secrets (`secrets.GH_ACTIONS` and `secrets.TESTING`) are used for authentication
+# - `nix-options` includes the GitHub token for accessing private repositories
 name: Update flake
 on:
   workflow_dispatch:
@@ -14,17 +17,17 @@ on:
 
 jobs:
   lockfile:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # The operating system to run the job on
     steps:
-      - uses: webfactory/ssh-agent@master
+      - uses: webfactory/ssh-agent@master # The SSH agent for the deploy keys
         with:
           ssh-private-key: ${{ secrets.GH_ACTIONS }} # The private key for the SSH agent
       - name: Checkout repository
-        uses: actions/checkout@main
+        uses: actions/checkout@main # The action to checkout the repository
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@main # The action to install Nix
       - name: Update flake.lock
-        uses: DeterminateSystems/update-flake-lock@main
+        uses: DeterminateSystems/update-flake-lock@main # The action to update the flake.lock file
         id: update-flake-lock
         with:
           commit-msg: "🧹 chore(flake.lock): update"
@@ -40,7 +43,7 @@ jobs:
           nix-options: "--access-tokens github.com=${{ secrets.TESTING }}"
           token: ${{ secrets.TESTING }} # The GitHub token for the update-flake-lock action
       - name: Create compare URLs
-        uses: actions/github-script@main
+        uses: actions/github-script@main # The action to run a script using the GitHub API
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
         with:
           github-token: ${{ secrets.TESTING }}
