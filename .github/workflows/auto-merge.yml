@@ -1,0 +1,28 @@
+name: Update flake
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "5 */4 * * *" # Every 4 hours
+  pull_request:
+    types: [ assigned, unassigned, labeled, unlabeled, opened, edited, closed, reopened, synchronize, converted_to_draft, locked, unlocked, ready_for_review, review_requested, review_request_removed, auto_merge_enabled, auto_merge_disabled ]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    if: (github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || github.event.pull_request.user.login == 'telometto' || github.actor == 'telometto' || github.actor == 'dependabot[bot]' || github.actor == 'github-actions[bot]') && github.repository == 'telometto/nix-config'
+    steps:
+      # - name: Dependabot metadata
+      #   id: metadata
+      #   uses: dependabot/fetch-metadata@main
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Enable auto-merge for Dependabot PRs
+        # if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
