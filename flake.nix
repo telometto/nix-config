@@ -150,11 +150,11 @@
           modules = hostConfigs.snowfall;
           extraSharedModules = [ inputs.hyprland.homeManagerModules.default ];
           extraUsers = {
-            ${VARS.users.admin.user} = import ./hosts/desktop/home/admin/home/home.nix;
-            ${VARS.users.frankie.user} = import ./hosts/desktop/home/extra-users/frankie/home/home.nix;
+            ${VARS.users.admin.user} = import ./hosts/desktop/home/users/admin/home.nix;
+            ${VARS.users.frankie.user} = import ./hosts/desktop/home/users/extra/frankie/home.nix;
           };
         };
-
+        /*
         blizzard = mkNixosSystem {
           systemName = "blizzard";
           modules = hostConfigs.blizzard;
@@ -173,6 +173,7 @@
             ${VARS.users.frankie.user} = import ./hosts/laptop/home/extra-users/frankie/home/home.nix;
           };
         };
+        */
       };
     };
 }
