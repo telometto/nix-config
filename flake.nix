@@ -111,7 +111,7 @@
           specialArgs = { inherit inputs VARS; };
         };
 
-        # snowfall = ./hosts/desktop;
+        snowfall = ./hosts/desktop;
         # blizzard = ./hosts/server;
         # avalanche = ./hosts/laptop;
       };
