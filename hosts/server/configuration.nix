@@ -21,7 +21,9 @@
 
     # 0.3 Networking
     ./networking/defaults.nix
+    ./networking/systemd/systemd-networking.nix
     ./networking/tailscale/tailscale.nix
+    ./networking/vlan/vlans.nix
 
     # 0.4 System packages
     ./packages/defaults.nix
@@ -36,63 +38,67 @@
     ./virtualization/orchestration/k3s.nix
 
     ### 1. Import common configurations
-    ../../common/base/imports.nix
+    ../../common/imports.nix
 
     # 1.1 Users
-    ./home/users/admin/home.nix
+    ./home/admin/defaults.nix
 
     ### 2. Import modules
     # 2.1 Desktop managers
-    # ../../modules/base/base/desktop-environments/kde/kde-settings.nix
-    # ../../modules/base/base/desktop-environments/gnome/gnome-settings.nix
+    # ../../modules/desktop-environments/kde/kde-settings.nix
+    # ../../modules/desktop-environments/gnome/gnome-settings.nix
 
     # 2.2 Boot/filesystem
-    # ../../modules/base/base/boot/disko/disko.nix # On hold
+    # ../../modules/boot/disko/disko.nix # On hold
 
     # 2.3 Hardware
-    # ../../modules/base/hardware/audio/sound.nix
-    # ../../modules/base/hardware/peripherals/razer.nix
-    # ../../modules/base/hardware/peripherals/steam-devices.nix
-    # ../../modules/base/hardware/printers/printing.nix
-    # ../../modules/base/hardware/peripherals/touchpad.nix
-    # ../../modules/base/hardware/video/amdgpu.nix
+    # ../../modules/hardware/audio/sound.nix
+    # ../../modules/hardware/peripherals/razer.nix
+    # ../../modules/hardware/peripherals/steam-devices.nix
+    # ../../modules/hardware/printers/printing.nix
+    # ../../modules/hardware/peripherals/touchpad.nix
+    # ../../modules/hardware/video/amdgpu.nix
 
     # 2.4 Networking
-    ../../modules/base/networking/defaults.nix
-    ../../modules/base/networking/systemd/defaults.nix
-    ../../modules/base/networking/tailscale/defaults.nix
-    # ../../modules/base/networking/vpn/vpn-confinement.nix
+    ../../modules/networking/defaults.nix
+    ../../modules/networking/systemd/defaults.nix
+    ../../modules/networking/tailscale/defaults.nix
+    # ../../modules/networking/vpn/vpn-confinement.nix
 
     # 2.5 Programs
-    # ../../modules/base/programs/steam.nix
-    # ../../modules/base/programs/virt-manager.nix
+    # ../../modules/programs/steam.nix
+    # ../../modules/programs/virt-manager.nix
 
     # 2.6 Security
-    # ../../modules/base/security/crowdsec/crowdsec.nix
+    ../../modules/security/defaults.nix
+    # ../../modules/security/crowdsec/crowdsec.nix
+    # ../../modules/security/secrets/agenix.nix
+    ../../modules/security/secrets/sops-nix.nix
+    ../../modules/security/secureboot/lanzaboote.nix
 
     # 2.7 Services
-    ../../modules/base/services/backups/borg.nix
-    # ../../modules/base/services/documents/paperless.nix
-    # ../../modules/base/services/finance/firefly.nix # Not yet created
-    ../../modules/base/services/internet/searx.nix
-    # ../../modules/base/services/media/immich.nix # Not in use; using k3s
-    # ../../modules/base/services/media/nixarr.nix # Not in use; using k3s
-    ../../modules/base/services/media/ombi.nix
-    ../../modules/base/services/media/tautulli.nix
-    ../../modules/base/services/media/plex.nix
-    # ../../modules/base/services/monitoring/prometheus.nix # On hold
+    ../../modules/services/backups/borg.nix
+    ../../modules/services/documents/paperless.nix
+    # ../../modules/services/finance/firefly.nix # Not yet created
+    ../../modules/services/internet/searx.nix
+    # ../../modules/services/media/immich.nix # Not in use; using k3s
+    # ../../modules/services/media/nixarr.nix # Not in use; using k3s
+    ../../modules/services/media/ombi.nix
+    ../../modules/services/media/tautulli.nix
+    ../../modules/services/media/plex.nix
+    # ../../modules/services/monitoring/prometheus.nix # On hold
 
     # 2.8 System
-    ../../modules/base/system/defaults.nix
+    ../../modules/system/defaults.nix
 
     # 2.9 Utilities
-    # ../../modules/base/utilities/flatpak.nix
+    # ../../modules/utilities/flatpak.nix
 
     # 2.10 Virtualization
-    ../../modules/base/virtualization/containers/docker.nix
-    ../../modules/base/virtualization/containers/podman.nix
-    ../../modules/base/virtualization/vm/microvm.nix
-    ../../modules/base/virtualization/vm/vm.nix
+    ../../modules/virtualization/containers/docker.nix
+    ../../modules/virtualization/containers/podman.nix
+    ../../modules/virtualization/vm/microvm.nix
+    ../../modules/virtualization/vm/vm.nix
   ];
 
   nixpkgs = {

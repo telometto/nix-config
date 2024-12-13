@@ -25,64 +25,63 @@
     ./packages/system-packages.nix
 
     ### 1. Import common configurations
-    ../../common/base/imports.nix
+    ../../common/imports.nix
 
     # 1.1 Users
-    # 1.1.1 Admin
-    ./home/users/admin/home.nix
-
-    # 1.1.2 Extra
-    ./home/users/extra/frankie/home.nix
-    ./home/users/extra/luke/home.nix
-    ./home/users/extra/wife/home.nix
+    ./home/admin/defaults.nix
+    ./home/extra-users/defaults.nix
 
     ### 2. Import modules
     # 2.1 Desktop managers
     # ../../modules/desktop-environments/gnome/gnome-settings.nix
-    ../../modules/base/desktop-environments/hyprland/cachix.nix # Hyprland Cachix
-    ../../modules/base/desktop-environments/hyprland/hyprland.nix
-    ../../modules/base/desktop-environments/kde/kde-settings.nix
+    ../../modules/desktop-environments/hyprland/cachix.nix # Hyprland Cachix
+    ../../modules/desktop-environments/hyprland/hyprland.nix
+    ../../modules/desktop-environments/kde/kde-settings.nix
 
     # 2.2 Boot/filesystem
-    # ../../modules/boot/base/disko/disko.nix # On hold
-    ../../modules/boot/base/plymouth/plymouth.nix
+    # ../../modules/boot/disko/disko.nix # On hold
+    ../../modules/boot/plymouth/plymouth.nix
 
     # 2.3 Hardware
-    ../../modules/base/hardware/audio/sound.nix
-    ../../modules/base/hardware/peripherals/razer.nix
-    ../../modules/base/hardware/peripherals/steam-devices.nix
-    ../../modules/base/hardware/printers/printing.nix
-    # ../../modules/base/hardware/peripherals/touchpad.nix
-    ../../modules/base/hardware/video/amdgpu.nix
+    ../../modules/hardware/audio/sound.nix
+    ../../modules/hardware/peripherals/razer.nix
+    ../../modules/hardware/peripherals/steam-devices.nix
+    ../../modules/hardware/printers/printing.nix
+    # ../../modules/hardware/peripherals/touchpad.nix
+    ../../modules/hardware/video/amdgpu.nix
 
     # 2.4 Networking
-    ../../modules/base/networking/defaults.nix
-    ../../modules/base/networking/systemd/defaults.nix
-    ../../modules/base/networking/tailscale/defaults.nix
-    # ../../modules/base/networking/vpn/vpn-confinement.nix
-    ../../modules/base/networking/vpn/pvpn-systemd.nix # On hold
+    ../../modules/networking/defaults.nix
+    ../../modules/networking/systemd/defaults.nix
+    ../../modules/networking/tailscale/defaults.nix
+    # ../../modules/networking/vpn/vpn-confinement.nix
+    ../../modules/networking/vpn/pvpn-systemd.nix # On hold
 
     # 2.5 Programs
-    ../../modules/base/programs/steam.nix
-    ../../modules/base/programs/virt-manager.nix
+    ../../modules/programs/steam.nix
+    ../../modules/programs/virt-manager.nix
 
     # 2.6 Security
-    # ../../modules/base/security/crowdsec/crowdsec.nix
+    ../../modules/security/defaults.nix
+    # ../../modules/security/crowdsec/crowdsec.nix
+    # ../../modules/security/secrets/agenix.nix
+    ../../modules/security/secrets/sops-nix.nix
+    ../../modules/security/secureboot/lanzaboote.nix
 
     # 2.7 Services
     # None for desktop (for now)
 
     # 2.8 System
-    # ../../modules/base/system/defaults.nix
+    # ../../modules/system/defaults.nix
 
     # 2.9 Utilities
-    ../../modules/base/utilities/flatpak.nix
+    ../../modules/utilities/flatpak.nix
 
     # 2.10 Virtualization
-    ../../modules/base/virtualization/containers/docker.nix
-    ../../modules/base/virtualization/containers/podman.nix
-    ../../modules/base/virtualization/vm/microvm.nix
-    ../../modules/base/virtualization/vm/vm.nix
+    ../../modules/virtualization/containers/docker.nix
+    ../../modules/virtualization/containers/podman.nix
+    ../../modules/virtualization/vm/microvm.nix
+    ../../modules/virtualization/vm/vm.nix
   ];
 
   # Allow unfree packages
