@@ -115,8 +115,8 @@
 
       hostUsers = {
         snowfall = [ VARS.users.admin.user ];
-        blizzard = [ "admin" "user2" "user3" ];
-        avalanche = [ "admin" ];
+        blizzard = [ VARS.users.admin.user ];
+        avalanche = [ VARS.users.admin.user "frankie" "luke"];
       };
 
       # Define a function to generate host configurations
@@ -164,8 +164,8 @@
         };
 
         snowfall = ./hosts/snowfall;
-        # blizzard = ./hosts/server;
-        # avalanche = ./hosts/laptop;
+        # blizzard = ./hosts/blizzard;
+        # avalanche = ./hosts/avalanche;
       };
 
       nixosConfigurations = {
