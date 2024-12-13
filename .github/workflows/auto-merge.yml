@@ -23,7 +23,7 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: (github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || github.event.pull_request.user.login == 'telometto' || github.actor == 'telometto' || github.actor == 'dependabot[bot]' || github.actor == 'github-actions[bot]') && github.repository == 'telometto/nix-config'
+    if: (github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'github-actions[bot]' || github.actor == 'dependabot[bot]' || github.actor == 'github-actions[bot]') && github.repository == 'telometto/nix-config'
     steps:
       # - name: Dependabot metadata
       #   id: metadata
