@@ -145,11 +145,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1730135292,
-        "narHash": "sha256-CI27qHAbc3/tIe8sb37kiHNaeCqGxNimckCMj0lW5kg=",
+        "lastModified": 1734088167,
+        "narHash": "sha256-snPBgTqwn3FPZVdFC5yt7Bnk3squim1vZOZ8CObWykk=",
         "owner": "nix-community",
         "repo": "disko",
-        "rev": "ab58501b2341bc5e0fc88f2f5983a679b075ddf5",
+        "rev": "65a441502c9382d41ada1adbc9bd31d6c9b00fe2",
         "type": "github"
       },
       "original": {
@@ -353,11 +353,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1734037113,
-        "narHash": "sha256-ENSfIRpZUGyr2quTJCESzppcR9i0N2iUrenGxcr9Mj0=",
+        "lastModified": 1734093295,
+        "narHash": "sha256-hSwgGpcZtdDsk1dnzA0xj5cNaHgN9A99hRF/mxMtwS4=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "e526fd2b1a40e4ca0b5e07e87b8c960281c67412",
+        "rev": "66c5d8b62818ec4c1edb3e941f55ef78df8141a8",
         "type": "github"
       },
       "original": {
@@ -441,11 +441,11 @@
         "xdph": "xdph"
       },
       "locked": {
-        "lastModified": 1734005819,
-        "narHash": "sha256-hbA0aFybdxjpu4Tr4xH57mOLjRMqcop6iBVA0ZFIIx4=",
+        "lastModified": 1734129402,
+        "narHash": "sha256-SSyk9SJ5Uu3/LhaoH2Bsgbx8fDgR6ZYQZG/13aNjL3M=",
         "owner": "hyprwm",
         "repo": "Hyprland",
-        "rev": "aefaeedf5e3f773c923373795267c1633141566c",
+        "rev": "3cba4ba44e7ba3cc8bb67ac71bc61245b5aca347",
         "type": "github"
       },
       "original": {
@@ -623,11 +623,11 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1733868086,
-        "narHash": "sha256-CeYsC8J2dNiV2FCQOxK1oZ/jNpOF2io7aCEFHmfi95U=",
+        "lastModified": 1734041466,
+        "narHash": "sha256-51bhaMe8BZuNAStUHvo07nDO72wmw8PAqkSYH4U31Yo=",
         "owner": "astro",
         "repo": "microvm.nix",
-        "rev": "870cb181719aa12baf478d7cde6068ec7ed144ae",
+        "rev": "3910e65c3d92c82ea41ab295c66df4c0b4f9e7b3",
         "type": "github"
       },
       "original": {
@@ -649,22 +649,6 @@
       "original": {
         "type": "git",
         "url": "ssh://git@github.com/telometto/nix-secrets.git"
-      }
-    },
-    "nixos-hardware": {
-      "locked": {
-        "lastModified": 1733861262,
-        "narHash": "sha256-+jjPup/ByS0LEVIrBbt7FnGugJgLeG9oc+ivFASYn2U=",
-        "owner": "NixOS",
-        "repo": "nixos-hardware",
-        "rev": "cf737e2eba82b603f54f71b10cb8fd09d22ce3f5",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "master",
-        "repo": "nixos-hardware",
-        "type": "github"
       }
     },
     "nixpkgs": {
@@ -715,45 +699,13 @@
         "type": "github"
       }
     },
-    "nixpkgs-stable_3": {
-      "locked": {
-        "lastModified": 1733808091,
-        "narHash": "sha256-KWwINTQelKOoQgrXftxoqxmKFZb9pLVfnRvK270nkVk=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "a0f3e10d94359665dba45b71b4227b0aeb851f8e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-24.11",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs-unstable": {
-      "locked": {
-        "lastModified": 1734014226,
-        "narHash": "sha256-RcDCLav9GZYWYGoPcU5LzDxrqdDO+a4UYg4pSDyfV9c=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "0b04b1f3548f38d045f46821d8f41cab5680fed7",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable-small",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1733759999,
-        "narHash": "sha256-463SNPWmz46iLzJKRzO3Q2b0Aurff3U1n0nYItxq7jU=",
+        "lastModified": 1733940404,
+        "narHash": "sha256-Pj39hSoUA86ZePPF/UXiYHHM7hMIkios8TYG29kQT4g=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "a73246e2eef4c6ed172979932bc80e1404ba2d56",
+        "rev": "5d67ea6b4b63378b9c13be21e2ec9d1afc921713",
         "type": "github"
       },
       "original": {
@@ -825,10 +777,7 @@
         "lanzaboote": "lanzaboote",
         "microvm": "microvm",
         "nix-secrets": "nix-secrets",
-        "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_2",
-        "nixpkgs-stable": "nixpkgs-stable_3",
-        "nixpkgs-unstable": "nixpkgs-unstable",
         "sops-nix": "sops-nix",
         "tt-schemes": "tt-schemes",
         "vpn-confinement": "vpn-confinement"
