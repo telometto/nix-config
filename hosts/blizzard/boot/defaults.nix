@@ -6,10 +6,21 @@
   boot = {
     supportedFilesystems = [ "zfs" ];
 
+    initrd = {
+      enable = true;
+
+      secrets = {
+        "/hex.key" = /opt/sec/hex.key;
+      };
+    };
+
     zfs = {
       forceImportRoot = false;
       forceImportAll = false;
-      extraPools = [ "tank" "flash_temp" ];
+      extraPools = [
+        "flash_temp"
+        "rpool"
+      ];
     };
   };
 
@@ -18,7 +29,7 @@
       autoScrub.enable = true;
 
       autoSnapshot = {
-        enable = true;
+        enable = false;
 
         monthly = 4;
         weekly = 7;
