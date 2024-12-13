@@ -77,9 +77,9 @@
     ../../modules/base/services/internet/searx.nix
     # ../../modules/base/services/media/immich.nix # Not in use; using k3s
     # ../../modules/base/services/media/nixarr.nix # Not in use; using k3s
-    ../../modules/base/services/media/ombi.nix
-    ../../modules/base/services/media/tautulli.nix
-    ../../modules/base/services/media/plex.nix
+    # ../../modules/base/services/media/ombi.nix
+    # ../../modules/base/services/media/tautulli.nix
+    # ../../modules/base/services/media/plex.nix
     # ../../modules/base/services/monitoring/prometheus.nix # On hold
 
     # 2.8 System
