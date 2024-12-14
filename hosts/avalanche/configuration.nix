@@ -21,7 +21,7 @@
     ./packages/system-packages.nix
 
     ### 1. Import common configurations
-    ../../common/imports.nix
+    ../../common/base/imports.nix
 
     # 1.1 Users
     ../../common/users/admin/admin.nix
