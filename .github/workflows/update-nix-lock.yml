@@ -84,7 +84,7 @@ jobs:
           if [ -n "$PR_URL"]; then
             gh pr merge --auto --merge "$PR_URL"
           else
-            echo "PR:URL is not set!"
+            echo "PR_URL is not set!"
           fi
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
