@@ -47,11 +47,11 @@ in
           contents = {
             user.name = "telometto";
             user.email = config.sops.secrets."git/github-email".path;
-            # user.signingKey = ""; # TODO: Add signing key
+            # user.signingKey = "0x5A5BF29378C3942B";
 
             commit.gpgSign = true;
 
-            core.sshCommand = "ssh -i ~/.ssh/zeno-avalanche";
+            # core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
           };
         }
         {
@@ -60,18 +60,20 @@ in
           contents = {
             user.name = "telometto";
             user.email = config.sops.secrets."git/gitlab-email".path;
-            # user.signingKey = ""; # TODO: Add signing key
+            # user.signingKey = "0xB7103B8A59566994";
 
             commit.gpgSign = true;
 
-            core.sshCommand = "ssh -i ~/.ssh/zeno-avalanche";
+            # core.sshCommand = "ssh -i ~/.ssh/gitlabkey";
           };
         }
       ];
     };
 
     keychain = {
-      keys = [ "zeno-avalanche" ];
+      keys = [
+        "zeno-avalanche"
+      ];
     };
 
     mangohud = {

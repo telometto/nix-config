@@ -4,29 +4,21 @@ let
 in
 {
   imports = [
-    ./gnome.nix # Enables GNOME
-    # ./hyprland.nix # Enables Hyprland
-    # ./kde.nix # Enables KDE
+    # Common imports
+    ../../../../../common/home/imports.nix
 
-    ../../../../../common/security/secrets/sops-home.nix
+    # Secrets
+    ../../../../../common/home/security/secrets/sops-home.nix
 
-    ./programs.nix
-    ./services.nix
-    ./xdg.nix
+    # Desktop environments
+    ../../../../../common/home/desktop-environments/gnome/defaults.nix # Enables GNOME
+    # ../../../../../common/home/desktop-environments/hyprland/defaults.nix # Enables Hyprland
+    # ../../../../../common/home/desktop-environments/kde/defaults.nix # Enables KDE
+
+    # User-specific imports
+    ./programs/programs.nix
+    ./services/gpg/agent.nix
   ];
-
-  users.users.${VARS.users.admin.user} = {
-    description = VARS.users.admin.description;
-    isNormalUser = VARS.users.admin.isNormalUser;
-    extraGroups = VARS.users.admin.extraGroups ++ lib.optionals (config.networking.hostName == VARS.systems.desktop.hostname) [ "openrazer" ];
-    hashedPassword = VARS.users.admin.hashedPassword;
-    shell = pkgs.zsh;
-
-    openssh.authorizedKeys.keys = [
-      VARS.users.admin.sshPubKey
-      VARS.users.admin.gpgSshPubKey
-    ];
-  };
 
   programs.home-manager.enable = true; # Enable home-manager
 
@@ -80,6 +72,7 @@ in
       meld # Diff tool
       variety # Wallpaper changer
       zsh-powerlevel10k
+      polychromatic # Razer configuration tool
 
       # Gaming
       #mangohud
@@ -111,7 +104,9 @@ in
       fortune # Random quotes
       yaru-theme # Yaru theme for Ubuntu
       spotify # Music streaming
-      pdfmixtool
+      pdfmixtool # PDF tool
+      onlyoffice-desktopeditors # Office suite
+      nomacs
 
       # System tools
       # deja-dup # Backup tool; use Flatpak instead

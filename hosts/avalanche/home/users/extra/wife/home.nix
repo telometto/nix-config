@@ -1,24 +1,25 @@
 { config, lib, pkgs, VARS, ... }:
 let
-  DEFAULT_LANG = "it_IT.UTF-8";
+  DEFAULT_LANG = "nb_NO.UTF-8";
 in
 {
   imports = [
-    ./gnome.nix # Enables GNOME
-    # ./hyprland.nix # Enables Hyprland
-    # ./kde.nix # Enables KDE
+    # Common imports
+    ../../../../../common/home/imports.nix
 
-    # ../../../../../common/security/secrets/sops-home.nix
+    # Desktop environments
+    ../../../../../common/home/desktop-environments/gnome/defaults.nix # Enables GNOME
+    # ../../../../../common/home/desktop-environments/hyprland/defaults.nix # Enables Hyprland
+    # ../../../../../common/home/desktop-environments/kde/defaults.nix # Enables KDE
 
-    ./programs.nix
-    ./services.nix
-    ./xdg.nix
+    # User-specific imports
+    ./programs/programs.nix
   ];
 
   programs.home-manager.enable = true; # Enable home-manager
 
   home = {
-    username = VARS.users.luke.user;
+    username = VARS.users.wife.user;
     stateVersion = "24.05";
 
     # Localization
