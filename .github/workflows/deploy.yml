@@ -2,12 +2,12 @@
 name: Deploy
 on:
   push:
-    branches: [testing]
+    branches: [main, testing]
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@main
       - uses: DeterminateSystems/nix-installer-action@main
       - name: Deploy Configuration
         run: |

@@ -2,12 +2,12 @@
 name: Lint
 on:
   pull_request:
-    branches: [main]
+    branches: [main, testing]
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@main
       - uses: DeterminateSystems/nix-installer-action@main
       - name: Run linter
         run: nix shell nixpkgs#nixpkgs-fmt -c nixpkgs-fmt --check .
