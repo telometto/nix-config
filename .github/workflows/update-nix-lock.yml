@@ -9,23 +9,40 @@
 # Notes:
 # - Secrets (`secrets.GH_ACTIONS` and `secrets.TESTING`) are used for authentication
 # - `nix-options` includes the GitHub token for accessing private repositories
+
 name: Update flake
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 */4 * * *" # Every 4 hours
+  pull_request:
+    types: [opened, synchronize]
+    # types: [ assigned, unassigned, labeled, unlabeled, opened, edited, closed, reopened, synchronize, converted_to_draft, locked, unlocked, ready_for_review, review_requested, review_request_removed, auto_merge_enabled, auto_merge_disabled ]
+    branches: main
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   lockfile:
     runs-on: ubuntu-latest # The operating system to run the job on
     steps:
-      - uses: webfactory/ssh-agent@master # The SSH agent for the deploy keys
-        with:
-          ssh-private-key: ${{ secrets.GH_ACTIONS }} # The private key for the SSH agent
+      # Remove SSH agent setup
+      # - uses: webfactory/ssh-agent@master
+      #   with:
+      #     ssh-private-key: ${{ secrets.BOT_SSH_KEY }}
       - name: Checkout repository
         uses: actions/checkout@main # The action to checkout the repository
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main # The action to install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      # Remove Git user configuration
+      # - name: Set Git user
+      #   run: |
+      #     git config --global user.name "Bot Name"
+      #     git config --global user.email "bot@example.com"
       - name: Update flake.lock
         uses: DeterminateSystems/update-flake-lock@main # The action to update the flake.lock file
         id: update-flake-lock
@@ -38,15 +55,15 @@ jobs:
           pr-title: "chore(flake.lock): update"
           pr-labels: |
             automated
-            automerge
             dependencies
-          nix-options: "--access-tokens github.com=${{ secrets.TESTING }}"
-          token: ${{ secrets.TESTING }} # The GitHub token for the update-flake-lock action
+            auto-merge
+          nix-options: "--access-tokens github.com=${{ secrets.BOT_PAT }}"
+          token: ${{ secrets.GITHUB_TOKEN }} # Use GITHUB_TOKEN for PR operations
       - name: Create compare URLs
         uses: actions/github-script@main # The action to run a script using the GitHub API
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
         with:
-          github-token: ${{ secrets.TESTING }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const comment = require('.github/scripts/comment')
             const compare = require('.github/scripts/compare')
@@ -65,3 +82,13 @@ jobs:
             }
 
             await comment({ github, context, header, body, issueNumber })
+
+      - name: Auto-merge Bot PRs
+        if: |
+          github.event.pull_request.user.login == 'github-actions[bot]' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          contains(github.event.pull_request.labels.*.name, 'auto-merge')
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
