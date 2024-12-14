@@ -53,29 +53,29 @@ jobs:
             auto-merge
           nix-options: "--access-tokens github.com=${{ secrets.BOT_PAT }}"
           token: ${{ secrets.GITHUB_TOKEN }} # Use GITHUB_TOKEN for PR operations
-      - name: Create compare URLs
-        uses: actions/github-script@main # The action to run a script using the GitHub API
-        if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const comment = require('.github/scripts/comment')
-            const compare = require('.github/scripts/compare')
+      # - name: Create compare URLs
+      #   uses: actions/github-script@main # The action to run a script using the GitHub API
+      #   if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     script: |
+      #       const comment = require('.github/scripts/comment')
+      #       const compare = require('.github/scripts/compare')
 
-            const urls = await compare({ core })
-            if (!urls?.length) {
-              return
-            }
+      #       const urls = await compare({ core })
+      #       if (!urls?.length) {
+      #         return
+      #       }
 
-            const header = "# Compare URLs"
-            const body = urls.map((url) => `- ${url}`).join("\n")
+      #       const header = "# Compare URLs"
+      #       const body = urls.map((url) => `- ${url}`).join("\n")
 
-            const issueNumber = parseInt(process.env.PULL_REQUEST_NUMBER, 10)
-            if (Number.isNaN(issueNumber)) {
-              return
-            }
+      #       const issueNumber = parseInt(process.env.PULL_REQUEST_NUMBER, 10)
+      #       if (Number.isNaN(issueNumber)) {
+      #         return
+      #       }
 
-            await comment({ github, context, header, body, issueNumber })
+      #       await comment({ github, context, header, body, issueNumber })
 
       - name: Auto-merge Bot PRs
         if: |
