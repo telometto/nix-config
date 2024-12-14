@@ -1,0 +1,15 @@
+
+name: CI
+on:
+  push:
+    branches: [testing]
+  pull_request:
+    branches: [testing]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Run Tests
+        run: nix flake check

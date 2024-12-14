@@ -1,0 +1,15 @@
+
+name: Deploy
+on:
+  push:
+    branches: [testing]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Deploy Configuration
+        run: |
+          # Add your deployment commands here
+          echo "Deploying configurations..."
