@@ -103,7 +103,8 @@ in
       fortune # Random quotes
       yaru-theme # Yaru theme for Ubuntu
       spotify # Music streaming
-      pdfmixtool
+      pdfmixtool # PDF tool
+      onlyoffice-desktopeditors # Office suite
 
       # System tools
       # deja-dup # Backup tool; use Flatpak instead
