@@ -24,8 +24,10 @@
     ../../common/imports.nix
 
     # 1.1 Users
-    ./home/admin/defaults.nix
-    ./home/extra-users/defaults.nix
+    ../../common/users/admin/admin.nix
+    ../../common/users/extra/frankie.nix
+    ../../common/users/extra/luke.nix
+    # ../../common/users/extra/wife.nix
 
     ### 2. Import modules
     # 2.1 Desktop managers
