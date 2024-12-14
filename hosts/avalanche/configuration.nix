@@ -32,70 +32,49 @@
     ### 2. Import modules
     # 2.1 Desktop managers
     # ../../modules/desktop-environments/kde/kde-settings.nix
-    ../../modules/desktop-environments/gnome/gnome-settings.nix
+    ../../modules/base/desktop-environments/gnome/gnome-settings.nix
 
     # 2.2 Boot/filesystem
-    # ../../modules/boot/disko/disko.nix # On hold
+    # ../../modules/base/boot/disko/disko.nix # On hold
+    ../../modules/base/boot/plymouth/plymouth.nix
 
     # 2.3 Hardware
-    ../../modules/hardware/audio/sound.nix
-    # ../../modules/hardware/peripherals/razer.nix
-    ../../modules/hardware/peripherals/steam-devices.nix
-    # ../../modules/hardware/peripherals/touchpad.nix
-    ../../modules/hardware/printers/printing.nix
-    # ../../modules/hardware/video/amdgpu.nix
+    ../../modules/base/hardware/audio/sound.nix
+    # ../../modules/base/hardware/peripherals/razer.nix
+    ../../modules/base/hardware/peripherals/steam-devices.nix
+    # ../../modules/base/hardware/peripherals/touchpad.nix
+    ../../modules/base/hardware/printers/printing.nix
+    # ../../modules/base/hardware/video/amdgpu.nix
 
     # 2.4 Networking
-    ../../modules/networking/defaults.nix
-    ../../modules/networking/systemd/defaults.nix
-    ../../modules/networking/tailscale/defaults.nix
-    # ../../modules/networking/vpn/pvpn-systemd.nix
-    # ../../modules/networking/vpn/vpn-confinement.nix
+    ../../modules/base/networking/defaults.nix
+    ../../modules/base/networking/systemd/defaults.nix
+    ../../modules/base/networking/tailscale/defaults.nix
+    # ../../modules/base/networking/vpn/pvpn-systemd.nix
+    # ../../modules/base/networking/vpn/vpn-confinement.nix
 
     # 2.5 Programs
-    ../../modules/programs/steam.nix
-    # ../../modules/programs/virt-manager.nix
+    ../../modules/base/programs/steam.nix
+    # ../../modules/base/programs/virt-manager.nix
 
     # 2.6 Security
-    ../../modules/security/defaults.nix
-    # ../../modules/security/crowdsec/crowdsec.nix
-    # ../../modules/security/secrets/agenix.nix
-    ../../modules/security/secrets/sops-nix.nix
-    ../../modules/security/secureboot/lanzaboote.nix
+    # ../../modules/base/security/crowdsec/crowdsec.nix
 
     # 2.7 Services
     # None for laptop (for now)
 
-    # 2.8 Utilities
-    ../../modules/utilities/flatpak.nix
+    # 2.8 System
+    ../../modules/base/system/defaults.nix
 
-    # 2.9 Virtualization
-    ../../modules/virtualization/containers/docker.nix
-    ../../modules/virtualization/containers/podman.nix
-    # ../../modules/virtualization/vm/microvm.nix
-    # ../../modules/virtualization/vm/vm.nix
+    # 2.9 Utilities
+    ../../modules/base/utilities/flatpak.nix
+
+    # 2.10 Virtualization
+    ../../modules/base/virtualization/containers/docker.nix
+    ../../modules/base/virtualization/containers/podman.nix
+    # ../../modules/base/virtualization/vm/microvm.nix
+    # ../../modules/base/virtualization/vm/vm.nix
   ];
-
-  system = {
-    autoUpgrade = {
-      enable = true;
-
-      flake = "github:telometto/nix-config";
-      operation = "boot";
-      flags = [ ];
-      dates = "daily";
-
-      rebootWindow = {
-        lower = "02:30";
-        upper = "05:30";
-      };
-
-      persistent = true;
-      allowReboot = true;
-      fixedRandomDelay = true;
-      randomizedDelaySec = "20min";
-    };
-  };
 
   nixpkgs = {
     config = {
