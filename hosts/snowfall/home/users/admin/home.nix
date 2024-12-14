@@ -106,6 +106,7 @@ in
       spotify # Music streaming
       pdfmixtool # PDF tool
       onlyoffice-desktopeditors # Office suite
+      nomacs
 
       # System tools
       # deja-dup # Backup tool; use Flatpak instead
