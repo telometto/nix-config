@@ -28,21 +28,15 @@ jobs:
   lockfile:
     runs-on: ubuntu-latest # The operating system to run the job on
     steps:
-      # Remove SSH agent setup
-      # - uses: webfactory/ssh-agent@master
-      #   with:
-      #     ssh-private-key: ${{ secrets.BOT_SSH_KEY }}
+      - uses: webfactory/ssh-agent@master
+        with:
+          ssh-private-key: ${{ secrets.BOT_SSH_KEY }}
       - name: Checkout repository
         uses: actions/checkout@main # The action to checkout the repository
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      # Remove Git user configuration
-      # - name: Set Git user
-      #   run: |
-      #     git config --global user.name "Bot Name"
-      #     git config --global user.email "bot@example.com"
       - name: Update flake.lock
         uses: DeterminateSystems/update-flake-lock@main # The action to update the flake.lock file
         id: update-flake-lock
