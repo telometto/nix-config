@@ -18,7 +18,7 @@ on:
   pull_request:
     types: [opened, synchronize]
     # types: [ assigned, unassigned, labeled, unlabeled, opened, edited, closed, reopened, synchronize, converted_to_draft, locked, unlocked, ready_for_review, review_requested, review_request_removed, auto_merge_enabled, auto_merge_disabled ]
-    branches: main
+    branches: [main, testing]
 
 permissions:
   contents: write
