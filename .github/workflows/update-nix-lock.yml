@@ -80,7 +80,12 @@ jobs:
       - name: Auto-merge GitHub bot PRs
         if: |
           github.event_name == 'workflow_dispatch' || (github.event.pull_request.user.login == 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository)
-        run: gh pr merge --auto --merge "$PR_URL"
+        run: |
+          if [ -n "$PR_URL"]; then
+            gh pr merge --auto --merge "$PR_URL"
+          else
+            echo "PR_URL is not set!"
+          fi
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
