@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: webfactory/ssh-agent@master
         with:
-          ssh-private-key: ${{ secrets.BOT_SSH_KEY }}
+          ssh-private-key: ${{ secrets.GH_ACTIONS }}
       - name: Checkout repository
         uses: actions/checkout@main # The action to checkout the repository
         with:
