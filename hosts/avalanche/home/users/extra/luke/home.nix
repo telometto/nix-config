@@ -5,12 +5,12 @@ in
 {
   imports = [
     # Common imports
-    ../../../../../common/home/imports.nix
+    ../../../../../../common/home/imports.nix
 
     # Desktop environments
-    ../../../../../common/home/desktop-environments/gnome/defaults.nix # Enables GNOME
-    # ../../../../../common/home/desktop-environments/hyprland/defaults.nix # Enables Hyprland
-    # ../../../../../common/home/desktop-environments/kde/defaults.nix # Enables KDE
+    ../../../../../../common/home/desktop-environments/gnome/defaults.nix # Enables GNOME
+    # ../../../../../../common/home/desktop-environments/hyprland/defaults.nix # Enables Hyprland
+    # ../../../../../../common/home/desktop-environments/kde/defaults.nix # Enables KDE
 
     # User-specific imports
     ./programs/programs.nix
