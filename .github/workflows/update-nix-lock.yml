@@ -80,10 +80,7 @@ jobs:
       - name: Auto-merge GitHub bot PRs
         if: |
           github.event_name == 'workflow_dispatch' || (github.event.pull_request.user.login == 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository)
-        run: |
-          if [[ "$(jq -r '.labels[] | select(.name=="auto-merge")' <<< "${{ toJson(github.event.pull_request.labels) }}")" != "" ]]; then
-            gh pr merge --auto --merge "$PR_URL"
-          fi
+        run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
