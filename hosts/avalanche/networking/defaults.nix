@@ -20,8 +20,8 @@
     };
 
     nftables = { enable = true; }; # Use nftables instead of iptables
-  };
 
-  useNetworkd = lib.mkForce false;
-  useDHCP = lib.mkForce true;
+    useNetworkd = lib.mkForce false;
+    useDHCP = lib.mkForce true;
+  };
 }
