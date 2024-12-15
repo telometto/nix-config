@@ -3,7 +3,7 @@
 {
   imports = [
     inputs.crowdsec.nixosModules.crowdsec
-    inputs.crowdsec.nixosModules.crowdsec-firewall-bouncer  
+    inputs.crowdsec.nixosModules.crowdsec-firewall-bouncer
   ];
 
   nixpkgs.overlays = [ inputs.crowdsec.overlays.default ];
@@ -31,7 +31,7 @@
 
     crowdsec-firewall-bouncer = {
       enable = true;
-    
+
       settings = {
         api_key = config.sops.secrets."general/crowdsec".path; # config.sops.secrets.crowdsecApiKey.path;
         api_url = "http://localhost:9998";
@@ -40,17 +40,19 @@
   };
 
   systemd.services.crowdsec.serviceConfig = {
-    ExecStartPre = let
-      script = pkgs.writeScriptBin "register-bouncer" ''
-        #!${pkgs.runtimeShell}
-        set -eu
-        set -o pipefail
+    ExecStartPre =
+      let
+        script = pkgs.writeScriptBin "register-bouncer" ''
+          #!${pkgs.runtimeShell}
+          set -eu
+          set -o pipefail
 
-        if ! cscli bouncers list | grep -q "my-bouncer"; then
-          cscli bouncers add "my-bouncer" --key "${config.sops.secrets."general/crowdsec".path}"
-        fi
-      '';
-    in ["${script}/bin/register-bouncer"];
+          if ! cscli bouncers list | grep -q "my-bouncer"; then
+            cscli bouncers add "my-bouncer" --key "${config.sops.secrets."general/crowdsec".path}"
+          fi
+        '';
+      in
+      [ "${script}/bin/register-bouncer" ];
   };
 
   environment.systemPackages = with pkgs; [ crowdsec ];

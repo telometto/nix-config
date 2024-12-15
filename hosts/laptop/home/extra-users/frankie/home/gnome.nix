@@ -64,11 +64,11 @@
         night-light-enabled = true;
         night-light-schedule-automatic = true;
       };
-      
+
       "org/gnome/settings-daemon/plugins/power" = {
         sleep-inactive-battery-type = "suspend"; # Default: suspend
         sleep-inactive-battery-timeout = 900; # Default: 900
-        
+
         sleep-inactive-ac-type = "nothing"; # Default: suspend
         sleep-inactive-ac-timeout = 900; # Default: 900
       };
