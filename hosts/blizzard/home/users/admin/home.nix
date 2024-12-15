@@ -25,6 +25,9 @@
     username = VARS.users.admin.user; # Change this back upon reformatting
     stateVersion = "24.11";
 
+    enableDebugInfo = true;
+    preferXdgDirectories = true;
+
     packages = with pkgs; [
       # Your packages here
       atuin
