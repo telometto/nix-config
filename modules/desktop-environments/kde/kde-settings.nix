@@ -35,16 +35,16 @@
       };
     };
 
-/*
-    kde = {
+    /*
+      kde = {
       allowNullPassword = true;
 
       kwallet = {
         enable = true;
         #package = pkgs.kdePackages.kwallet-pam;
       };
-    };
-*/
+      };
+    */
     sddm = {
       enableAppArmor = true;
       gnupg.enable = true;
