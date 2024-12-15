@@ -50,7 +50,7 @@ in
     }];
 
     useNetworkd = lib.mkForce true;
-    useDHCP = lib.mkForce false;
+    # useDHCP = lib.mkForce false;
   };
 
   systemd.network = {
