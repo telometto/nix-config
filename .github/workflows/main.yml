@@ -19,6 +19,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.GH_ACTIONS }}
 
+      - name: Checkout repository
+        uses: actions/checkout@main # The action to checkout the repository
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Lint and test
         uses: ./.github/workflows/lint_and_test.yml
         with:
