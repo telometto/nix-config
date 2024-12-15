@@ -1,0 +1,36 @@
+name: Lint and test
+on:
+  workflow_call:
+    inputs:
+      token:
+        type: string
+        required: true
+    secrets: {}
+
+jobs:
+  lint_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+        with:
+          token: ${{ inputs.token }}
+
+      - name: Cache Nix store
+        uses: actions/cache@main
+        with:
+          path: /nix/store
+          key: ${{ runner.os }}-nix-${{ hashFiles('flake.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-nix-
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Run linter
+        run: nix run nixpkgs#nixpkgs-fmt -- --check .
+
+      - name: Run statix
+        run: nix run nixpkgs#statix -- .
+
+      - name: Run NixOS tests
+        run: nix flake check --tests

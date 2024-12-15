@@ -35,8 +35,20 @@ jobs:
         uses: actions/checkout@main # The action to checkout the repository
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/cache@main
+        with:
+          path: /nix/store
+          key: ${{ runner.os }}-nix-${{ hashFiles('flake.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-nix-
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
+      - name: Run linter
+        run: nix run nixpkgs#nixpkgs-fmt -- --check .
+      - name: Run statix
+        run: nix run nixpkgs#statix -- .
+      - name: Run NixOS tests
+        run: nix flake check --tests
       - name: Update flake.lock
         uses: DeterminateSystems/update-flake-lock@main # The action to update the flake.lock file
         id: update-flake-lock
@@ -46,33 +58,33 @@ jobs:
             ```
             {{ env.GIT_COMMIT_MESSAGE }}
             ```
-          pr-title: "chore(flake.lock): update"
+          pr-title: "🧹 chore(flake.lock): update"
           pr-labels: auto-merge
           nix-options: "--access-tokens github.com=${{ secrets.BOT_PAT }}"
           token: ${{ secrets.GITHUB_TOKEN }} # Use GITHUB_TOKEN for PR operations
-      # - name: Create compare URLs
-      #   uses: actions/github-script@main # The action to run a script using the GitHub API
-      #   if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
-      #     script: |
-      #       const comment = require('.github/scripts/comment')
-      #       const compare = require('.github/scripts/compare')
+      - name: Create compare URLs
+        uses: actions/github-script@main # The action to run a script using the GitHub API
+        if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comment = require('.github/scripts/comment')
+            const compare = require('.github/scripts/compare')
 
-      #       const urls = await compare({ core })
-      #       if (!urls?.length) {
-      #         return
-      #       }
+            const urls = await compare({ core })
+            if (!urls?.length) {
+              return
+            }
 
-      #       const header = "# Compare URLs"
-      #       const body = urls.map((url) => `- ${url}`).join("\n")
+            const header = "# Compare URLs"
+            const body = urls.map((url) => `- ${url}`).join("\n")
 
-      #       const issueNumber = parseInt(process.env.PULL_REQUEST_NUMBER, 10)
-      #       if (Number.isNaN(issueNumber)) {
-      #         return
-      #       }
+            const issueNumber = parseInt(process.env.PULL_REQUEST_NUMBER, 10)
+            if (Number.isNaN(issueNumber)) {
+              return
+            }
 
-      #       await comment({ github, context, header, body, issueNumber })
+            await comment({ github, context, header, body, issueNumber })
 
       - name: Auto-merge GitHub bot PRs
         if: ${{ steps.update-flake-lock.outputs.pull-request-url != '' }}
