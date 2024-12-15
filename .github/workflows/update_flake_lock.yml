@@ -2,7 +2,7 @@ name: Update .lock file
 on:
   workflow_call:
     secrets:
-      github_token:
+      token:
         required: true
       bot_pat:
         required: true
@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@main
         with:
-          token: ${{ secrets.github_token }}
+          token: ${{ secrets.token }}
 
       - name: Update flake.lock
         uses: DeterminateSystems/update-flake-lock@main
@@ -28,7 +28,7 @@ jobs:
           pr-title: "🧹 chore(flake.lock): update"
           pr-labels: auto-merge
           nix-options: "--access-tokens github.com=${{ secrets.bot_pat }}"
-          token: ${{ secrets.github_token }}
+          token: ${{ secrets.token }}
 
       - name: Set outputs
         run: |
