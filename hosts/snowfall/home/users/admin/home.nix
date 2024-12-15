@@ -18,6 +18,7 @@ in
     # User-specific imports
     ./programs/programs.nix
     ./services/gpg/agent.nix
+    ./xdg/xdg.nix
   ];
 
   programs.home-manager.enable = true; # Enable home-manager
@@ -106,7 +107,8 @@ in
       spotify # Music streaming
       pdfmixtool # PDF tool
       onlyoffice-desktopeditors # Office suite
-      nomacs
+      nomacs # Image viewer
+      apostrophe # Markdown editor
 
       # System tools
       # deja-dup # Backup tool; use Flatpak instead
