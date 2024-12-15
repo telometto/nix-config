@@ -2,7 +2,7 @@ name: Comment and auto-merge
 on:
   workflow_call:
     secrets:
-      github_token:
+      token:
         required: true
     inputs:
       pull_request_operation:
@@ -20,7 +20,7 @@ jobs:
         if: ${{ inputs.pull_request_operation == 'created' || inputs.pull_request_operation == 'updated' }}
         uses: actions/github-script@main
         with:
-          github-token: ${{ secrets.github_token }}
+          github-token: ${{ secrets.token }}
           script: |
             const comment = require('.github/scripts/comment')
             const compare = require('.github/scripts/compare')
@@ -46,4 +46,4 @@ jobs:
           fi
         env:
           PR_URL: ${{ inputs.pull_request_url }}
-          GH_TOKEN: ${{ secrets.github_token }}
+          GH_TOKEN: ${{ secrets.token }}
