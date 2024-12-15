@@ -38,14 +38,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create a cache of the Nix store
-        uses: actions/cache@main
-        with:
-          path: /nix/store
-          key: ${{ runner.os }}-nix-${{ hashFiles('flake.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-nix-
-
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
