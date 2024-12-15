@@ -47,10 +47,7 @@ jobs:
             {{ env.GIT_COMMIT_MESSAGE }}
             ```
           pr-title: "chore(flake.lock): update"
-          pr-labels: |
-            automated
-            dependencies
-            auto-merge
+          pr-labels: auto-merge
           nix-options: "--access-tokens github.com=${{ secrets.BOT_PAT }}"
           token: ${{ secrets.GITHUB_TOKEN }} # Use GITHUB_TOKEN for PR operations
       # - name: Create compare URLs
@@ -78,14 +75,13 @@ jobs:
       #       await comment({ github, context, header, body, issueNumber })
 
       - name: Auto-merge GitHub bot PRs
-        if: |
-          github.event_name == 'workflow_dispatch' || (github.event.pull_request.user.login == 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository)
+        if: ${{ steps.update-flake-lock.outputs.pull-request-url != '' }}
         run: |
-          if [ -n "$PR_URL"]; then
+          if [ -n "$PR_URL" ]; then
             gh pr merge --auto --merge "$PR_URL"
           else
             echo "PR_URL is not set!"
           fi
         env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_URL: ${{ steps.update-flake-lock.outputs.pull-request-url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
