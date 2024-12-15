@@ -28,27 +28,51 @@ jobs:
   lockfile:
     runs-on: ubuntu-latest # The operating system to run the job on
     steps:
-      - uses: webfactory/ssh-agent@master
+      - name: Access private repository
+        uses: webfactory/ssh-agent@master
         with:
           ssh-private-key: ${{ secrets.GH_ACTIONS }}
-      - name: Checkout repository
+
+      - name: Checkout main repository
         uses: actions/checkout@main # The action to checkout the repository
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/cache@main
+
+      - name: Create a cache of the Nix store
+        uses: actions/cache@main
         with:
           path: /nix/store
           key: ${{ runner.os }}-nix-${{ hashFiles('flake.lock') }}
           restore-keys: |
             ${{ runner.os }}-nix-
+
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Run linter
+
+      - name: Check linting
+        id: check-formatting
         run: nix run nixpkgs#nixpkgs-fmt -- --check .
+        continue-on-error: true
+
+      - name: Format files
+        if: ${{ steps.check-formatting.outcome == 'failure' }}
+        run: |
+          nix run nixpkgs#nixpkgs-fmt .
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "style: automatic formatting by nixpkgs-fmt"
+
+      - name: Set formatting message
+        if: ${{ steps.check-formatting.outcome == 'failure' }}
+        run: echo "NIXFMT_MESSAGE=Changes were automatically formatted by nixpkgs-fmt." >> $GITHUB_ENV
+
       - name: Run statix
         run: nix run nixpkgs#statix -- .
+
       - name: Run NixOS tests
         run: nix flake check --tests
+
       - name: Update flake.lock
         uses: DeterminateSystems/update-flake-lock@main # The action to update the flake.lock file
         id: update-flake-lock
@@ -62,6 +86,7 @@ jobs:
           pr-labels: auto-merge
           nix-options: "--access-tokens github.com=${{ secrets.BOT_PAT }}"
           token: ${{ secrets.GITHUB_TOKEN }} # Use GITHUB_TOKEN for PR operations
+
       - name: Create compare URLs
         uses: actions/github-script@main # The action to run a script using the GitHub API
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
