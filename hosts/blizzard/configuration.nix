@@ -39,7 +39,7 @@
     ../../common/base/imports.nix
 
     # 1.1 Users
-    ./home/users/admin/home.nix
+    ../../common/users/admin/admin.nix
 
     ### 2. Import modules
     # 2.1 Desktop managers
