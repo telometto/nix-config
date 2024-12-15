@@ -18,7 +18,7 @@ in
     # User-specific imports
     ./programs/programs.nix
     ./services/gpg/agent.nix
-    ./xdg/xdg.nix
+    # ./xdg/xdg.nix
   ];
 
   programs.home-manager.enable = true; # Enable home-manager
