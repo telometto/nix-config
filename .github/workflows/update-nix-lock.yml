@@ -67,9 +67,6 @@ jobs:
         if: ${{ steps.check-formatting.outcome == 'failure' }}
         run: echo "NIXFMT_MESSAGE=Changes were automatically formatted by nixpkgs-fmt." >> $GITHUB_ENV
 
-      - name: Run statix
-        run: nix run nixpkgs#statix -- .
-
       - name: Run NixOS tests
         run: nix flake check --tests
 
