@@ -1,6 +1,5 @@
 name: Update .lock file
 on:
-  workflow_dispatch:
   workflow_call:
     secrets:
       token:
