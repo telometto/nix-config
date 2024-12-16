@@ -16,10 +16,10 @@
 
     zfs = {
       forceImportRoot = false;
-      forceImportAll = false;
+      # forceImportAll = false;
       extraPools = [
-        "flash_temp"
-        "rpool"
+        "flash_temp" # SSD
+        "rpool" # HDD
       ];
     };
   };
