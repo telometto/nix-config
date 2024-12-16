@@ -38,6 +38,5 @@
   environment.systemPackages = with pkgs; [
     flatpak
     xdg-desktop-portal
-    xdg-desktop-portal-kde
   ];
 }
