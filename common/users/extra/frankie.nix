@@ -2,10 +2,8 @@
 
 {
   users.extraUsers.${VARS.users.frankie.user} = {
-    description = VARS.users.frankie.description;
-    isNormalUser = VARS.users.frankie.isNormalUser;
-    extraGroups = VARS.users.frankie.extraGroups;
-    hashedPassword = VARS.users.frankie.hashedPassword;
+    inherit (VARS.users.frankie) description isNormalUser extraGroups hashedPassword;
+
     shell = pkgs.zsh;
 
     openssh.authorizedKeys.keys = [

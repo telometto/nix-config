@@ -2,10 +2,7 @@
 
 {
   users.extraUsers.${VARS.users.luke.user} = {
-    description = VARS.users.luke.description;
-    isNormalUser = VARS.users.luke.isNormalUser;
-    extraGroups = VARS.users.luke.extraGroups;
-    hashedPassword = VARS.users.luke.hashedPassword;
+    inherit (VARS.users.luke) description isNormalUser extraGroups hashedPassword;
     shell = pkgs.zsh;
 
     openssh.authorizedKeys.keys = [

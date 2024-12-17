@@ -2,10 +2,7 @@
 
 {
   users.extraUsers.${VARS.users.wife.user} = {
-    description = VARS.users.wife.description;
-    isNormalUser = VARS.users.wife.isNormalUser;
-    extraGroups = VARS.users.wife.extraGroups;
-    hashedPassword = VARS.users.wife.hashedPassword;
+    inherit (VARS.users.wife) description isNormalUser extraGroups hashedPassword;
     shell = pkgs.zsh;
 
     packages = with pkgs; [

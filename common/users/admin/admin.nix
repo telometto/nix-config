@@ -2,10 +2,10 @@
 
 {
   users.users.${VARS.users.admin.user} = {
-    description = VARS.users.admin.description;
-    isNormalUser = VARS.users.admin.isNormalUser;
-    extraGroups = VARS.users.admin.extraGroups ++ lib.optionals (config.networking.hostName == VARS.systems.desktop.hostname) [ "openrazer" ];
-    hashedPassword = VARS.users.admin.hashedPassword;
+    inherit (VARS.users.admin) description isNormalUser hashedPassword;
+
+    extraGroups = VARS.users.admin.extraGroups ++ lib.optionals (config.networking.hostName == VARS.systems.desktop.hostName) [ "openrazer" ];
+
     shell = pkgs.zsh;
 
     openssh.authorizedKeys.keys = [
