@@ -9,9 +9,9 @@
     initrd = {
       enable = true;
 
-      secrets = {
-        "/hex.key" = /opt/sec/hex.key;
-      };
+      # secrets = {
+      #   "/hex.key" = /opt/sec/hex.key;
+      # };
     };
 
     zfs = {
@@ -19,7 +19,7 @@
       # forceImportAll = false;
       extraPools = [
         "flash_temp" # SSD
-        "rpool" # HDD
+        # "rpool" # HDD
       ];
     };
   };
@@ -58,7 +58,35 @@
   };
 
   # NFS sharing
-  # fileSystems = {
+  fileSystems = {
+    ### TESTING
+    "/rpool/enc/transfers" = {
+      device = "rpool";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/apps" = {
+      device = "rpool";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/dbs" = {
+      device = "rpool";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/media" = {
+      device = "rpool";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/vms" = {
+      device = "rpool";
+      fsType = "zfs";
+    };
+
+    #### END TESTING
+
   #   "/tank" = {
   #     device = "tank";
   #     mountPoint = "/tank";
@@ -79,7 +107,7 @@
   #   # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
   #   options = [ "bind" ];
   # };
-  # };
+  };
 
   environment.systemPackages = with pkgs; [
     zfs
