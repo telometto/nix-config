@@ -87,26 +87,26 @@
 
     #### END TESTING
 
-  #   "/tank" = {
-  #     device = "tank";
-  #     mountPoint = "/tank";
-  #     fsType = "zfs";
-  #     neededForBoot = false;
-  #   };
+    #   "/tank" = {
+    #     device = "tank";
+    #     mountPoint = "/tank";
+    #     fsType = "zfs";
+    #     neededForBoot = false;
+    #   };
 
-  #   "/flash_temp" = {
-  #     device = "flash_temp";
-  #     mountPoint = "/flash_temp";
-  #     fsType = "zfs";
-  #     neededForBoot = false;
-  #   };
+    #   "/flash_temp" = {
+    #     device = "flash_temp";
+    #     mountPoint = "/flash_temp";
+    #     fsType = "zfs";
+    #     neededForBoot = false;
+    #   };
 
-  # Commented out for testing
-  # "/flash_temp" = {
-  #   device = "/flash_temp/nfsshare";
-  #   # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
-  #   options = [ "bind" ];
-  # };
+    # Commented out for testing
+    # "/flash_temp" = {
+    #   device = "/flash_temp/nfsshare";
+    #   # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
+    #   options = [ "bind" ];
+    # };
   };
 
   environment.systemPackages = with pkgs; [
