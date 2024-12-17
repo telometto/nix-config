@@ -111,7 +111,7 @@
 
   outputs = inputs@{ self, nixpkgs, ... }:
     let
-      VARS = import (inputs.nix-secrets.vars.varsFile);
+      VARS = import inputs.nix-secrets.vars.varsFile;
 
       hostUsers = {
         snowfall = [ VARS.users.admin.user ];
