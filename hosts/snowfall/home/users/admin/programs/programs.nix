@@ -45,9 +45,11 @@ in
           condition = "gitdir:~/.versioncontrol/github/";
 
           contents = {
-            user.name = "telometto";
-            user.email = config.sops.secrets."git/github-email".path;
-            user.signingKey = "0x5A5BF29378C3942B";
+            user = {
+              name = "telometto";
+              email = config.sops.secrets."git/github-email".path;
+              signingKey = "0x5A5BF29378C3942B";
+            };
 
             commit.gpgSign = true;
 
@@ -58,9 +60,11 @@ in
           condition = "gitdir:~/.versioncontrol/gitlab/";
 
           contents = {
-            user.name = "telometto";
-            user.email = config.sops.secrets."git/gitlab-email".path;
-            user.signingKey = "0xB7103B8A59566994";
+            user = {
+              name = "telometto";
+              email = config.sops.secrets."git/gitlab-email".path;
+              signingKey = "0xB7103B8A59566994";
+            };
 
             commit.gpgSign = true;
 
