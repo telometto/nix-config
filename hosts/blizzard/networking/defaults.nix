@@ -4,8 +4,7 @@ let
 in
 {
   networking = {
-    hostName = VARS.systems.server.hostname;
-    hostId = VARS.systems.server.hostId;
+    inherit (VARS.systems.server) hostName hostId;
 
     wireless = { enable = false; }; # Enables wireless support via wpa_supplicant.
     networkmanager = { enable = false; }; # Easiest to use and most distros use this by default.

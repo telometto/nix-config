@@ -2,8 +2,7 @@
 
 {
   networking = {
-    hostName = VARS.systems.laptop.hostname;
-    hostId = VARS.systems.laptop.hostId;
+    inherit (VARS.systems.laptop) hostName hostId;
 
     wireless = { enable = false; }; # Enables wireless support via wpa_supplicant.
     networkmanager = { enable = true; }; # Easiest to use and most distros use this by default.

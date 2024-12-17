@@ -4,8 +4,7 @@ let
 in
 {
   networking = {
-    hostName = VARS.systems.desktop.hostname;
-    hostId = VARS.systems.desktop.hostId;
+    inherit (VARS.systems.desktop) hostName hostId;
 
     wireless = { enable = false; }; # Enables wireless support via wpa_supplicant.
     networkmanager = { enable = true; }; # Easiest to use and most distros use this by default.
