@@ -1,7 +1,5 @@
 { config, lib, pkgs, VARS, ... }:
-let
-  INTERFACE = "enp8s0";
-in
+
 {
   networking = {
     inherit (VARS.systems.server) hostName hostId;
