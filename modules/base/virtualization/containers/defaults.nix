@@ -1,6 +1,6 @@
 { config, lib, pkgs, VARS, ... }:
 let
-  IS_DESKTOP = config.networking.hostName == VARS.systems.desktop.hostname;
+  IS_DESKTOP = config.networking.hostName == VARS.systems.desktop.hostName;
   IS_PODMAN_ENABLED = config.virtualisation.podman.enable; # Set this true/false as needed
 
   # Base path for containers when using Docker rootless mode

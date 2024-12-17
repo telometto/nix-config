@@ -1,7 +1,7 @@
 { config, lib, pkgs, VARS, ... }:
 
 {
-  services.borgbackup = lib.mkIf (config.networking.hostName == VARS.systems.server.hostname) {
+  services.borgbackup = lib.mkIf (config.networking.hostName == VARS.systems.server.hostName) {
     jobs = {
       homeserver = {
         paths = "/home/${VARS.users.admin.user}";
