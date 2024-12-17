@@ -18,7 +18,7 @@
 let
   # TODO: Change desktop root fs to btrfs
   STORAGEDRIVER =
-    if config.networking.hostName == VARS.systems.desktop.hostname then
+    if config.networking.hostName == VARS.systems.desktop.hostName then
       "overlay" # When TODO has been implemented, change this to "btrfs"
     else
       "overlay"; # Fallback driver
@@ -26,7 +26,7 @@ in
 {
   virtualisation = {
     containers = {
-      enable = lib.mkIf (config.virtualisation.podman.enable) true;
+      enable = lib.mkIf config.virtualisation.podman.enable true;
 
       storage = {
         settings = {

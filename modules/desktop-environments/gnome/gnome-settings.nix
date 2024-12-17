@@ -65,10 +65,10 @@
     gnome-keyring
   ];
 
-  environment.gnome.excludePackages = (with pkgs; [
+  environment.gnome.excludePackages = with pkgs; [
     gnome-tour
     gnome-builder
     #]) ++ (with pkgs.gnome; [
     gnome-maps
-  ]);
+  ];
 }

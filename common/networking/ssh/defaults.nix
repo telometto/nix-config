@@ -17,7 +17,7 @@
   services.openssh = {
     enable = true;
 
-    banner = "Testing stuff";
+    banner = ":: Welcome back to The Matrix! ::\n";
 
     settings = {
       X11Forwarding = false;

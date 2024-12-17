@@ -20,7 +20,7 @@ let
 
   # TODO: Change desktop root fs to btrfs
   STORAGEDRIVER =
-    if config.networking.hostName == VARS.systems.desktop.hostname then
+    if config.networking.hostName == VARS.systems.desktop.hostName then
       "overlay2" # See TODO; when this has been implemented, change this to "btrfs"
     # else if config.networking.hostName == VARS.systems.server.hostname then
     #   "zfs"
@@ -28,7 +28,7 @@ let
       "overlay2"; # Fallback driver
 
   ROOTPATH =
-    if config.networking.hostName == VARS.systems.desktop.hostname then
+    if config.networking.hostName == VARS.systems.desktop.hostName then
       "${DRIVE_BASE_PATH}/personal/.containers"
     # else if config.networking.hostName == VARS.systems.server.hostname then
     #   "/tank/containers"
