@@ -21,6 +21,8 @@
         "flash_temp" # SSD
         # "rpool" # HDD
       ];
+
+      devNodes = "/dev/disk/by-id";
     };
   };
 
@@ -61,27 +63,27 @@
   fileSystems = {
     ### TESTING
     "/rpool/enc/transfers" = {
-      device = "rpool";
+      device = "rpool/enc/transfers";
       fsType = "zfs";
     };
 
     "/rpool/unenc/apps" = {
-      device = "rpool";
+      device = "rpool/unenc/apps";
       fsType = "zfs";
     };
 
     "/rpool/unenc/dbs" = {
-      device = "rpool";
+      device = "rpool/unenc/dbs";
       fsType = "zfs";
     };
 
     "/rpool/unenc/media" = {
-      device = "rpool";
+      device = "rpool/unenc/media";
       fsType = "zfs";
     };
 
     "/rpool/unenc/vms" = {
-      device = "rpool";
+      device = "rpool/unenc/vms";
       fsType = "zfs";
     };
 
