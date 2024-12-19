@@ -17,7 +17,7 @@
     };
 
     zfs = {
-      forceImportRoot = false;
+      # forceImportRoot = false;
       forceImportAll = true;
       requestEncryptionCredentials = true;
       devNodes = "/dev/disk/by-id";
