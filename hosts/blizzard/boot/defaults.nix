@@ -10,7 +10,6 @@
       enable = true;
 
       supportedFilesystems = { zfs = true; };
-      requestEncryptionCredentials = true;
 
       # secrets = {
       #   "/hex.key" = /opt/sec/hex.key;
@@ -20,6 +19,7 @@
     zfs = {
       forceImportRoot = false;
       forceImportAll = true;
+      requestEncryptionCredentials = true;
       devNodes = "/dev/disk/by-id";
 
       # extraPools = [
