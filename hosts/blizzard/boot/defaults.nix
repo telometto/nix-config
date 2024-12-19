@@ -20,6 +20,7 @@
     zfs = {
       forceImportRoot = false;
       forceImportAll = true;
+      devNodes = "/dev/disk/by-id";
 
       # extraPools = [
       #   "flash_temp" # SSD
