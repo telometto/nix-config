@@ -60,35 +60,7 @@
   };
 
   # NFS sharing
-  fileSystems = {
-    ### TESTING
-    "/rpool/enc/transfers" = {
-      device = "rpool/enc/transfers";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/apps" = {
-      device = "rpool/unenc/apps";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/dbs" = {
-      device = "rpool/unenc/dbs";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/media" = {
-      device = "rpool/unenc/media";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/vms" = {
-      device = "rpool/unenc/vms";
-      fsType = "zfs";
-    };
-
-    #### END TESTING
-
+  # fileSystems = {
     #   "/tank" = {
     #     device = "tank";
     #     mountPoint = "/tank";
