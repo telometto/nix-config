@@ -10,10 +10,6 @@
       enable = true;
 
       supportedFilesystems = { zfs = true; };
-
-      # secrets = {
-      #   "/hex.key" = /opt/sec/hex.key;
-      # };
     };
 
     zfs = {
@@ -22,10 +18,9 @@
       requestEncryptionCredentials = true;
       devNodes = "/dev/disk/by-id";
 
-      # extraPools = [
-      #   "flash_temp" # SSD
-      #   "rpool" # HDD
-      # ];
+      extraPools = [
+        "flash_temp" # SSD
+      ];
     };
   };
 
@@ -77,6 +72,16 @@
 
     "/rpool/unenc/dbs" = {
       device = "rpool/unenc/dbs";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/dbs/mysql" = {
+      device = "rpool/unenc/dbs/mysql";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/dbs/psql" = {
+      device = "rpool/unenc/dbs/psql";
       fsType = "zfs";
     };
 
