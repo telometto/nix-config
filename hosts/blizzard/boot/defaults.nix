@@ -9,20 +9,18 @@
     initrd = {
       enable = true;
 
-      # secrets = {
-      #   "/hex.key" = /opt/sec/hex.key;
-      # };
+      supportedFilesystems = { zfs = true; };
     };
 
     zfs = {
       forceImportRoot = false;
       # forceImportAll = false;
-      extraPools = [
-        "flash_temp" # SSD
-        # "rpool" # HDD
-      ];
 
       devNodes = "/dev/disk/by-id";
+
+      extraPools = [
+        "flash_temp" # SSD
+      ];
     };
   };
 
@@ -60,7 +58,44 @@
   };
 
   # NFS sharing
-  # fileSystems = {
+  fileSystems = {
+    ### TESTING
+    "/rpool/enc/transfers" = {
+      device = "rpool/enc/transfers";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/apps" = {
+      device = "rpool/unenc/apps";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/dbs" = {
+      device = "rpool/unenc/dbs";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/dbs/mysql" = {
+      device = "rpool/unenc/dbs/mysql";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/dbs/psql" = {
+      device = "rpool/unenc/dbs/psql";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/media" = {
+      device = "rpool/unenc/media";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/vms" = {
+      device = "rpool/unenc/vms";
+      fsType = "zfs";
+    };
+
+    # fileSystems = {
     #   "/tank" = {
     #     device = "tank";
     #     mountPoint = "/tank";
