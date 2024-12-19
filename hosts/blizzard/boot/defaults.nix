@@ -62,31 +62,58 @@
   };
 
   # NFS sharing
-  # fileSystems = {
-  #   "/tank" = {
-  #     device = "tank";
-  #     mountPoint = "/tank";
-  #     fsType = "zfs";
-  #     neededForBoot = false;
-  #   };
+  fileSystems = {
+    ### TESTING
+    "/rpool/enc/transfers" = {
+      device = "rpool/enc/transfers";
+      fsType = "zfs";
+    };
 
-  #   "/flash_temp" = {
-  #     device = "flash_temp";
-  #     mountPoint = "/flash_temp";
-  #     fsType = "zfs";
-  #     neededForBoot = false;
-  #   };
+    "/rpool/unenc/apps" = {
+      device = "rpool/unenc/apps";
+      fsType = "zfs";
+    };
 
-  # Commented out for testing
-  # "/flash_temp" = {
-  #   device = "/flash_temp/nfsshare";
-  #   # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
-  #   options = [ "bind" ];
-  # };
-  # };
+    "/rpool/unenc/dbs" = {
+      device = "rpool/unenc/dbs";
+      fsType = "zfs";
+    };
 
-  environment.systemPackages = with pkgs; [
-    zfs
-    zfstools
-  ];
-}
+    "/rpool/unenc/media" = {
+      device = "rpool/unenc/media";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/vms" = {
+      device = "rpool/unenc/vms";
+      fsType = "zfs";
+    };
+
+    # fileSystems = {
+    #   "/tank" = {
+    #     device = "tank";
+    #     mountPoint = "/tank";
+    #     fsType = "zfs";
+    #     neededForBoot = false;
+    #   };
+
+    #   "/flash_temp" = {
+    #     device = "flash_temp";
+    #     mountPoint = "/flash_temp";
+    #     fsType = "zfs";
+    #     neededForBoot = false;
+    #   };
+
+    # Commented out for testing
+    # "/flash_temp" = {
+    #   device = "/flash_temp/nfsshare";
+    #   # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
+    #   options = [ "bind" ];
+    # };
+    # };
+
+    environment.systemPackages = with pkgs; [
+      zfs
+      zfstools
+    ];
+  }
