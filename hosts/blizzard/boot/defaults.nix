@@ -111,10 +111,10 @@
     #   # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
     #   options = [ "bind" ];
     # };
-    # };
+  };
 
-    environment.systemPackages = with pkgs; [
-      zfs
-      zfstools
-    ];
-  }
+  environment.systemPackages = with pkgs; [
+    zfs
+    zfstools
+  ];
+}
