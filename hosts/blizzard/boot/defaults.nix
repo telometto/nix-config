@@ -9,18 +9,22 @@
     initrd = {
       enable = true;
 
-      secrets = {
-        "/hex.key" = /opt/sec/hex.key;
-      };
+      supportedFilesystems = { zfs = true; };
+      requestEncryptionCredentials = true;
+
+      # secrets = {
+      #   "/hex.key" = /opt/sec/hex.key;
+      # };
     };
 
     zfs = {
       forceImportRoot = false;
-      # forceImportAll = false;
-      extraPools = [
-        "flash_temp" # SSD
-        "rpool" # HDD
-      ];
+      forceImportAll = true;
+
+      # extraPools = [
+      #   "flash_temp" # SSD
+      #   "rpool" # HDD
+      # ];
     };
   };
 
