@@ -13,14 +13,14 @@
     };
 
     zfs = {
-      forceImportRoot = false;
-      # forceImportAll = false;
-
+      # forceImportRoot = false;
+      forceImportAll = true;
+      requestEncryptionCredentials = true;
       devNodes = "/dev/disk/by-id";
 
-      extraPools = [
-        "flash_temp" # SSD
-      ];
+      # extraPools = [
+      #   "flash_temp" # SSD
+      # ];
     };
   };
 
@@ -29,7 +29,7 @@
       autoScrub.enable = true;
 
       autoSnapshot = {
-        enable = false;
+        enable = true;
 
         monthly = 4;
         weekly = 7;
@@ -59,7 +59,13 @@
 
   # NFS sharing
   fileSystems = {
-    ### TESTING
+    ### SSD
+    "/flash/enc/personal" = {
+      device = "flash/enc/personal";
+      fsType = "zfs";
+    };
+
+    ### HDD
     "/rpool/enc/transfers" = {
       device = "rpool/enc/transfers";
       fsType = "zfs";
