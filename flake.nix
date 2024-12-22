@@ -1,33 +1,20 @@
 /**
- * Description:
- *   This flake serves as a complete NixOS deployment configuration managed via Colmena.
- *   It orchestrates multiple host configurations, ensuring consistent and reproducible environments.
- *   
- *   Inputs are organized into the following categories for better maintainability and clarity:
- *     - **Nixpkgs:** Core package repositories, including stable and unstable branches.
- *     - **NixOS Hardware:** Hardware-specific configurations and modules.
- *     - **Home Manager:** User environment management tools.
- *     - **Security:** Tools and modules related to secure boot and secret management.
- *     - **VPN:** Configurations for VPN confinement.
- *     - **Virtualization:** Virtual machine management tools.
- *     - **File Systems:** Disk management utilities.
- *     - **Theming:** Customization of system aesthetics.
- *     - **Desktop Environments:** Configuration for desktop environments like Hyprland.
- *     - **Management Tools:** Orchestration tools like Colmena for deploying configurations.
- *   
- * Usage:
- *   - **Deploy Configurations:**
- *       Use `nixos-rebuild` or `colmena` commands with this flake to deploy or update host configurations.
- *       Example: `colmena deploy -f .#snowfall`
- *   
- *   - **Manage Inputs:**
- *       Inputs are categorized for ease of updates and maintenance. Modify inputs within their respective categories as needed.
- *   
- *   - **Handle Secrets:**
- *       Ensure that secrets are managed securely via `nix-secrets`. Update the `vars.varsFile` as required.
- *   
- *   - **Extend Configurations:**
- *       Add new host configurations by updating the `hostConfigs` and corresponding user definitions.
+ * This `flake.nix` file provides a comprehensive NixOS deployment configuration managed via Colmena.
+ * It defines multiple host configurations and organizes inputs into categories such as Nixpkgs, Home Manager, Security, and more.
+ * 
+ * **Usage:**
+ * - **Deploy Configurations:**
+ *   Use `nixos-rebuild` or `colmena` commands to deploy or update host configurations.
+ *   Example: `colmena deploy -f .#hostname`
+ * 
+ * - **Manage Inputs:**
+ *   Modify inputs within their respective categories for updates and maintenance.
+ * 
+ * - **Handle Secrets:**
+ *   Securely manage secrets via `nix-secrets`. Update the `vars.varsFile` as required.
+ * 
+ * - **Extend Configurations:**
+ *   Add new host configurations by updating `hostConfigs` and user definitions.
  */
 
 {
