@@ -81,15 +81,16 @@
       fsType = "zfs";
     };
 
-    "/rpool/unenc/dbs/mysql" = {
-      device = "rpool/unenc/dbs/mysql";
-      fsType = "zfs";
-    };
+    # Commented out for testing
+    # "/rpool/unenc/dbs/mysql" = {
+    #   device = "rpool/unenc/dbs/mysql";
+    #   fsType = "zfs";
+    # };
 
-    "/rpool/unenc/dbs/psql" = {
-      device = "rpool/unenc/dbs/psql";
-      fsType = "zfs";
-    };
+    # "/rpool/unenc/dbs/psql" = {
+    #   device = "rpool/unenc/dbs/psql";
+    #   fsType = "zfs";
+    # };
 
     "/rpool/unenc/media" = {
       device = "rpool/unenc/media";
