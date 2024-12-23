@@ -93,7 +93,7 @@ in
       element-desktop # Matrix client
       teams-for-linux # Microsoft Teams client
       weechat # IRC client
-      zoom-us
+      zoom-us # Zoom client
 
       # Development
       nixd # Nix language server for VS Code
