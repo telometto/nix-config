@@ -101,7 +101,7 @@
       VARS = import inputs.nix-secrets.vars.varsFile;
 
       hostUsers = {
-        snowfall = [ VARS.users.admin.user ];
+        snowfall = [ VARS.users.admin.user VARS.users.frankie.user ];
         blizzard = [ VARS.users.admin.user ];
         avalanche = [ VARS.users.admin.user VARS.users.frankie.user VARS.users.luke.user ];
       };

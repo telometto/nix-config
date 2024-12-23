@@ -38,6 +38,8 @@
     };
   };
 
+  sops.secrets."general/tsKeyFilePath" = { };
+
   environment.systemPackages = with pkgs; [
     networkd-dispatcher
     tailscale

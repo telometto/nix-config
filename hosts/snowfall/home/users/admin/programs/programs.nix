@@ -149,4 +149,10 @@ in
     };
 
   };
+
+  sops.secrets = {
+      "git/github-prim-email" = { path = "${config.sops.defaultSymlinkPath}/git/github-prim-email"; };
+      "git/github-email" = { path = "${config.sops.defaultSymlinkPath}/git/github-email"; };
+      "git/gitlab-email" = { path = "${config.sops.defaultSymlinkPath}/git/gitlab-email"; };
+  };
 }

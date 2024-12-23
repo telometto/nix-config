@@ -56,4 +56,6 @@ in
       networkConfig = { IPv6AcceptRA = false; };
     };
   };
+
+  sops.secrets."general/wireguardKeyFile" = { };
 }
