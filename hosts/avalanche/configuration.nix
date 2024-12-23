@@ -25,8 +25,9 @@
 
     # 1.1 Users
     ../../common/users/admin/admin.nix
-    ../../common/users/extra/frankie.nix
-    ../../common/users/extra/luke.nix
+
+    ../../common/users/extra/francesco.nix
+    ../../common/users/extra/gianluca.nix
     # ../../common/users/extra/wife.nix
 
     ### 2. Import modules

@@ -32,7 +32,7 @@
     ../../common/users/admin/admin.nix
 
     # 1.1.2 Extra
-    # ../../common/users/extra/frankie/home.nix
+    ../../common/users/extra/francesco.nix
     # ../../common/users/extra/luke/home.nix
     # ../../common/users/extra/wife/home.nix
 
