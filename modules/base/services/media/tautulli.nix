@@ -10,7 +10,7 @@
     openFirewall = true;
     # user = VARS.users.serverAdmin.user; # If not set, the service will run as user "tautulli"
     # group = "nogroup"; # Default: "nogroup"
-    dataDir = "/tank/apps/mediastack/nixos/tautulli"; # If not set, the service will use the default data directory
+    dataDir = "/rpool/unenc/apps/nixos/tautulli"; # If not set, the service will use the default data directory
     # configFile = "/var/lib/plexpy/config.ini"; # Default: "/var/lib/plexpy/config.ini"
   };
 

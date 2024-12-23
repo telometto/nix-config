@@ -12,9 +12,9 @@
     # openMPThreadingWorkaround = true; # Defaults to true
     consumptionDirIsPublic = true; # Defaults to false
 
-    consumptionDir = "/tank/apps/nixos/paperless-ngx/consumption";
-    mediaDir = "/tank/apps/nixos/paperless-ngx/media";
-    dataDir = "/tank/apps/nixos/paperless-ngx/data";
+    consumptionDir = "/rpool/enc/personal/documents"; # Defaults to "/var/lib/paperless/consumption"
+    dataDir = "/rpool/unenc/apps/nixos/paperless-ngx";
+    # mediaDir = "/rpool/unenc/apps/nixos/paperless-ngx/media";
     passwordFile = config.sops.secrets."general/paperlessKeyFilePath".path; # config.sops.secrets.paperlessKeyFilePath.path;
 
     /* The following configuration does not work

@@ -10,7 +10,7 @@
     openFirewall = true;
     # user = VARS.users.serverAdmin.user; # If not set, the service will run as user "ombi"
     # group = "ombi"; # Default: "ombi"
-    dataDir = "/tank/apps/mediastack/nixos/ombi"; # If not set, the service will use the default data directory
+    dataDir = "/rpool/unenc/apps/nixos/ombi"; # If not set, the service will use the default data directory
   };
 
   environment.systemPackages = with pkgs; [ ombi ];
