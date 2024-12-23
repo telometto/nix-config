@@ -19,5 +19,7 @@
     };
   };
 
+  sops.secrets."general/searxSecretKey" = { };
+
   environment.systemPackages = with pkgs; [ searxng ];
 }

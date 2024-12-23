@@ -55,5 +55,7 @@
       [ "${script}/bin/register-bouncer" ];
   };
 
+  sops.secrets."general/crowdsecApiKey" = { };
+
   environment.systemPackages = with pkgs; [ crowdsec ];
 }

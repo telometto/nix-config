@@ -37,5 +37,7 @@
     */
   };
 
+  sops.secrets."general/paperlessKeyFilePath" = { };
+
   environment.systemPackages = with pkgs; [ paperless-ngx ];
 }

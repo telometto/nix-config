@@ -46,5 +46,10 @@
     };
   */
 
+  sops.secrets = {
+    "general/borgKeyFilePath" = { };
+    "general/borgRepo" = { };
+  };
+
   environment.systemPackages = with pkgs; [ borgbackup borgmatic ];
 }

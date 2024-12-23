@@ -32,4 +32,19 @@
       !include ${config.sops.templates."access-tokens".path}
     '';
   };
+
+  sops = {
+    secrets = {
+      "tokens/github-rl" = { };
+      "tokens/github-ns" = { };
+      "tokens/gitlab-fa" = { };
+      "tokens/gitlab-ns" = { };
+    };
+
+    templates."access-tokens".content = ''
+      access-tokens = "github.com=${config.sops.placeholder."tokens/github-ns"}"
+
+      extra-access-tokens = "github.com=${config.sops.placeholder."tokens/github-rl"}" "gitlab.com=${config.sops.placeholder."tokens/gitlab-ns"}" "gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}"
+    '';
+  };
 }
