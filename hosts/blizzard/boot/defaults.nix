@@ -76,6 +76,11 @@
       fsType = "zfs";
     };
 
+    "/rpool/unenc/apps/nixos" = {
+      device = "rpool/unenc/apps/nixos";
+      fsType = "zfs";
+    };
+
     "/rpool/unenc/dbs" = {
       device = "rpool/unenc/dbs";
       fsType = "zfs";
