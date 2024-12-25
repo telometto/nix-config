@@ -13,7 +13,7 @@
     # group = "immich";
 
     # secretsFile = "/opt/sec/immich-file"; # Default: null
-    mediaLocation = "/flash/enc/personal/photos"; # Default: "/var/lib/immich"
+    # mediaLocation = "/flash/enc/personal/photos"; # Default: "/var/lib/immich"
 
     environment = {
       IMMICH_LOG_LEVEL = "verbose"; # Example
@@ -27,7 +27,7 @@
     database = {
       enable = true; # Default: true
 
-      host = "/rpool/unenc/dbs/psql/immich"; # Default: "/run/postgresql"
+      # host = "/rpool/unenc/dbs/psql/immich"; # Default: "/run/postgresql"
       # port = 5432; # Default: 5432
 
       # user = "immich"; # Default: "immich"
