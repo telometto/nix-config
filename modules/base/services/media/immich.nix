@@ -5,8 +5,8 @@
   services.immich = {
     enable = true;
 
-    host = "192.168.4.100"; # Default: "localhost"
-    port = 2283; # Default: 3001
+    host = "192.168.2.100"; # Default: "localhost"
+    # port = 2283; # Default: 3001
     openFirewall = true;
 
     # user = "immich";
@@ -17,6 +17,7 @@
 
     environment = {
       IMMICH_LOG_LEVEL = "verbose"; # Example
+      IMMICH_TELEMETRY_INCLUDE = "all";
     };
 
     settings = {
@@ -50,6 +51,8 @@
       };
     };
   };
+
+  users.users.immich.extraGroups = [ "video" "render" ];
 
   environment.systemPackages = with pkgs; [ immich ];
 }
