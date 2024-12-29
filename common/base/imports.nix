@@ -31,7 +31,7 @@
     # Security
     ./security/defaults.nix
     ./security/gpg/defaults.nix
-    ./security/secrets/agenix.nix
+    # ./security/secrets/agenix.nix
     ./security/secrets/sops-nix.nix
     ./security/secureboot/lanzaboote.nix
 
