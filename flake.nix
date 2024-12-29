@@ -23,7 +23,8 @@
   inputs = {
     ### Nixpkgs
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-stable-latest.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
     ### NixOS Hardware repo
@@ -96,7 +97,7 @@
     #nixarr.url = "github:rasmus-kirk/nixarr";
   };
 
-  outputs = inputs@{ self, nixpkgs, ... }:
+  outputs = inputs@{ self, nixpkgs, nixpkgs-stable, ... }:
     let
       VARS = import inputs.nix-secrets.vars.varsFile;
 
@@ -107,21 +108,29 @@
       };
 
       # Define a function to generate host configurations
-      mkConfig = host: nixpkgs.lib.nixosSystem {
+      mkConfig = host: nixpkgs.lib.nixosSystem rec {
         system = "x86_64-linux";
+
         modules = [
           # Start Home Manager configuration
           inputs.home-manager.nixosModules.home-manager
           {
             home-manager = {
+              useGlobalPkgs = true;
+              useUserPackages = true;
+              backupFileExtension = "hm-backup";
+
               sharedModules = [
                 inputs.sops-nix.homeManagerModules.sops
                 inputs.hyprland.homeManagerModules.default
               ];
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              backupFileExtension = "hm-backup";
-              extraSpecialArgs = { inherit inputs VARS; };
+
+              extraSpecialArgs = {
+                pkgs-stable = import nixpkgs-stable { inherit system; };
+
+                inherit inputs VARS;
+              };
+
               users = nixpkgs.lib.genAttrs hostUsers.${host} (user:
                 import ./hosts/${host}/home/users/${if user == VARS.users.admin.user then "admin" else "extra/${user}"}/home.nix
               );
