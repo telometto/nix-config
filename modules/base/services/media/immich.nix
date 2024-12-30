@@ -1,5 +1,5 @@
 # Not in use yet; just have entered all the options as placeholders
-{ config, lib, pkgs, pkgs-stable-latest, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   services.immich = {
@@ -54,5 +54,5 @@
 
   users.users.immich.extraGroups = [ "video" "render" ];
 
-  environment.systemPackages = with pkgs; [ pkgs-stable-latest.immich ];
+  environment.systemPackages = with pkgs; [ immich ];
 }
