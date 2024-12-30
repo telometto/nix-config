@@ -53,7 +53,7 @@ in
       #mangohud
 
       # Media
-      pkgs-stable.jamesdsp
+      jamesdsp
       #mpv # Media player
 
       # Internet
