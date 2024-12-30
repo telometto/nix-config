@@ -124,7 +124,7 @@
       };
 
       # Define a function to generate host configurations
-      mkConfig = host: nixpkgs.lib.nixosSystem rec{
+      mkConfig = host: nixpkgs.lib.nixosSystem rec {
         system = hostArch.${host};
 
         modules = [
@@ -160,7 +160,13 @@
           }
         ] ++ hostConfigs.${host};
 
-        specialArgs = { inherit inputs VARS; };
+        specialArgs = {
+          pkgs-stable-latest = import nixpkgs-stable-latest { inherit system; };
+          pkgs-stable = import nixpkgs-stable { inherit system; };
+          pkgs-unstable = import nixpkgs-unstable { inherit system; };
+
+          inherit inputs VARS;
+        };
       };
     in
     {
