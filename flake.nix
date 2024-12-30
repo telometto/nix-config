@@ -89,7 +89,14 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, nixpkgs-stable, colmena, ... }:
+  outputs =
+    inputs@{ self
+    , nixpkgs
+    , nixpkgs-stable-latest
+    , nixpkgs-stable
+    , nixpkgs-unstable
+    , ...
+    }:
     let
       VARS = import inputs.nix-secrets.vars.varsFile;
 
@@ -135,7 +142,9 @@
               ];
 
               extraSpecialArgs = {
+                pkgs-stable-latest = import nixpkgs-stable-latest { inherit system; };
                 pkgs-stable = import nixpkgs-stable { inherit system; };
+                pkgs-unstable = import nixpkgs-unstable { inherit system; };
 
                 inherit inputs VARS;
               };
