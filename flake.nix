@@ -105,7 +105,7 @@
         snowfall = [ VARS.users.admin.user VARS.users.frankie.user ];
         blizzard = [ VARS.users.admin.user ];
         avalanche = [ VARS.users.admin.user VARS.users.frankie.user VARS.users.luke.user ];
-        frostbite = [ VARS.users.admin.user ];
+        frostbite = [ VARS.users.admin.user ]; # Placeholder
       };
 
       ## Define host architecture
@@ -113,7 +113,7 @@
         snowfall = "x86_64-linux";
         blizzard = "x86_64-linux";
         avalanche = "x86_64-linux";
-        frostbite = "aarch64-linux";
+        frostbite = "aarch64-linux"; # Placeholder
       };
 
       ## Define host configurations
@@ -121,6 +121,7 @@
         snowfall = [ ./hosts/snowfall/configuration.nix ];
         blizzard = [ ./hosts/blizzard/configuration.nix ];
         avalanche = [ ./hosts/avalanche/configuration.nix ];
+        # frostbite = [ ./hosts/frostbite/configuration.nix ]; # Placeholder
       };
 
       # Define a function to generate host configurations
@@ -185,13 +186,14 @@
         snowfall = ./hosts/snowfall;
         # blizzard = ./hosts/blizzard;
         # avalanche = ./hosts/avalanche;
+        # frostbite = ./hosts/frostbite;
       };
 
       nixosConfigurations = {
         snowfall = mkConfig "snowfall";
         blizzard = mkConfig "blizzard";
         avalanche = mkConfig "avalanche";
-        # frostbite = mkConfig "frostbite";
+        # frostbite = mkConfig "frostbite"; # Placeholder
       };
     };
 }
