@@ -1,4 +1,4 @@
-{ config, lib, pkgs, VARS, ... }:
+{ config, lib, pkgs, VARS, pkgs-stable, ... }:
 let
   DEFAULT_LANG = "nb_NO.UTF-8";
 in
@@ -68,7 +68,7 @@ in
     packages = with pkgs; [
       # Utils
       atuin # History manager
-      #blesh
+      # blesh
       gparted # Partition manager
       meld # Diff tool
       variety # Wallpaper changer
@@ -76,11 +76,11 @@ in
       polychromatic # Razer configuration tool
 
       # Gaming
-      #mangohud
+      # mangohud
 
       # Media
       jamesdsp
-      #mpv # Media player
+      # mpv # Media player
 
       # Internet
       brave # Web browser
@@ -118,13 +118,13 @@ in
 
       ## Declaratively configure VS Code with extensions
       ## NOTE: Settings will not be synced
-      #(vscode-with-extensions.override {
+      # (vscode-with-extensions.override {
       #  vscodeExtensions = with vscode-extensions; [
       #    jnoortheen.nix-ide
       #    pkief.material-icon-theme
       #    github.copilot
       #  ];
-      #})
+      # })
     ];
   };
 }

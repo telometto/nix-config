@@ -21,32 +21,28 @@
   description = "Full-deployment NixOS flake";
 
   inputs = {
-    ### Nixpkgs
+    ## Nixpkgs
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-stable-latest.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
-    ### NixOS Hardware repo
+    ## NixOS Hardware repo
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
-    ### Home Manager repo
+    ## Home Manager repo
     home-manager = {
       url = "github:nix-community/home-manager/master"; # Unstable
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    ### Secure boot
+    ## Secure boot
     lanzaboote = {
       url = "github:nix-community/lanzaboote/v0.4.1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Secrets
-    agenix = {
-      url = "github:ryantm/agenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
+    ## Secrets
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -57,28 +53,25 @@
       flake = true;
     };
 
-    ### VPN confinement repo
-    vpn-confinement = { url = "github:Maroka-chan/VPN-Confinement"; };
-
-    ### Virtualization
+    ## Virtualization
     microvm = {
       url = "github:astro/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    ### Security
+    ## Security
     crowdsec = {
       url = "git+https://codeberg.org/kampka/nix-flake-crowdsec.git";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    ### File systems
+    ## File systems
     disko = {
       url = "github:nix-community/disko/latest";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    ### Pimping
+    ## Pimping
     base16 = { url = "github:SenchoPens/base16.nix"; };
 
     tt-schemes = {
@@ -86,55 +79,95 @@
       flake = false;
     };
 
-    ### Desktop environments
+    ## Desktop environments
     hyprland = { url = "github:hyprwm/Hyprland"; };
 
-    ### NixOps
-    colmena = { url = "github:zhaofengli/colmena"; inputs.nixpkgs.follows = "nixpkgs"; };
-
-    # Nixarr repo (test)
-    #nixarr.url = "github:rasmus-kirk/nixarr";
+    ## NixOps
+    colmena = {
+      url = "github:zhaofengli/colmena";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, ... }:
+  outputs =
+    inputs@{ self
+    , nixpkgs
+    , nixpkgs-stable-latest
+    , nixpkgs-stable
+    , nixpkgs-unstable
+    , ...
+    }:
     let
       VARS = import inputs.nix-secrets.vars.varsFile;
 
+      ## Define host users
       hostUsers = {
         snowfall = [ VARS.users.admin.user VARS.users.frankie.user ];
         blizzard = [ VARS.users.admin.user ];
         avalanche = [ VARS.users.admin.user VARS.users.frankie.user VARS.users.luke.user ];
+        frostbite = [ VARS.users.admin.user ]; # Placeholder
       };
 
-      # Define a function to generate host configurations
-      mkConfig = host: nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [
-          # Start Home Manager configuration
-          inputs.home-manager.nixosModules.home-manager
-          {
-            home-manager = {
-              sharedModules = [
-                inputs.sops-nix.homeManagerModules.sops
-                inputs.hyprland.homeManagerModules.default
-              ];
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              backupFileExtension = "hm-backup";
-              extraSpecialArgs = { inherit inputs VARS; };
-              users = nixpkgs.lib.genAttrs hostUsers.${host} (user:
-                import ./hosts/${host}/home/users/${if user == VARS.users.admin.user then "admin" else "extra/${user}"}/home.nix
-              );
-            };
-          }
-        ] ++ hostConfigs.${host};
-        specialArgs = { inherit inputs VARS; };
+      ## Define host architecture
+      hostArch = {
+        snowfall = "x86_64-linux";
+        blizzard = "x86_64-linux";
+        avalanche = "x86_64-linux";
+        frostbite = "aarch64-linux"; # Placeholder
       };
 
+      ## Define host configurations
       hostConfigs = {
         snowfall = [ ./hosts/snowfall/configuration.nix ];
         blizzard = [ ./hosts/blizzard/configuration.nix ];
         avalanche = [ ./hosts/avalanche/configuration.nix ];
+        # frostbite = [ ./hosts/frostbite/configuration.nix ]; # Placeholder
+      };
+
+      # Define a function to generate host configurations
+      mkConfig = host: nixpkgs.lib.nixosSystem rec {
+        system = hostArch.${host};
+
+        modules = [
+          ## Start Home Manager configuration
+          inputs.home-manager.nixosModules.home-manager
+          {
+            home-manager = {
+              useGlobalPkgs = true;
+              useUserPackages = true;
+              backupFileExtension = "hm-backup";
+
+              sharedModules = [
+                inputs.sops-nix.homeManagerModules.sops
+                inputs.hyprland.homeManagerModules.default
+              ];
+
+              extraSpecialArgs = {
+                pkgs-stable-latest = import nixpkgs-stable-latest { inherit system; };
+                pkgs-stable = import nixpkgs-stable { inherit system; };
+                pkgs-unstable = import nixpkgs-unstable { inherit system; };
+
+                inherit inputs VARS;
+              };
+
+              users = nixpkgs.lib.genAttrs hostUsers.${host} (user:
+                import ./hosts/${host}/home/users/${
+                    if user == VARS.users.admin.user
+                    then "admin"
+                    else "extra/${user}"
+                  }/home.nix
+              );
+            };
+          }
+        ] ++ hostConfigs.${host};
+
+        specialArgs = {
+          pkgs-stable-latest = import nixpkgs-stable-latest { inherit system; };
+          pkgs-stable = import nixpkgs-stable { inherit system; };
+          pkgs-unstable = import nixpkgs-unstable { inherit system; };
+
+          inherit inputs VARS;
+        };
       };
     in
     {
@@ -153,12 +186,14 @@
         snowfall = ./hosts/snowfall;
         # blizzard = ./hosts/blizzard;
         # avalanche = ./hosts/avalanche;
+        # frostbite = ./hosts/frostbite;
       };
 
       nixosConfigurations = {
         snowfall = mkConfig "snowfall";
         blizzard = mkConfig "blizzard";
         avalanche = mkConfig "avalanche";
+        # frostbite = mkConfig "frostbite"; # Placeholder
       };
     };
 }

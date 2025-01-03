@@ -1,4 +1,4 @@
-{ config, lib, pkgs, VARS, ... }:
+{ config, lib, pkgs, VARS, pkgs-stable, ... }:
 let
   DEFAULT_LANG = "it_IT.UTF-8";
 in
