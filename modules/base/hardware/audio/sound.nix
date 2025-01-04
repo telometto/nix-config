@@ -22,7 +22,7 @@
   security.rtkit.enable = true;
 
   # Enable sound.
-  hardware.pulseaudio.enable = false; # Default: true
+  services.pulseaudio.enable = false; # Default: true
   # OR
   services.pipewire = {
     enable = true;
