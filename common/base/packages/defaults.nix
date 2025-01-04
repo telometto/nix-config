@@ -82,5 +82,7 @@
     nerd-fonts.mononoki
     nerd-fonts.fira-code
     nerd-fonts.tinos
+    noto-fonts
+    noto-fonts-color-emoji
   ];
 }
