@@ -90,15 +90,15 @@ in
       # Social
       discord # Discord client
       element-desktop # Matrix client
-      teams-for-linux # Microsoft Teams client
-      weechat # IRC client
+      # teams-for-linux # Microsoft Teams client
+      # weechat # IRC client
 
       # Development
       nixd # Nix language server for VS Code
       nixpkgs-fmt # Nix language formatter
       vscode # Visual Studio Code
 
-      texliveFull # LaTeX
+      # texliveFull # LaTeX
 
       # Misc
       fortune # Random quotes
