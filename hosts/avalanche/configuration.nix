@@ -26,7 +26,7 @@
     # 1.1 Users
     ../../common/users/admin/admin.nix
 
-    ../../common/users/extra/francesco.nix
+    # ../../common/users/extra/francesco.nix
     ../../common/users/extra/gianluca.nix
     # ../../common/users/extra/wife.nix
 
