@@ -33,8 +33,8 @@
 
     # 1.1.2 Extra
     # ../../common/users/extra/francesco.nix
-    ../../common/users/extra/gianluca/home.nix
-    # ../../common/users/extra/wife/home.nix
+    ../../common/users/extra/gianluca.nix
+    # ../../common/users/extra/wife.nix
 
     ### 2. Import modules
     # 2.1 Desktop managers
