@@ -14,7 +14,7 @@ name: Update flake
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */4 * * *" # Every 4 hours
+    - cron: "0 * * * *" # Every hour
   pull_request:
     types: [opened, synchronize]
     # types: [ assigned, unassigned, labeled, unlabeled, opened, edited, closed, reopened, synchronize, converted_to_draft, locked, unlocked, ready_for_review, review_requested, review_request_removed, auto_merge_enabled, auto_merge_disabled ]
