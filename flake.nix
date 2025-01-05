@@ -102,7 +102,7 @@
 
       ## Define host users
       hostUsers = {
-        snowfall = [ VARS.users.admin.user ];
+        snowfall = [ VARS.users.admin.user VARS.users.luke.user ];
         blizzard = [ VARS.users.admin.user ];
         avalanche = [ VARS.users.admin.user VARS.users.luke.user ];
         frostbite = [ VARS.users.admin.user ]; # Placeholder
