@@ -20,7 +20,7 @@ in
       allowedUDPPortRanges = allowedTCPPortRanges;
     };
 
-    nftables = { enable = true; }; # Use nftables instead of iptables
+    nftables = { enable = false; }; # Use nftables instead of iptables
 
     useNetworkd = lib.mkForce false;
     useDHCP = lib.mkForce true;
