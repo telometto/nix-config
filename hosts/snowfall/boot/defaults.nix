@@ -33,16 +33,16 @@ in
       options = [ "defaults" "nofail" ];
     };
 
-    "${DRIVE_BASE_PATH}/personal/shares" = {
-      device = "192.168.2.100:/flash_temp/nfsshare";
-      fsType = "nfs";
-      options = [
-        "x-systemd.automount"
-        "x-systemd.idle-timeout=600"
-        "noauto"
-        "nofail"
-      ];
-    };
+    # "${DRIVE_BASE_PATH}/personal/shares" = {
+    #   device = "192.168.2.100:/flash_temp/nfsshare";
+    #   fsType = "nfs";
+    #   options = [
+    #     "x-systemd.automount"
+    #     "x-systemd.idle-timeout=600"
+    #     "noauto"
+    #     "nofail"
+    #   ];
+    # };
   };
 
   # Services
