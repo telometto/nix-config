@@ -33,7 +33,7 @@
 
     # 1.1.2 Extra
     # ../../common/users/extra/francesco.nix
-    ../../common/users/extra/luke/home.nix
+    ../../common/users/extra/gianluca/home.nix
     # ../../common/users/extra/wife/home.nix
 
     ### 2. Import modules
