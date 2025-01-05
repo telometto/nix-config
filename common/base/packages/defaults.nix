@@ -71,6 +71,8 @@
     sbctl # Secure Boot key manager
     colmena # Remote management tool
     lsof # List open files
+
+    baobab # Disk usage analyzer
   ];
 
   fonts.packages = with pkgs; [
