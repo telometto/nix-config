@@ -42,7 +42,7 @@
     };
 
     nfs.server = {
-      enable = false;
+      enable = true;
 
       lockdPort = 4001;
       mountdPort = 4002;
@@ -50,10 +50,11 @@
 
       # extraNfsdConfig = '''';
 
-      # Commented out for testing
-      # exports = ''
-      #   /flash_temp/nfsshare 192.168.2.100 (rw,async,no_subtree_check)
-      # '';
+      ## Commented out for testing
+      exports = ''
+        /rpool/enc/transfers 192.168.2.0/24(rw,sync,no_subtree_check)
+        /rpool/enc/transfers/recovery 192.168.2.0/24(rw,sync,no_subtree_check)
+      '';
     };
   };
 
@@ -105,28 +106,6 @@
       device = "rpool/unenc/vms";
       fsType = "zfs";
     };
-
-    # fileSystems = {
-    #   "/tank" = {
-    #     device = "tank";
-    #     mountPoint = "/tank";
-    #     fsType = "zfs";
-    #     neededForBoot = false;
-    #   };
-
-    #   "/flash_temp" = {
-    #     device = "flash_temp";
-    #     mountPoint = "/flash_temp";
-    #     fsType = "zfs";
-    #     neededForBoot = false;
-    #   };
-
-    # Commented out for testing
-    # "/flash_temp" = {
-    #   device = "/flash_temp/nfsshare";
-    #   # fsType = "zfs"; # Defaults to auto; "zfs" might not be valid
-    #   options = [ "bind" ];
-    # };
   };
 
   environment.systemPackages = with pkgs; [
