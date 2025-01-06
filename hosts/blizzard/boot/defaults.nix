@@ -50,10 +50,8 @@
 
       # extraNfsdConfig = '''';
 
-      ## Commented out for testing
       exports = ''
         /rpool/enc/transfers 192.168.2.0/24(rw,sync,no_subtree_check)
-        /rpool/enc/transfers/recovery 192.168.2.0/24(rw,sync,no_subtree_check)
       '';
     };
   };
