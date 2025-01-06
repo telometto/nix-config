@@ -51,7 +51,7 @@
       # extraNfsdConfig = '''';
 
       exports = ''
-        /rpool/enc/transfers 192.168.2.0/24(rw,sync,no_subtree_check)
+        /rpool/enc/transfers 192.168.2.0/24(rw,sync,nohide,no_subtree_check)
       '';
     };
   };
