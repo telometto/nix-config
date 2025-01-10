@@ -13,8 +13,8 @@
     consumptionDirIsPublic = true; # Defaults to false
 
     consumptionDir = "/rpool/enc/personal/documents"; # Defaults to "/var/lib/paperless/consumption"
-    dataDir = "/rpool/unenc/apps/nixos/paperless-ngx";
-    # mediaDir = "/rpool/unenc/apps/nixos/paperless-ngx/media";
+    # dataDir = "/rpool/unenc/apps/nixos/paperless-ngx";
+    mediaDir = "/rpool/enc/personal/paperless-media"; # Defaults to "${dataDir}/media"
     passwordFile = config.sops.secrets."general/paperlessKeyFilePath".path; # config.sops.secrets.paperlessKeyFilePath.path;
 
     /* The following configuration does not work
