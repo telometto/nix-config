@@ -64,6 +64,26 @@
       fsType = "zfs";
     };
 
+    "/flash/enc/personal/documents" = {
+      device = "flash/enc/personal/documents";
+      fsType = "zfs";
+    };
+
+    "/flash/enc/personal/immich-library" = {
+      device = "flash/enc/personal/immich-library";
+      fsType = "zfs";
+    };
+
+    "/flash/enc/personal/photos" = {
+      device = "flash/enc/personal/photos";
+      fsType = "zfs";
+    };
+
+    "/flash/enc/personal/videos" = {
+      device = "flash/enc/personal/videos";
+      fsType = "zfs";
+    };
+
     ### HDD
     "/rpool/enc/transfers" = {
       device = "rpool/enc/transfers";
