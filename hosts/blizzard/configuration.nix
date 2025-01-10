@@ -75,7 +75,7 @@
     # ../../modules/base/services/documents/paperless.nix
     # ../../modules/base/services/finance/firefly.nix # Not yet created
     # ../../modules/base/services/internet/searx.nix
-    # ../../modules/base/services/media/immich.nix
+    ../../modules/base/services/media/immich.nix
     # ../../modules/base/services/media/nixarr.nix # Not in use; using k3s
     # ../../modules/base/services/media/ombi.nix
     # ../../modules/base/services/media/tautulli.nix
