@@ -15,7 +15,7 @@
     # configDir = "/etc/jellyfin"; # Default: "${cfg.dataDir}/config"
   };
 
-    nixpkgs.overlays = with pkgs; [
+  nixpkgs.overlays = with pkgs; [
     (
       final: prev:
         {
