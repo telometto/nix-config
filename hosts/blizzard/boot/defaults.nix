@@ -85,6 +85,21 @@
     };
 
     ### HDD
+    "/rpool/enc/personal" = {
+      device = "rpool/enc/personal";
+      fsType = "zfs";
+    };
+
+    "/rpool/enc/personal/documents" = {
+      device = "rpool/enc/personal/documents";
+      fsType = "zfs";
+    };
+
+    "/rpool/enc/personal/paperless-media" = {
+      device = "rpool/enc/personal/paperless-media";
+      fsType = "zfs";
+    };
+
     "/rpool/enc/transfers" = {
       device = "rpool/enc/transfers";
       fsType = "zfs";
@@ -95,8 +110,18 @@
       fsType = "zfs";
     };
 
+    "/rpool/unenc/apps/kubernetes" = {
+      device = "rpool/unenc/apps/kubernetes";
+      fsType = "zfs";
+    };
+
     "/rpool/unenc/apps/nixos" = {
       device = "rpool/unenc/apps/nixos";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/caches" = {
+      device = "rpool/unenc/caches";
       fsType = "zfs";
     };
 
@@ -112,6 +137,11 @@
 
     "/rpool/unenc/dbs/psql" = {
       device = "rpool/unenc/dbs/psql";
+      fsType = "zfs";
+    };
+
+    "/rpool/unenc/dbs/redis" = {
+      device = "rpool/unenc/dbs/redis";
       fsType = "zfs";
     };
 
