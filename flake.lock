@@ -33,24 +33,6 @@
         "type": "github"
       }
     },
-    "base16": {
-      "inputs": {
-        "fromYaml": "fromYaml"
-      },
-      "locked": {
-        "lastModified": 1732200724,
-        "narHash": "sha256-+R1BH5wHhfnycySb7Sy5KbYEaTJZWm1h+LW1OtyhiTs=",
-        "owner": "SenchoPens",
-        "repo": "base16.nix",
-        "rev": "153d52373b0fb2d343592871009a286ec8837aec",
-        "type": "github"
-      },
-      "original": {
-        "owner": "SenchoPens",
-        "repo": "base16.nix",
-        "type": "github"
-      }
-    },
     "colmena": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -272,22 +254,6 @@
       "original": {
         "owner": "numtide",
         "repo": "flake-utils",
-        "type": "github"
-      }
-    },
-    "fromYaml": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1731966426,
-        "narHash": "sha256-lq95WydhbUTWig/JpqiB7oViTcHFP8Lv41IGtayokA8=",
-        "owner": "SenchoPens",
-        "repo": "fromYaml",
-        "rev": "106af9e2f715e2d828df706c386a685698f3223b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "SenchoPens",
-        "repo": "fromYaml",
         "type": "github"
       }
     },
@@ -648,11 +614,11 @@
     },
     "nix-secrets": {
       "locked": {
-        "lastModified": 1736972674,
-        "narHash": "sha256-JX3I5Eo6bXHq6a8aw8Xe1KQZ7w4oHD3OTJdgfovseBQ=",
+        "lastModified": 1736973140,
+        "narHash": "sha256-QiGEywGNS3YKVVcORRjZgyxAXhekoS2bVO/DeUEwW9g=",
         "ref": "refs/heads/master",
-        "rev": "42a7f0da8fac496ea54037f4de26342511c0580c",
-        "revCount": 28,
+        "rev": "301bc774799c779399c0cdbce2348630701135ce",
+        "revCount": 29,
         "type": "git",
         "url": "ssh://git@github.com/telometto/nix-secrets.git"
       },
@@ -825,7 +791,6 @@
     },
     "root": {
       "inputs": {
-        "base16": "base16",
         "colmena": "colmena",
         "crowdsec": "crowdsec",
         "disko": "disko",
@@ -839,8 +804,7 @@
         "nixpkgs-stable": "nixpkgs-stable_2",
         "nixpkgs-stable-latest": "nixpkgs-stable-latest",
         "nixpkgs-unstable": "nixpkgs-unstable",
-        "sops-nix": "sops-nix",
-        "tt-schemes": "tt-schemes"
+        "sops-nix": "sops-nix"
       }
     },
     "rust-overlay": {
@@ -977,22 +941,6 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
-        "type": "github"
-      }
-    },
-    "tt-schemes": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1736888641,
-        "narHash": "sha256-ioUzCnrFr5YsFtsSG+0QecR7/A1YUQPFOUYblGy4CLM=",
-        "owner": "tinted-theming",
-        "repo": "schemes",
-        "rev": "5c6d92f20e5761e0bfd78ee88cb9fca72189c0cf",
-        "type": "github"
-      },
-      "original": {
-        "owner": "tinted-theming",
-        "repo": "schemes",
         "type": "github"
       }
     },
