@@ -7,7 +7,7 @@
 
     openFirewall = true;
     # user = VARS.users.admin.user; # If not set, the service will run as user "plex"
-    dataDir = "/rpool/unenc/apps/nixos/plex"; # If not set, the service will use the default data directory
+    # dataDir = "/rpool/unenc/apps/nixos/plex"; # If not set, the service will use the default data directory
   };
 
   environment.systemPackages = with pkgs; [ plex ];
