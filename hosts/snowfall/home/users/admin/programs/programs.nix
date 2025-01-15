@@ -36,6 +36,19 @@ in
       #languagePacks = [ "nb-NO" "it-IT" "en-US" ];
     };
 
+    ghostty = {
+      enable = true;
+
+      enableBashIntegration = true;
+      enableZshIntegration = true;
+
+      # installBatSyntax = true;
+
+      settings = {
+        theme = "gruvbox-dark";
+      };
+    };
+
     git = {
       userName = "telometto";
       userEmail = config.sops.secrets."git/github-prim-email".path;
