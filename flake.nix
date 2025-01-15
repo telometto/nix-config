@@ -72,12 +72,12 @@
     };
 
     ## Pimping
-    base16 = { url = "github:SenchoPens/base16.nix"; };
+    # base16 = { url = "github:SenchoPens/base16.nix"; };
 
-    tt-schemes = {
-      url = "github:tinted-theming/schemes";
-      flake = false;
-    };
+    # tt-schemes = {
+    #   url = "github:tinted-theming/schemes";
+    #   flake = false;
+    # };
 
     ## Desktop environments
     hyprland = { url = "github:hyprwm/Hyprland"; };
