@@ -45,7 +45,7 @@ in
       # installBatSyntax = true;
 
       settings = {
-        theme = "gruvbox-dark";
+        theme = "catppuccin-frappe";
       };
     };
 
