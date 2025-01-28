@@ -12,6 +12,10 @@
       supportedFilesystems = { zfs = true; };
     };
 
+    kernel = {
+      sysctl = { "net.ipv4.conf.all.src_valid_mark" = 1; };
+    };
+
     zfs = {
       # forceImportRoot = false;
       forceImportAll = true;
