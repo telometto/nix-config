@@ -11,7 +11,7 @@ in
 
     # Firewall-related
     firewall = rec {
-      enable = false;
+      enable = true;
 
       allowedTCPPortRanges = [ ];
       allowedUDPPortRanges = [ ];
