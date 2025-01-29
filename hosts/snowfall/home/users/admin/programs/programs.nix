@@ -123,24 +123,24 @@ in
       # TODO: Declaratively configure mpv
     };
 
-      # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
+    # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
 
-      ssh = {
-        enable = true;
+    ssh = {
+      enable = true;
 
-        extraConfig = ''
-          AddKeysToAgent yes
+      extraConfig = ''
+        AddKeysToAgent yes
 
-          Host github.com
-            Hostname ssh.github.com
-            Port 443
+        Host github.com
+          Hostname ssh.github.com
+          Port 443
 
-          Host 192.168.*
-            ForwardAgent yes
-            IdentityFile /home/zeno/.ssh/id_ed25519
-            IdentitiesOnly yes
-            SetEnv TERM=xterm-256color
-        '';
+        Host 192.168.*
+          ForwardAgent yes
+          IdentityFile /home/zeno/.ssh/id_ed25519
+          IdentitiesOnly yes
+          SetEnv TERM=xterm-256color
+      '';
 
       # addKeysToAgent = "yes";
       # # controlMaster = "auto";
@@ -156,7 +156,7 @@ in
       # # serverAliveCountMax = 1; # Positive integer
       # # serverAliveInterval = 1;
       # # userKnownHostsFile = ""; # String
-      };
+    };
 
     /*
       thunderbird = {
