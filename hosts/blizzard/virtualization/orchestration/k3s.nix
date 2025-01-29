@@ -2,37 +2,32 @@
 { config, lib, pkgs, ... }:
 
 {
-  ## Disabled for testing (not using ZFS for now)
-  # virtualisation = {
-  #   # k3s-related; more info at https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/networking/cluster/k3s/docs/examples/STORAGE.md
-  #   containerd = {
-  #     enable = true;
+  # Disabled for testing (not using ZFS for now)
+  virtualisation = {
+    # k3s-related; more info at https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/networking/cluster/k3s/docs/examples/STORAGE.md
+    containerd = {
+      enable = true;
 
-  #     settings =
-  #       let
-  #         fullCNIPlugins = pkgs.buildEnv {
-  #           name = "full-cni";
-  #           paths = with pkgs; [
-  #             cni-plugins
-  #             cni-plugin-flannel
-  #           ];
-  #         };
-  #       in
-  #       {
-  #         plugins."io.containerd.grpc.v1.cri" = {
-  #           cni = {
-  #             bin_dir = "${fullCNIPlugins}/bin";
-  #             conf_dir = "/var/lib/rancher/k3s/agent/etc/cni/net.d/";
-  #           };
+      settings = let
+        fullCNIPlugins = pkgs.buildEnv {
+          name = "full-cni";
+          paths = with pkgs; [ cni-plugins cni-plugin-flannel ];
+        };
+      in {
+        plugins."io.containerd.grpc.v1.cri" = {
+          cni = {
+            bin_dir = "${fullCNIPlugins}/bin";
+            conf_dir = "/var/lib/rancher/k3s/agent/etc/cni/net.d/";
+          };
 
-  #           # config.toml does not get declaratively edited; needs to be done manually
-  #           # containerd = {
-  #           #   snapshotter = "zfs";
-  #           # };
-  #         };
-  #       };
-  #   };
-  # };
+          # config.toml does not get declaratively edited; needs to be done manually
+          # containerd = {
+          #   snapshotter = "zfs";
+          # };
+        };
+      };
+    };
+  };
 
   services = {
     rpcbind.enable = lib.mkOptionDefault true; # Required for NFS on k3s
@@ -43,7 +38,10 @@
       role = "server";
       gracefulNodeShutdown = { enable = true; };
       ## Disabled for testing (not using ZFS for now)
-      # extraFlags = toString [ "--container-runtime-endpoint unix:///run/containerd/containerd.sock" ];
+      extraFlags = toString [
+        "--container-runtime-endpoint unix:///run/containerd/containerd.sock"
+        # "--disable=servicelb"
+      ];
     };
   };
 
