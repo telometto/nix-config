@@ -38,8 +38,8 @@ in
         DisableFirefoxStudies = true;
         DisablePocket = true;
         DisableFirefoxAccounts = false;
-        OverrideFirstRunPage = "";
-        OverridePostUpdatePage = "";
+        # OverrideFirstRunPage = "";
+        # OverridePostUpdatePage = "";
         DontCheckDefaultBrowser = true;
         DisplayBookmarksToolbar = "always";
         DisplayMenuBar = "default-off";
@@ -60,14 +60,12 @@ in
       enableBashIntegration = true;
       enableZshIntegration = true;
 
-      settings = {
-        theme = "catppuccin-frappe";
-      };
+      settings = { theme = "catppuccin-frappe"; };
     };
 
     git = {
       userName = "telometto";
-      userEmail = "65364211+telometto@users.noreply.github.com";
+      userEmail = config.sops.secrets."git/github-prim-email".path;
 
       includes = [
         {
@@ -104,18 +102,11 @@ in
     };
 
     keychain = {
-      keys = [
-        "id_ed25519"
-        "gitlabkey"
-        "deployment-keys"
-        "nix-secrets"
-        "testkey"
-      ];
+      keys =
+        [ "id_ed25519" "gitlabkey" "deployment-keys" "nix-secrets" "testkey" ];
     };
 
-    mangohud = {
-      enable = true;
-    };
+    mangohud = { enable = true; };
 
     mpv = {
       enable = true;
@@ -123,24 +114,24 @@ in
       # TODO: Declaratively configure mpv
     };
 
-      # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
+    # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
 
-      ssh = {
-        enable = true;
+    ssh = {
+      enable = true;
 
-        extraConfig = ''
-          AddKeysToAgent yes
+      extraConfig = ''
+        AddKeysToAgent yes
 
-          Host github.com
-            Hostname ssh.github.com
-            Port 443
+        Host github.com
+          Hostname ssh.github.com
+          Port 443
 
-          Host 192.168.*
-            ForwardAgent yes
-            IdentityFile /home/zeno/.ssh/id_ed25519
-            IdentitiesOnly yes
-            SetEnv TERM=xterm-256color
-        '';
+        Host 192.168.*
+          ForwardAgent yes
+          IdentityFile /home/zeno/.ssh/id_ed25519
+          IdentitiesOnly yes
+          SetEnv TERM=xterm-256color
+      '';
 
       # addKeysToAgent = "yes";
       # # controlMaster = "auto";
@@ -156,26 +147,24 @@ in
       # # serverAliveCountMax = 1; # Positive integer
       # # serverAliveInterval = 1;
       # # userKnownHostsFile = ""; # String
-      };
+    };
 
-    /*
-      thunderbird = {
-      enable = true;
+    /* thunderbird = {
+       enable = true;
 
-      # TODO: Declaratively configure Thunderbird
-      };
-        */
+       # TODO: Declaratively configure Thunderbird
+       };
+    */
 
-    /*
-      vscode = {
-      enable = true;
+    /* vscode = {
+       enable = true;
 
-      enableUpdateCheck = false; # Disable update checks
-      mutableExtensionsDir = true; # Allow extensions to be installed in the user's home directory
+       enableUpdateCheck = false; # Disable update checks
+       mutableExtensionsDir = true; # Allow extensions to be installed in the user's home directory
 
-      # TODO: Declaratively configure Visual Studio Code
-      };
-        */
+       # TODO: Declaratively configure Visual Studio Code
+       };
+    */
 
     zellij = {
       enable = true;
@@ -191,8 +180,14 @@ in
   };
 
   sops.secrets = {
-    "git/github-prim-email" = { path = "${config.sops.defaultSymlinkPath}/git/github-prim-email"; };
-    "git/github-email" = { path = "${config.sops.defaultSymlinkPath}/git/github-email"; };
-    "git/gitlab-email" = { path = "${config.sops.defaultSymlinkPath}/git/gitlab-email"; };
+    "git/github-prim-email" = {
+      path = "${config.sops.defaultSymlinkPath}/git/github-prim-email";
+    };
+    "git/github-email" = {
+      path = "${config.sops.defaultSymlinkPath}/git/github-email";
+    };
+    "git/gitlab-email" = {
+      path = "${config.sops.defaultSymlinkPath}/git/gitlab-email";
+    };
   };
 }
