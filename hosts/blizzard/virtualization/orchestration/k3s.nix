@@ -58,7 +58,7 @@
   };
 
   environment.systemPackages = with pkgs; [
-    # containerd # Disabled for testing (not using ZFS for now)
+    containerd # Disabled for testing (not using ZFS for now)
     k3s
 
     (wrapHelm kubernetes-helm {
