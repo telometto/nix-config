@@ -137,7 +137,7 @@ in
 
           Host 192.168.*
             ForwardAgent yes
-            IdentityFile ~/.ssh/id_ed25519
+            IdentityFile /home/zeno/.ssh/id_ed25519
             IdentitiesOnly yes
             SetEnv TERM=xterm-256color
         '';
