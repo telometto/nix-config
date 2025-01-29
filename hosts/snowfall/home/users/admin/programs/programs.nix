@@ -33,7 +33,25 @@ in
     floorp = {
       enable = true;
 
-      #languagePacks = [ "nb-NO" "it-IT" "en-US" ];
+      policies = {
+        DisableTelemetry = true;
+        DisableFirefoxStudies = true;
+        DisablePocket = true;
+        DisableFirefoxAccounts = false;
+        OverrideFirstRunPage = "";
+        OverridePostUpdatePage = "";
+        DontCheckDefaultBrowser = true;
+        DisplayBookmarksToolbar = "always";
+        DisplayMenuBar = "default-off";
+        SearchBar = "unified";
+
+        EnableTrackingProtection = {
+          Value = true;
+          Locked = true;
+          Cryptomining = true;
+          Fingerprinting = true;
+        };
+      };
     };
 
     ghostty = {
@@ -42,8 +60,6 @@ in
       enableBashIntegration = true;
       enableZshIntegration = true;
 
-      # installBatSyntax = true;
-
       settings = {
         theme = "catppuccin-frappe";
       };
@@ -51,7 +67,7 @@ in
 
     git = {
       userName = "telometto";
-      userEmail = config.sops.secrets."git/github-prim-email".path;
+      userEmail = "65364211+telometto@users.noreply.github.com";
 
       includes = [
         {
@@ -60,7 +76,7 @@ in
           contents = {
             user = {
               name = "telometto";
-              email = config.sops.secrets."git/github-email".path;
+              email = "65364211+telometto@users.noreply.github.com";
               signingKey = "0x5A5BF29378C3942B";
             };
 
@@ -75,7 +91,7 @@ in
           contents = {
             user = {
               name = "telometto";
-              email = config.sops.secrets."git/gitlab-email".path;
+              email = "gitlab.z8mfn@simplelogin.com";
               signingKey = "0xB7103B8A59566994";
             };
 
@@ -107,29 +123,39 @@ in
       # TODO: Declaratively configure mpv
     };
 
-    /*
       # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
-      # For now, resorting to non-home-manager configuration
 
       ssh = {
-      enable = true;
+        enable = true;
 
-      addKeysToAgent = "yes";
-      #controlMaster = "auto";
-      #controlPath = "/some/path/%r@%h:%p";
-      #controlPersist = "yes";
-      compression = true;
-      #extraConfig = ""; # Strings concatenated with "\n"
-      #extraOptionOverrides = ""; # Attribute set of strings
-      forwardAgent = true;
-      #hashKnownHosts = true;
-      #includes = [ ]; # List of strings
-      #matchBlocks = { }; # Attribute set of attribute sets
-      #serverAliveCountMax = 1; # Positive integer
-      #serverAliveInterval = 1;
-      #userKnownHostsFile = ""; # String
+        extraConfig = ''
+          AddKeysToAgent yes
+
+          Host github.com
+            Hostname ssh.github.com
+            Port 443
+
+          Host 192.168.*
+            ForwardAgent yes
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+        '';
+
+      # addKeysToAgent = "yes";
+      # # controlMaster = "auto";
+      # # controlPath = "/some/path/%r@%h:%p";
+      # # controlPersist = "yes";
+      # compression = true;
+      # # extraConfig = ""; # Strings concatenated with "\n"
+      # # extraOptionOverrides = ""; # Attribute set of strings
+      # forwardAgent = true;
+      # # hashKnownHosts = true;
+      # # includes = [ ]; # List of strings
+      # # matchBlocks = { }; # Attribute set of attribute sets
+      # # serverAliveCountMax = 1; # Positive integer
+      # # serverAliveInterval = 1;
+      # # userKnownHostsFile = ""; # String
       };
-        */
 
     /*
       thunderbird = {
