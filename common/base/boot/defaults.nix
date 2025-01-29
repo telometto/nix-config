@@ -7,7 +7,9 @@
  */
 
 { config, lib, pkgs, VARS, ... }:
-
+let
+  MEM_MAX = 7500000;
+in
 {
   # Bootloader
   boot = {
@@ -24,8 +26,8 @@
 
     kernel = {
       sysctl = {
-        "net.core.wmem_max" = 7500000; # For cloudflared tunnel
-        "net.core.rmem_max" = 7500000; # For cloudflared tunnel
+        "net.core.wmem_max" = MEM_MAX; # For cloudflared tunnel
+        "net.core.rmem_max" = MEM_MAX; # For cloudflared tunnel
 
         # "net.ipv4.ip_forward" = 1; # Tailscale optimization: enable ipv4 forwarding
         # "net.ipv6.conf.all.forwarding" = 1; # Tailscale optimization: enable ipv6 forwarding
