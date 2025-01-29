@@ -98,6 +98,7 @@ in
       # Development
       nixd # Nix language server for VS Code
       nixpkgs-fmt # Nix language formatter
+      nixfmt-classic # Nix language formatter
       vscode # Visual Studio Code
 
       texliveFull # LaTeX
