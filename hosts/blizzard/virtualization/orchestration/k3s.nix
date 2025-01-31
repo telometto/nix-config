@@ -18,7 +18,7 @@
           bin_dir = "${fullCNIPlugins}/bin";
           conf_dir = "/var/lib/rancher/k3s/agent/etc/cni/net.d/";
         };
-        plugins."io.containerd.cri.v1.images" = { snapshotter = "zfs"; };
+        plugins."io.containerd.cri.v1.images" = { snapshotter = "zfs"; }; # Why won't this work?
       };
     };
   };
