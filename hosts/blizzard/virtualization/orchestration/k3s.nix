@@ -8,26 +8,18 @@
     containerd = {
       enable = true;
 
-      settings =
-        let
-          fullCNIPlugins = pkgs.buildEnv {
-            name = "full-cni";
-            paths = with pkgs; [ cni-plugins cni-plugin-flannel ];
-          };
-        in
-        {
-          plugins."io.containerd.grpc.v1.cri" = {
-            cni = {
-              bin_dir = "${fullCNIPlugins}/bin";
-              conf_dir = "/var/lib/rancher/k3s/agent/etc/cni/net.d/";
-            };
-
-            # config.toml does not get declaratively edited; needs to be done manually
-            # containerd = {
-            #   snapshotter = "zfs";
-            # };
-          };
+      settings = let
+        fullCNIPlugins = pkgs.buildEnv {
+          name = "full-cni";
+          paths = with pkgs; [ cni-plugins cni-plugin-flannel ];
         };
+      in {
+        plugins."io.containerd.grpc.v1.cri".cni = {
+          bin_dir = "${fullCNIPlugins}/bin";
+          conf_dir = "/var/lib/rancher/k3s/agent/etc/cni/net.d/";
+        };
+        plugins."io.containerd.cri.v1.images" = { snapshotter = "zfs"; };
+      };
     };
   };
 
@@ -43,7 +35,7 @@
       extraFlags = toString [
         "--container-runtime-endpoint unix:///run/containerd/containerd.sock"
         # "--disable=servicelb"
-        "--docker"
+        # "--docker"
         # "--snapshotter=native"
       ];
     };
