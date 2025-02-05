@@ -6,14 +6,16 @@
     enable = true;
 
     host = "0.0.0.0"; # Default: "localhost"
-    # port = 2283; # Default: 3001
+    # port = 2283; # Default: 2283
     openFirewall = true;
 
     # user = "immich";
     # group = "immich";
 
     # secretsFile = "/opt/sec/immich-file"; # Default: null
-    mediaLocation = "/flash/enc/personal/immich-library"; # Default: "/var/lib/immich"
+    # mediaLocation = "/flash/enc/personal/immich-library"; # Default: "/var/lib/immich"
+
+    accelerationDevices = null;
 
     environment = {
       IMMICH_LOG_LEVEL = "verbose"; # Example
@@ -28,7 +30,7 @@
     database = {
       enable = true; # Default: true
 
-      host = "/rpool/unenc/dbs/psql/immich"; # Default: "/run/postgresql"
+      host = "/rpool/unenc/dbs/psql/immich-nixos"; # Default: "/run/postgresql"
       # port = 5432; # Default: 5432
 
       # user = "immich"; # Default: "immich"
