@@ -56,6 +56,20 @@ in
         interval = "weekly";
       };
     };
+
+    nfs.server = {
+      enable = true;
+
+      lockdPort = 4001;
+      mountdPort = 4002;
+      statdPort = 4000;
+
+      # extraNfsdConfig = '''';
+
+      exports = ''
+        /run/media/zeno/personal/nfs-oldie 192.168.2.0/24(rw,sync,nohide,no_subtree_check)
+      '';
+    };
   };
 
   environment.systemPackages = with pkgs; [
