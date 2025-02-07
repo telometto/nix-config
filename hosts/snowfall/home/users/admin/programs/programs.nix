@@ -65,31 +65,47 @@ in
 
     git = {
       userName = "telometto";
-      userEmail = config.sops.secrets."git/github-prim-email".path;
+      userEmail = "65364211+telometto@users.noreply.github.com";
+
+      signing = {
+        # key = "";
+        signByDefault = false;
+      };
+
+      extraConfig = {
+        # gpg.format = "ssh";
+        # commit.gpgSign = true;
+
+        core = {
+          untrackedCache = true;
+          # sshCommand = "ssh -i ~/.ssh/id_ed25519";
+        };
+      };
 
       includes = [
         {
-          condition = "gitdir:~/.versioncontrol/github/";
+          condition = "gitdir:~/.versioncontrol/github";
 
           contents = {
             user = {
-              name = "telometto";
-              email = "65364211+telometto@users.noreply.github.com";
-              signingKey = "0x5A5BF29378C3942B";
+              # name = "telometto";
+              email = config.sops.secrets."git/github-email".path;
+              signingKey = "~/.ssh/id_ed25519"; # "0x5A5BF29378C3942B";
             };
 
-            commit.gpgSign = true;
+            # commit.gpgSign = true;
+            gpg.format = "ssh";
 
             core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
           };
         }
         {
-          condition = "gitdir:~/.versioncontrol/gitlab/";
+          condition = "gitdir:~/.versioncontrol/gitlab";
 
           contents = {
             user = {
-              name = "telometto";
-              email = "gitlab.z8mfn@simplelogin.com";
+              # name = "telometto";
+              email = config.sops.secrets."git/gitlab-email".path;
               signingKey = "0xB7103B8A59566994";
             };
 
@@ -117,21 +133,21 @@ in
     # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
 
     ssh = {
-      enable = true;
+      enable = false;
 
-      extraConfig = ''
-        AddKeysToAgent yes
+      # extraConfig = ''
+      #   AddKeysToAgent yes
 
-        Host github.com
-          Hostname ssh.github.com
-          Port 443
+      #   Host github.com
+      #     Hostname ssh.github.com
+      #     Port 443
 
-        Host 192.168.*
-          ForwardAgent yes
-          IdentityFile /home/zeno/.ssh/id_ed25519
-          IdentitiesOnly yes
-          SetEnv TERM=xterm-256color
-      '';
+      #   Host 192.168.*
+      #     ForwardAgent yes
+      #     IdentityFile /home/zeno/.ssh/id_ed25519
+      #     IdentitiesOnly yes
+      #     SetEnv TERM=xterm-256color
+      # '';
 
       # addKeysToAgent = "yes";
       # # controlMaster = "auto";
