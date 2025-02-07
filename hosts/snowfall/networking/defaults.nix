@@ -16,11 +16,13 @@ in {
       enable = true;
 
       allowedTCPPortRanges = [
-        { # Required by KDE Connect
+        {
+          # Required by KDE Connect
           from = 1714;
           to = 1764;
         }
-        { # Required for Steam LAN sharing; to be removed
+        {
+          # Required for Steam LAN sharing; to be removed
           from = 27031;
           to = 27036;
         }
