@@ -1,23 +1,46 @@
 { config, lib, pkgs, VARS, ... }:
-let
-  INTERFACE = "enp5s0";
-in
-{
+let INTERFACE = "enp5s0";
+in {
   networking = {
     inherit (VARS.systems.desktop) hostName hostId;
 
-    wireless = { enable = false; }; # Enables wireless support via wpa_supplicant.
-    networkmanager = { enable = true; }; # Easiest to use and most distros use this by default.
+    wireless = {
+      enable = false;
+    }; # Enables wireless support via wpa_supplicant.
+    networkmanager = {
+      enable = true;
+    }; # Easiest to use and most distros use this by default.
 
     # Firewall-related
     firewall = rec {
       enable = true;
 
       allowedTCPPortRanges = [
-        { from = 1714; to = 1764; } # Required by KDE Connect
+        { # Required by KDE Connect
+          from = 1714;
+          to = 1764;
+        }
+        { # Required for Steam LAN sharing; to be removed
+          from = 27031;
+          to = 27036;
+        }
       ];
 
       allowedUDPPortRanges = allowedTCPPortRanges;
+
+      allowedTCPPorts = [
+        # Start of NFS ports
+        2049 # NFSv4
+        4000 # statd
+        4001 # lockd
+        4002 # mountd
+        20048
+        # End of NFS ports
+
+        27040 # Required for Steam LAN sharing; to be removed
+      ];
+
+      allowedUDPPorts = allowedTCPPorts;
     };
 
     nftables = { enable = false; }; # Use nftables instead of iptables
@@ -25,29 +48,4 @@ in
     useNetworkd = lib.mkForce false;
     useDHCP = lib.mkForce true;
   };
-
-  ## Not in use, due to networkmanager being enabled and compatibility with certain VPNs.
-  ## Here for reference.
-  # systemd.network = {
-  #   enable = lib.mkForce true;
-
-  #   wait-online.enable = lib.mkForce false;
-
-  #   networks = {
-  #     "40-${INTERFACE}" = {
-  #       matchConfig.Name = INTERFACE;
-
-  #       networkConfig = {
-  #         DHCP = "yes";
-  #         IPv6PrivacyExtensions = "kernel";
-  #         #IPv6AcceptRA = true;
-  #         #LinkLocalAddressing = "no"; # VLAN
-  #       };
-
-  #       linkConfig = {
-  #         RequiredForOnline = "routable";
-  #       };
-  #     };
-  #   };
-  # };
 }
