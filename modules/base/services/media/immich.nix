@@ -30,7 +30,7 @@
     database = {
       enable = true; # Default: true
 
-      host = "/rpool/unenc/dbs/psql/immich-nixos"; # Default: "/run/postgresql"
+      # host = "/rpool/unenc/dbs/psql/immich-nixos"; # Default: "/run/postgresql"
       # port = 5432; # Default: 5432
 
       # user = "immich"; # Default: "immich"
