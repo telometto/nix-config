@@ -74,6 +74,10 @@ in
       variety # Wallpaper changer
       zsh-powerlevel10k
       polychromatic # Razer configuration tool
+      # ghostty
+      flameshot
+      # rustdesk
+      teamviewer
 
       # Gaming
       # mangohud
