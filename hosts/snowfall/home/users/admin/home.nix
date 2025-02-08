@@ -1,8 +1,6 @@
 { config, lib, pkgs, VARS, pkgs-stable, ... }:
-let
-  DEFAULT_LANG = "nb_NO.UTF-8";
-in
-{
+let DEFAULT_LANG = "nb_NO.UTF-8";
+in {
   imports = [
     # Common imports
     ../../../../../common/home/imports.nix
@@ -91,7 +89,8 @@ in
       protonmail-desktop # ProtonMail client
       thunderbird # Email client
       yt-dlp # YouTube downloader
-
+      protonvpn-gui # ProtonVPN GUI client
+      plex-desktop # Plex media player for desktop
       # Social
       discord # Discord client
       element-desktop # Matrix client

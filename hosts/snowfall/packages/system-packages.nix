@@ -13,10 +13,13 @@
   environment.systemPackages = with pkgs; [
     # System utilities
     microcode-amd # AMD CPU microcode updates
-    protonvpn-gui # ProtonVPN GUI client
-    plex-desktop # Plex media player for desktop
     distrobox # Distrobox containers
     distrobox-tui # Distrobox terminal UI
     fuse3
+
+    # Wine
+    wineWowPackages.stable # Wine compatibility layer
+    wineWowPackages.waylandFull # Wine compatibility layer with Wayland support
+    winetricks
   ];
 }
