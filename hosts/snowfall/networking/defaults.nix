@@ -26,6 +26,11 @@ in {
           from = 27031;
           to = 27036;
         }
+        {
+          # Required for WC3; to be removed
+          from = 6112;
+          to = 6119;
+        }
       ];
 
       allowedUDPPortRanges = allowedTCPPortRanges;
