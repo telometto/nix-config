@@ -45,6 +45,8 @@ in {
         # End of NFS ports
 
         27040 # Required for Steam LAN sharing; to be removed
+        27015
+        27020
       ];
 
       allowedUDPPorts = allowedTCPPorts;
