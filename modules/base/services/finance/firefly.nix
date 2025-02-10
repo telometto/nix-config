@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-  services.firefly = {
+  services.firefly-iii = {
     enable = true;
   };
 }
