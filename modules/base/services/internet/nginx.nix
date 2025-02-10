@@ -11,4 +11,5 @@
         root = "/var/www/firefly";
       };
     };
+  };
 }
