@@ -17,6 +17,9 @@ in
       allowedUDPPortRanges = [ ];
 
       allowedTCPPorts = [
+        80 # HTTP
+        443 # HTTPS
+
         # Start of NFS ports
         111
         2049 # NFSv4
@@ -69,14 +72,10 @@ in
 
         vlan = [ "vlan4" ]; # VLAN
 
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
+        linkConfig = { RequiredForOnline = "carrier"; };
       };
 
-      "40-vlan4" = {
-        matchConfig.Name = "vlan4";
-      };
+      "40-vlan4" = { matchConfig.Name = "vlan4"; };
     };
 
     netdevs = {
