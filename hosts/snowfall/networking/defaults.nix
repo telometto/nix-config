@@ -15,23 +15,22 @@ in {
     firewall = rec {
       enable = true;
 
-      allowedTCPPortRanges = [
-        {
-          # Required by KDE Connect
-          from = 1714;
-          to = 1764;
-        }
-        {
-          # Required for Steam LAN sharing; to be removed
-          from = 27031;
-          to = 27036;
-        }
-        {
-          # Required for WC3; to be removed
-          from = 6112;
-          to = 6119;
-        }
-      ];
+      allowedTCPPortRanges = [{
+        # Required by KDE Connect
+        from = 1714;
+        to = 1764;
+      }
+      # {
+      #   # Required for Steam LAN sharing; to be removed
+      #   from = 27031;
+      #   to = 27036;
+      # }
+      # {
+      #   # Required for WC3; to be removed
+      #   from = 6112;
+      #   to = 6119;
+      # }
+        ];
 
       allowedUDPPortRanges = allowedTCPPortRanges;
 
@@ -44,9 +43,9 @@ in {
         20048
         # End of NFS ports
 
-        27040 # Required for Steam LAN sharing; to be removed
-        27015
-        27020
+        # 27040 # Required for Steam LAN sharing; to be removed
+        # 27015
+        # 27020
       ];
 
       allowedUDPPorts = allowedTCPPorts;
