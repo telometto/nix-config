@@ -90,7 +90,7 @@ in {
       thunderbird # Email client
       yt-dlp # YouTube downloader
       protonvpn-gui # ProtonVPN GUI client
-      plex-desktop # Plex media player for desktop
+      # plex-desktop # Plex media player for desktop
       # Social
       discord # Discord client
       element-desktop # Matrix client
