@@ -4,12 +4,6 @@
   services.nginx = {
     enable = true;
 
-    virtualHosts = {
-      "firefly.blizzard.INTERNAL" = {
-        enableACME = true;
-        forceSSL = false;
-        root = "/var/www/firefly";
-      };
-    };
+    statusPage = true;
   };
 }
