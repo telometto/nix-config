@@ -21,4 +21,12 @@
       randomizedDelaySec = "20min";
     };
   };
+
+  services.cron = {
+    enable = true;
+
+    systemCronJobs = [
+      "15 * * * * zeno cd /home/zeno/.versioncontrol/github/nix-config && git fetch && git pull && nix flake update"
+    ];
+  };
 }
