@@ -39,8 +39,8 @@
       timerConfig = {
         OnCalendar = "*-*-* *:15:00";
         Persistent = true;
+        Unit = "nix-config-update.service";
       };
-      service = "nix-config-update.service";
     };
   };
 }
