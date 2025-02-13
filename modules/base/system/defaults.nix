@@ -6,7 +6,7 @@
       enable = true;
 
       flake = "github:telometto/nix-config";
-      operation = "boot";
+      operation = "switch";
       flags = [ ];
       dates = "daily";
 
