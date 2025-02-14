@@ -42,7 +42,7 @@
     micro # Terminal-based text editor
 
     # System Information
-    fastfetch # Neofetch-like tool for displaying system information
+    # fastfetch # Neofetch-like tool for displaying system information
 
     # Development Tools
     automake # Tool for automatically generating Makefile.in files
