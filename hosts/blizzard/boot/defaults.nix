@@ -124,10 +124,10 @@
       fsType = "zfs";
     };
 
-    "/rpool/unenc/caches" = {
-      device = "rpool/unenc/caches";
-      fsType = "zfs";
-    };
+    # "/rpool/unenc/caches" = {
+    #   device = "rpool/unenc/caches";
+    #   fsType = "zfs";
+    # };
 
     "/rpool/unenc/dbs" = {
       device = "rpool/unenc/dbs";
