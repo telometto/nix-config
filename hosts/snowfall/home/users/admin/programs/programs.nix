@@ -66,17 +66,16 @@ in {
       userEmail = config.sops.secrets."git/github-prim-email".path;
 
       signing = {
-        # key = "";
+        key = "5A5BF29378C3942B";
         signByDefault = true;
+        format = "openpgp";
       };
 
       extraConfig = {
         # gpg.format = "ssh";
         # commit.gpgSign = true;
 
-        core = {
-          untrackedCache = true;
-        };
+        core = { untrackedCache = true; };
       };
 
       includes = [
