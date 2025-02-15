@@ -115,8 +115,14 @@ in {
     };
 
     keychain = {
-      keys =
-        [ "id_ed25519" "gitlabkey" "deployment-keys" "nix-secrets" "testkey" ];
+      keys = [
+        "id_ed25519"
+        "gitlabkey"
+        "deployment-keys"
+        "nix-secrets"
+        "testkey"
+        "github-key"
+      ];
     };
 
     mangohud = { enable = true; };
