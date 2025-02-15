@@ -42,7 +42,7 @@ in
     nftables = { enable = false; }; # Use nftables instead of iptables
 
     # useNetworkd = lib.mkForce true;
-    # useDHCP = lib.mkForce false;
+    useDHCP = lib.mkForce false;
   };
 
   systemd.network = {
