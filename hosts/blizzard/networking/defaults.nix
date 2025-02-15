@@ -13,8 +13,14 @@ in
     firewall = rec {
       enable = true;
 
-      allowedTCPPortRanges = [ ];
-      allowedUDPPortRanges = [ ];
+      allowedTCPPortRanges = [
+        {
+          # NFS ports
+          from = 4000;
+          to = 4002;
+        }
+      ];
+      allowedUDPPortRanges = allowedTCPPortRanges;
 
       allowedTCPPorts = [
         80 # HTTP
@@ -23,9 +29,6 @@ in
         # Start of NFS ports
         111
         2049 # NFSv4
-        4000 # statd
-        4001 # lockd
-        4002 # mountd
         20048
         # End of NFS ports
 
@@ -38,20 +41,7 @@ in
 
     nftables = { enable = false; }; # Use nftables instead of iptables
 
-    ## Related to systemd-networkd
-    vlans = {
-      vlan4 = {
-        id = 4;
-        interface = INTERFACE;
-      };
-    };
-
-    interfaces.vlan4.ipv4.addresses = [{
-      address = "192.168.4.100";
-      prefixLength = 24;
-    }];
-
-    useNetworkd = lib.mkForce true;
+    # useNetworkd = lib.mkForce true;
     # useDHCP = lib.mkForce false;
   };
 
@@ -66,26 +56,11 @@ in
 
         networkConfig = {
           DHCP = "yes";
+          IPv6AcceptRA = true;
           IPv6PrivacyExtensions = "kernel";
-          LinkLocalAddressing = "no"; # VLAN
         };
 
-        vlan = [ "vlan4" ]; # VLAN
-
-        linkConfig = { RequiredForOnline = "carrier"; };
-      };
-
-      "40-vlan4" = { matchConfig.Name = "vlan4"; };
-    };
-
-    netdevs = {
-      "40-vlan4" = {
-        netdevConfig = {
-          Kind = "vlan";
-          Name = "vlan4";
-        };
-
-        vlanConfig.Id = 4;
+        linkConfig.RequiredForOnline = "routable";
       };
     };
   };
