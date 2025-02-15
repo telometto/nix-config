@@ -1,236 +1,175 @@
 { config, lib, pkgs, VARS, ... }:
-let
-  LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
-in
-{
+let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
+in {
   programs = {
-    fastfetch = {
+    firefox = {
       enable = true;
 
-      settings = {
-        modules = [
-          "title"
-          "separator"
-          "host"
-          "os"
-          "kernel"
-          "initsystem"
-          "uptime"
-          "loadavg"
-          "processes"
-          "packages"
-          "shell"
-          "editor"
-          "display"
-          "lm"
-          "de"
-          "wm"
-          "theme"
-          "terminal"
-          {
-            "type" = "cpu";
-            "showPeCoreCount" = true;
-            "temp" = true;
-          }
-          "cpuusage"
-          {
-            "type" = "gpu";
-            "driverSpecific" = true;
-            "temp" = true;
-          }
-          "memory"
-          "physicalmemory"
-          "swap"
-          "disk"
-          "btrfs"
-          "zpool"
-          {
-            "type" = "battery";
-            "temp" = true;
-          }
-          "poweradapter"
-          {
-            "type" = "localip";
-          }
-          "datetime"
-          {
-            "type" = "weather";
-            "timeout" = 1000;
-          }
-          "break"
-          "colors"
-          };
-          };
+      languagePacks = LANGUAGES;
 
-          firefox = {
-          enable = true;
+      policies = {
+        DisableTelemetry = true;
+        DisableFirefoxStudies = true;
+        DisablePocket = true;
+        DisableFirefoxAccounts = false;
+        OverrideFirstRunPage = "";
+        OverridePostUpdatePage = "";
+        DontCheckDefaultBrowser = true;
+        DisplayBookmarksToolbar = "always";
+        DisplayMenuBar = "default-off";
+        SearchBar = "unified";
 
-          languagePacks = LANGUAGES;
+        EnableTrackingProtection = {
+          Value = true;
+          Locked = true;
+          Cryptomining = true;
+          Fingerprinting = true;
+        };
+      };
+    };
 
-          policies = {
-            DisableTelemetry = true;
-            DisableFirefoxStudies = true;
-            DisablePocket = true;
-            DisableFirefoxAccounts = false;
-            OverrideFirstRunPage = "";
-            OverridePostUpdatePage = "";
-            DontCheckDefaultBrowser = true;
-            DisplayBookmarksToolbar = "always";
-            DisplayMenuBar = "default-off";
-            SearchBar = "unified";
+    floorp = {
+      enable = true;
 
-            EnableTrackingProtection = {
-              Value = true;
-              Locked = true;
-              Cryptomining = true;
-              Fingerprinting = true;
+      policies = {
+        DisableTelemetry = true;
+        DisableFirefoxStudies = true;
+        DisablePocket = true;
+        DisableFirefoxAccounts = false;
+        # OverrideFirstRunPage = "";
+        # OverridePostUpdatePage = "";
+        DontCheckDefaultBrowser = true;
+        DisplayBookmarksToolbar = "always";
+        DisplayMenuBar = "default-off";
+        SearchBar = "unified";
+
+        EnableTrackingProtection = {
+          Value = true;
+          Locked = true;
+          Cryptomining = true;
+          Fingerprinting = true;
+        };
+      };
+    };
+
+    ghostty = {
+      enable = true;
+
+      enableBashIntegration = true;
+      enableZshIntegration = true;
+
+      settings = { theme = "catppuccin-frappe"; };
+    };
+
+    git = {
+      userName = "telometto";
+      userEmail = config.sops.secrets."git/github-prim-email".path;
+
+      signing = {
+        # key = "";
+        signByDefault = true;
+      };
+
+      extraConfig = {
+        # gpg.format = "ssh";
+        # commit.gpgSign = true;
+
+        core = {
+          untrackedCache = true;
+        };
+      };
+
+      includes = [
+        {
+          condition = "gitdir:~/.versioncontrol/github";
+
+          contents = {
+            user = {
+              # name = "telometto";
+              email = config.sops.secrets."git/github-email".path;
+              signingKey = "0x5A5BF29378C3942B";
             };
-          };
-        };
 
-          floorp = {
-          enable = true;
-
-          policies = {
-            DisableTelemetry = true;
-            DisableFirefoxStudies = true;
-            DisablePocket = true;
-            DisableFirefoxAccounts = false;
-            # OverrideFirstRunPage = "";
-            # OverridePostUpdatePage = "";
-            DontCheckDefaultBrowser = true;
-            DisplayBookmarksToolbar = "always";
-            DisplayMenuBar = "default-off";
-            SearchBar = "unified";
-
-            EnableTrackingProtection = {
-              Value = true;
-              Locked = true;
-              Cryptomining = true;
-              Fingerprinting = true;
-            };
-          };
-        };
-
-          ghostty = {
-          enable = true;
-
-          enableBashIntegration = true;
-          enableZshIntegration = true;
-
-          settings = { theme = "catppuccin-frappe"; };
-        };
-
-          git = {
-          userName = "telometto";
-          userEmail = "65364211+telometto@users.noreply.github.com";
-
-          signing = {
-            # key = "";
-            signByDefault = false;
-          };
-
-          extraConfig = {
-            # gpg.format = "ssh";
             # commit.gpgSign = true;
+            gpg.format = "ssh";
 
-            core = {
-              untrackedCache = true;
-              # sshCommand = "ssh -i ~/.ssh/id_ed25519";
-            };
+            core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
           };
+        }
+        {
+          condition = "gitdir:~/.versioncontrol/gitlab";
 
-          includes = [
-            {
-              condition = "gitdir:~/.versioncontrol/github";
+          contents = {
+            user = {
+              # name = "telometto";
+              email = config.sops.secrets."git/gitlab-email".path;
+              signingKey = "0xB7103B8A59566994";
+            };
 
-              contents = {
-                user = {
-                  # name = "telometto";
-                  email = config.sops.secrets."git/github-email".path;
-                  signingKey = "~/.ssh/id_ed25519"; # "0x5A5BF29378C3942B";
-                };
+            commit.gpgSign = true;
 
-                # commit.gpgSign = true;
-                gpg.format = "ssh";
+            core.sshCommand = "ssh -i ~/.ssh/gitlabkey";
+          };
+        }
+      ];
+    };
 
-                core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
-              };
-            }
-            {
-              condition = "gitdir:~/.versioncontrol/gitlab";
+    keychain = {
+      keys =
+        [ "id_ed25519" "gitlabkey" "deployment-keys" "nix-secrets" "testkey" ];
+    };
 
-              contents = {
-                user = {
-                  # name = "telometto";
-                  email = config.sops.secrets."git/gitlab-email".path;
-                  signingKey = "0xB7103B8A59566994";
-                };
+    mangohud = { enable = true; };
 
-                commit.gpgSign = true;
+    mpv = {
+      enable = true;
 
-                core.sshCommand = "ssh -i ~/.ssh/gitlabkey";
-              };
-            }
-          ];
-        };
+      # TODO: Declaratively configure mpv
+    };
 
-          keychain = {
-          keys =
-            [ "id_ed25519" "gitlabkey" "deployment-keys" "nix-secrets" "testkey" ];
-        };
+    # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
 
-          mangohud = { enable = true; };
+    ssh = {
+      enable = false;
 
-          mpv = {
-          enable = true;
+      # extraConfig = ''
+      #   AddKeysToAgent yes
 
-          # TODO: Declaratively configure mpv
-        };
+      #   Host github.com
+      #     Hostname ssh.github.com
+      #     Port 443
 
-          # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
+      #   Host 192.168.*
+      #     ForwardAgent yes
+      #     IdentityFile /home/zeno/.ssh/id_ed25519
+      #     IdentitiesOnly yes
+      #     SetEnv TERM=xterm-256color
+      # '';
 
-          ssh = {
-          enable = false;
+      # addKeysToAgent = "yes";
+      # # controlMaster = "auto";
+      # # controlPath = "/some/path/%r@%h:%p";
+      # # controlPersist = "yes";
+      # compression = true;
+      # # extraConfig = ""; # Strings concatenated with "\n"
+      # # extraOptionOverrides = ""; # Attribute set of strings
+      # forwardAgent = true;
+      # # hashKnownHosts = true;
+      # # includes = [ ]; # List of strings
+      # # matchBlocks = { }; # Attribute set of attribute sets
+      # # serverAliveCountMax = 1; # Positive integer
+      # # serverAliveInterval = 1;
+      # # userKnownHostsFile = ""; # String
+    };
 
-          # extraConfig = ''
-          #   AddKeysToAgent yes
-
-          #   Host github.com
-          #     Hostname ssh.github.com
-          #     Port 443
-
-          #   Host 192.168.*
-          #     ForwardAgent yes
-          #     IdentityFile /home/zeno/.ssh/id_ed25519
-          #     IdentitiesOnly yes
-          #     SetEnv TERM=xterm-256color
-          # '';
-
-          # addKeysToAgent = "yes";
-          # # controlMaster = "auto";
-          # # controlPath = "/some/path/%r@%h:%p";
-          # # controlPersist = "yes";
-          # compression = true;
-          # # extraConfig = ""; # Strings concatenated with "\n"
-          # # extraOptionOverrides = ""; # Attribute set of strings
-          # forwardAgent = true;
-          # # hashKnownHosts = true;
-          # # includes = [ ]; # List of strings
-          # # matchBlocks = { }; # Attribute set of attribute sets
-          # # serverAliveCountMax = 1; # Positive integer
-          # # serverAliveInterval = 1;
-          # # userKnownHostsFile = ""; # String
-        };
-
-          /* thunderbird = {
+    /* thunderbird = {
        enable = true;
 
        # TODO: Declaratively configure Thunderbird
        };
-          */
+    */
 
-          /* vscode = {
+    /* vscode = {
        enable = true;
 
        enableUpdateCheck = false; # Disable update checks
@@ -238,30 +177,30 @@ in
 
        # TODO: Declaratively configure Visual Studio Code
        };
-          */
+    */
 
-          zellij = {
-          enable = true;
-          enableBashIntegration = true;
-          enableZshIntegration = true;
+    zellij = {
+      enable = true;
+      enableBashIntegration = true;
+      enableZshIntegration = true;
 
-          # TODO: Declaratively configure Zellij
-          # settings = {
-          #   theme = "gruvbox-dark";
-          # };
-        };
+      # TODO: Declaratively configure Zellij
+      # settings = {
+      #   theme = "gruvbox-dark";
+      # };
+    };
 
-          };
+  };
 
-          sops.secrets = {
-          "git/github-prim-email" = {
-            path = "${config.sops.defaultSymlinkPath}/git/github-prim-email";
-          };
-          "git/github-email" = {
-            path = "${config.sops.defaultSymlinkPath}/git/github-email";
-          };
-          "git/gitlab-email" = {
-            path = "${config.sops.defaultSymlinkPath}/git/gitlab-email";
-          };
-        };
-          }
+  sops.secrets = {
+    "git/github-prim-email" = {
+      path = "${config.sops.defaultSymlinkPath}/git/github-prim-email";
+    };
+    "git/github-email" = {
+      path = "${config.sops.defaultSymlinkPath}/git/github-email";
+    };
+    "git/gitlab-email" = {
+      path = "${config.sops.defaultSymlinkPath}/git/gitlab-email";
+    };
+  };
+}

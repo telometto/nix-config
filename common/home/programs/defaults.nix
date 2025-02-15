@@ -15,13 +15,12 @@
     bash = {
       enable = true;
       enableCompletion = true;
-      enableVteIntegration = true; # Enable VTE integration to track current directory
+      enableVteIntegration =
+        true; # Enable VTE integration to track current directory
       historyControl = [ "erasedups" ]; # Remove duplicates in history
     };
 
-    bat = {
-      enable = true;
-    };
+    bat = { enable = true; };
 
     direnv = {
       enable = true;
@@ -48,6 +47,55 @@
       ];
     };
 
+    fastfetch = {
+      enable = true;
+
+      logo.source = "nixos_small";
+
+      settings = {
+        modules = [
+          "title"
+          "separator"
+          "os"
+          "kernel"
+          "initsystem"
+          "uptime"
+          "loadavg"
+          "processes"
+          "packages"
+          "shell"
+          "editor"
+          "display"
+          "de"
+          "terminal"
+          {
+            "type" = "cpu";
+            "showPeCoreCount" = true;
+            "temp" = true;
+          }
+          "cpuusage"
+          {
+            "type" = "gpu";
+            "driverSpecific" = true;
+            "temp" = true;
+          }
+          "memory"
+          "swap"
+          "disk"
+          {
+            "type" = "battery";
+            "temp" = true;
+          }
+          { "type" = "localip"; }
+          {
+            "type" = "weather";
+            "timeout" = 1000;
+          }
+          "break"
+        ];
+      };
+    };
+
     fzf = {
       enable = true;
 
@@ -57,9 +105,7 @@
     git = {
       enable = true;
 
-      diff-so-fancy = {
-        enable = true;
-      };
+      diff-so-fancy = { enable = true; };
     };
 
     gpg = {
@@ -84,12 +130,16 @@
 
         # List and verify options
         list-options = "show-uid-validity"; # Show the validity of user IDs
-        verify-options = "show-uid-validity show-keyserver-urls"; # Show the validity of user IDs and keyserver URLs
+        verify-options =
+          "show-uid-validity show-keyserver-urls"; # Show the validity of user IDs and keyserver URLs
 
         # Cipher and digest preferences
-        personal-cipher-preferences = "AES256"; # Set the personal cipher preferences
-        personal-digest-preferences = "SHA512"; # Set the personal digest preferences
-        default-preference-list = "SHA512 SHA384 SHA256 RIPEMD160 AES256 TWOFISH BLOWFISH ZLIB BZIP2 ZIP Uncompressed"; # Set the default preference list
+        personal-cipher-preferences =
+          "AES256"; # Set the personal cipher preferences
+        personal-digest-preferences =
+          "SHA512"; # Set the personal digest preferences
+        default-preference-list =
+          "SHA512 SHA384 SHA256 RIPEMD160 AES256 TWOFISH BLOWFISH ZLIB BZIP2 ZIP Uncompressed"; # Set the default preference list
         cipher-algo = "AES256"; # Set the cipher algorithm
         digest-algo = "SHA512"; # Set the digest algorithm
         cert-digest-algo = "SHA512"; # Set the certificate digest algorithm
@@ -127,29 +177,28 @@
       };
     };
 
-    /*
-      # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
-      # For now, resorting to non-home-manager configuration
+    /* # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
+       # For now, resorting to non-home-manager configuration
 
-      ssh = {
-      enable = true;
+       ssh = {
+       enable = true;
 
-      addKeysToAgent = "yes";
-      #controlMaster = "auto";
-      #controlPath = "/some/path/%r@%h:%p";
-      #controlPersist = "yes";
-      compression = true;
-      #extraConfig = ""; # Strings concatenated with "\n"
-      #extraOptionOverrides = ""; # Attribute set of strings
-      forwardAgent = true;
-      #hashKnownHosts = true;
-      #includes = [ ]; # List of strings
-      #matchBlocks = { }; # Attribute set of attribute sets
-      #serverAliveCountMax = 1; # Positive integer
-      #serverAliveInterval = 1;
-      #userKnownHostsFile = ""; # String
-      };
-        */
+       addKeysToAgent = "yes";
+       #controlMaster = "auto";
+       #controlPath = "/some/path/%r@%h:%p";
+       #controlPersist = "yes";
+       compression = true;
+       #extraConfig = ""; # Strings concatenated with "\n"
+       #extraOptionOverrides = ""; # Attribute set of strings
+       forwardAgent = true;
+       #hashKnownHosts = true;
+       #includes = [ ]; # List of strings
+       #matchBlocks = { }; # Attribute set of attribute sets
+       #serverAliveCountMax = 1; # Positive integer
+       #serverAliveInterval = 1;
+       #userKnownHostsFile = ""; # String
+       };
+    */
 
     tmux = {
       enable = true;
