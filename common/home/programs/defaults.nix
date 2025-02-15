@@ -50,9 +50,9 @@
     fastfetch = {
       enable = true;
 
-      logo.source = "nixos_small";
-
       settings = {
+        # logo.source = "nixos_small";
+
         modules = [
           "title"
           "separator"
