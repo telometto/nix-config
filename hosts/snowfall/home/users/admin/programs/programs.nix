@@ -72,12 +72,12 @@ in {
         format = "ssh";
       };
 
-      extraConfig = {
-        gpg.format = "ssh";
+      # extraConfig = {
+      #   gpg.format = "ssh";
         # commit.gpgSign = true;
 
-        core = { untrackedCache = true; };
-      };
+      #   core = { untrackedCache = true; };
+      # };
 
       # includes = [
       #   {
@@ -114,16 +114,16 @@ in {
       # ];
     };
 
-    keychain = {
-      keys = [
-        "id_ed25519"
-        "gitlabkey"
-        "deployment-keys"
-        "nix-secrets"
-        "testkey"
-        "github-key"
-      ];
-    };
+    # keychain = {
+    #   keys = [
+    #     "id_ed25519"
+    #     "gitlabkey"
+    #     "deployment-keys"
+    #     "nix-secrets"
+    #     "testkey"
+    #     "github-key"
+    #   ];
+    # };
 
     mangohud = { enable = true; };
 
@@ -135,8 +135,8 @@ in {
 
     # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
 
-    ssh = {
-      enable = false;
+    # ssh = {
+    #   enable = false;
 
       # extraConfig = ''
       #   AddKeysToAgent yes
@@ -166,7 +166,7 @@ in {
       # # serverAliveCountMax = 1; # Positive integer
       # # serverAliveInterval = 1;
       # # userKnownHostsFile = ""; # String
-    };
+    # };
 
     /* thunderbird = {
        enable = true;
