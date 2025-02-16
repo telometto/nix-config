@@ -32,7 +32,13 @@
       enable = true;
 
       role = "server";
-      gracefulNodeShutdown = { enable = true; };
+      gracefulNodeShutdown = {
+        enable = false;
+
+        shutdownGracePeriod = "1m30s";
+        shutdownGracePeriodCriticalPods = "1m";
+      };
+
       ## Disabled for testing (not using ZFS for now)
       extraFlags = toString [
         "--container-runtime-endpoint unix:///run/containerd/containerd.sock"
