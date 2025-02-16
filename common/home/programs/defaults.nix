@@ -158,7 +158,7 @@
     };
 
     keychain = {
-      enable = true;
+      enable = false;
 
       enableBashIntegration = true;
       enableZshIntegration = true;
@@ -262,7 +262,7 @@
           "fzf"
           "gpg-agent"
           "podman"
-          "ssh-agent"
+          # "ssh-agent"
           "sudo"
           "systemd"
           "tailscale"
