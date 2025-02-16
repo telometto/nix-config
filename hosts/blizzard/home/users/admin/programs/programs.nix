@@ -2,6 +2,51 @@
 
 {
   programs = {
+    fastfetch = {
+      enable = true;
+
+      settings = {
+        # logo.source = "nixos_small";
+
+        modules = [
+          "title"
+          "separator"
+          "os"
+          "kernel"
+          "initsystem"
+          "uptime"
+          "loadavg"
+          "processes"
+          "packages"
+          "shell"
+          "editor"
+          "display"
+          "terminal"
+          {
+            "type" = "cpu";
+            "showPeCoreCount" = true;
+            "temp" = true;
+          }
+          "cpuusage"
+          {
+            "type" = "gpu";
+            "driverSpecific" = true;
+            "temp" = true;
+          }
+          "memory"
+          "swap"
+          "disk"
+          "zpool"
+          { "type" = "localip"; }
+          {
+            "type" = "weather";
+            "timeout" = 1000;
+          }
+          "break"
+        ];
+      };
+    };
+
     keychain = {
       keys = [ "borg-blizzard" "sops-hm-blizzard" "zeno-blizzard" ];
     };
