@@ -74,7 +74,7 @@
     ../../modules/base/services/backups/borg.nix
     # ../../modules/base/services/documents/paperless.nix
     ../../modules/base/services/finance/actual.nix
-    # ../../modules/base/services/finance/firefly.nix
+    ../../modules/base/services/finance/firefly.nix
     # ../../modules/base/services/internet/nginx.nix
     # ../../modules/base/services/internet/searx.nix
     ../../modules/base/services/media/immich.nix
