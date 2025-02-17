@@ -41,24 +41,24 @@
 
   programs = {
     ssh = {
-  #     startAgent = true;
+      #     startAgent = true;
       enableAskPassword = true;
-  #     forwardX11 = false;
-  #     setXAuthLocation = false;
+      #     forwardX11 = false;
+      #     setXAuthLocation = false;
 
-  #     extraConfig = ''
-  #       Host *
-  #         ForwardAgent yes
-  #         AddKeysToAgent yes
-  #         Compression yes
-  #         ServerAliveInterval 0
-  #         ServerAliveCountMax 3
-  #         HashKnownHosts no
-  #         UserKnownHostsFile ~/.ssh/known_hosts
-  #         ControlMaster no
-  #         ControlPath ~/.ssh/master-%r@%n:%p
-  #         ControlPersist no
-  #     '';
+      #     extraConfig = ''
+      #       Host *
+      #         ForwardAgent yes
+      #         AddKeysToAgent yes
+      #         Compression yes
+      #         ServerAliveInterval 0
+      #         ServerAliveCountMax 3
+      #         HashKnownHosts no
+      #         UserKnownHostsFile ~/.ssh/known_hosts
+      #         ControlMaster no
+      #         ControlPath ~/.ssh/master-%r@%n:%p
+      #         ControlPersist no
+      #     '';
     };
   };
 
