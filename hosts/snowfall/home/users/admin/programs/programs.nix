@@ -74,7 +74,7 @@ in {
 
       # extraConfig = {
       #   gpg.format = "ssh";
-        # commit.gpgSign = true;
+      # commit.gpgSign = true;
 
       #   core = { untrackedCache = true; };
       # };
@@ -138,34 +138,34 @@ in {
     # ssh = {
     #   enable = false;
 
-      # extraConfig = ''
-      #   AddKeysToAgent yes
+    # extraConfig = ''
+    #   AddKeysToAgent yes
 
-      #   Host github.com
-      #     Hostname ssh.github.com
-      #     Port 443
+    #   Host github.com
+    #     Hostname ssh.github.com
+    #     Port 443
 
-      #   Host 192.168.*
-      #     ForwardAgent yes
-      #     IdentityFile /home/zeno/.ssh/id_ed25519
-      #     IdentitiesOnly yes
-      #     SetEnv TERM=xterm-256color
-      # '';
+    #   Host 192.168.*
+    #     ForwardAgent yes
+    #     IdentityFile /home/zeno/.ssh/id_ed25519
+    #     IdentitiesOnly yes
+    #     SetEnv TERM=xterm-256color
+    # '';
 
-      # addKeysToAgent = "yes";
-      # # controlMaster = "auto";
-      # # controlPath = "/some/path/%r@%h:%p";
-      # # controlPersist = "yes";
-      # compression = true;
-      # # extraConfig = ""; # Strings concatenated with "\n"
-      # # extraOptionOverrides = ""; # Attribute set of strings
-      # forwardAgent = true;
-      # # hashKnownHosts = true;
-      # # includes = [ ]; # List of strings
-      # # matchBlocks = { }; # Attribute set of attribute sets
-      # # serverAliveCountMax = 1; # Positive integer
-      # # serverAliveInterval = 1;
-      # # userKnownHostsFile = ""; # String
+    # addKeysToAgent = "yes";
+    # # controlMaster = "auto";
+    # # controlPath = "/some/path/%r@%h:%p";
+    # # controlPersist = "yes";
+    # compression = true;
+    # # extraConfig = ""; # Strings concatenated with "\n"
+    # # extraOptionOverrides = ""; # Attribute set of strings
+    # forwardAgent = true;
+    # # hashKnownHosts = true;
+    # # includes = [ ]; # List of strings
+    # # matchBlocks = { }; # Attribute set of attribute sets
+    # # serverAliveCountMax = 1; # Positive integer
+    # # serverAliveInterval = 1;
+    # # userKnownHostsFile = ""; # String
     # };
 
     /* thunderbird = {
