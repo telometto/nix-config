@@ -3,7 +3,7 @@ let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
 in {
   programs = {
     firefox = {
-      enable = true;
+      enable = false;
 
       languagePacks = LANGUAGES;
 
