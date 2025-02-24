@@ -13,7 +13,7 @@
 
     wlr.enable = true; # Enable Wayland support
 
-    configPackages = [ pkgs.xdg-desktop-portal-kde ];
+    configPackages = with pkgs; [ kdePackages.xdg-desktop-portal-kde ];
     xdgOpenUsePortal = true;
 
     extraPortals = with pkgs; [

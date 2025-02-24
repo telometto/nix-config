@@ -23,7 +23,7 @@
     };
   };
 
-  programs.ssh = { askPassword = "${pkgs.ksshaskpass.out}/bin/ksshaskpass"; };
+  programs.ssh = { askPassword = "${pkgs.kdePackages.ksshaskpass.out}/bin/ksshaskpass"; };
 
   security.pam.services = {
     login = {
