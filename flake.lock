@@ -628,11 +628,11 @@
     },
     "nix-secrets": {
       "locked": {
-        "lastModified": 1739877099,
-        "narHash": "sha256-yd+trXTM/3iPZTjUO9t75k4dxVUSO/SNBUmsKm0O8rE=",
+        "lastModified": 1740473289,
+        "narHash": "sha256-Uxolp+DahMy0ctfcXF8sfBezqKedgpEf3bzImidiGq0=",
         "ref": "refs/heads/master",
-        "rev": "8f6fa0e77d00797d76dddce79c6d3ca00ca56dd5",
-        "revCount": 30,
+        "rev": "f7bc5f53d39342ff6102757ff97716e42696a6e5",
+        "revCount": 31,
         "type": "git",
         "url": "ssh://git@github.com/telometto/nix-secrets.git"
       },
