@@ -129,6 +129,7 @@
         system = hostArch.${host};
 
         modules = [
+          if host != "blizzard" then [
           ## Start Home Manager configuration
           inputs.home-manager.nixosModules.home-manager
           {
@@ -159,6 +160,7 @@
               );
             };
           }
+          ] else [])
         ] ++ hostConfigs.${host};
 
         specialArgs = {
