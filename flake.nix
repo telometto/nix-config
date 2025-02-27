@@ -130,37 +130,37 @@
 
         modules = [
           (if host != "blizzard" then [
-          ## Start Home Manager configuration
-          inputs.home-manager.nixosModules.home-manager
-          {
-            home-manager = {
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              backupFileExtension = "hm-backup";
+            ## Start Home Manager configuration
+            inputs.home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                backupFileExtension = "hm-backup";
 
-              sharedModules = [
-                inputs.sops-nix.homeManagerModules.sops
-                inputs.hyprland.homeManagerModules.default
-              ];
+                sharedModules = [
+                  inputs.sops-nix.homeManagerModules.sops
+                  inputs.hyprland.homeManagerModules.default
+                ];
 
-              extraSpecialArgs = {
-                pkgs-stable-latest = import nixpkgs-stable-latest { inherit system; };
-                pkgs-stable = import nixpkgs-stable { inherit system; };
-                pkgs-unstable = import nixpkgs-unstable { inherit system; };
+                extraSpecialArgs = {
+                  pkgs-stable-latest = import nixpkgs-stable-latest { inherit system; };
+                  pkgs-stable = import nixpkgs-stable { inherit system; };
+                  pkgs-unstable = import nixpkgs-unstable { inherit system; };
 
-                inherit inputs VARS;
-              };
+                  inherit inputs VARS;
+                };
 
-              users = nixpkgs.lib.genAttrs hostUsers.${host} (user:
-                import ./hosts/${host}/home/users/${
+                users = nixpkgs.lib.genAttrs hostUsers.${host} (user:
+                  import ./hosts/${host}/home/users/${
                     if user == VARS.users.admin.user
                     then "admin"
                     else "extra/${user}"
                   }/home.nix
-              );
-            };
-          }
-          ] else [])
+                );
+              };
+            }
+          ] else [ ])
         ] ++ hostConfigs.${host};
 
         specialArgs = {
