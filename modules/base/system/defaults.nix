@@ -11,8 +11,8 @@
       dates = "daily";
 
       rebootWindow = {
-        lower = "04:00";
-        upper = "05:30";
+        lower = "00:00";
+        upper = "02:30";
       };
 
       persistent = true;
