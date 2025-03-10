@@ -31,7 +31,10 @@
       #package = pkgs.steam.override { withJava = true; }; # Deprecated since 23.05
     };
 
-    java.enable = true;
+    java = {
+      enable = true;
+      package = pkgs.jdk23;
+    };
 
     gamemode.enable = true;
   };
