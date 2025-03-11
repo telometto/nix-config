@@ -103,6 +103,7 @@ in {
       nixpkgs-fmt # Nix language formatter
       nixfmt-classic # Nix language formatter
       vscode # Visual Studio Code
+      jetbrains.idea-community-bin # IntelliJ IDEA Community Edition
 
       texliveFull # LaTeX
 
