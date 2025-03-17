@@ -70,7 +70,7 @@
     # ../../modules/base/security/crowdsec/crowdsec.nix
 
     # 2.7 Services
-    # None for desktop (for now)
+    ../../modules/base/services/internet/teamviewer.nix
 
     # 2.8 System
     # ../../modules/base/system/defaults.nix

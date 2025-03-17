@@ -1,5 +1,5 @@
 { config, libs, pkgs, ... }:
 
 {
-  services.teamviewer.enable = false;
+  services.teamviewer.enable = true;
 }
