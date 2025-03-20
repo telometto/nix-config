@@ -1,5 +1,6 @@
 { config, lib, pkgs, VARS, pkgs-stable, ... }:
-let DEFAULT_LANG = "nb_NO.UTF-8";
+let
+  DEFAULT_LANG = "nb_NO.UTF-8";
 in {
   imports = [
     # Common imports
@@ -76,12 +77,13 @@ in {
       flameshot
       # rustdesk
       teamviewer
+      czkawka # Duplicate file finder
 
       # Gaming
       # mangohud
 
       # Media
-      jamesdsp
+      # jamesdsp
       # mpv # Media player
 
       # Internet

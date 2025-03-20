@@ -6,6 +6,7 @@
     kdePackages.kate
     kdePackages.kdeconnect-kde
     kdePackages.kcalc
+    kdePackages.kolourpaint
   ];
 
   #qt = {
