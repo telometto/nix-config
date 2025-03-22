@@ -79,12 +79,13 @@ in
       # rustdesk
       teamviewer
       czkawka # Duplicate file finder
+      ansible
 
       # Gaming
       # mangohud
 
       # Media
-      # jamesdsp
+      jamesdsp
       # mpv # Media player
 
       # Internet
