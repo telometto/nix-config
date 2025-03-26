@@ -104,7 +104,7 @@
       hostUsers = {
         snowfall = [ VARS.users.admin.user ];
         blizzard = [ VARS.users.admin.user ];
-        avalanche = [ VARS.users.admin.user }; # VARS.users.luke.user ];
+        avalanche = [ VARS.users.admin.user ]; # VARS.users.luke.user ];
         frostbite = [ VARS.users.admin.user ]; # Placeholder
       };
 
