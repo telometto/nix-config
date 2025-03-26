@@ -17,6 +17,14 @@ in
   # Bootloader
   boot = {
     supportedFilesystems = [ "btrfs" ];
+
+    initrd = {
+      enable = true;
+
+      kernelModules = [ "amdgpu" ];
+
+      supportedFilesystems = { btrfs = true; };
+    };
   };
 
   # Filesystems
