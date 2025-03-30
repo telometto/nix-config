@@ -119,6 +119,7 @@ in
       onlyoffice-desktopeditors # Office suite
       nomacs # Image viewer
       apostrophe # Markdown editor
+      gpt4all
 
       # System tools
       # deja-dup # Backup tool; use Flatpak instead
