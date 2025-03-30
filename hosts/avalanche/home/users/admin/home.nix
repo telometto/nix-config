@@ -72,7 +72,7 @@ in
       meld # Diff tool
       variety # Wallpaper changer
       zsh-powerlevel10k
-      polychromatic # Razer configuration tool
+      # polychromatic # Razer configuration tool
 
       # Gaming
       #mangohud
