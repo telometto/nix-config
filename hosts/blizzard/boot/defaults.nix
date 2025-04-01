@@ -1,5 +1,5 @@
 # Filesystem configuration defaults
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, VARS, ... }:
 
 {
   # Bootloader
@@ -10,6 +10,12 @@
       enable = true;
 
       supportedFilesystems = { zfs = true; };
+
+      systemd = {
+        enable = true;
+
+        emergencyAccess = users.users.${VARS.users.admin.user}.hashedPassword;
+      };
     };
 
     kernel = {
