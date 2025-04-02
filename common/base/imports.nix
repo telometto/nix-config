@@ -38,5 +38,6 @@
     # Utilities
     ./utilities/memory/zram.nix
     ./utilities/shell/defaults.nix
+    ./utilities/systemd/defaults.nix
   ];
 }
