@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-  services.systemd = {
+  services = {
     # homed.enable = true;
 
     timesyncd = {
