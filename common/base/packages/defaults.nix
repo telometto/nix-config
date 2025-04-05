@@ -51,7 +51,7 @@
     autoconf # Generates configuration scripts
     git # Version control system, required by flakes
     pipx # Install and run Python applications in isolated environments
-    poetry # Python dependency management and packaging
+    # poetry # Python dependency management and packaging
 
     # Terminal Multiplexers and Plugins
     tmux # Terminal multiplexer
