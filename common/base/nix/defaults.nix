@@ -27,6 +27,11 @@
       options = lib.mkDefault "--delete-older-than 7d"; # Delete generations older than 7 days
     };
 
+    optimise = {
+      automatic = enable;
+      dates = [ "02:00" ]; # Run at 2:00 AM
+    };
+
     # nix.settings.access-tokens cannot read secrets from sops-nix, thus the following workaround
     extraOptions = ''
       !include ${config.sops.templates."access-tokens".path}
