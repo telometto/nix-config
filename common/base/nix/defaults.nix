@@ -28,7 +28,7 @@
     };
 
     optimise = {
-      automatic = enable;
+      automatic = true;
       dates = [ "02:00" ]; # Run at 2:00 AM
     };
 
