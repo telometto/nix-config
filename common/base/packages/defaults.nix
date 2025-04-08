@@ -73,6 +73,8 @@
     lsof # List open files
 
     baobab # Disk usage analyzer
+    restic
+    deja-dup
   ];
 
   fonts.packages = with pkgs; [
