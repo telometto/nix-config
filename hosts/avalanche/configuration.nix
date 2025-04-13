@@ -75,6 +75,9 @@
     ../../modules/base/virtualization/containers/podman.nix
     # ../../modules/base/virtualization/vm/microvm.nix
     # ../../modules/base/virtualization/vm/vm.nix
+
+    # 3.1 Development
+    ../../modules/development/java.nix
   ];
 
   nixpkgs = {
