@@ -14,7 +14,7 @@
       systemd = {
         enable = true;
 
-        emergencyAccess = users.users.${VARS.users.admin.user}.hashedPassword;
+        emergencyAccess = config.users.users.${VARS.users.admin.user}.hashedPassword;
       };
     };
 
