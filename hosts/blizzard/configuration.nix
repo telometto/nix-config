@@ -33,7 +33,7 @@
     ./utilities/monitoring/cockpit.nix
 
     # 0.6 Virtualization
-    ./virtualization/orchestration/k3s.nix
+    # ./virtualization/orchestration/k3s.nix
 
     ### 1. Import common configurations
     ../../common/base/imports.nix
