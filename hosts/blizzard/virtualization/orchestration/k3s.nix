@@ -20,7 +20,7 @@
             bin_dir = "${fullCNIPlugins}/bin";
             conf_dir = "/var/lib/rancher/k3s/agent/etc/cni/net.d/";
           };
-          plugins."io.containerd.cri.v1.images" = { snapshotter = "zfs"; }; # Why won't this work?
+          # plugins."io.containerd.cri.v1.images" = { snapshotter = "zfs"; }; # Why won't this work?
         };
     };
   };
@@ -39,12 +39,11 @@
         shutdownGracePeriodCriticalPods = "1m";
       };
 
-      ## Disabled for testing (not using ZFS for now)
       extraFlags = toString [
         "--container-runtime-endpoint unix:///run/containerd/containerd.sock"
         # "--disable=servicelb"
         # "--docker"
-        # "--snapshotter=native"
+        "--snapshotter=native"
       ];
     };
   };
