@@ -43,7 +43,7 @@
         "--container-runtime-endpoint unix:///run/containerd/containerd.sock"
         # "--disable=servicelb"
         # "--docker"
-        "--snapshotter=native"
+        # "--snapshotter=native"
       ];
     };
   };
