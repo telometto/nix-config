@@ -16,6 +16,8 @@
         shutdownGracePeriod = "1m30s";
         shutdownGracePeriodCriticalPods = "1m";
       };
+
+      extraFlags = toString [ "--snapshotter native" ];
     };
   };
 
@@ -31,14 +33,15 @@
     ];
   };
 
-  environment.systemPackages = with pkgs; [
-    (wrapHelm kubernetes-helm {
-      plugins = with pkgs.kubernetes-helmPlugins; [
-        helm-secrets
-        helm-diff
-        helm-s3
-        helm-git
-      ];
-    })
-  ];
+  environment.systemPackages = with pkgs;
+    [
+      (wrapHelm kubernetes-helm {
+        plugins = with pkgs.kubernetes-helmPlugins; [
+          helm-secrets
+          helm-diff
+          helm-s3
+          helm-git
+        ];
+      })
+    ];
 }
