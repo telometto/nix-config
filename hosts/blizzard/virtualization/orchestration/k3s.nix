@@ -17,7 +17,7 @@
         shutdownGracePeriodCriticalPods = "1m";
       };
 
-      extraFlags = toString [ "--snapshotter native" ];
+      extraFlags = [ "--snapshotter native" ];
     };
   };
 
