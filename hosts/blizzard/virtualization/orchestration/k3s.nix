@@ -2,29 +2,6 @@
 { config, lib, pkgs, ... }:
 
 {
-  # Disabled for testing (not using ZFS for now)
-  virtualisation = {
-    # k3s-related; more info at https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/networking/cluster/k3s/docs/examples/STORAGE.md
-    containerd = {
-      enable = true;
-
-      settings =
-        let
-          fullCNIPlugins = pkgs.buildEnv {
-            name = "full-cni";
-            paths = with pkgs; [ cni-plugins cni-plugin-flannel ];
-          };
-        in
-        {
-          plugins."io.containerd.grpc.v1.cri".cni = {
-            bin_dir = "${fullCNIPlugins}/bin";
-            conf_dir = "/var/lib/rancher/k3s/agent/etc/cni/net.d/";
-          };
-          # plugins."io.containerd.cri.v1.images" = { snapshotter = "zfs"; }; # Why won't this work?
-        };
-    };
-  };
-
   services = {
     rpcbind.enable = lib.mkOptionDefault true; # Required for NFS on k3s
 
@@ -32,19 +9,13 @@
       enable = true;
 
       role = "server";
+
       gracefulNodeShutdown = {
         enable = false;
 
         shutdownGracePeriod = "1m30s";
         shutdownGracePeriodCriticalPods = "1m";
       };
-
-      extraFlags = toString [
-        "--container-runtime-endpoint unix:///run/containerd/containerd.sock"
-        # "--disable=servicelb"
-        # "--docker"
-        # "--snapshotter=native"
-      ];
     };
   };
 
@@ -61,9 +32,6 @@
   };
 
   environment.systemPackages = with pkgs; [
-    containerd # Disabled for testing (not using ZFS for now)
-    k3s
-
     (wrapHelm kubernetes-helm {
       plugins = with pkgs.kubernetes-helmPlugins; [
         helm-secrets
