@@ -16,7 +16,7 @@ in
 {
   # Bootloader
   boot = {
-    supportedFilesystems = [ "btrfs" ];
+    supportedFilesystems = [ "btrfs" "nfs" ];
 
     initrd = {
       enable = true;
@@ -56,10 +56,10 @@ in
   systemd.mounts = [{
     type = "nfs";
     mountConfig = {
-      options = "noatime";
+      options = "rw,noatime,nofail";
     };
     what = "192.168.2.100:/rpool/enc/transfers";
-    where = "${DRIVE_BASE_PATH}/personal/shares";
+    where = "${DRIVE_BASE_PATH}/personal/transfers";
   }];
 
   systemd.automounts = [{
