@@ -67,7 +67,7 @@ in
     automountConfig = {
       TimeoutIdleSec = "600";
     };
-    where = "${DRIVE_BASE_PATH}/personal/shares";
+    where = "${DRIVE_BASE_PATH}/personal/transfers";
   }];
 
   # Services
