@@ -53,6 +53,23 @@ in
     # };
   };
 
+  systemd.mounts = [{
+    type = "nfs";
+    mountConfig = {
+      options = "noatime";
+    };
+    what = "192.168.2.100:/rpool/enc/transfers";
+    where = "${DRIVE_BASE_PATH}/personal/shares";
+  }];
+
+  systemd.automounts = [{
+    wantedBy = [ "multi-user.target" ];
+    automountConfig = {
+      TimeoutIdleSec = "600";
+    };
+    where = "${DRIVE_BASE_PATH}/personal/shares";
+  }];
+
   # Services
   services = {
     rpcbind = { enable = lib.mkOptionDefault true; };
