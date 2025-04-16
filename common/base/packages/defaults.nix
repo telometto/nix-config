@@ -71,6 +71,7 @@
     sbctl # Secure Boot key manager
     colmena # Remote management tool
     lsof # List open files
+    envsubst
 
     baobab # Disk usage analyzer
     restic
