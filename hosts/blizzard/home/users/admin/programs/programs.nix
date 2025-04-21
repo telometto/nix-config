@@ -26,9 +26,7 @@
         };
 
         item_fields = {
-          disk_folder = ''
-            return f"Disk-{disc}" if disctotal > 1 else ""
-          '';
+          disk_folder = ''return f"Disk-{disc}" if disctotal > 1 else ""'';
         };
 
         paths = {
