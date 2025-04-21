@@ -62,27 +62,27 @@ in {
     };
 
     git = {
-      # userName = "telometto";
-      # userEmail = config.sops.secrets."git/github-email".path;
+      userName = "telometto";
+      userEmail = config.sops.secrets."git/github-email".path;
 
       extraConfig = {
         commit.gpgSign = true;
-
+        tag.gpgSign = true;
         gpg.format = "ssh";
+        user.signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
       };
 
-      includes = [{
-        condition = "gitdir:~/.versioncontrol/github/";
+      # includes = [{
+      #   condition = "gitdir:~/.versioncontrol/github/";
 
-        contents = {
-          user = {
-            name = "telometto";
-            email = config.sops.secrets."git/github-email".path;
-            signingKey =
-              "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com";
-          };
-        };
-      }];
+      #   contents = {
+      #     user = {
+      #       name = "telometto";
+      #       email = config.sops.secrets."git/github-email".path;
+      #       signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
+      #     };
+      #   };
+      # }];
     };
 
     keychain = {
