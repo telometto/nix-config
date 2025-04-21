@@ -6,7 +6,8 @@
       enable = true;
 
       settings = {
-        plugins = "fetchart embedart convert scrub replaygain lastgenre chroma web inline";
+        plugins =
+          "fetchart embedart convert scrub replaygain lastgenre chroma web inline";
 
         directory = config.xdg.userDirs.music;
         # library = "${config.home.homeDirectory}/.config/beets/musiclibrary.blb";
@@ -31,10 +32,12 @@
         };
 
         paths = {
-          default = "\"Albums/$albumartist/$year/$album%aunique{}/$disk_folder/$track - $title\"";
-          singleton = "\"Non-Albums/$artist/$title\"";
-          comp = "\"Compilations/$album%aunique{}/$disk_folder/$track - $title\"";
-          albumtype_soundtrack = "\"Soundtracks/$album%aunique{}/$disk_folder/$track - $title\"";
+          default =
+            "Albums/$albumartist/$year/$album%aunique{}/$disk_folder/$track - $title";
+          singleton = "Non-Albums/$artist/$title";
+          comp = "Compilations/$album%aunique{}/$disk_folder/$track - $title";
+          albumtype_soundtrack =
+            "Soundtracks/$album%aunique{}/$disk_folder/$track - $title";
         };
 
         import = {
@@ -47,7 +50,7 @@
           quiet_fallback = "skip";
           timid = false;
           duplicate_action = "skip";
-          # log = "";
+          log = "${config.home.homeDirectory}/.config/beets/beets.log";
           languages = "en";
         };
 
@@ -58,21 +61,13 @@
           source = "album";
         };
 
-        embedart = {
-          auto = true;
-        };
+        embedart = { auto = true; };
 
-        fetchart = {
-          auto = true;
-        };
+        fetchart = { auto = true; };
 
-        replaygain = {
-          auto = false;
-        };
+        replaygain = { auto = false; };
 
-        scrub = {
-          auto = true;
-        };
+        scrub = { auto = true; };
 
         replace = {
           "^\\." = "_";
