@@ -11,5 +11,6 @@
     # cloudflare-dyndns # Dynamic DNS client for Cloudflare
 
     gcr_4 # GNOME crypto services
+    chromaprint
   ];
 }
