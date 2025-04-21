@@ -6,7 +6,7 @@
       enable = true;
 
       settings = {
-        plugins = [ "fetchart" "embedart" "convert" "scrub" "replaygain" "lastgenre" "chroma" "web" "inline" ];
+        plugins = "fetchart embedart convert scrub replaygain lastgenre chroma web inline";
 
         directory = config.xdg.userDirs.music;
         # library = "${config.home.homeDirectory}/.config/beets/musiclibrary.blb";
@@ -25,14 +25,16 @@
         };
 
         item_fields = {
-          disk_folder = ''return f"Disk-{disc}" if disctotal > 1 else ""'';
+          disk_folder = ''
+          return f"Disk-{disc}" if disctotal > 1 else ""
+          '';
         };
 
         paths = {
-          default = "Albums/$albumartist/$year/$album%aunique{}/$disk_folder/$track - $title";
-          singleton = "Non-Albums/$artist/$title";
-          comp = "Compilations/$album%aunique{}/$disk_folder/$track - $title";
-          albumtype_soundtrack = "Soundtracks/$album%aunique{}/$disk_folder/$track - $title";
+          default = "\"Albums/$albumartist/$year/$album%aunique{}/$disk_folder/$track - $title\"";
+          singleton = "\"Non-Albums/$artist/$title\"";
+          comp = "\"Compilations/$album%aunique{}/$disk_folder/$track - $title\"";
+          albumtype_soundtrack = "\"Soundtracks/$album%aunique{}/$disk_folder/$track - $title\"";
         };
 
         import = {
