@@ -1,52 +1,48 @@
 { config, lib, pkgs, VARS, ... }:
-let
-  LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
-in
-{
+let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
+in {
   programs = {
-
     fastfetch = {
-        modules = [
-          "title"
-          "separator"
-          "os"
-          "kernel"
-          "initsystem"
-          "uptime"
-          "loadavg"
-          "processes"
-          "packages"
-          "shell"
-          "editor"
-          "display"
-          "de"
-          "terminal"
-          {
-            "type" = "cpu";
-            "showPeCoreCount" = true;
-            "temp" = true;
-          }
-          "cpuusage"
-          {
-            "type" = "gpu";
-            "driverSpecific" = true;
-            "temp" = true;
-          }
-          "memory"
-          "swap"
-          "disk"
-          {
-            "type" = "battery";
-            "temp" = true;
-          }
-          { "type" = "localip"; }
-          {
-            "type" = "weather";
-            "timeout" = 1000;
-          }
-          "break"
-        ];
-      };
+      modules = [
+        "title"
+        "separator"
+        "os"
+        "kernel"
+        "initsystem"
+        "uptime"
+        "loadavg"
+        "processes"
+        "packages"
+        "shell"
+        "editor"
+        "display"
+        "de"
+        "terminal"
+        {
+          "type" = "cpu";
+          "showPeCoreCount" = true;
+          "temp" = true;
+        }
+        "cpuusage"
+        {
+          "type" = "gpu";
+          "driverSpecific" = true;
+          "temp" = true;
+        }
+        "memory"
+        "swap"
+        "disk"
+        {
+          "type" = "battery";
+          "temp" = true;
+        }
+        { "type" = "localip"; }
+        {
+          "type" = "weather";
+          "timeout" = 1000;
+        }
+        "break"
+      ];
     };
 
     firefox = {
@@ -133,15 +129,9 @@ in
       ];
     };
 
-    keychain = {
-      keys = [
-        "zeno-avalanche"
-      ];
-    };
+    keychain = { keys = [ "zeno-avalanche" ]; };
 
-    mangohud = {
-      enable = true;
-    };
+    mangohud = { enable = true; };
 
     mpv = {
       enable = true;
@@ -149,48 +139,45 @@ in
       # TODO: Declaratively configure mpv
     };
 
-    /*
-      # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
-      # For now, resorting to non-home-manager configuration
+    /* # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
+       # For now, resorting to non-home-manager configuration
 
-      ssh = {
-      enable = true;
+       ssh = {
+       enable = true;
 
-      addKeysToAgent = "yes";
-      #controlMaster = "auto";
-      #controlPath = "/some/path/%r@%h:%p";
-      #controlPersist = "yes";
-      compression = true;
-      #extraConfig = ""; # Strings concatenated with "\n"
-      #extraOptionOverrides = ""; # Attribute set of strings
-      forwardAgent = true;
-      #hashKnownHosts = true;
-      #includes = [ ]; # List of strings
-      #matchBlocks = { }; # Attribute set of attribute sets
-      #serverAliveCountMax = 1; # Positive integer
-      #serverAliveInterval = 1;
-      #userKnownHostsFile = ""; # String
-      };
-        */
+       addKeysToAgent = "yes";
+       #controlMaster = "auto";
+       #controlPath = "/some/path/%r@%h:%p";
+       #controlPersist = "yes";
+       compression = true;
+       #extraConfig = ""; # Strings concatenated with "\n"
+       #extraOptionOverrides = ""; # Attribute set of strings
+       forwardAgent = true;
+       #hashKnownHosts = true;
+       #includes = [ ]; # List of strings
+       #matchBlocks = { }; # Attribute set of attribute sets
+       #serverAliveCountMax = 1; # Positive integer
+       #serverAliveInterval = 1;
+       #userKnownHostsFile = ""; # String
+       };
+    */
 
-    /*
-      thunderbird = {
-      enable = true;
+    /* thunderbird = {
+       enable = true;
 
-      # TODO: Declaratively configure Thunderbird
-      };
-        */
+       # TODO: Declaratively configure Thunderbird
+       };
+    */
 
-    /*
-      vscode = {
-      enable = true;
+    /* vscode = {
+       enable = true;
 
-      enableUpdateCheck = false; # Disable update checks
-      mutableExtensionsDir = true; # Allow extensions to be installed in the user's home directory
+       enableUpdateCheck = false; # Disable update checks
+       mutableExtensionsDir = true; # Allow extensions to be installed in the user's home directory
 
-      # TODO: Declaratively configure Visual Studio Code
-      };
-        */
+       # TODO: Declaratively configure Visual Studio Code
+       };
+    */
 
     zellij = {
       enable = true;
@@ -206,9 +193,15 @@ in
   };
 
   sops.secrets = {
-    "git/github-prim-email" = { path = "${config.sops.defaultSymlinkPath}/git/github-prim-email"; };
-    "git/github-email" = { path = "${config.sops.defaultSymlinkPath}/git/github-email"; };
-    "git/gitlab-email" = { path = "${config.sops.defaultSymlinkPath}/git/gitlab-email"; };
+    "git/github-prim-email" = {
+      path = "${config.sops.defaultSymlinkPath}/git/github-prim-email";
+    };
+    "git/github-email" = {
+      path = "${config.sops.defaultSymlinkPath}/git/github-email";
+    };
+    "git/gitlab-email" = {
+      path = "${config.sops.defaultSymlinkPath}/git/gitlab-email";
+    };
   };
 
 }

@@ -87,59 +87,57 @@
       };
     };
 
-
     fastfetch = {
-        modules = [
-          "title"
-          "separator"
-          "os"
-          "kernel"
-          "initsystem"
-          "uptime"
-          "loadavg"
-          "processes"
-          "packages"
-          "shell"
-          "editor"
-          "display"
-          "de"
-          "terminal"
-          {
-            "type" = "cpu";
-            "showPeCoreCount" = true;
-            "temp" = true;
-          }
-          "cpuusage"
-          {
-            "type" = "gpu";
-            "driverSpecific" = true;
-            "temp" = true;
-          }
-          "memory"
-          "swap"
-          {
-            "type" = "disk";
-            "folders" = "/";
-            "key" = "root";
-          }
-          {
-            "type" = "disk";
-            "folders" = "/flash";
-            "key" = "flash";
-          }
-          {
-            "type" = "disk";
-            "folders" = "/rpool";
-            "key" = "rpool";
-          }
-          { "type" = "localip"; }
-          {
-            "type" = "weather";
-            "timeout" = 1000;
-          }
-          "break"
-        ];
-      };
+      modules = [
+        "title"
+        "separator"
+        "os"
+        "kernel"
+        "initsystem"
+        "uptime"
+        "loadavg"
+        "processes"
+        "packages"
+        "shell"
+        "editor"
+        "display"
+        "de"
+        "terminal"
+        {
+          "type" = "cpu";
+          "showPeCoreCount" = true;
+          "temp" = true;
+        }
+        "cpuusage"
+        {
+          "type" = "gpu";
+          "driverSpecific" = true;
+          "temp" = true;
+        }
+        "memory"
+        "swap"
+        {
+          "type" = "disk";
+          "folders" = "/";
+          "key" = "root";
+        }
+        {
+          "type" = "disk";
+          "folders" = "/flash";
+          "key" = "flash";
+        }
+        {
+          "type" = "disk";
+          "folders" = "/rpool";
+          "key" = "rpool";
+        }
+        { "type" = "localip"; }
+        {
+          "type" = "weather";
+          "timeout" = 1000;
+        }
+        "break"
+      ];
     };
 
     keychain = {
