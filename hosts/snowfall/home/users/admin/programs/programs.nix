@@ -1,6 +1,29 @@
 { config, lib, pkgs, VARS, ... }:
 let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
 in {
+  home = {
+    file.".ssh/config".text = ''
+      Host *
+        ForwardAgent yes
+        AddKeysToAgent yes
+        Compression yes
+
+      Host github.com
+        Hostname ssh.github.com
+        Port 443
+        User git
+        IdentityFile ${config.home.homeDirectory}/.ssh/github-key
+
+      Host 192.168.*
+        IdentityFile ${config.home.homeDirectory}/.ssh/id_ed25519
+        IdentitiesOnly yes
+        SetEnv TERM=xterm-256color
+    '';
+
+    file.".ssh/allowed_signers".text =
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com";
+  };
+
   programs = {
     firefox = {
       enable = false;
@@ -63,26 +86,25 @@ in {
 
     git = {
       userName = "telometto";
-      userEmail = config.sops.secrets."git/github-email".path;
+      userEmail = "65364211+telometto@users.noreply.github.com";
 
       extraConfig = {
         commit.gpgSign = true;
         tag.gpgSign = true;
-        gpg.format = "ssh";
+
+        gpg = {
+          format = "ssh";
+          ssh.allowedSignersFile =
+            "${config.home.homeDirectory}/.ssh/allowed_signers";
+        };
+
         user.signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
       };
 
-      # includes = [{
-      #   condition = "gitdir:~/.versioncontrol/github/";
-
-      #   contents = {
-      #     user = {
-      #       name = "telometto";
-      #       email = config.sops.secrets."git/github-email".path;
-      #       signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
-      #     };
-      #   };
-      # }];
+      includes = [{
+        condition = "gitdir:~/.versioncontrol/github/";
+        contents.user.email = "65364211+telometto@users.noreply.github.com";
+      }];
     };
 
     keychain = {
