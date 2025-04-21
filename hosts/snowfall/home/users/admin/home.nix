@@ -85,7 +85,7 @@ in
       # mangohud
 
       # Media
-      jamesdsp
+      # jamesdsp
       # mpv # Media player
 
       # Internet
