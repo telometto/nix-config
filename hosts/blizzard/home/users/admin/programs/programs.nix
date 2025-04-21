@@ -11,11 +11,13 @@
 
         directory = config.xdg.userDirs.music;
         # library = "${config.home.homeDirectory}/.config/beets/musiclibrary.blb";
+        statefile = "${config.home.homeDirectory}/.config/beets/state.pickle";
 
         art_filename = "albumart";
         threaded = true;
         original_date = false;
-        per_disc_numbering = false;
+        per_disc_numbering =
+          true; # Starts numbering from 1 again for each disk set
 
         convert = {
           auto = true;
@@ -25,9 +27,41 @@
           threads = 6;
         };
 
-        item_fields = {
-          disk_folder = ''return f"Disk-{disc}" if disctotal > 1 else ""'';
+        match = {
+          strong_rec_thresh = 0.04;
+          medium_rec_thresh = 0.25;
+          rec_gap_thresh = 0.25;
+          distance_weights = {
+            source = 2.0;
+            artist = 3.0;
+            album = 3.0;
+            media = 1.0;
+            mediums = 1.0;
+            year = 1.0;
+            country = 0.5;
+            label = 0.5;
+            catalognum = 0.5;
+            albumdisambig = 0.5;
+            album_id = 5.0;
+            tracks = 2.0;
+            missing_tracks = 0.9;
+            unmatched_tracks = 0.6;
+            track_title = 3.0;
+            track_artist = 2.0;
+            track_index = 1.0;
+            track_length = 2.0;
+            track_id = 5.0;
+          };
+
+          preferred = {
+            countries = [ ];
+            media = [ ];
+            original_year = true;
+          };
         };
+
+        item_fields.disk_folder =
+          ''return f"Disk-{disc}" if disctotal > 1 else ""'';
 
         paths = {
           default =
@@ -39,17 +73,46 @@
         };
 
         import = {
+          # Common options
           write = true;
           copy = false;
           move = true;
-          resume = false;
-          incremental = true;
-          quiet = true;
-          quiet_fallback = "skip";
           timid = false;
-          duplicate_action = "skip";
+          quiet = true;
           log = "${config.home.homeDirectory}/.config/beets/beets.log";
+
+          # Other options
+          default_action = "apply";
           languages = "en";
+          quiet_fallback = "skip";
+          none_rec_action = "ask";
+
+          # Rare options
+          # link = false;
+          # hardlink = false;
+          # reflink = false;
+          # delete = false;
+          resume = false;
+          incremental = false;
+          incremental_skip_later = false;
+          from_scratch = true;
+          autotag = true;
+          # singletons = false;
+          # detail = false;
+          # flat = false;
+          # group_albums = false;
+          # pretend = false;
+          # search_ids = [ ];
+          # duplicate_keys = {
+          #   album = "albumartist album";
+          #   item = "artist title";
+          # };
+          duplicate_action = "skip";
+          # duplicate_verbose_prompt = false;
+          # bell = false;
+          # set_fields = ;
+          # ignored_alias_types = ;
+          # singleton_album_disambig = true;
         };
 
         ui = { color = true; };
