@@ -26,7 +26,7 @@
 
         item_fields = {
           disk_folder = ''
-          return f"Disk-{disc}" if disctotal > 1 else ""
+            return f"Disk-{disc}" if disctotal > 1 else ""
           '';
         };
 

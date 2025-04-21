@@ -81,7 +81,8 @@
       # read all overlays from ./overlays/*.nix
       overlayFiles = builtins.attrNames (builtins.readDir ./overlays);
       allOverlays = map (f: import (./overlays + "/" + f)) overlayFiles;
-    in {
+    in
+    {
       # Colmena config
       colmena = {
         meta = {
@@ -95,56 +96,58 @@
       };
 
       # NixOS configurations
-      nixosConfigurations = lib.mapAttrs (hostName: hostAttrs:
-        nixpkgs.lib.nixosSystem {
-          system = hostAttrs.system;
-          modules = [
-            inputs.home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                backupFileExtension = "hm-backup";
-                sharedModules = [
-                  inputs.sops-nix.homeManagerModules.sops
-                  inputs.hyprland.homeManagerModules.default
-                ];
+      nixosConfigurations = lib.mapAttrs
+        (hostName: hostAttrs:
+          nixpkgs.lib.nixosSystem {
+            system = hostAttrs.system;
+            modules = [
+              inputs.home-manager.nixosModules.home-manager
+              {
+                home-manager = {
+                  useGlobalPkgs = true;
+                  useUserPackages = true;
+                  backupFileExtension = "hm-backup";
+                  sharedModules = [
+                    inputs.sops-nix.homeManagerModules.sops
+                    inputs.hyprland.homeManagerModules.default
+                  ];
 
-                extraSpecialArgs = {
-                  inherit inputs VARS;
-                  pkgs-stable-latest = import inputs.nixpkgs-stable-latest {
-                    system = hostAttrs.system;
+                  extraSpecialArgs = {
+                    inherit inputs VARS;
+                    pkgs-stable-latest = import inputs.nixpkgs-stable-latest {
+                      system = hostAttrs.system;
+                    };
+                    pkgs-stable =
+                      import inputs.nixpkgs-stable { system = hostAttrs.system; };
+                    pkgs-unstable = import inputs.nixpkgs-unstable-small {
+                      system = hostAttrs.system;
+                    };
                   };
-                  pkgs-stable =
-                    import inputs.nixpkgs-stable { system = hostAttrs.system; };
-                  pkgs-unstable = import inputs.nixpkgs-unstable-small {
-                    system = hostAttrs.system;
-                  };
-                };
 
-                users = lib.genAttrs hostAttrs.users (user:
-                  import ./hosts/${hostName}/home/users/${
+                  users = lib.genAttrs hostAttrs.users (user:
+                    import ./hosts/${hostName}/home/users/${
                     if user == VARS.users.admin.user then
                       "admin"
                     else
                       "extra/${user}"
                   }/home.nix);
-              };
-            }
-            hostAttrs.config
-          ];
+                };
+              }
+              hostAttrs.config
+            ];
 
-          specialArgs = {
-            inherit inputs VARS;
-            pkgs-stable-latest = import inputs.nixpkgs-stable-latest {
-              system = hostAttrs.system;
+            specialArgs = {
+              inherit inputs VARS;
+              pkgs-stable-latest = import inputs.nixpkgs-stable-latest {
+                system = hostAttrs.system;
+              };
+              pkgs-stable =
+                import inputs.nixpkgs-stable { system = hostAttrs.system; };
+              pkgs-unstable = import inputs.nixpkgs-unstable-small {
+                system = hostAttrs.system;
+              };
             };
-            pkgs-stable =
-              import inputs.nixpkgs-stable { system = hostAttrs.system; };
-            pkgs-unstable = import inputs.nixpkgs-unstable-small {
-              system = hostAttrs.system;
-            };
-          };
-        }) hosts;
+          })
+        hosts;
     };
 }
