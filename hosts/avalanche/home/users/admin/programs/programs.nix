@@ -3,46 +3,48 @@ let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
 in {
   programs = {
     fastfetch = {
-      modules = [
-        "title"
-        "separator"
-        "os"
-        "kernel"
-        "initsystem"
-        "uptime"
-        "loadavg"
-        "processes"
-        "packages"
-        "shell"
-        "editor"
-        "display"
-        "de"
-        "terminal"
-        {
-          "type" = "cpu";
-          "showPeCoreCount" = true;
-          "temp" = true;
-        }
-        "cpuusage"
-        {
-          "type" = "gpu";
-          "driverSpecific" = true;
-          "temp" = true;
-        }
-        "memory"
-        "swap"
-        "disk"
-        {
-          "type" = "battery";
-          "temp" = true;
-        }
-        { "type" = "localip"; }
-        {
-          "type" = "weather";
-          "timeout" = 1000;
-        }
-        "break"
-      ];
+      settings = {
+        modules = [
+          "title"
+          "separator"
+          "os"
+          "kernel"
+          "initsystem"
+          "uptime"
+          "loadavg"
+          "processes"
+          "packages"
+          "shell"
+          "editor"
+          "display"
+          "de"
+          "terminal"
+          {
+            "type" = "cpu";
+            "showPeCoreCount" = true;
+            "temp" = true;
+          }
+          "cpuusage"
+          {
+            "type" = "gpu";
+            "driverSpecific" = true;
+            "temp" = true;
+          }
+          "memory"
+          "swap"
+          "disk"
+          {
+            "type" = "battery";
+            "temp" = true;
+          }
+          { "type" = "localip"; }
+          {
+            "type" = "weather";
+            "timeout" = 1000;
+          }
+          "break"
+        ];
+      };
     };
 
     firefox = {
