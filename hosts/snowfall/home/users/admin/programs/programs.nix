@@ -63,55 +63,18 @@ in {
 
     git = {
       userName = "telometto";
-      userEmail =
-        "65364211+telometto@users.noreply.github.com"; # config.sops.secrets."git/github-prim-email".path;
+      userEmail = config.sops.secrets."git/github-email".path;
 
-      signing = {
-        key = "~/.ssh/github-key";
-        signByDefault = true;
-        format = "ssh";
-      };
+      includes = [{
+        condition = "gitdir:~/.versioncontrol/github/";
 
-      # extraConfig = {
-      #   gpg.format = "ssh";
-      # commit.gpgSign = true;
+        contents = {
+          user.name = "telometto";
+          user.email = config.sops.secrets."git/github-email".path;
 
-      #   core = { untrackedCache = true; };
-      # };
-
-      # includes = [
-      #   {
-      #     condition = "gitdir:~/.versioncontrol/github";
-
-      #     contents = {
-      #       user = {
-      #         # name = "telometto";
-      #         email = config.sops.secrets."git/github-email".path;
-      #         signingKey = "0x5A5BF29378C3942B";
-      #       };
-
-      #       # commit.gpgSign = true;
-      #       gpg.format = "ssh";
-
-      #       core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
-      #     };
-      #   }
-      #   {
-      #     condition = "gitdir:~/.versioncontrol/gitlab";
-
-      #     contents = {
-      #       user = {
-      #         # name = "telometto";
-      #         email = config.sops.secrets."git/gitlab-email".path;
-      #         signingKey = "0xB7103B8A59566994";
-      #       };
-
-      #       commit.gpgSign = true;
-
-      #       core.sshCommand = "ssh -i ~/.ssh/gitlabkey";
-      #     };
-      #   }
-      # ];
+          commit.gpgSign = true;
+        };
+      }];
     };
 
     keychain = {
