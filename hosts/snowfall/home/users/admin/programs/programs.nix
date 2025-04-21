@@ -62,17 +62,25 @@ in {
     };
 
     git = {
-      userName = "telometto";
-      userEmail = config.sops.secrets."git/github-email".path;
+      # userName = "telometto";
+      # userEmail = config.sops.secrets."git/github-email".path;
+
+      extraConfig = {
+        commit.gpgSign = true;
+
+        gpg.format = "ssh";
+      };
 
       includes = [{
         condition = "gitdir:~/.versioncontrol/github/";
 
         contents = {
-          user.name = "telometto";
-          user.email = config.sops.secrets."git/github-email".path;
-
-          commit.gpgSign = true;
+          user = {
+            name = "telometto";
+            email = config.sops.secrets."git/github-email".path;
+            signingKey =
+              "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com";
+          };
         };
       }];
     };
