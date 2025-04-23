@@ -41,10 +41,10 @@
     };
   };
 
-  programs.ssh = {
-    # askPassword = "${pkgs.seahorse.out}/libexec/seahorse/ssh-askpass"; # Not correct?
-    askPassword = "${pkgs.seahorse.out}/bin/seahorse";
-  };
+  # programs.ssh = {
+  #   # askPassword = "${pkgs.seahorse.out}/libexec/seahorse/ssh-askpass"; # Not correct?
+  #   askPassword = "${pkgs.seahorse.out}/bin/seahorse";
+  # };
 
   security.pam.services = {
     gdm = {
@@ -70,5 +70,6 @@
     gnome-builder
     #]) ++ (with pkgs.gnome; [
     gnome-maps
+    epiphany
   ];
 }
