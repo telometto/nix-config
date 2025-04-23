@@ -1,6 +1,29 @@
 { config, lib, pkgs, VARS, ... }:
 let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
 in {
+  home = {
+    file.".ssh/config".text = ''
+      Host *
+        ForwardAgent yes
+        AddKeysToAgent yes
+        Compression yes
+
+      Host github.com
+        Hostname ssh.github.com
+        Port 443
+        User git
+        IdentityFile ${config.home.homeDirectory}/.ssh/github-key
+
+      Host 192.168.*
+        IdentityFile ${config.home.homeDirectory}/.ssh/id_ed25519
+        IdentitiesOnly yes
+        SetEnv TERM=xterm-256color
+    '';
+
+    file.".ssh/allowed_signers".text =
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com";
+  };
+
   programs = {
     fastfetch = {
       settings = {
@@ -99,39 +122,33 @@ in {
 
     git = {
       userName = "telometto";
-      userEmail = config.sops.secrets."git/github-prim-email".path;
+      userEmail = "65364211+telometto@users.noreply.github.com";
 
-      includes = [
-        {
-          condition = "gitdir:~/.versioncontrol/github/";
+      extraConfig = {
+        commit.gpgSign = true;
+        tag.gpgSign = true;
 
-          contents = {
-            user.name = "telometto";
-            user.email = config.sops.secrets."git/github-email".path;
-            # user.signingKey = "0x5A5BF29378C3942B";
+        gpg = {
+          format = "ssh";
+          ssh.allowedSignersFile =
+            "${config.home.homeDirectory}/.ssh/allowed_signers";
+        };
 
-            commit.gpgSign = true;
+        user.signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
+      };
 
-            # core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
-          };
-        }
-        {
-          condition = "gitdir:~/.versioncontrol/gitlab/";
-
-          contents = {
-            user.name = "telometto";
-            user.email = config.sops.secrets."git/gitlab-email".path;
-            # user.signingKey = "0xB7103B8A59566994";
-
-            commit.gpgSign = true;
-
-            # core.sshCommand = "ssh -i ~/.ssh/gitlabkey";
-          };
-        }
-      ];
+      includes = [{
+        condition = "gitdir:~/.versioncontrol/github/";
+        contents.user.email = "65364211+telometto@users.noreply.github.com";
+      }];
     };
 
-    keychain = { keys = [ "zeno-avalanche" ]; };
+    keychain = {
+      keys = [
+        "zeno-avalanche"
+        "github-key"
+      ];
+    };
 
     mangohud = { enable = true; };
 
