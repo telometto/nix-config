@@ -73,19 +73,22 @@ in
       variety # Wallpaper changer
       zsh-powerlevel10k
       # polychromatic # Razer configuration tool
+      flameshot
+      ansible
 
       # Gaming
       #mangohud
 
       # Media
-      # jamesdsp
-      #mpv # Media player
+      jamesdsp
+      # mpv # Media player
 
       # Internet
       brave # Web browser
       protonmail-desktop # ProtonMail client
       thunderbird # Email client
       yt-dlp # YouTube downloader
+      # protonvpn-gui # ProtonVPN GUI client
 
       # Social
       discord # Discord client
@@ -96,7 +99,9 @@ in
       # Development
       nixd # Nix language server for VS Code
       nixpkgs-fmt # Nix language formatter
+      nixfmt-classic # Nix language formatter
       vscode # Visual Studio Code
+      jetbrains.idea-community-bin # IntelliJ IDEA Community Edition
 
       # texliveFull # LaTeX
 

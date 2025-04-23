@@ -77,7 +77,7 @@ in
       # ghostty
       flameshot
       # rustdesk
-      teamviewer
+      # teamviewer
       czkawka # Duplicate file finder
       ansible
 
@@ -85,7 +85,7 @@ in
       # mangohud
 
       # Media
-      # jamesdsp
+      jamesdsp
       # mpv # Media player
 
       # Internet
@@ -93,13 +93,14 @@ in
       protonmail-desktop # ProtonMail client
       thunderbird # Email client
       yt-dlp # YouTube downloader
-      protonvpn-gui # ProtonVPN GUI client
+      # protonvpn-gui # ProtonVPN GUI client
       plex-desktop # Plex media player for desktop
+
       # Social
       discord # Discord client
       element-desktop # Matrix client
       teams-for-linux # Microsoft Teams client
-      weechat # IRC client
+      # weechat # IRC client
       zoom-us # Zoom client
 
       # Development
