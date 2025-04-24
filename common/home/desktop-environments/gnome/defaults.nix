@@ -12,7 +12,7 @@
     gnomeExtensions.tailscale-status
     gnomeExtensions.openweather-refined
     gnomeExtensions.burn-my-windows
-    #gnomeExtensions.
+    gnomeExtensions.thinkpad-battery-threshold
   ];
 
   dconf = {
