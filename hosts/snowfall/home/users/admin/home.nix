@@ -80,6 +80,7 @@ in
       # teamviewer
       czkawka # Duplicate file finder
       ansible
+      figma
 
       # Gaming
       # mangohud
