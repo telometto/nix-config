@@ -47,9 +47,7 @@
       ];
     };
 
-    fastfetch = {
-      enable = true;
-    };
+    fastfetch = { enable = true; };
 
     fzf = {
       enable = true;
@@ -185,13 +183,11 @@
         ignoreAllDups = true;
       };
 
-      initExtraBeforeCompInit = ''
-        source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
-      '';
+      initContent = lib.mkMerge [
+        (lib.mkOrder 550 "source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme")
 
-      initExtra = ''
-        [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-      '';
+        (lib.mkOrder 1000 "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh")
+      ];
 
       oh-my-zsh = {
         enable = true;
