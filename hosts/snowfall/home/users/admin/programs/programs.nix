@@ -149,6 +149,11 @@ in {
     };
 
     keychain = {
+      enable = false;
+
+      enableBashIntegration = true;
+      enableZshIntegration = true;
+
       keys = [
         "id_ed25519"
         "gitlabkey"

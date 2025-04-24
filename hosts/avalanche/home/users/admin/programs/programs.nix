@@ -143,12 +143,17 @@ in {
       }];
     };
 
-    keychain = {
-      keys = [
-        "zeno-avalanche"
-        "github-key"
-      ];
-    };
+    # keychain = {
+    #   enable = false;
+
+    #   enableBashIntegration = true;
+    #   enableZshIntegration = true;
+
+    #   keys = [
+    #     "zeno-avalanche"
+    #     "github-key"
+    #   ];
+    # };
 
     mangohud = { enable = true; };
 

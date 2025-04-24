@@ -112,13 +112,6 @@
       };
     };
 
-    keychain = {
-      enable = true;
-
-      enableBashIntegration = true;
-      enableZshIntegration = true;
-    };
-
     micro = {
       enable = true;
 
@@ -217,7 +210,7 @@
           "fzf"
           "gpg-agent"
           "podman"
-          "ssh-agent"
+          # "ssh-agent"
           "sudo"
           "systemd"
           "tailscale"

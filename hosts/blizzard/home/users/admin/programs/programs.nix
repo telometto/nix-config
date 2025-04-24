@@ -206,7 +206,16 @@
     };
 
     keychain = {
-      keys = [ "borg-blizzard" "sops-hm-blizzard" "zeno-blizzard" ];
+      enable = false;
+
+      enableBashIntegration = true;
+      enableZshIntegration = true;
+
+      keys = [
+        "borg-blizzard"
+        "sops-hm-blizzard"
+        "zeno-blizzard"
+      ];
     };
 
     zsh = {
