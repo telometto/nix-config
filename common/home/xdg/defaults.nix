@@ -14,6 +14,8 @@
 
       createDirectories = true; # Default: false
     };
+
+    autostart = { enable = true; };
   };
 
   home.packages = with pkgs; [
