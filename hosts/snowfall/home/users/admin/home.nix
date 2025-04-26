@@ -94,7 +94,7 @@ in
       protonmail-desktop # ProtonMail client
       thunderbird # Email client
       yt-dlp # YouTube downloader
-      # protonvpn-gui # ProtonVPN GUI client
+      protonvpn-gui # ProtonVPN GUI client
       plex-desktop # Plex media player for desktop
 
       # Social
