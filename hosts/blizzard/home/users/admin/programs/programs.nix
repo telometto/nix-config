@@ -2,6 +2,20 @@
 
 {
   programs = {
+  home = {
+    file.".ssh/config".text = ''
+      Host *
+        ForwardAgent yes
+        AddKeysToAgent yes
+        Compression yes
+
+      Host github.com
+        Hostname ssh.github.com
+        Port 443
+        User git
+        IdentityFile ${config.home.homeDirectory}/.ssh/zeno-blizzard
+    '';
+
     beets = {
       enable = true;
 
