@@ -65,6 +65,7 @@
     # 2.5 Programs
     ../../modules/base/programs/steam.nix
     ../../modules/base/programs/virt-manager.nix
+    ../../modules/base/programs/wayland.nix
 
     # 2.6 Security
     # ../../modules/base/security/crowdsec/crowdsec.nix
