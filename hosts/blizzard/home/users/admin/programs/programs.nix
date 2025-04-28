@@ -1,7 +1,6 @@
 { config, lib, pkgs, VARS, ... }:
 
 {
-  programs = {
   home = {
     file.".ssh/config".text = ''
       Host *
@@ -15,7 +14,9 @@
         User git
         IdentityFile ${config.home.homeDirectory}/.ssh/zeno-blizzard
     '';
+  };
 
+  programs = {
     beets = {
       enable = true;
 
