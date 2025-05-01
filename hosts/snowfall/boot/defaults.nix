@@ -21,7 +21,7 @@ in
     initrd = {
       enable = true;
 
-      kernelModules = [ "amdgpu" ];
+      # kernelModules = [ "amdgpu" ];
 
       supportedFilesystems = { btrfs = true; };
     };
