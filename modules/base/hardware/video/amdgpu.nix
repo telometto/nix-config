@@ -26,6 +26,12 @@ let
 in
 {
   hardware = {
+    amdgpu = {
+      initrd = {
+        enable = true;
+      };
+    };
+
     opengl =
       if stableRelease then {
         enable = true;
