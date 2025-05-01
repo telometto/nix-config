@@ -3,7 +3,7 @@ let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
 in {
   home = {
     /*
-    file.".ssh/config".text = ''
+      file.".ssh/config".text = ''
       Host *
         ForwardAgent yes
         AddKeysToAgent yes
@@ -19,7 +19,7 @@ in {
         IdentityFile ${config.home.homeDirectory}/.ssh/id_ed25519
         IdentitiesOnly yes
         SetEnv TERM=xterm-256color
-    '';
+      '';
     */
 
     file.".ssh/allowed_signers".text =
