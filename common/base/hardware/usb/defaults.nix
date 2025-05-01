@@ -10,6 +10,10 @@
 {
   # Enable USB support.
   services = {
+    devmon = {
+      enable = true;
+    };
+
     gvfs = {
       enable = true;
     };
