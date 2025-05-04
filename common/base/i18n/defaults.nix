@@ -23,7 +23,7 @@ in
   i18n = {
     defaultLocale = "en_US.UTF-8";
 
-    supportedLocales = [ "all" ]; # Support all locales
+    extraLocales = [ "all" ]; # Support all locales
 
     extraLocaleSettings = {
       LC_ADDRESS = LANGUAGE;
