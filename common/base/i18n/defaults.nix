@@ -23,7 +23,11 @@ in
   i18n = {
     defaultLocale = "en_US.UTF-8";
 
-    extraLocales = [ "all" ]; # Support all locales
+    # extraLocales = [ ];
+
+    glibcLocales = pkgs.glibcLocales.override {
+      allLocales = true;
+    };
 
     extraLocaleSettings = {
       LC_ADDRESS = LANGUAGE;
