@@ -19,7 +19,7 @@
   environment.systemPackages = with pkgs; [
     # apparmor-related packages
     apparmor-bin-utils
-    apparmor-kernel-patches
+    # apparmor-kernel-patches # [DEPRECATED] Removed due to being unmaintained
     apparmor-pam
     apparmor-parser
     apparmor-profiles
