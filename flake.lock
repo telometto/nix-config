@@ -44,11 +44,11 @@
         "stable": "stable"
       },
       "locked": {
-        "lastModified": 1746801673,
-        "narHash": "sha256-v0u7diV2mY+rcTsDjpUZNGLRc/EgI5oR7XiCjwFzbNA=",
+        "lastModified": 1746808687,
+        "narHash": "sha256-X0ZNcw+wGMWPmoP90jZ525l2z+inL9kq7qG9KcTXLH4=",
         "owner": "zhaofengli",
         "repo": "colmena",
-        "rev": "3f7e5cfa31a83d60b68eee7ad01f754daa1bf5e1",
+        "rev": "f3ae793ae10a1f32a360acdac0a41279c9d15c44",
         "type": "github"
       },
       "original": {
@@ -569,11 +569,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1746717538,
-        "narHash": "sha256-mBPMdT19oLO6zRxTiuoKIKPQ4smlD8om3CZC3F34ZNo=",
+        "lastModified": 1746809399,
+        "narHash": "sha256-rMYfYaUpKuyMpDnodIfgFOnj6Wn0duItZvG4kQODcZo=",
         "owner": "nix-community",
         "repo": "lanzaboote",
-        "rev": "fa81496ad7359f62deec2f52882479250b237fc7",
+        "rev": "8f27abb5e623d83db4988ee3e864df48181e7c30",
         "type": "github"
       },
       "original": {
