@@ -44,11 +44,11 @@
         "stable": "stable"
       },
       "locked": {
-        "lastModified": 1746808687,
-        "narHash": "sha256-X0ZNcw+wGMWPmoP90jZ525l2z+inL9kq7qG9KcTXLH4=",
+        "lastModified": 1746816769,
+        "narHash": "sha256-ymQzXrfHVT8/RJiGbfrNjEeuzXQan46lUJdxEhgivdM=",
         "owner": "zhaofengli",
         "repo": "colmena",
-        "rev": "f3ae793ae10a1f32a360acdac0a41279c9d15c44",
+        "rev": "df694ee23be7ed7b2d8b42c245a640f0724eb06c",
         "type": "github"
       },
       "original": {
@@ -643,11 +643,11 @@
     },
     "nixos-hardware": {
       "locked": {
-        "lastModified": 1746621361,
-        "narHash": "sha256-T9vOxEqI1j1RYugV0b9dgy0AreiZ9yBDKZJYyclF0og=",
+        "lastModified": 1746814339,
+        "narHash": "sha256-hf2lICJzwACWuzHCmZn5NI6LUAOgGdR1yh8ip+duyhk=",
         "owner": "NixOS",
         "repo": "nixos-hardware",
-        "rev": "2ea3ad8a1f26a76f8a8e23fc4f7757c46ef30ee5",
+        "rev": "3c5e12673265dfb0de3d9121420c0c2153bf21e0",
         "type": "github"
       },
       "original": {
