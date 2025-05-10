@@ -67,7 +67,7 @@ in
 
     packages = with pkgs; [
       # Utils
-      atuin # History manager
+      # atuin # History manager
       # blesh
       gparted # Partition manager
       meld # Diff tool
