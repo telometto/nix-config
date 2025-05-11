@@ -1,9 +1,11 @@
-{ config, lib, pkgs, VARS, pkgs-stable, ... }:
+{ config, lib, inputs, pkgs, VARS, pkgs-stable, pkgs-unstable, ... }:
 let
   DEFAULT_LANG = "nb_NO.UTF-8";
 in
 {
   imports = [
+    inputs.nix-colors.homeManagerModules.default
+
     # Common imports
     ../../../../../common/home/imports.nix
 
@@ -12,7 +14,7 @@ in
 
     # Desktop environments
     # ../../../../../common/home/desktop-environments/gnome/defaults.nix # Enables GNOME
-    ../../../../../common/home/desktop-environments/hyprland/defaults.nix # Enables Hyprland
+    # ../../../../../common/home/desktop-environments/hyprland/defaults.nix # Enables Hyprland
     ../../../../../common/home/desktop-environments/kde/defaults.nix # Enables KDE
 
     # User-specific imports
@@ -20,6 +22,8 @@ in
     ./services/gpg/agent.nix
     # ./xdg/xdg.nix
   ];
+
+  colorScheme = inputs.nix-colors.colorSchemes.gruvbox-dark-medium;
 
   programs.home-manager.enable = true; # Enable home-manager
 
@@ -65,68 +69,68 @@ in
       # variant = "";
     };
 
-    packages = with pkgs; [
+    packages = [
       # Utils
-      # atuin # History manager
-      # blesh
-      gparted # Partition manager
-      meld # Diff tool
-      variety # Wallpaper changer
-      zsh-powerlevel10k
-      polychromatic # Razer configuration tool
-      # ghostty
-      flameshot
-      # rustdesk
-      # teamviewer
-      czkawka # Duplicate file finder
-      ansible
-      figma-linux
+      # pkgs.atuin # History manager
+      # pkgs.blesh
+      pkgs.gparted # Partition manager
+      pkgs.meld # Diff tool
+      pkgs-unstable.variety # Wallpaper changer
+      pkgs.zsh-powerlevel10k
+      pkgs.polychromatic # Razer configuration tool
+      # pkgs.ghostty
+      pkgs.flameshot
+      # pkgs.rustdesk
+      # pkgs.teamviewer
+      pkgs.czkawka # Duplicate file finder
+      pkgs.ansible
+      pkgs.figma-linux
 
       # Gaming
-      # mangohud
+      # pkgs.mangohud
 
       # Media
-      jamesdsp
-      # mpv # Media player
+      pkgs.jamesdsp
+      # pkgs.mpv # Media player
 
       # Internet
-      brave # Web browser
-      protonmail-desktop # ProtonMail client
-      thunderbird # Email client
-      yt-dlp # YouTube downloader
-      protonvpn-gui # ProtonVPN GUI client
-      plex-desktop # Plex media player for desktop
+      pkgs.brave # Web browser
+      pkgs.protonmail-desktop # ProtonMail client
+      pkgs.thunderbird # Email client
+      pkgs.yt-dlp # YouTube downloader
+      pkgs.protonvpn-gui # ProtonVPN GUI client
+      pkgs.plex-desktop # Plex media player for desktop
 
       # Social
-      discord # Discord client
-      element-desktop # Matrix client
-      teams-for-linux # Microsoft Teams client
-      # weechat # IRC client
-      zoom-us # Zoom client
+      pkgs.discord # Discord client
+      pkgs.element-desktop # Matrix client
+      pkgs.teams-for-linux # Microsoft Teams client
+      # pkgs.weechat # IRC client
+      pkgs.zoom-us # Zoom client
 
       # Development
-      nixd # Nix language server for VS Code
-      nixpkgs-fmt # Nix language formatter
-      nixfmt-classic # Nix language formatter
-      vscode # Visual Studio Code
-      jetbrains.idea-community-bin # IntelliJ IDEA Community Edition
+      pkgs.nixd # Nix language server for VS Code
+      pkgs.nixpkgs-fmt # Nix language formatter
+      pkgs.nixfmt-classic # Nix language formatter
+      pkgs.vscode # Visual Studio Code
+      pkgs.jetbrains.idea-community-bin # IntelliJ IDEA Community Edition
 
-      texliveFull # LaTeX
+      pkgs.texliveFull # LaTeX
 
       # Misc
-      fortune # Random quotes
-      yaru-theme # Yaru theme for Ubuntu
-      spotify # Music streaming
-      pdfmixtool # PDF tool
-      onlyoffice-desktopeditors # Office suite
-      nomacs # Image viewer
-      apostrophe # Markdown editor
-      gpt4all
+      pkgs.fortune # Random quotes
+      pkgs.yaru-theme # Yaru theme for Ubuntu
+      pkgs.spotify # Music streaming
+      pkgs.pdfmixtool # PDF tool
+      pkgs.onlyoffice-desktopeditors # Office suite
+      pkgs.nomacs # Image viewer
+      pkgs.apostrophe # Markdown editor
+      pkgs.gpt4all
 
       # System tools
       # deja-dup # Backup tool; use Flatpak instead
       # restic # Does not enable restic in deja-dup
-      vorta # Backup software
+      pkgs.vorta # Backup software
 
       ## Declaratively configure VS Code with extensions
       ## NOTE: Settings will not be synced
