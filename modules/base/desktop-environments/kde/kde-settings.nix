@@ -13,6 +13,13 @@
         enable = true;
         wayland.enable = true;
         autoNumlock = true;
+        theme = "sddm-astronaut-theme";
+
+        extraPackages = with pkgs; [
+          kdePackages.qtsvg
+          kdePackages.qtmultimedia
+          kdePackages.qtvirtualkeyboard
+        ];
       };
     };
 
@@ -51,6 +58,10 @@
     kdePackages.kwalletmanager
     kdePackages.kwallet-pam
     kdePackages.ksshaskpass
+
+    (sddm-astronaut.override {
+      embeddedTheme = "jake_the_dog";
+    })
   ];
 
   environment.plasma6.excludePackages = with pkgs.kdePackages; [ gwenview ];
