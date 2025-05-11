@@ -8,19 +8,19 @@
 { config, lib, pkgs, VARS, ... }:
 
 {
-  xdg.portal = {
-    enable = true; # Needs to be enabled for Flatpak to work
+  # xdg.portal = {
+  #   enable = true; # Needs to be enabled for Flatpak to work
 
-    wlr.enable = true; # Enable Wayland support
+  #   # wlr.enable = true;
 
-    configPackages = with pkgs; [ kdePackages.xdg-desktop-portal-kde ];
-    xdgOpenUsePortal = true;
+  #   configPackages = with pkgs; [ kdePackages.xdg-desktop-portal-kde ];
+  #   xdgOpenUsePortal = true;
 
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-wlr
-      xdg-desktop-portal-gtk
-    ];
-  };
+  #   extraPortals = with pkgs; [
+  #     # xdg-desktop-portal-wlr
+  #     xdg-desktop-portal-gtk
+  #   ];
+  # };
 
   services.flatpak = { enable = true; };
 
@@ -33,10 +33,4 @@
       flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
     '';
   };
-
-  # System-wide Flatpak installation
-  environment.systemPackages = with pkgs; [
-    flatpak
-    xdg-desktop-portal
-  ];
 }
