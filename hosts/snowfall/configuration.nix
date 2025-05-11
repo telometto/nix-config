@@ -39,8 +39,8 @@
     ### 2. Import modules
     # 2.1 Desktop managers
     # ../../modules/desktop-environments/gnome/gnome-settings.nix
-    ../../modules/base/desktop-environments/hyprland/cachix.nix # Hyprland Cachix
-    ../../modules/base/desktop-environments/hyprland/hyprland.nix
+    # ../../modules/base/desktop-environments/hyprland/cachix.nix # Hyprland Cachix
+    # ../../modules/base/desktop-environments/hyprland/hyprland.nix
     ../../modules/base/desktop-environments/kde/kde-settings.nix
 
     # 2.2 Boot/filesystem
