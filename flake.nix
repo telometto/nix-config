@@ -50,6 +50,8 @@
       url = "github:zhaofengli/colmena";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nix-colors.url = "github:misterio77/nix-colors";
   };
 
   outputs = inputs@{ self, nixpkgs, ... }:
@@ -119,7 +121,7 @@
                     };
                     pkgs-stable =
                       import inputs.nixpkgs-stable { system = hostAttrs.system; };
-                    pkgs-unstable = import inputs.nixpkgs-unstable-small {
+                    pkgs-unstable = import inputs.nixpkgs-unstable {
                       system = hostAttrs.system;
                     };
                   };
@@ -143,7 +145,7 @@
               };
               pkgs-stable =
                 import inputs.nixpkgs-stable { system = hostAttrs.system; };
-              pkgs-unstable = import inputs.nixpkgs-unstable-small {
+              pkgs-unstable = import inputs.nixpkgs-unstable {
                 system = hostAttrs.system;
               };
             };
