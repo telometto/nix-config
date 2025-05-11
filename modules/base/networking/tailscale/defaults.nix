@@ -22,7 +22,7 @@
         ephemeral = false;
       };
 
-      extraUpFlags = [ "--reset" ];
+      extraUpFlags = [ "--reset" "--ssh"];
     };
 
     # Snippet below is to optimize the performance of subnet routers and exit nodes
