@@ -201,12 +201,12 @@
             "key" = "root";
           }
           {
-            "type" = "disk";
+            "type" = "zpool";
             "folders" = "/flash";
             "key" = "flash";
           }
           {
-            "type" = "disk";
+            "type" = "zpool";
             "folders" = "/rpool";
             "key" = "rpool";
           }
