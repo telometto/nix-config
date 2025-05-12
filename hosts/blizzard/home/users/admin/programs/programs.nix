@@ -200,17 +200,16 @@
             "folders" = "/";
             "key" = "root";
           }
-          "zpool"
-          # {
-          #   "type" = "zpool";
-          #   "folders" = "/flash";
-          #   "key" = "flash";
-          # }
-          # {
-          #   "type" = "zpool";
-          #   "folders" = "/rpool";
-          #   "key" = "rpool";
-          # }
+          {
+            "type" = "zpool";
+            "folders" = "/flash";
+            "key" = "flash";
+          }
+          {
+            "type" = "zpool";
+            "folders" = "/rpool";
+            "key" = "rpool";
+          }
           { "type" = "localip"; }
           {
             "type" = "weather";
