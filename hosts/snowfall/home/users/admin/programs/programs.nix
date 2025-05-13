@@ -2,7 +2,6 @@
 let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
 in {
   home = {
-    /*
       file.".ssh/config".text = ''
       Host *
         ForwardAgent yes
@@ -20,7 +19,6 @@ in {
         IdentitiesOnly yes
         SetEnv TERM=xterm-256color
       '';
-    */
 
     file.".ssh/allowed_signers".text =
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com";
@@ -137,8 +135,10 @@ in {
 
         gpg = {
           format = "ssh";
-          ssh.allowedSignersFile =
-            "${config.home.homeDirectory}/.ssh/allowed_signers";
+          ssh = {
+            defaultKeyCommand = "sh -c 'echo key::$(ssh-add -L | tail -n1)'";
+            allowedSignersFile = "${config.home.homeDirectory}/.ssh/allowed_signers";
+          };
         };
 
         user.signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
@@ -166,7 +166,45 @@ in {
       ];
     };
 
-    mangohud = { enable = true; };
+    mangohud = {
+      enable = true;
+
+      settings = {
+        time = true;
+        time_no_label = true;
+        time_format = "%T";
+
+        gpu_stats = true;
+        gpu_temp = true;
+        gpu_text = "GPU";
+        gpu_load_change = true;
+        gpu_load_color = "39F900,FDFD09,B22222";
+
+        cpu_stats = true;
+        cpu_temp = true;
+        cpu_text = "CPU";
+        cpu_load_change = true;
+        cpu_load_color = "39F900,FDFD09,B22222";
+
+        vram = true;
+        ram = true;
+
+        fps = true;
+        fps_color_change = true;
+        fps_color = "B22222,FDFD09,39F900";
+        frametime = true;
+
+        throttling_status = true;
+        frame_timing = true;
+        gamemode = true;
+
+        media_player = true;
+        media_player_name = "spotify";
+        media_player_format = "title,artist,album";
+
+        text_outline = true;
+      };
+    };
 
     mpv = {
       enable = true;
@@ -224,8 +262,18 @@ in {
       vencord = {
         useSystem = true;
 
-        # settings = {};
-        # themes = {};
+        themes = {
+          clearvision = /home/zeno/Downloads/vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;
+          glass = /home/zeno/Downloads/vesktop-themes/glass_local.theme.css;
+        };
+
+        settings = {
+         useQuickCss = true;
+          enabledThemes = [
+            "clearvision.css"
+            "glass.css"
+          ];
+        };
       };
     };
 
