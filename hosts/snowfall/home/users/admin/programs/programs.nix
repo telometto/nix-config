@@ -151,7 +151,7 @@ in {
     };
 
     keychain = {
-      enable = false;
+      enable = true;
 
       enableBashIntegration = true;
       enableZshIntegration = true;
@@ -172,7 +172,7 @@ in {
       settings = {
         time = true;
         time_no_label = true;
-        time_format = "%T";
+        # time_format = "%T";
 
         gpu_stats = true;
         gpu_temp = true;
