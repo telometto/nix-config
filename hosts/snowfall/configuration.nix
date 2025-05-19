@@ -9,6 +9,8 @@
 
 {
   imports = [
+    inputs.vscode-server.nixosModules.vscode-server
+
     ### 0. Desktop-specific settings
     # 0.0 Include the results of the hardware scan
     ./hardware-configuration.nix # DO NOT TOUCH
@@ -88,6 +90,8 @@
     # 3.1 Development
     ../../modules/development/java.nix
   ];
+
+  services.vscode-server.enable = true;
 
   # Allow unfree packages
   nixpkgs = {
