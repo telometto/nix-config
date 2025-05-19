@@ -5,11 +5,11 @@
  * and in the NixOS manual (accessible by running ‘nixos-help’).
  */
 
-{ config, lib, pkgs, ... }:
+{ config, lib, inputs, pkgs, ... }:
 
 {
   imports = [
-    inputs.vscode-server.nixosModules.vscode-server
+    inputs.vscode-server.nixosModules.default
 
     ### 0. Desktop-specific settings
     # 0.0 Include the results of the hardware scan
