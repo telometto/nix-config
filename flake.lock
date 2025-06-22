@@ -835,11 +835,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1750574650,
-        "narHash": "sha256-y33G1gT8GitDbcL8h4rGmsd++LZDTFRDa3VnB2YS3yY=",
+        "lastModified": 1750577753,
+        "narHash": "sha256-+MOYvGYH5XnEGhh37ssSPmC4dPyjjN4Jkcdi3P1LloU=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "408320e846e8f7bd5b69252dd55e1b39373e9678",
+        "rev": "3554e7aabe09010bf91a6680fb12878119a3cb5a",
         "type": "github"
       },
       "original": {
