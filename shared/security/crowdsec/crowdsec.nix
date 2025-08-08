@@ -35,19 +35,21 @@
   };
 
   systemd.services.crowdsec.serviceConfig = {
-    ExecStartPre = let
-      script = pkgs.writeScriptBin "register-bouncer" ''
-        #!${pkgs.runtimeShell}
-        set -eu
-        set -o pipefail
+    ExecStartPre =
+      let
+        script = pkgs.writeScriptBin "register-bouncer" ''
+          #!${pkgs.runtimeShell}
+          set -eu
+          set -o pipefail
 
-        if ! cscli bouncers list | grep -q "my-bouncer"; then
-          cscli bouncers add "my-bouncer" --key "${
-            config.sops.secrets."general/crowdsec".path
-          }"
-        fi
-      '';
-    in [ "${script}/bin/register-bouncer" ];
+          if ! cscli bouncers list | grep -q "my-bouncer"; then
+            cscli bouncers add "my-bouncer" --key "${
+              config.sops.secrets."general/crowdsec".path
+            }"
+          fi
+        '';
+      in
+      [ "${script}/bin/register-bouncer" ];
   };
 
   sops.secrets."general/crowdsecApiKey" = { };

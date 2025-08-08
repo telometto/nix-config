@@ -22,15 +22,17 @@
   # XDG portal required for Flatpak; select DE-specific portal to avoid conflicts
   xdg.portal = {
     enable = true;
-    extraPortals = let
-      isGnome = (config.services.desktopManager.gnome.enable or false)
-        || (config.services.xserver.desktopManager.gnome.enable or false);
-      isPlasma = config.services.desktopManager.plasma6.enable or false;
-    in lib.unique (with pkgs;
+    extraPortals =
+      let
+        isGnome = (config.services.desktopManager.gnome.enable or false)
+          || (config.services.xserver.desktopManager.gnome.enable or false);
+        isPlasma = config.services.desktopManager.plasma6.enable or false;
+      in
+      lib.unique (with pkgs;
       (lib.optionals isGnome [ xdg-desktop-portal-gnome ]) ++
       (lib.optionals isPlasma [ kdePackages.xdg-desktop-portal-kde ]) ++
       (lib.optionals (!(isGnome || isPlasma)) [ xdg-desktop-portal-gtk ])
-    );
+      );
   };
 
   # Ensure Flathub is configured once system reaches multi-user.target

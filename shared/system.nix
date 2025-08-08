@@ -6,7 +6,8 @@ let
     import ./system-packages.nix { inherit config lib pkgs VARS; };
   LANG_NO = "nb_NO.UTF-8";
   MEM_MAX = 7500000;
-in {
+in
+{
 
   imports = [
     # inputs.agenix.nixosModules.default  # Not available in current inputs
@@ -46,7 +47,8 @@ in {
   boot = {
     supportedFilesystems = [ "nfs" ]
       ++ lib.optionals (mylib.isServer config.networking.hostName) [ "zfs" ]
-      ++ lib.optionals (mylib.isDesktop config.networking.hostName
+      ++ lib.optionals
+      (mylib.isDesktop config.networking.hostName
         || mylib.isLaptop config.networking.hostName) [ "btrfs" ];
 
     loader = {
@@ -77,8 +79,10 @@ in {
         config.users.users.${VARS.users.admin.user}.hashedPassword;
     } // lib.optionalAttrs (mylib.isServer config.networking.hostName) {
       supportedFilesystems.zfs = true;
-    } // lib.optionalAttrs (mylib.isDesktop config.networking.hostName
-      || mylib.isLaptop config.networking.hostName) {
+    } // lib.optionalAttrs
+      (mylib.isDesktop config.networking.hostName
+        || mylib.isLaptop config.networking.hostName)
+      {
         supportedFilesystems.btrfs = true;
       };
 
@@ -114,8 +118,10 @@ in {
     };
 
     systemPackages = commonPackages.base
-      ++ lib.optionals (mylib.isDesktop config.networking.hostName
-        || mylib.isLaptop config.networking.hostName) commonPackages.desktop
+      ++ lib.optionals
+      (mylib.isDesktop config.networking.hostName
+        || mylib.isLaptop config.networking.hostName)
+      commonPackages.desktop
       ++ lib.optionals (mylib.isServer config.networking.hostName)
       commonPackages.server;
   };
@@ -126,18 +132,29 @@ in {
       enable = lib.mkDefault true;
       allowedTCPPorts =
         lib.optionals (mylib.isServer config.networking.hostName) [
-          80 443 111 2049 20048 28981 6443
-        ] ++ lib.optionals (mylib.isDesktop config.networking.hostName
+          80
+          443
+          111
+          2049
+          20048
+          28981
+          6443
+        ] ++ lib.optionals
+          (mylib.isDesktop config.networking.hostName
           || mylib.isLaptop config.networking.hostName) [
-            2049 4000 4001 4002 20048
-          ];
+          2049
+          4000
+          4001
+          4002
+          20048
+        ];
 
       allowedUDPPorts = allowedTCPPorts;
 
       allowedTCPPortRanges = lib.optionals
         (mylib.isDesktop config.networking.hostName
           || mylib.isLaptop config.networking.hostName) [{ from = 1714; to = 1764; }]
-        ++ lib.optionals (mylib.isServer config.networking.hostName) [{ from = 4000; to = 4002; }];
+      ++ lib.optionals (mylib.isServer config.networking.hostName) [{ from = 4000; to = 4002; }];
 
       allowedUDPPortRanges = allowedTCPPortRanges;
     };

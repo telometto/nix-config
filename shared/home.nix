@@ -113,7 +113,8 @@
     };
 
     # Development tools
-    git = { # duplicate /home/zeno/Downloads/nix-config/home/programs/desktop-programs.nix
+    git = {
+      # duplicate /home/zeno/Downloads/nix-config/home/programs/desktop-programs.nix
       enable = true;
       userName = "telometto";
       userEmail = "65364211+telometto@users.noreply.github.com";

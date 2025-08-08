@@ -26,7 +26,8 @@ let
   homeFiles = import ../home/files/files.nix { inherit config lib pkgs VARS; };
   LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
   LANG_NO = "nb_NO.UTF-8";
-in {
+in
+{
   # User-specific configurations by device and user
   users = {
     # Admin user configurations per device
