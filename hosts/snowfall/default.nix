@@ -1,5 +1,4 @@
-{ config, lib, pkgs, VARS, name, nodes, ... }:
-{
+{ config, lib, pkgs, VARS, name, nodes, ... }: {
   imports = [ ./configuration.nix ];
 
   deployment = {

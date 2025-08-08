@@ -1,10 +1,3 @@
-{ config, lib, pkgs, ... }:
-{
-  hardware = {
-    cpu = {
-      amd = {
-        updateMicrocode = true;
-      };
-    };
-  };
+{ config, lib, pkgs, ... }: {
+  hardware = { cpu = { amd = { updateMicrocode = true; }; }; };
 }

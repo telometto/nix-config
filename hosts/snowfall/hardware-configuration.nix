@@ -8,27 +8,27 @@
 
   boot = {
     initrd = {
-      availableKernelModules = [ "nvme" "xhci_pci" "ahci" "uas" "usbhid" "sd_mod" ];
+      availableKernelModules =
+        [ "nvme" "xhci_pci" "ahci" "uas" "usbhid" "sd_mod" ];
       kernelModules = [ ];
     };
     kernelModules = [ "kvm-amd" ];
     extraModulePackages = [ ];
   };
 
-  fileSystems."/" =
-    {
-      device = "/dev/disk/by-uuid/b2764093-ebe4-4f38-a455-841297be70b9";
-      fsType = "ext4";
-    };
+  fileSystems."/" = {
+    device = "/dev/disk/by-uuid/b2764093-ebe4-4f38-a455-841297be70b9";
+    fsType = "ext4";
+  };
 
-  fileSystems."/boot" =
-    {
-      device = "/dev/disk/by-uuid/17CB-3713";
-      fsType = "vfat";
-      options = [ "fmask=0077" "dmask=0077" ];
-    };
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-uuid/17CB-3713";
+    fsType = "vfat";
+    options = [ "fmask=0077" "dmask=0077" ];
+  };
 
-  swapDevices = [{ device = "/dev/disk/by-uuid/90e67159-a24b-4481-9cfd-f643990812b7"; }];
+  swapDevices =
+    [{ device = "/dev/disk/by-uuid/90e67159-a24b-4481-9cfd-f643990812b7"; }];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
   # (the default) this is the recommended approach. When using systemd-networkd it's
@@ -39,5 +39,6 @@
   # networking.interfaces.tailscale0.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-  hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.cpu.amd.updateMicrocode =
+    lib.mkDefault config.hardware.enableRedistributableFirmware;
 }

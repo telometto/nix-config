@@ -1,39 +1,24 @@
-{ config, lib, pkgs, VARS, ... }:
+# Blizzard Server Home Manager configuration for admin user
+{ config, lib, pkgs, VARS, inputs, ... }:
 
 {
   imports = [
-    # Common imports
-    ../../../../../common/home/imports.nix
-
-    # Secrets
-    ../../../../../common/home/security/secrets/sops-home.nix
-
-    # Desktop environments
-    # ../../../../../common/home/desktop-environments/gnome/defaults.nix # Enables GNOME
-    # ../../../../../common/home/desktop-environments/hyprland/defaults.nix # Enables Hyprland
-    # ../../../../../common/home/desktop-environments/kde/defaults.nix # Enables KDE
-
-    # User-specific imports
-    ./programs/programs.nix
-    ./services/gpg/agent.nix
-    ./services/gpg/keyring.nix
+    ../../../../../shared/home.nix
+    ../../../../../home/secrets.nix
+    ../../../../../home/programs/server-programs.nix
+    ../../../../../home/services/server-services.nix
   ];
 
-  programs.home-manager.enable = true;
-
   home = {
-    username = VARS.users.admin.user; # Change this back upon reformatting
+    username = VARS.users.admin.user;
     stateVersion = "24.11";
 
     enableDebugInfo = true;
     preferXdgDirectories = true;
 
-    packages = with pkgs; [
-      # Your packages here
-      atuin
-      #blesh
-      sqlite
-      zsh-powerlevel10k
-    ];
+    keyboard.layout = "no";
   };
+
+  # Server-specific packages (minimal)
+  home.packages = with pkgs; [ atuin sqlite ];
 }
