@@ -6,7 +6,8 @@ let
   transfersExport = constants.nfs.transfersExport;
   adminUser = VARS.users.admin.user;
   lanCIDR = constants.network.lanCIDR;
-in {
+in
+{
   hardware = {
     cpu.amd.updateMicrocode = true;
     graphics = { enable = true; enable32Bit = true; };

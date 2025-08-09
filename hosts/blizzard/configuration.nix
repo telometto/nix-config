@@ -5,7 +5,8 @@ let
   constants = import ../../shared/constants.nix;
   adminUser = VARS.users.admin.user;
   backups = constants.backups;
-in {
+in
+{
   imports = [
     # Hardware scan (don't touch)
     ./hardware-configuration.nix

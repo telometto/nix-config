@@ -83,7 +83,7 @@ in
       supportedFilesystems.nfs = true;
       systemd.emergencyAccess = config.users.users.${adminUser}.hashedPassword;
     } // lib.optionalAttrs isServer { supportedFilesystems.zfs = true; }
-      // lib.optionalAttrs workstation { supportedFilesystems.btrfs = true; };
+    // lib.optionalAttrs workstation { supportedFilesystems.btrfs = true; };
 
     plymouth = {
       enable = true;
@@ -328,7 +328,9 @@ in
   nixpkgs.config.allowUnfree = lib.mkDefault true;
 
   assertions = [
-    { assertion = mylib.roleOf config.networking.hostName != null;
-      message = "Unknown role for host ${config.networking.hostName}. Update VARS.systems.*.hostName or constants."; }
+    {
+      assertion = mylib.roleOf config.networking.hostName != null;
+      message = "Unknown role for host ${config.networking.hostName}. Update VARS.systems.*.hostName or constants.";
+    }
   ];
 }

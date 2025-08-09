@@ -55,7 +55,8 @@ let
     }
     "break"
   ];
-in {
+in
+{
   programs = {
     fastfetch.settings.modules = fastfetchModulesCommon;
 

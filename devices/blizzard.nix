@@ -4,7 +4,8 @@ let
   adminUser = VARS.users.admin.user;
   constants = import ../shared/constants.nix;
   lanCIDR = constants.network.lanCIDR;
-in {
+in
+{
   networking = {
     inherit (VARS.systems.server) hostName hostId;
     interfaces.enp8s0.useDHCP = lib.mkForce false;
@@ -27,7 +28,8 @@ in {
   };
 
   services = {
-    plex.enable = true; services.plex.openFirewall = true; # ensure openFirewall
+    plex.enable = true;
+    services.plex.openFirewall = true; # ensure openFirewall
 
     immich = {
       enable = true;
@@ -56,7 +58,13 @@ in {
     sanoid = {
       enable = true;
       templates."production" = {
-        autosnap = true; autoprune = true; yearly = 4; monthly = 4; weekly = 3; daily = 4; hourly = 0;
+        autosnap = true;
+        autoprune = true;
+        yearly = 4;
+        monthly = 4;
+        weekly = 3;
+        daily = 4;
+        hourly = 0;
       };
       datasets = {
         rpool = { useTemplate = [ "production" ]; recursive = true; };

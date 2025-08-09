@@ -3,14 +3,19 @@
 let
   inherit (lib) mkOption types mkIf concatStringsSep mapAttrsToList;
   cfg = config.my.nfs;
-  exportsText = concatStringsSep "\n" (map (e:
-    let opts = e.options or "rw,sync,nohide,no_subtree_check";
+  exportsText = concatStringsSep "\n" (map
+    (e:
+      let
+        opts = e.options or "rw,sync,nohide,no_subtree_check";
         networks = e.networks or [ "127.0.0.1/32" ];
         nets = concatStringsSep " " (map (n: "${n}(${opts})") networks);
-    in "${e.path} ${nets}"
-  ) cfg.exports);
+      in
+      "${e.path} ${nets}"
+    )
+    cfg.exports);
   hasExports = cfg.exports != [ ];
-in {
+in
+{
   options.my.nfs = {
     exports = mkOption {
       type = types.listOf (types.submodule ({ config, ... }: {

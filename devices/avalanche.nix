@@ -5,7 +5,8 @@ let
   nfsServerIP = constants.network.nfsServerIP;
   transfersExport = constants.nfs.transfersExport;
   adminUser = VARS.users.admin.user;
-in {
+in
+{
   hardware = {
     cpu.intel.updateMicrocode = true;
     bluetooth.enable = true;

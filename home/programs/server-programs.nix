@@ -55,7 +55,8 @@ let
   beetsDir = config.xdg.userDirs.music;
   beetsLog = "${config.home.homeDirectory}/.config/beets/beets.log";
   beetsState = "${config.home.homeDirectory}/.config/beets/state.pickle";
-in {
+in
+{
   programs = {
     beets = {
       enable = true;

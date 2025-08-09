@@ -13,7 +13,8 @@ let
       ++ (map (h: { name = h; value = "laptop"; }) laptopHosts)
       ++ (map (h: { name = h; value = "server"; }) serverHosts)
     );
-in rec {
+in
+rec {
   deviceTypes = {
     desktop = desktopHosts;
     laptop = laptopHosts;

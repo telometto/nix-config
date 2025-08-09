@@ -154,7 +154,8 @@
 
       defaultSystem = "x86_64-linux";
       pkgsFor = system: import nixpkgs { inherit system; overlays = allOverlays; };
-    in {
+    in
+    {
       # Colmena config
       colmena = {
         meta = {
@@ -177,39 +178,41 @@
       }).alejandra;
 
       # Dev shell with common tooling
-      devShells.x86_64-linux.default = let
-        pkgs = import nixpkgs {
-          system = "x86_64-linux";
-          overlays = allOverlays;
+      devShells.x86_64-linux.default =
+        let
+          pkgs = import nixpkgs {
+            system = "x86_64-linux";
+            overlays = allOverlays;
+          };
+        in
+        pkgs.mkShell {
+          name = "nix-config-dev";
+          packages = with pkgs; [
+            alejandra
+            statix
+            deadnix
+            sops
+            colmena
+            nix-output-monitor
+            git
+          ];
         };
-      in pkgs.mkShell {
-        name = "nix-config-dev";
-        packages = with pkgs; [
-          alejandra
-          statix
-          deadnix
-          sops
-          colmena
-          nix-output-monitor
-          git
-        ];
-      };
 
       # Checks
       checks.${defaultSystem} = let pkgs = pkgsFor defaultSystem; in {
-        fmt = pkgs.runCommand "fmt-check" {} ''
+        fmt = pkgs.runCommand "fmt-check" { } ''
           ${pkgs.alejandra}/bin/alejandra --check ${./.} || (echo "Formatting issues"; exit 1)
           touch $out
         '';
-        deadnix = pkgs.runCommand "deadnix" {} ''
+        deadnix = pkgs.runCommand "deadnix" { } ''
           ${pkgs.deadnix}/bin/deadnix --fail --no-lambda-pattern-names ${./.}
           touch $out
         '';
-        statix = pkgs.runCommand "statix" {} ''
+        statix = pkgs.runCommand "statix" { } ''
           ${pkgs.statix}/bin/statix check ${./.}
           touch $out
         '';
-        flakeEval = pkgs.runCommand "flake-eval" {} ''
+        flakeEval = pkgs.runCommand "flake-eval" { } ''
           nix flake check --no-build --print-build-logs ${./.}
           touch $out
         '';
