@@ -69,10 +69,7 @@
   programs = {
     mangohud = { enable = true; };
 
-    mpv = {
-      enable = true;
-      # TODO: Declaratively configure mpv
-    };
+    mpv = { enable = true; };
   };
 
   colorScheme = inputs.nix-colors.colorSchemes.gruvbox-dark-medium;

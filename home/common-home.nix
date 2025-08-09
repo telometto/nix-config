@@ -7,13 +7,11 @@
     ../shared/home.nix
   ];
 
-  # Home Manager settings
   home = {
     username = VARS.USERNAME;
     homeDirectory = "/home/${VARS.USERNAME}";
     stateVersion = "24.11";
   };
 
-  # Allow unfree packages in home-manager
   nixpkgs.config.allowUnfree = true;
 }

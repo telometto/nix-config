@@ -36,8 +36,7 @@ let
       User git
       IdentityFile ${config.home.homeDirectory}/.ssh/zeno-blizzard
   '';
-in
-{
+in {
   base = { };
 
   # Device-specific SSH configurations

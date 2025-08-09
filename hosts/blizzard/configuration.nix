@@ -4,8 +4,7 @@
 let
   deviceConfigs =
     import ../../devices/configurations.nix { inherit config lib pkgs VARS; };
-in
-{
+in {
   imports = [
     # Hardware scan (don't touch)
     ./hardware-configuration.nix

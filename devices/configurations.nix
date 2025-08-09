@@ -5,23 +5,14 @@ let mylib = import ../lib { inherit lib VARS; };
 in {
   # Avalanche (Laptop) specific configuration
   avalanche = {
-    # Hardware-specific
     hardware = {
       cpu.intel.updateMicrocode = true;
-      pulseaudio.enable = lib.mkForce false;
       bluetooth.enable = true;
-      # steam-hardware comes from laptop profile by default
     };
 
     boot = { plymouth.enable = true; };
 
-    # Audio handled by profile
-
-    # Device-specific packages
-    environment.systemPackages = with pkgs; [
-      # microcode handled by hardware.cpu.intel.updateMicrocode
-      # Laptop-specific tools can be added here
-    ];
+    environment.systemPackages = with pkgs; [ ];
 
     networking = {
       inherit (VARS.systems.laptop) hostName hostId;
@@ -29,12 +20,8 @@ in {
       wireless.enable = false;
       useNetworkd = lib.mkForce false;
       useDHCP = lib.mkForce true;
-      # Firewall defaults handled in shared/system.nix
     };
 
-    # Flatpak + Flathub + XDG portal provided by shared/desktop-common.nix
-
-    # Gaming support in profile
     # programs = { };
 
     # virtualisation = { };
@@ -55,15 +42,19 @@ in {
     };
   };
 
-  # Snowfall (Desktop) specific configuration  
+  # Snowfall (Desktop) specific configuration
   snowfall = {
     hardware = {
       cpu.amd.updateMicrocode = true;
-      # steam-hardware not enforced here (desktop profile/host decides)
-      graphics = { enable = true; enable32Bit = true; };
+      graphics = {
+        enable = true;
+        enable32Bit = true;
+      };
       amdgpu.initrd.enable = true;
-      pulseaudio.enable = lib.mkForce false;
-      openrazer = { enable = true; users = [ VARS.users.admin.user ]; };
+      openrazer = {
+        enable = true;
+        users = [ VARS.users.admin.user ];
+      };
       bluetooth.enable = false;
     };
 
@@ -75,14 +66,11 @@ in {
       plymouth.enable = true;
     };
 
-    # Audio handled by profile
-
     environment.systemPackages = with pkgs; [
       openrazer-daemon
       libnfs
       nfs-utils
       btrfs-progs
-      # microcode handled by hardware.cpu.amd.updateMicrocode
       distrobox
       distrobox-tui
       fuse3
@@ -93,7 +81,6 @@ in {
 
     networking = {
       inherit (VARS.systems.desktop) hostName hostId;
-      # Firewall defaults handled in shared/system.nix
       networkmanager.enable = true;
       wireless.enable = false;
       useNetworkd = lib.mkForce false;
@@ -101,8 +88,6 @@ in {
     };
 
     systemd = {
-      # Flathub repo handled globally in shared/desktop-common.nix
-
       mounts = [{
         type = "nfs";
         mountConfig.options = "rw,noatime,nofail";
@@ -133,7 +118,6 @@ in {
 
     services = {
       teamviewer.enable = true;
-      # flatpak.enable moved to shared/desktop-common.nix
       btrfs.autoScrub = {
         enable = true;
         interval = "weekly";
@@ -152,8 +136,6 @@ in {
         '';
       };
     };
-
-    # XDG portal provided by shared/desktop-common.nix
   };
 
   # Blizzard (Server) specific configuration
@@ -179,43 +161,38 @@ in {
       };
     };
 
-    fileSystems = {
-      "/flash/enc/personal" = { device = "flash/enc/personal"; fsType = "zfs"; };
-      "/flash/enc/personal/documents" = { device = "flash/enc/personal/documents"; fsType = "zfs"; };
-      "/flash/enc/personal/immich-library" = { device = "flash/enc/personal/immich-library"; fsType = "zfs"; };
-      "/flash/enc/personal/photos" = { device = "flash/enc/personal/photos"; fsType = "zfs"; };
-      "/flash/enc/personal/videos" = { device = "flash/enc/personal/videos"; fsType = "zfs"; };
-      "/rpool/enc/personal" = { device = "rpool/enc/personal"; fsType = "zfs"; };
-      "/rpool/enc/personal/documents" = { device = "rpool/enc/personal/documents"; fsType = "zfs"; };
-      "/rpool/enc/personal/paperless-media" = { device = "rpool/enc/personal/paperless-media"; fsType = "zfs"; };
-      "/rpool/enc/transfers" = { device = "rpool/enc/transfers"; fsType = "zfs"; };
-      "/rpool/unenc/apps" = { device = "rpool/unenc/apps"; fsType = "zfs"; };
-      "/rpool/unenc/apps/kubernetes" = { device = "rpool/unenc/apps/kubernetes"; fsType = "zfs"; };
-      "/rpool/unenc/apps/nixos" = { device = "rpool/unenc/apps/nixos"; fsType = "zfs"; };
-      "/rpool/unenc/dbs" = { device = "rpool/unenc/dbs"; fsType = "zfs"; };
-      "/rpool/unenc/dbs/mysql" = { device = "rpool/unenc/dbs/mysql"; fsType = "zfs"; };
-      "/rpool/unenc/dbs/psql" = { device = "rpool/unenc/dbs/psql"; fsType = "zfs"; };
-      "/rpool/unenc/dbs/redis" = { device = "rpool/unenc/dbs/redis"; fsType = "zfs"; };
-      "/rpool/unenc/media" = { device = "rpool/unenc/media"; fsType = "zfs"; };
-      "/rpool/unenc/vms" = { device = "rpool/unenc/vms"; fsType = "zfs"; };
-    };
-
     services = {
-      plex = { enable = true; openFirewall = true; };
+      plex = {
+        enable = true;
+        openFirewall = true;
+      };
 
       immich = {
         enable = true;
         host = "0.0.0.0";
         openFirewall = true;
         accelerationDevices = null;
-        environment = { IMMICH_LOG_LEVEL = "verbose"; IMMICH_TELEMETRY_INCLUDE = "all"; };
+        environment = {
+          IMMICH_LOG_LEVEL = "verbose";
+          IMMICH_TELEMETRY_INCLUDE = "all";
+        };
         settings.newVersionCheck.enabled = true;
-        database = { enable = true; createDB = true; };
+        database = {
+          enable = true;
+          createDB = true;
+        };
         redis.enable = true;
-        machine-learning = { enable = true; environment = { MACHINE_LEARNING_MODEL_TTL = "600"; }; };
+        machine-learning = {
+          enable = true;
+          environment = { MACHINE_LEARNING_MODEL_TTL = "600"; };
+        };
       };
 
-      actual = { enable = true; openFirewall = true; settings.port = 3838; };
+      actual = {
+        enable = true;
+        openFirewall = true;
+        settings.port = 3838;
+      };
 
       borgbackup.jobs.homeserver = {
         paths = "/home/${VARS.users.admin.user}";
@@ -224,14 +201,48 @@ in {
         repo = "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo";
         compression = "zstd,8";
         startAt = "daily";
-        encryption = { mode = "repokey-blake2"; passCommand = "cat /opt/sec/borg-file"; };
+        encryption = {
+          mode = "repokey-blake2";
+          passCommand = "cat /opt/sec/borg-file";
+        };
       };
 
-      cockpit = { enable = true; port = 9090; openFirewall = true; settings = { WebService = { AllowUnencrypted = true; }; }; };
+      cockpit = {
+        enable = true;
+        port = 9090;
+        openFirewall = true;
+        settings = { WebService = { AllowUnencrypted = true; }; };
+      };
 
-      scrutiny = { enable = true; openFirewall = true; settings = { web = { listen = { port = 8072; }; }; }; };
+      sanoid = {
+        enable = true;
+        templates."production" = {
+          autosnap = true;
+          autoprune = true;
+          yearly = 4;
+          monthly = 4;
+          weekly = 3;
+          daily = 4;
+          hourly = 0;
+        };
+        datasets = {
+          rpool = {
+            useTemplate = [ "production" ];
+            recursive = true;
+          };
+          flash = {
+            useTemplate = [ "production" ];
+            recursive = true;
+          };
+        };
+      };
 
-      # Re-added k3s; no flannel backend
+      scrutiny = {
+        enable = true;
+        openFirewall = true;
+        settings = { web = { listen = { port = 8072; }; }; };
+      };
+
       k3s = {
         enable = true;
         role = "server";
@@ -244,7 +255,7 @@ in {
       };
 
       paperless = {
-        enable = lib.mkForce false; # disabled per proposal
+        enable = lib.mkForce false;
         address = "0.0.0.0";
         consumptionDirIsPublic = true;
         consumptionDir = "/rpool/enc/personal/documents";
@@ -253,21 +264,26 @@ in {
       };
 
       firefly-iii = {
-        enable = lib.mkForce false; # disabled per proposal
+        enable = lib.mkForce false;
         enableNginx = true;
-        settings = { APP_ENV = "local"; APP_KEY_FILE = "/opt/sec/ff-file"; };
+        settings = {
+          APP_ENV = "local";
+          APP_KEY_FILE = "/opt/sec/ff-file";
+        };
       };
 
       searx = {
-        enable = lib.mkForce false; # disabled per proposal
+        enable = lib.mkForce false;
         redisCreateLocally = true;
         settings = {
-          server = { port = 7777; bind_address = "0.0.0.0"; secret_key = config.sops.secrets."general/searxSecretKey".path; };
+          server = {
+            port = 7777;
+            bind_address = "0.0.0.0";
+            secret_key = config.sops.secrets."general/searxSecretKey".path;
+          };
           search = { formats = [ "html" "json" "rss" ]; };
         };
       };
     };
-
-    # XDG portal provided by shared/desktop-common.nix
   };
 }

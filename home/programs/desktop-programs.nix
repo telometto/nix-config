@@ -215,8 +215,9 @@ in {
         useSystem = true;
 
         themes = {
-          clearvision = ./vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;
-          glass = ./vesktop-themes/glass_local.theme.css;
+          clearvision =
+            ../vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;
+          glass = ../vesktop-themes/glass_local.theme.css;
         };
 
         settings = {

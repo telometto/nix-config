@@ -31,8 +31,16 @@
 
   # KDE-specific PAM (kwallet + hardening) here, not globally
   security.pam.services = {
-    login = { enableAppArmor = true; gnupg.enable = true; kwallet.enable = true; };
-    sddm = { enableAppArmor = true; gnupg.enable = true; kwallet.enable = true; };
+    login = {
+      enableAppArmor = true;
+      gnupg.enable = true;
+      kwallet.enable = true;
+    };
+    sddm = {
+      enableAppArmor = true;
+      gnupg.enable = true;
+      kwallet.enable = true;
+    };
   };
 
   environment.systemPackages = with pkgs; [

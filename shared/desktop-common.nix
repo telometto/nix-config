@@ -25,7 +25,7 @@
     extraPortals =
       let
         isGnome = (config.services.desktopManager.gnome.enable or false)
-          || (config.services.xserver.desktopManager.gnome.enable or false);
+          || (config.services.desktopManager.gnome.enable or false);
         isPlasma = config.services.desktopManager.plasma6.enable or false;
       in
       lib.unique (with pkgs;

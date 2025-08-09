@@ -190,6 +190,9 @@ in
     fwupd.enable = true;
     zram-generator.enable = true;
 
+    # Disable legacy PulseAudio everywhere (PipeWire emulation supplied in profiles)
+    pulseaudio.enable = lib.mkDefault false;
+
     # Desktop/laptop printing default
     printing.enable = lib.mkDefault (mylib.isDesktop config.networking.hostName
       || mylib.isLaptop config.networking.hostName);
