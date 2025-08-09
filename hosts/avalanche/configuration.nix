@@ -6,6 +6,9 @@
     # Hardware scan (don't touch)
     ./hardware-configuration.nix
 
+    # Device specific configuration
+    ../../devices/avalanche.nix
+
     # Shared system configuration and profiles
     ../../shared/system.nix
     ../../shared/profiles/laptop.nix
@@ -16,9 +19,6 @@
 
     # GNOME desktop
     ../../shared/desktop-environments/gnome/gnome-settings.nix
-
-    # Device specific configuration
-    ../../devices/avalanche.nix
 
     # User definitions
     ../../users

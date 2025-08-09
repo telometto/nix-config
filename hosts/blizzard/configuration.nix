@@ -10,6 +10,9 @@ in {
     # Hardware scan (don't touch)
     ./hardware-configuration.nix
 
+    # Device configuration
+    ../../devices/blizzard.nix
+
     # Shared system configuration
     ../../shared/system.nix
     ../../shared/profiles/server.nix
@@ -17,9 +20,6 @@ in {
 
     # MicroVM host support (server runs microvms)
     inputs.microvm.nixosModules.host
-
-    # Device configuration
-    ../../devices/blizzard.nix
 
     # User definitions
     ../../users

@@ -6,6 +6,9 @@
     # Hardware scan (don't touch)
     ./hardware-configuration.nix
 
+    # Device configuration
+    ../../devices/snowfall.nix
+
     # Shared system configuration and profiles
     ../../shared/system.nix
     ../../shared/profiles/desktop.nix
