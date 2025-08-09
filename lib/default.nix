@@ -1,44 +1,39 @@
 # Utility functions for the configuration
 { lib, VARS }:
 
-rec {
-  # Device type detection
+let
+  # Allow roles to be defined as a single hostname or list in VARS
+  toList = x: if builtins.isList x then x else [ x ];
+  desktopHosts = toList VARS.systems.desktop.hostName;
+  laptopHosts = toList VARS.systems.laptop.hostName;
+  serverHosts = toList VARS.systems.server.hostName;
+  rolesByHost =
+    lib.listToAttrs (
+      (map (h: { name = h; value = "desktop"; }) desktopHosts)
+      ++ (map (h: { name = h; value = "laptop"; }) laptopHosts)
+      ++ (map (h: { name = h; value = "server"; }) serverHosts)
+    );
+in rec {
   deviceTypes = {
-    desktop = VARS.systems.desktop.hostName;
-    laptop = VARS.systems.laptop.hostName;
-    server = VARS.systems.server.hostName;
+    desktop = desktopHosts;
+    laptop = laptopHosts;
+    server = serverHosts;
   };
 
-  # Check if current host is of specific type
-  isDesktop = hostName: hostName == deviceTypes.desktop;
-  isLaptop = hostName: hostName == deviceTypes.laptop;
-  isServer = hostName: hostName == deviceTypes.server;
+  roleOf = hostName: rolesByHost.${hostName} or null;
 
-  # Common module builder
+  isDesktop = hostName: roleOf hostName == "desktop";
+  isLaptop = hostName: roleOf hostName == "laptop";
+  isServer = hostName: roleOf hostName == "server";
+  isWorkstation = hostName: let r = roleOf hostName; in r == "desktop" || r == "laptop";
+
   mkModule = { condition ? true, config }: lib.mkIf condition config;
 
-  # Host-specific module builder
-  mkHostModule = hostName: config:
-    mkModule {
-      condition = (hostName == deviceTypes.desktop)
-        || (hostName == deviceTypes.laptop) || (hostName == deviceTypes.server);
-      inherit config;
-    };
+  mkDesktopConfig = hostName: config: mkModule { condition = isDesktop hostName; inherit config; };
+  mkLaptopConfig = hostName: config: mkModule { condition = isLaptop hostName; inherit config; };
+  mkServerConfig = hostName: config: mkModule { condition = isServer hostName; inherit config; };
+  mkWorkstationConfig = hostName: config: mkModule { condition = isWorkstation hostName; inherit config; };
 
-  # Device type conditional config
-  mkDesktopConfig = hostName: config:
-    mkModule {
-      condition = isDesktop hostName;
-      inherit config;
-    };
-  mkLaptopConfig = hostName: config:
-    mkModule {
-      condition = isLaptop hostName;
-      inherit config;
-    };
-  mkServerConfig = hostName: config:
-    mkModule {
-      condition = isServer hostName;
-      inherit config;
-    };
+  # Expose rolesByHost for debugging / assertions
+  roles = rolesByHost;
 }

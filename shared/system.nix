@@ -6,6 +6,16 @@ let
     import ./system-packages.nix { inherit config lib pkgs VARS; };
   LANG_NO = "nb_NO.UTF-8";
   MEM_MAX = 7500000;
+  adminUser = VARS.users.admin.user;
+  hostName = config.networking.hostName;
+  workstation = mylib.isWorkstation hostName;
+  isServer = mylib.isServer hostName;
+  isDesktop = mylib.isDesktop hostName;
+  isLaptop = mylib.isLaptop hostName;
+  constants = import ./constants.nix;
+  lanCIDR = constants.network.lanCIDR;
+  routeCIDR = constants.tailscale.routeCIDR;
+  transfersExport = constants.nfs.transfersExport;
 in
 {
 
@@ -13,9 +23,9 @@ in
     # inputs.agenix.nixosModules.default  # Not available in current inputs
     inputs.sops-nix.nixosModules.sops
     inputs.lanzaboote.nixosModules.lanzaboote
-    # inputs.microvm.nixosModules.host # For hosts (import per-host when needed)
-
-    # Profiles (desktop/laptop/server) are imported in hosts
+    ../modules/services/nfs-exports.nix
+    ../modules/services/borgbackup.nix
+    ../modules/services/tailscale.nix
   ];
 
   # Nix settings and optimization
@@ -24,7 +34,8 @@ in
       trusted-users = [ "root" "@wheel" ];
       experimental-features = [ "nix-command" "flakes" ];
       auto-optimise-store = true;
-      download-buffer-size = 536870912; # 512MB
+      download-buffer-size =
+        536870912; # 512MB TODO: consider lowering on low-RAM hosts
     };
 
     gc = {
@@ -45,11 +56,8 @@ in
 
   # Boot configuration
   boot = {
-    supportedFilesystems = [ "nfs" ]
-      ++ lib.optionals (mylib.isServer config.networking.hostName) [ "zfs" ]
-      ++ lib.optionals
-      (mylib.isDesktop config.networking.hostName
-        || mylib.isLaptop config.networking.hostName) [ "btrfs" ];
+    supportedFilesystems = [ "nfs" ] ++ lib.optionals isServer [ "zfs" ]
+      ++ lib.optionals workstation [ "btrfs" ];
 
     loader = {
       systemd-boot.enable = lib.mkForce false; # required for lanzaboote
@@ -66,25 +74,16 @@ in
     kernel.sysctl = {
       "net.core.wmem_max" = MEM_MAX;
       "net.core.rmem_max" = MEM_MAX;
-    } // lib.optionalAttrs (mylib.isServer config.networking.hostName) {
-      "net.ipv4.conf.all.src_valid_mark" = 1;
-    };
+    } // lib.optionalAttrs isServer { "net.ipv4.conf.all.src_valid_mark" = 1; };
 
     initrd = {
       enable = true;
       verbose = false;
       systemd.enable = lib.mkDefault true;
       supportedFilesystems.nfs = true;
-      systemd.emergencyAccess =
-        config.users.users.${VARS.users.admin.user}.hashedPassword;
-    } // lib.optionalAttrs (mylib.isServer config.networking.hostName) {
-      supportedFilesystems.zfs = true;
-    } // lib.optionalAttrs
-      (mylib.isDesktop config.networking.hostName
-        || mylib.isLaptop config.networking.hostName)
-      {
-        supportedFilesystems.btrfs = true;
-      };
+      systemd.emergencyAccess = config.users.users.${adminUser}.hashedPassword;
+    } // lib.optionalAttrs isServer { supportedFilesystems.zfs = true; }
+      // lib.optionalAttrs workstation { supportedFilesystems.btrfs = true; };
 
     plymouth = {
       enable = true;
@@ -102,7 +101,7 @@ in
       "udev.log_priority=3"
     ];
 
-    zfs = mylib.mkServerConfig config.networking.hostName {
+    zfs = mylib.mkServerConfig hostName {
       forceImportAll = true;
       requestEncryptionCredentials = true;
       devNodes = "/dev/disk/by-id";
@@ -113,17 +112,13 @@ in
     variables = {
       EDITOR = "micro";
       SSH_ASKPASS_REQUIRE = "prefer";
-    } // lib.optionalAttrs (mylib.isServer config.networking.hostName) {
-      KUBECONFIG = "/home/${VARS.users.admin.user}/.kube/config";
+    } // lib.optionalAttrs isServer {
+      KUBECONFIG = "/home/${adminUser}/.kube/config";
     };
 
     systemPackages = commonPackages.base
-      ++ lib.optionals
-      (mylib.isDesktop config.networking.hostName
-        || mylib.isLaptop config.networking.hostName)
-      commonPackages.desktop
-      ++ lib.optionals (mylib.isServer config.networking.hostName)
-      commonPackages.server;
+      ++ lib.optionals workstation commonPackages.desktop
+      ++ lib.optionals isServer commonPackages.server;
   };
 
   # Networking base configuration
@@ -131,36 +126,22 @@ in
     firewall = rec {
       enable = lib.mkDefault true;
       allowedTCPPorts =
-        lib.optionals (mylib.isServer config.networking.hostName) [
-          80
-          443
-          111
-          2049
-          20048
-          28981
-          6443
-        ] ++ lib.optionals
-          (mylib.isDesktop config.networking.hostName
-          || mylib.isLaptop config.networking.hostName) [
-          2049
-          4000
-          4001
-          4002
-          20048
-        ];
+        lib.optionals isServer [ 80 443 111 2049 20048 28981 6443 ]
+        ++ lib.optionals workstation [ 2049 4000 4001 4002 20048 ];
 
       allowedUDPPorts = allowedTCPPorts;
 
-      allowedTCPPortRanges = lib.optionals
-        (mylib.isDesktop config.networking.hostName
-          || mylib.isLaptop config.networking.hostName) [{ from = 1714; to = 1764; }]
-      ++ lib.optionals (mylib.isServer config.networking.hostName) [{ from = 4000; to = 4002; }];
-
+      allowedTCPPortRanges = lib.optionals workstation [{
+        from = 1714;
+        to = 1764;
+      }] ++ lib.optionals isServer [{
+        from = 4000;
+        to = 4002;
+      }];
       allowedUDPPortRanges = allowedTCPPortRanges;
     };
 
-    networkmanager.enable = mylib.isDesktop config.networking.hostName
-      || mylib.isLaptop config.networking.hostName;
+    networkmanager.enable = workstation;
     wireless.enable = lib.mkDefault false;
     useNetworkd = lib.mkDefault false; # server overrides per-host if needed
     nftables.enable = lib.mkDefault false;
@@ -189,13 +170,8 @@ in
   services = {
     fwupd.enable = true;
     zram-generator.enable = true;
-
-    # Disable legacy PulseAudio everywhere (PipeWire emulation supplied in profiles)
-    pulseaudio.enable = lib.mkDefault false;
-
-    # Desktop/laptop printing default
-    printing.enable = lib.mkDefault (mylib.isDesktop config.networking.hostName
-      || mylib.isLaptop config.networking.hostName);
+    pulseaudio.enable = lib.mkDefault false; # PipeWire provides compatibility
+    printing.enable = lib.mkDefault workstation;
 
     xserver.xkb = {
       layout = "no";
@@ -233,16 +209,6 @@ in
       };
     };
 
-    tailscale = {
-      enable = true;
-      openFirewall = true;
-      authKeyFile = config.sops.secrets."general/tsKeyFilePath".path;
-      authKeyParameters = { preauthorized = true; ephemeral = false; };
-      extraUpFlags = [ "--reset" "--ssh" ]
-        ++ lib.optionals (mylib.isServer config.networking.hostName) [ "--advertise-routes=192.168.2.0/24" ]
-        ++ lib.optionals (mylib.isLaptop config.networking.hostName) [ "--accept-routes" ];
-    };
-
     timesyncd = {
       enable = true;
       servers = [
@@ -273,39 +239,31 @@ in
     gvfs.enable = true;
     udisks2.enable = true;
     rpcbind.enable = lib.mkOptionDefault true;
+  };
 
-    # Server desktop-specific ZFS auto tasks moved to server profile
-
-    # NFS: restrict shared export to server only; desktop export lives in devices/snowfall
-    nfs.server = mylib.mkModule {
-      condition = mylib.isServer config.networking.hostName;
-      config = {
-        enable = true;
-        lockdPort = 4001;
-        mountdPort = 4002;
-        statdPort = 4000;
-        exports = ''
-          /rpool/enc/transfers 192.168.2.0/24(rw,sync,nohide,no_subtree_check)
-        '';
-      };
-    };
+  my.tailscale = {
+    enable = true;
+    lanRouteCIDR = routeCIDR;
+    advertiseLAN = isServer;
+    acceptRoutes = isLaptop;
   };
 
   security = {
     apparmor.enable = true;
     polkit.enable = true;
     tpm2.enable = true;
-    rtkit.enable = mylib.isDesktop config.networking.hostName || mylib.isLaptop config.networking.hostName;
+    rtkit.enable = workstation;
 
     pam.services = {
-      login = { enableAppArmor = true; gnupg.enable = true; };
-      # sddm-specific hardening lives in the KDE module
+      login = {
+        enableAppArmor = true;
+        gnupg.enable = true;
+      };
     };
   };
 
   programs = {
     mtr.enable = true;
-
     gnupg.agent.enable = false; # prefer Home Manager gpg-agent
 
     ssh = {
@@ -317,22 +275,10 @@ in
 
     zsh.enable = true;
 
-    gnome-disks = mylib.mkModule {
-      condition = mylib.isDesktop config.networking.hostName || mylib.isLaptop config.networking.hostName;
-      config.enable = true;
-    };
-
-    gnome-terminal = mylib.mkModule {
-      condition = mylib.isDesktop config.networking.hostName || mylib.isLaptop config.networking.hostName;
-      config.enable = false;
-    };
-
-    light.brightnessKeys = mylib.mkLaptopConfig config.networking.hostName { enable = true; };
-
-    seahorse = mylib.mkModule {
-      condition = mylib.isLaptop config.networking.hostName;
-      config.enable = true;
-    };
+    gnome-disks = mylib.mkWorkstationConfig hostName { enable = true; };
+    gnome-terminal = mylib.mkWorkstationConfig hostName { enable = false; };
+    light.brightnessKeys = mylib.mkLaptopConfig hostName { enable = true; };
+    seahorse = mylib.mkLaptopConfig hostName { enable = true; };
   };
 
   # Virtualisation consolidated into shared/virtualisation/podman.nix and profiles
@@ -343,7 +289,10 @@ in
     flake = "github:telometto/nix-config";
     operation = "boot";
     dates = "weekly";
-    rebootWindow = { lower = "00:00"; upper = "02:30"; };
+    rebootWindow = {
+      lower = "00:00";
+      upper = "02:30";
+    };
     persistent = true;
     allowReboot = true;
     fixedRandomDelay = true;
@@ -368,8 +317,8 @@ in
       "tokens/gitlab-ns" = { };
     };
     templates."access-tokens".content = ''
-      access-tokens = "github.com=${config.sops.placeholder."tokens/github-ns"}"
-      extra-access-tokens = "github.com=${config.sops.placeholder."tokens/gh-ns-test"}" "gitlab.com=${config.sops.placeholder."tokens/gitlab-ns"}" "gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}"
+      # Consolidated token lines (one directive). Repeat service tokens space-separated per Nix docs.
+      access-tokens = "github.com=${config.sops.placeholder."tokens/github-ns"}" "github.com=${config.sops.placeholder."tokens/gh-ns-test"}" "gitlab.com=${config.sops.placeholder."tokens/gitlab-ns"}" "gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}"
     '';
   };
 
@@ -377,4 +326,9 @@ in
   zramSwap.enable = lib.mkForce false;
 
   nixpkgs.config.allowUnfree = lib.mkDefault true;
+
+  assertions = [
+    { assertion = mylib.roleOf config.networking.hostName != null;
+      message = "Unknown role for host ${config.networking.hostName}. Update VARS.systems.*.hostName or constants."; }
+  ];
 }

@@ -123,5 +123,5 @@ in {
   ];
 
   development = [ ];
-  gaming = [ pkgs.openrazer-daemon ];
+  gaming = [ ];
 }

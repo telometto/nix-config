@@ -1,10 +1,7 @@
 # Simplified host configuration for Snowfall (Desktop)
 { config, lib, pkgs, VARS, inputs, mylib, ... }:
 
-let
-  deviceConfigs =
-    import ../../devices/configurations.nix { inherit config lib pkgs VARS; };
-in {
+{
   imports = [
     # Hardware scan (don't touch)
     ./hardware-configuration.nix
@@ -26,19 +23,6 @@ in {
     # User definitions
     ../../users
   ];
-
-  # Apply device-specific configuration
-  environment = deviceConfigs.snowfall.environment;
-  hardware = deviceConfigs.snowfall.hardware;
-  networking = deviceConfigs.snowfall.networking;
-  services = deviceConfigs.snowfall.services;
-  systemd = deviceConfigs.snowfall.systemd;
-  fileSystems = deviceConfigs.snowfall.fileSystems;
-  boot = lib.mkMerge [ deviceConfigs.snowfall.boot ];
-  # programs/security/xdg not provided in device configs
-
-  # Virtualization
-  # Desktop profile + shared podman module set defaults
 
   system.stateVersion = "24.05";
 }

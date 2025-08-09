@@ -2,8 +2,9 @@
 { config, lib, pkgs, VARS, inputs, mylib, ... }:
 
 let
-  deviceConfigs =
-    import ../../devices/configurations.nix { inherit config lib pkgs VARS; };
+  constants = import ../../shared/constants.nix;
+  adminUser = VARS.users.admin.user;
+  backups = constants.backups;
 in {
   imports = [
     # Hardware scan (don't touch)
@@ -17,13 +18,21 @@ in {
     # MicroVM host support (server runs microvms)
     inputs.microvm.nixosModules.host
 
+    # Device configuration
+    ../../devices/blizzard.nix
+
     # User definitions
     ../../users
   ];
 
-  # Apply device-specific configuration
-  inherit (deviceConfigs.blizzard)
-    networking systemd fileSystems services environment;
+  # Migrate Borg job to my.backups
+  my.backups.jobs.homeserver = {
+    paths = "/home/${adminUser}";
+    repo = backups.blizzardRepo;
+    identityFile = "/home/${adminUser}/.ssh/borg-blizzard";
+    encryption.passCommand = "cat ${backups.blizzardKeyFile}";
+    startAt = "daily";
+  };
 
   system.stateVersion = "24.11";
 }
