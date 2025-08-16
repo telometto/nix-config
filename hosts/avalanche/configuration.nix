@@ -80,6 +80,8 @@
     ../../modules/development/java.nix
   ];
 
+  services.teamviewer.enable = true;
+
   nixpkgs = {
     config = {
       allowUnfree = true;
