@@ -24,72 +24,72 @@
     # databases = [{
     #   lockAll = true;
 
-      settings = {
-        "org.blueman.plugins.powermanager" = {
-          auto-power-on = false;
-        };
-
-        "org/gnome/shell" = {
-          disable-user-extensions = false;
-          app-picker-layout = "reset";
-  
-          # enabled-extensions = { };
-        };
-  
-        "org/gnome/desktop/interface" = {
-          color-scheme = "prefer-dark";
-          clock-show-weekday = true;
-          font-antialiasing = "rgba";
-          show-battery-percentage = true;
-          # gtk-theme = "Adwaita-dark";
-        };
-  
-        "org/gnome/desktop/datetime" = {
-          automatic-timezone = true;
-          # automatic-timezone-guess = true;
-          # automatic-timezone-guess-geoclue = true;
-        };
-  
-        "org/gnome/desktop/peripherals/mouse" = {
-          # speed = "-0.5";
-          accel-profile = "flat";
-        };
-  
-        "org/gtk/Settings/FileChooser" = {
-          sort-directories-first = true;
-        };
-  
-        "org/gnome/desktop/wm/preferences" = {
-          button-layout = "appmenu:minimize,maximize,close";
-        };
-  
-        "org/gnome/desktop/calendar" = {
-          show-weekdate = true;
-        };
-  
-        "system/proxy" = {
-          mode = "auto";
-        };
-  
-        "org/gnome/settings-daemon/plugins/color" = {
-          night-light-enabled = true;
-          night-light-schedule-automatic = true;
-        };
-  
-        "org/gnome/settings-daemon/plugins/power" = {
-          sleep-inactive-battery-type = "suspend"; # Default: suspend
-          sleep-inactive-battery-timeout = 900; # Default: 900
-  
-          sleep-inactive-ac-type = "nothing"; # Default: suspend
-          # sleep-inactive-ac-timeout = 900; # Default: 900
-        };
-  
-        "org/gnome/mutter" = {
-          dynamic-workspaces = true;
-          edge-tiling = true;
-          experimental-features = [ "variable-refresh-rate" ];
-        };
+    settings = {
+      "org.blueman.plugins.powermanager" = {
+        auto-power-on = false;
       };
+
+      "org/gnome/shell" = {
+        disable-user-extensions = false;
+        app-picker-layout = "reset";
+
+        # enabled-extensions = { };
+      };
+
+      "org/gnome/desktop/interface" = {
+        color-scheme = "prefer-dark";
+        clock-show-weekday = true;
+        font-antialiasing = "rgba";
+        show-battery-percentage = true;
+        # gtk-theme = "Adwaita-dark";
+      };
+
+      "org/gnome/desktop/datetime" = {
+        automatic-timezone = true;
+        # automatic-timezone-guess = true;
+        # automatic-timezone-guess-geoclue = true;
+      };
+
+      "org/gnome/desktop/peripherals/mouse" = {
+        # speed = "-0.5";
+        accel-profile = "flat";
+      };
+
+      "org/gtk/Settings/FileChooser" = {
+        sort-directories-first = true;
+      };
+
+      "org/gnome/desktop/wm/preferences" = {
+        button-layout = "appmenu:minimize,maximize,close";
+      };
+
+      "org/gnome/desktop/calendar" = {
+        show-weekdate = true;
+      };
+
+      "system/proxy" = {
+        mode = "auto";
+      };
+
+      "org/gnome/settings-daemon/plugins/color" = {
+        night-light-enabled = true;
+        night-light-schedule-automatic = true;
+      };
+
+      "org/gnome/settings-daemon/plugins/power" = {
+        sleep-inactive-battery-type = "suspend"; # Default: suspend
+        sleep-inactive-battery-timeout = 900; # Default: 900
+
+        sleep-inactive-ac-type = "nothing"; # Default: suspend
+        # sleep-inactive-ac-timeout = 900; # Default: 900
+      };
+
+      "org/gnome/mutter" = {
+        dynamic-workspaces = true;
+        edge-tiling = true;
+        experimental-features = [ "variable-refresh-rate" ];
+      };
+    };
     # }];
   };
 
