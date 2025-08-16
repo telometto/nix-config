@@ -33,9 +33,16 @@
   };
 
   services.resolved = {
-    enable = true;
+    enable = true; # lib.mkDefault true;
     dnssec = "allow-downgrade";
     dnsovertls = "opportunistic";
     llmnr = "true";
+    # domains = [ "~." ];
+    # fallbackDns = [
+    #   "1.1.1.1"
+    #   "1.0.0.1"
+    #   "2606:4700:4700::1111"
+    #   "2606:4700:4700::1001"
+    # ];
   };
 }

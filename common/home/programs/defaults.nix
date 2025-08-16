@@ -122,29 +122,44 @@
         tabtospaces = true;
       };
     };
+    
+     # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
+      # For now, resorting to non-home-manager configuration
 
-    /* # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
-       # For now, resorting to non-home-manager configuration
+      ssh = {
+        enable = true;
 
-       ssh = {
-       enable = true;
+        addKeysToAgent = "yes";
+        # controlMaster = "auto";
+        # controlPath = "/some/path/%r@%h:%p";
+        # controlPersist = "yes";
+        # compression = true;
+        # extraConfig = ""; # Strings concatenated with "\n"
+        # extraOptionOverrides = ""; # Attribute set of strings
+        # forwardAgent = true;
+        # hashKnownHosts = true;
+        # includes = [ ]; # List of strings
+        # serverAliveCountMax = 1; # Positive integer
+        # serverAliveInterval = 1;
+        # userKnownHostsFile = ""; # String
 
-       addKeysToAgent = "yes";
-       #controlMaster = "auto";
-       #controlPath = "/some/path/%r@%h:%p";
-       #controlPersist = "yes";
-       compression = true;
-       #extraConfig = ""; # Strings concatenated with "\n"
-       #extraOptionOverrides = ""; # Attribute set of strings
-       forwardAgent = true;
-       #hashKnownHosts = true;
-       #includes = [ ]; # List of strings
-       #matchBlocks = { }; # Attribute set of attribute sets
-       #serverAliveCountMax = 1; # Positive integer
-       #serverAliveInterval = 1;
-       #userKnownHostsFile = ""; # String
-       };
-    */
+        matchBlocks = {
+          "github.com" = {
+            hostname = "ssh.github.com";
+            port = 443;
+            user = "git";
+            identitiesOnly = true;
+            identityFile = "${config.home.homeDirectory}/.ssh/github-key";
+          };
+
+          "192.168.*" = {
+            forwardAgent = true;
+            identityFile = "${config.home.homeDirectory}/.ssh/id_ed25519";
+            identitiesOnly = true;
+            # setEnv = "TERM=xterm-256color";
+          };
+        };
+      };
 
     tmux = {
       enable = true;

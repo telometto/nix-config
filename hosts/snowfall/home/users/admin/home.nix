@@ -75,7 +75,7 @@ in
       # pkgs.blesh
       pkgs.gparted # Partition manager
       pkgs.meld # Diff tool
-      pkgs-unstable.variety # Wallpaper changer
+      pkgs.variety # Wallpaper changer
       pkgs.zsh-powerlevel10k
       pkgs.polychromatic # Razer configuration tool
       # pkgs.ghostty
@@ -99,10 +99,10 @@ in
       pkgs.thunderbird # Email client
       pkgs.yt-dlp # YouTube downloader
       pkgs.protonvpn-gui # ProtonVPN GUI client
-      pkgs.plex-desktop # Plex media player for desktop
+      # pkgs.plex-desktop # Plex media player for desktop
 
       # Social
-      pkgs.discord # Discord client
+      # pkgs.discord # Discord client
       pkgs.element-desktop # Matrix client
       pkgs.teams-for-linux # Microsoft Teams client
       # pkgs.weechat # IRC client
@@ -113,19 +113,21 @@ in
       pkgs.nixpkgs-fmt # Nix language formatter
       pkgs.nixfmt-classic # Nix language formatter
       pkgs.vscode # Visual Studio Code
-      pkgs.jetbrains.idea-community-bin # IntelliJ IDEA Community Edition
+      # pkgs.jetbrains.idea-community-bin # IntelliJ IDEA Community Edition
 
-      pkgs.texliveFull # LaTeX
+      # pkgs.texliveFull # LaTeX
 
       # Misc
-      pkgs.fortune # Random quotes
+      # pkgs.fortune # Random quotes
       pkgs.yaru-theme # Yaru theme for Ubuntu
       pkgs.spotify # Music streaming
       pkgs.pdfmixtool # PDF tool
       pkgs.onlyoffice-desktopeditors # Office suite
       pkgs.nomacs # Image viewer
-      pkgs.apostrophe # Markdown editor
-      pkgs.gpt4all
+      # pkgs.apostrophe # Markdown editor
+      # pkgs.gpt4all
+      pkgs.tuxguitar
+      pkgs.pgadmin4-desktopmode
 
       # System tools
       # deja-dup # Backup tool; use Flatpak instead

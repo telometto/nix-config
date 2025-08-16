@@ -53,22 +53,22 @@ in
     # };
   };
 
-  systemd.mounts = [{
-    type = "nfs";
-    mountConfig = {
-      options = "rw,noatime,nofail";
-    };
-    what = "192.168.2.100:/rpool/enc/transfers";
-    where = "${DRIVE_BASE_PATH}/personal/transfers";
-  }];
+  # systemd.mounts = [{
+  #   type = "nfs";
+  #   mountConfig = {
+  #     options = "rw,noatime,nofail";
+  #   };
+  #   what = "192.168.2.100:/rpool/enc/transfers";
+  #   where = "${DRIVE_BASE_PATH}/personal/transfers";
+  # }];
 
-  systemd.automounts = [{
-    wantedBy = [ "multi-user.target" ];
-    automountConfig = {
-      TimeoutIdleSec = "600";
-    };
-    where = "${DRIVE_BASE_PATH}/personal/transfers";
-  }];
+  # systemd.automounts = [{
+  #   wantedBy = [ "multi-user.target" ];
+  #   automountConfig = {
+  #     TimeoutIdleSec = "600";
+  #   };
+  #   where = "${DRIVE_BASE_PATH}/personal/transfers";
+  # }];
 
   # Services
   services = {

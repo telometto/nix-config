@@ -2,23 +2,23 @@
 let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
 in {
   home = {
-    file.".ssh/config".text = ''
-      Host *
-        ForwardAgent yes
-        AddKeysToAgent yes
-        Compression yes
+    # file.".ssh/config".text = ''
+    #   Host *
+    #     ForwardAgent yes
+    #     AddKeysToAgent yes
+    #     Compression yes
 
-      Host github.com
-        Hostname ssh.github.com
-        Port 443
-        User git
-        IdentityFile ${config.home.homeDirectory}/.ssh/github-key
+    #   Host github.com
+    #     Hostname ssh.github.com
+    #     Port 443
+    #     User git
+    #     IdentityFile ${config.home.homeDirectory}/.ssh/github-key
 
-      Host 192.168.*
-        IdentityFile ${config.home.homeDirectory}/.ssh/id_ed25519
-        IdentitiesOnly yes
-        SetEnv TERM=xterm-256color
-    '';
+    #   Host 192.168.*
+    #     IdentityFile ${config.home.homeDirectory}/.ssh/id_ed25519
+    #     IdentitiesOnly yes
+    #     SetEnv TERM=xterm-256color
+    # '';
 
     file.".ssh/allowed_signers".text =
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com";

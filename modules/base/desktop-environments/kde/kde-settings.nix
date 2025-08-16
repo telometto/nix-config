@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
+  environment.variables.SSH_ASKPASS = "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
   services = {
     xserver = {
       enable = false; # Enables or disables the X11 server
@@ -60,7 +61,7 @@
     kdePackages.ksshaskpass
 
     (sddm-astronaut.override {
-      embeddedTheme = "jake_the_dog";
+      embeddedTheme = "post-apocalyptic_hacker";
     })
   ];
 
