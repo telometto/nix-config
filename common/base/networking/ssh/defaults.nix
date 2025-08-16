@@ -43,7 +43,7 @@
 
   programs = {
     ssh = {
-      startAgent = true;
+      # startAgent = true;
       enableAskPassword = true;
       forwardX11 = false;
       setXAuthLocation = false;
