@@ -11,6 +11,10 @@
   services = {
     hardware.bolt.enable = true;
 
+    # logind.extraConfig = ''
+    #   HandleLidSwitch=ignore
+    # '';
+
     gnome = {
       core-developer-tools.enable = true;
       core-os-services.enable = true;
@@ -41,11 +45,6 @@
     };
   };
 
-  # programs.ssh = {
-  #   # askPassword = "${pkgs.seahorse.out}/libexec/seahorse/ssh-askpass"; # Not correct?
-  #   askPassword = "${pkgs.seahorse.out}/bin/seahorse";
-  # };
-
   security.pam.services = {
     gdm = {
       enableAppArmor = true;
@@ -60,10 +59,7 @@
     };
   };
 
-  environment.systemPackages = with pkgs; [
-    seahorse
-    gnome-keyring
-  ];
+  environment.systemPackages = with pkgs; [ ];
 
   environment.gnome.excludePackages = with pkgs; [
     gnome-tour
@@ -71,5 +67,6 @@
     #]) ++ (with pkgs.gnome; [
     gnome-maps
     epiphany
+    geary
   ];
 }
