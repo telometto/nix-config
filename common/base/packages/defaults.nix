@@ -74,7 +74,6 @@
     envsubst
 
     baobab # Disk usage analyzer
-    restic
     deja-dup
   ];
 
