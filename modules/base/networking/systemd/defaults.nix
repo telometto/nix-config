@@ -24,6 +24,7 @@
   networking = {
     useNetworkd = lib.mkDefault false; # Default: false
     useDHCP = lib.mkDefault true; # Defaults to true; disabled for systemd-networkd
+    networkmanager.dns = "systemd-resolved";
   };
 
   systemd.network = {
