@@ -42,6 +42,10 @@
       # Ignore lock files that shouldn't be formatted
       "*.lock"
       
+      # Ignore GitHub Actions workflows to prevent permission issues
+      ".github/workflows/*.yml"
+      ".github/workflows/*.yaml"
+      
       # Ignore binary files
       "*.png"
       "*.jpg"
