@@ -1,13 +1,17 @@
 /**
- * 
- * This Nix expression defines host-specific system configuration defaults for a desktop environment.
- * It specifies the system packages to be included in the environment.
- * 
- * The `environment.systemPackages` attribute is used to list the packages that should be available
- * in the system environment.
- */
+  This Nix expression defines host-specific system configuration defaults for a desktop environment.
+  It specifies the system packages to be included in the environment.
 
-{ config, lib, pkgs, ... }:
+  The `environment.systemPackages` attribute is used to list the packages that should be available
+  in the system environment.
+*/
+
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   environment.systemPackages = with pkgs; [

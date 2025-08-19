@@ -1,11 +1,17 @@
 /**
- * This NixOS module configures Flatpak support on the system. It enables the necessary
- * xdg portal for Flatpak to function correctly, sets up the Flatpak service, and adds
- * the Flathub repository if it does not already exist. Additionally, it provides an
- * option to install Flatpak system-wide by uncommenting the relevant line.
- */
+  This NixOS module configures Flatpak support on the system. It enables the necessary
+  xdg portal for Flatpak to function correctly, sets up the Flatpak service, and adds
+  the Flathub repository if it does not already exist. Additionally, it provides an
+  option to install Flatpak system-wide by uncommenting the relevant line.
+*/
 
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 
 {
   # xdg.portal = {
@@ -22,7 +28,9 @@
   #   ];
   # };
 
-  services.flatpak = { enable = true; };
+  services.flatpak = {
+    enable = true;
+  };
 
   # Add Flathub repository if it does not already exist
   systemd.services.flatpak-repo = {

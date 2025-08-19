@@ -1,5 +1,10 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   services = {
@@ -33,15 +38,14 @@
     ];
   };
 
-  environment.systemPackages = with pkgs;
-    [
-      (wrapHelm kubernetes-helm {
-        plugins = with pkgs.kubernetes-helmPlugins; [
-          helm-secrets
-          helm-diff
-          helm-s3
-          helm-git
-        ];
-      })
-    ];
+  environment.systemPackages = with pkgs; [
+    (wrapHelm kubernetes-helm {
+      plugins = with pkgs.kubernetes-helmPlugins; [
+        helm-secrets
+        helm-diff
+        helm-s3
+        helm-git
+      ];
+    })
+  ];
 }

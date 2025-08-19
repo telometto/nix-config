@@ -1,4 +1,10 @@
-{ config, inputs, lib, pkgs, ... }:
+{
+  config,
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   imports = [ inputs.disko.nixosModules.disko ];
@@ -48,7 +54,10 @@
                   "/home/user" = { };
                   # Parent is not mounted so the mountpoint must be set
                   "@nix" = {
-                    mountOptions = [ "compress-force=zstd:1" "noatime" ];
+                    mountOptions = [
+                      "compress-force=zstd:1"
+                      "noatime"
+                    ];
                     mountpoint = "/nix";
                   };
                   # This subvolume will be created but not mounted

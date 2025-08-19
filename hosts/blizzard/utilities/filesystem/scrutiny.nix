@@ -1,5 +1,10 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   services.scrutiny = {

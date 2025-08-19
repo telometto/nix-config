@@ -1,4 +1,11 @@
-{ config, lib, pkgs, VARS, pkgs-stable, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  pkgs-stable,
+  ...
+}:
 let
   DEFAULT_LANG = "nb_NO.UTF-8";
 in

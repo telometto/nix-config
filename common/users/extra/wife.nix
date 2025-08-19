@@ -1,8 +1,19 @@
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 
 {
   users.extraUsers.${VARS.users.wife.user} = {
-    inherit (VARS.users.wife) description isNormalUser extraGroups hashedPassword;
+    inherit (VARS.users.wife)
+      description
+      isNormalUser
+      extraGroups
+      hashedPassword
+      ;
     shell = pkgs.zsh;
 
     packages = with pkgs; [

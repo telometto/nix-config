@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
   PRIVATEKEYFILE = config.sops.secrets."general/wireguardKeyFile".path; # config.sops.secrets.wireguardKeyFile.path;
   ADDRESS = [ "10.2.0.2/32" ];
@@ -53,7 +58,9 @@ in
       dns = DNS;
       ntp = [ "fc00::123" ];
       gateway = ALLOWEDIPS;
-      networkConfig = { IPv6AcceptRA = false; };
+      networkConfig = {
+        IPv6AcceptRA = false;
+      };
     };
   };
 

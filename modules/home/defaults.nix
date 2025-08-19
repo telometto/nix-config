@@ -1,7 +1,14 @@
-{ pkgs-stable, system, inputs, VARS, host, hostUsers }:
+{
+  pkgs-stable,
+  system,
+  inputs,
+  VARS,
+  host,
+  hostUsers,
+}:
 
 {
-  # This entire file is just a NixOS module. It is also a function 
+  # This entire file is just a NixOS module. It is also a function
   # that receives all arguments and returns a module config.
 
   home-manager = {
@@ -19,11 +26,10 @@
       inherit inputs VARS;
     };
 
-    users = pkgs.lib.genAttrs hostUsers.${host} (user:
+    users = pkgs.lib.genAttrs hostUsers.${host} (
+      user:
       import ./hosts/${host}/home/users/${
-        if user == VARS.users.admin.user 
-        then "admin" 
-        else "extra/${user}"
+        if user == VARS.users.admin.user then "admin" else "extra/${user}"
       }/home.nix
     );
   };

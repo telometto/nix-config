@@ -1,5 +1,13 @@
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 
 {
-  services.ssh-agent = { enable = true; };
+  services.ssh-agent = {
+    enable = true;
+  };
 }

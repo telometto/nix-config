@@ -1,27 +1,32 @@
 /**
- * This NixOS module configures the OpenSSH service with specific settings.
- * It enables the OpenSSH service, sets various security and usability options,
- * and opens the firewall for SSH connections.
- *
- * - `services.openssh.enable`: Enables the OpenSSH service.
- * - `services.openssh.banner`: Sets a custom banner for SSH connections.
- * - `services.openssh.settings`: Configures OpenSSH settings:
- *   - `X11Forwarding`: Disallows X11 forwarding (set to false).
- *   - `PermitRootLogin`: Disallows root login via SSH (set to "no").
- *   - `PasswordAuthentication`: Disables password authentication (set to false).
- *   - `UsePAM`: Enables Pluggable Authentication Modules (set to true).
- * - `services.openssh.openFirewall`: Opens the firewall for SSH connections.
- *
- * - `programs.ssh.startAgent`: Starts the SSH agent.
- * - `programs.ssh.enableAskPassword`: Enables asking for passwords.
- * - `programs.ssh.forwardX11`: Disables X11 forwarding.
- * - `programs.ssh.setXAuthLocation`: Disables setting the XAuth location.
- * - `programs.ssh.extraConfig`: Additional SSH client configuration.
- *
- * - `environment.systemPackages`: Installs the OpenSSH package.
- */
+  This NixOS module configures the OpenSSH service with specific settings.
+  It enables the OpenSSH service, sets various security and usability options,
+  and opens the firewall for SSH connections.
 
-{ config, lib, pkgs, ... }:
+  - `services.openssh.enable`: Enables the OpenSSH service.
+  - `services.openssh.banner`: Sets a custom banner for SSH connections.
+  - `services.openssh.settings`: Configures OpenSSH settings:
+    - `X11Forwarding`: Disallows X11 forwarding (set to false).
+    - `PermitRootLogin`: Disallows root login via SSH (set to "no").
+    - `PasswordAuthentication`: Disables password authentication (set to false).
+    - `UsePAM`: Enables Pluggable Authentication Modules (set to true).
+  - `services.openssh.openFirewall`: Opens the firewall for SSH connections.
+
+  - `programs.ssh.startAgent`: Starts the SSH agent.
+  - `programs.ssh.enableAskPassword`: Enables asking for passwords.
+  - `programs.ssh.forwardX11`: Disables X11 forwarding.
+  - `programs.ssh.setXAuthLocation`: Disables setting the XAuth location.
+  - `programs.ssh.extraConfig`: Additional SSH client configuration.
+
+  - `environment.systemPackages`: Installs the OpenSSH package.
+*/
+
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   services.openssh = {

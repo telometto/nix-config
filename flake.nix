@@ -69,7 +69,8 @@
     nix-colors.url = "github:misterio77/nix-colors";
   };
 
-  outputs = inputs@{ self, nixpkgs, ... }:
+  outputs =
+    inputs@{ self, nixpkgs, ... }:
     let
       lib = nixpkgs.lib;
       VARS = import inputs.nix-secrets.vars.varsFile;
@@ -113,62 +114,60 @@
       };
 
       # NixOS configurations
-      nixosConfigurations = lib.mapAttrs
-        (hostName: hostAttrs:
-          nixpkgs.lib.nixosSystem {
-            system = hostAttrs.system;
-            modules = [
-              inputs.home-manager.nixosModules.home-manager
-              {
-                home-manager = {
-                  useGlobalPkgs = true;
-                  useUserPackages = true;
-                  backupFileExtension = "hm-backup";
-                  sharedModules = [
-                    inputs.sops-nix.homeManagerModules.sops
-                    inputs.hyprland.homeManagerModules.default
-                  ];
+      nixosConfigurations = lib.mapAttrs (
+        hostName: hostAttrs:
+        nixpkgs.lib.nixosSystem {
+          system = hostAttrs.system;
+          modules = [
+            inputs.home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                backupFileExtension = "hm-backup";
+                sharedModules = [
+                  inputs.sops-nix.homeManagerModules.sops
+                  inputs.hyprland.homeManagerModules.default
+                ];
 
-                  extraSpecialArgs = {
-                    inherit inputs VARS;
-                    pkgs-stable-latest = import inputs.nixpkgs-stable-latest {
-                      system = hostAttrs.system;
-                    };
-                    pkgs-stable =
-                      import inputs.nixpkgs-stable { system = hostAttrs.system; };
-                    pkgs-unstable = import inputs.nixpkgs-unstable {
-                      system = hostAttrs.system;
-                    };
+                extraSpecialArgs = {
+                  inherit inputs VARS;
+                  pkgs-stable-latest = import inputs.nixpkgs-stable-latest {
+                    system = hostAttrs.system;
                   };
-
-                  users = lib.genAttrs hostAttrs.users (user:
-                    import ./hosts/${hostName}/home/users/${
-                    if user == VARS.users.admin.user then
-                      "admin"
-                    else
-                      "extra/${user}"
-                  }/home.nix);
+                  pkgs-stable = import inputs.nixpkgs-stable { system = hostAttrs.system; };
+                  pkgs-unstable = import inputs.nixpkgs-unstable {
+                    system = hostAttrs.system;
+                  };
                 };
-              }
-              hostAttrs.config
-            ];
 
-            specialArgs = {
-              inherit inputs VARS;
-              pkgs-stable-latest = import inputs.nixpkgs-stable-latest {
-                system = hostAttrs.system;
+                users = lib.genAttrs hostAttrs.users (
+                  user:
+                  import ./hosts/${hostName}/home/users/${
+                    if user == VARS.users.admin.user then "admin" else "extra/${user}"
+                  }/home.nix
+                );
               };
-              pkgs-stable =
-                import inputs.nixpkgs-stable { system = hostAttrs.system; };
-              pkgs-unstable = import inputs.nixpkgs-unstable {
-                system = hostAttrs.system;
-              };
+            }
+            hostAttrs.config
+          ];
+
+          specialArgs = {
+            inherit inputs VARS;
+            pkgs-stable-latest = import inputs.nixpkgs-stable-latest {
+              system = hostAttrs.system;
             };
-          })
-        hosts;
+            pkgs-stable = import inputs.nixpkgs-stable { system = hostAttrs.system; };
+            pkgs-unstable = import inputs.nixpkgs-unstable {
+              system = hostAttrs.system;
+            };
+          };
+        }
+      ) hosts;
 
       # Formatting configuration
-      formatter = nixpkgs.lib.genAttrs [ "x86_64-linux" ] (system:
+      formatter = nixpkgs.lib.genAttrs [ "x86_64-linux" ] (
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
@@ -177,7 +176,8 @@
       );
 
       # Formatting check for CI
-      checks = nixpkgs.lib.genAttrs [ "x86_64-linux" ] (system:
+      checks = nixpkgs.lib.genAttrs [ "x86_64-linux" ] (
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs ./treefmt.nix;

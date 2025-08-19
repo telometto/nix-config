@@ -1,4 +1,10 @@
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 
 {
   services.borgbackup = lib.mkIf (config.networking.hostName == VARS.systems.server.hostName) {
@@ -19,7 +25,8 @@
     };
   };
 
-  /* Template; on hold
+  /*
+    Template; on hold
     services.borgmatic = {
     enable = true;
 
@@ -51,5 +58,8 @@
     "general/borgRepo" = { };
   };
 
-  environment.systemPackages = with pkgs; [ borgbackup borgmatic ];
+  environment.systemPackages = with pkgs; [
+    borgbackup
+    borgmatic
+  ];
 }

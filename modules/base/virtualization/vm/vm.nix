@@ -1,16 +1,21 @@
 /**
- * This NixOS module configures virtualization settings for libvirt and QEMU/KVM.
- * It enables libvirtd, configures QEMU to run as root, and sets up secure boot
- * and TPM support for OVMF (Open Virtual Machine Firmware).
- *
- * - Enables libvirtd service.
- * - Configures QEMU to use the KVM package and run as root.
- * - Enables and configures swtpm (software TPM).
- * - Enables OVMF with secure boot and TPM support.
- * - Adds libvirt, qemu, and OVMFFull to the system packages.
- */
+  This NixOS module configures virtualization settings for libvirt and QEMU/KVM.
+  It enables libvirtd, configures QEMU to run as root, and sets up secure boot
+  and TPM support for OVMF (Open Virtual Machine Firmware).
 
-{ config, lib, pkgs, ... }:
+  - Enables libvirtd service.
+  - Configures QEMU to use the KVM package and run as root.
+  - Enables and configures swtpm (software TPM).
+  - Enables OVMF with secure boot and TPM support.
+  - Adds libvirt, qemu, and OVMFFull to the system packages.
+*/
+
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   virtualisation = {

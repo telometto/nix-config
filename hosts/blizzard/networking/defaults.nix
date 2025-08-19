@@ -1,4 +1,10 @@
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 let
   INTERFACE = "enp8s0";
 in
@@ -6,8 +12,12 @@ in
   networking = {
     inherit (VARS.systems.server) hostName hostId;
 
-    wireless = { enable = false; }; # Enables wireless support via wpa_supplicant.
-    networkmanager = { enable = false; }; # Easiest to use and most distros use this by default.
+    wireless = {
+      enable = false;
+    }; # Enables wireless support via wpa_supplicant.
+    networkmanager = {
+      enable = false;
+    }; # Easiest to use and most distros use this by default.
 
     # Firewall-related
     firewall = rec {
@@ -39,7 +49,9 @@ in
       allowedUDPPorts = allowedTCPPorts;
     };
 
-    nftables = { enable = false; }; # Use nftables instead of iptables
+    nftables = {
+      enable = false;
+    }; # Use nftables instead of iptables
 
     # useNetworkd = lib.mkForce true;
     useDHCP = lib.mkForce false;

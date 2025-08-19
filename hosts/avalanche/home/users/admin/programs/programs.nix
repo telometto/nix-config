@@ -1,6 +1,18 @@
-{ config, lib, pkgs, VARS, ... }:
-let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
-in {
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
+let
+  LANGUAGES = [
+    "nb-NO"
+    "it-IT"
+    "en-US"
+  ];
+in
+{
   home = {
     file.".ssh/config".text = ''
       Host *
@@ -130,17 +142,18 @@ in {
 
         gpg = {
           format = "ssh";
-          ssh.allowedSignersFile =
-            "${config.home.homeDirectory}/.ssh/allowed_signers";
+          ssh.allowedSignersFile = "${config.home.homeDirectory}/.ssh/allowed_signers";
         };
 
         user.signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
       };
 
-      includes = [{
-        condition = "gitdir:~/.versioncontrol/github/";
-        contents.user.email = "65364211+telometto@users.noreply.github.com";
-      }];
+      includes = [
+        {
+          condition = "gitdir:~/.versioncontrol/github/";
+          contents.user.email = "65364211+telometto@users.noreply.github.com";
+        }
+      ];
     };
 
     # keychain = {
@@ -155,7 +168,9 @@ in {
     #   ];
     # };
 
-    mangohud = { enable = true; };
+    mangohud = {
+      enable = true;
+    };
 
     mpv = {
       enable = true;
@@ -163,34 +178,36 @@ in {
       # TODO: Declaratively configure mpv
     };
 
-    /* # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
-       # For now, resorting to non-home-manager configuration
+    /*
+      # SSH is on hold until config permissions are fixed; see https://github.com/nix-community/home-manager/issues/322
+      # For now, resorting to non-home-manager configuration
 
-       ssh = {
-       enable = true;
+      ssh = {
+      enable = true;
 
-       addKeysToAgent = "yes";
-       #controlMaster = "auto";
-       #controlPath = "/some/path/%r@%h:%p";
-       #controlPersist = "yes";
-       compression = true;
-       #extraConfig = ""; # Strings concatenated with "\n"
-       #extraOptionOverrides = ""; # Attribute set of strings
-       forwardAgent = true;
-       #hashKnownHosts = true;
-       #includes = [ ]; # List of strings
-       #matchBlocks = { }; # Attribute set of attribute sets
-       #serverAliveCountMax = 1; # Positive integer
-       #serverAliveInterval = 1;
-       #userKnownHostsFile = ""; # String
-       };
+      addKeysToAgent = "yes";
+      #controlMaster = "auto";
+      #controlPath = "/some/path/%r@%h:%p";
+      #controlPersist = "yes";
+      compression = true;
+      #extraConfig = ""; # Strings concatenated with "\n"
+      #extraOptionOverrides = ""; # Attribute set of strings
+      forwardAgent = true;
+      #hashKnownHosts = true;
+      #includes = [ ]; # List of strings
+      #matchBlocks = { }; # Attribute set of attribute sets
+      #serverAliveCountMax = 1; # Positive integer
+      #serverAliveInterval = 1;
+      #userKnownHostsFile = ""; # String
+      };
     */
 
-    /* thunderbird = {
-       enable = true;
+    /*
+      thunderbird = {
+      enable = true;
 
-       # TODO: Declaratively configure Thunderbird
-       };
+      # TODO: Declaratively configure Thunderbird
+      };
     */
 
     vesktop = {
@@ -206,14 +223,15 @@ in {
       };
     };
 
-    /* vscode = {
-       enable = true;
+    /*
+      vscode = {
+      enable = true;
 
-       enableUpdateCheck = false; # Disable update checks
-       mutableExtensionsDir = true; # Allow extensions to be installed in the user's home directory
+      enableUpdateCheck = false; # Disable update checks
+      mutableExtensionsDir = true; # Allow extensions to be installed in the user's home directory
 
-       # TODO: Declaratively configure Visual Studio Code
-       };
+      # TODO: Declaratively configure Visual Studio Code
+      };
     */
 
     zellij = {
