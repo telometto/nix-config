@@ -2,6 +2,7 @@
 { config, lib, pkgs, VARS, ... }:
 
 {
+  # systemd.services.zfs-mount.enable = false;
   # Bootloader
   boot = {
     supportedFilesystems = [ "zfs" ];
@@ -28,9 +29,10 @@
       requestEncryptionCredentials = true;
       devNodes = "/dev/disk/by-id";
 
-      # extraPools = [
-      #   "flash_temp" # SSD
-      # ];
+      extraPools = [
+        "flash" # SSD
+        "rpool"
+      ];
     };
   };
 
@@ -39,7 +41,7 @@
       autoScrub.enable = true;
 
       autoSnapshot = {
-        enable = true;
+        enable = false;
 
         monthly = 4;
         weekly = 7;
@@ -57,15 +59,16 @@
       lockdPort = 4001;
       mountdPort = 4002;
       statdPort = 4000;
-
+/*
       # extraNfsdConfig = '''';
 
       exports = ''
         /rpool/enc/transfers 192.168.2.0/24(rw,sync,nohide,no_subtree_check)
       '';
+*/
     };
   };
-
+/*
   # NFS sharing
   fileSystems = {
     ### SSD
@@ -165,7 +168,7 @@
       fsType = "zfs";
     };
   };
-
+*/
   environment.systemPackages = with pkgs; [
     zfs
     zfstools
