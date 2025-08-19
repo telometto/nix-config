@@ -7,31 +7,28 @@
     templates = {
       "production" = {
         autosnap = true;
-        autoprune = true;
-        yearly = 4;
-        monthly = 4;
-        weekly = 3;
-        daily = 4;
-        hourly = 0;
+        autoprune = false;
+        yearly = 2;
+        monthly = 6;
+        weekly = 4;
+        daily = 7;
+        hourly = 24;
+        frequently = 0;
       };
     };
 
     datasets = {
-      tank = {
+      flash = {
         useTemplate = [ "production" ];
-        recursive = true;
+        recursive = "zfs";
       };
 
-      flash_temp = {
+      rpool = {
         useTemplate = [ "production" ];
-        recursive = true;
+        recursive = "zfs";
       };
     };
 
-    settings = { };
+    # settings = { };
   };
-
-  environment.systemPackages = with pkgs; [
-    sanoid # ZFS snapshot management
-  ];
 }
