@@ -74,7 +74,6 @@
     envsubst
 
     baobab # Disk usage analyzer
-    deja-dup
   ];
 
   fonts.packages = with pkgs; [
