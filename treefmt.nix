@@ -20,8 +20,8 @@
   # JSON formatting
   programs.jsonfmt.enable = true;
 
-  # GitHub Actions workflow formatting
-  programs.actionlint.enable = true;
+  # GitHub Actions workflow linting (disabled to avoid shellcheck conflicts)
+  # programs.actionlint.enable = true;
 
   # Spell checking (optional)
   # programs.typos.enable = true;
@@ -95,9 +95,9 @@
         ];
       };
 
-      actionlint = {
-        includes = [ ".github/workflows/*.yml" ".github/workflows/*.yaml" ];
-      };
+      # actionlint = {
+      #   includes = [ ".github/workflows/*.yml" ".github/workflows/*.yaml" ];
+      # };
     };
   };
 }

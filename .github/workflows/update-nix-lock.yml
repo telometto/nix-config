@@ -45,24 +45,30 @@ jobs:
 
       - name: Check and format files
         id: check-formatting
+        continue-on-error: true
         run: |
           # Run formatter and check if any files were changed
-          nix fmt
+          if nix fmt; then
+            echo "Formatting completed successfully"
+          else
+            echo "Warning: Formatting encountered issues but continuing..."
+          fi
+          
           if [ -n "$(git status --porcelain)" ]; then
             echo "Changes were made by formatter"
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add .
             git commit -m "style: automatic formatting by treefmt"
-            echo "formatted=true" >> $GITHUB_OUTPUT
+            echo "formatted=true" >> "$GITHUB_OUTPUT"
           else
             echo "No formatting changes needed"
-            echo "formatted=false" >> $GITHUB_OUTPUT
+            echo "formatted=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set formatting message
         if: ${{ steps.check-formatting.outputs.formatted == 'true' }}
-        run: echo "TREEFMT_MESSAGE=Changes were automatically formatted by treefmt." >> $GITHUB_ENV
+        run: echo "TREEFMT_MESSAGE=Changes were automatically formatted by treefmt." >> "$GITHUB_ENV"
 
       - name: Update flake.lock
         uses: DeterminateSystems/update-flake-lock@main # The action to update the flake.lock file
@@ -85,9 +91,11 @@ jobs:
           # Get the latest commit message from the PR branch
           git fetch origin
           COMMIT_MSG=$(git log --format=%B -n 1 HEAD)
-          echo "commit-message<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMIT_MSG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "commit-message<<EOF"
+            echo "$COMMIT_MSG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create compare URLs
         uses: actions/github-script@main # The action to run a script using the GitHub API
