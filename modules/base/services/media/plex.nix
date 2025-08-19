@@ -1,5 +1,12 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, pkgs-unstable, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  pkgs-unstable,
+  VARS,
+  ...
+}:
 
 {
   services.plex = {
