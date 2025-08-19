@@ -43,21 +43,21 @@ jobs:
 
       - name: Check linting
         id: check-formatting
-        run: nix run nixpkgs#nixpkgs-fmt -- --check .
+        run: nix run nixpkgs#nixfmt -- --check .
         continue-on-error: true
 
       - name: Format files
         if: ${{ steps.check-formatting.outcome == 'failure' }}
         run: |
-          nix run nixpkgs#nixpkgs-fmt .
+          nix run nixpkgs#nixfmt .
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "style: automatic formatting by nixpkgs-fmt"
+          git commit -m "style: automatic formatting by nixfmt"
 
       - name: Set formatting message
         if: ${{ steps.check-formatting.outcome == 'failure' }}
-        run: echo "NIXFMT_MESSAGE=Changes were automatically formatted by nixpkgs-fmt." >> $GITHUB_ENV
+        run: echo "NIXFMT_MESSAGE=Changes were automatically formatted by nixfmt." >> $GITHUB_ENV
 
       - name: Update flake.lock
         uses: DeterminateSystems/update-flake-lock@main # The action to update the flake.lock file
@@ -73,9 +73,23 @@ jobs:
           nix-options: "--access-tokens github.com=${{ secrets.BOT_PAT }}"
           token: ${{ secrets.GITHUB_TOKEN }} # Use GITHUB_TOKEN for PR operations
 
+      - name: Get commit message for compare URLs
+        if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
+        id: get-commit-message
+        run: |
+          # Get the latest commit message from the PR branch
+          git fetch origin
+          COMMIT_MSG=$(git log --format=%B -n 1 HEAD)
+          echo "commit-message<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create compare URLs
         uses: actions/github-script@main # The action to run a script using the GitHub API
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
+        env:
+          GIT_COMMIT_MESSAGE: ${{ steps.get-commit-message.outputs.commit-message }}
+          PULL_REQUEST_NUMBER: ${{ steps.update-flake-lock.outputs.pull-request-number }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -84,17 +98,20 @@ jobs:
 
             const urls = await compare({ core })
             if (!urls?.length) {
+              core.info('No compare URLs to add')
               return
             }
 
-            const header = "# Compare URLs"
+            const header = "## 🔗 Compare URLs"
             const body = urls.map((url) => `- ${url}`).join("\n")
 
             const issueNumber = parseInt(process.env.PULL_REQUEST_NUMBER, 10)
             if (Number.isNaN(issueNumber)) {
+              core.error('Could not determine PR number')
               return
             }
 
+            core.info(`Adding compare URLs to PR #${issueNumber}`)
             await comment({ github, context, header, body, issueNumber })
 
       - name: Auto-merge GitHub bot PRs
