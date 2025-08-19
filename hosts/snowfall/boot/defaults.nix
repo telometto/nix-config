@@ -1,29 +1,40 @@
 /*
- * This NixOS configuration file sets up filesystem defaults for a desktop machine.
- * It includes configurations for the bootloader, filesystems, and services related to Btrfs and NFS.
- * Additionally, it specifies system packages required for NFS and Btrfs operations.
- *
- * - Bootloader: Configures supported filesystems for the bootloader.
- * - Filesystems: Defines mount points for Btrfs and NFS filesystems.
- * - Services: Enables and configures Btrfs auto-scrubbing service.
- * - System Packages: Installs necessary packages for NFS and Btrfs support.
+  This NixOS configuration file sets up filesystem defaults for a desktop machine.
+  It includes configurations for the bootloader, filesystems, and services related to Btrfs and NFS.
+  Additionally, it specifies system packages required for NFS and Btrfs operations.
+
+  - Bootloader: Configures supported filesystems for the bootloader.
+  - Filesystems: Defines mount points for Btrfs and NFS filesystems.
+  - Services: Enables and configures Btrfs auto-scrubbing service.
+  - System Packages: Installs necessary packages for NFS and Btrfs support.
 */
 
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 let
   DRIVE_BASE_PATH = "/run/media/${VARS.users.admin.user}";
 in
 {
   # Bootloader
   boot = {
-    supportedFilesystems = [ "btrfs" "nfs" ];
+    supportedFilesystems = [
+      "btrfs"
+      "nfs"
+    ];
 
     initrd = {
       enable = true;
 
       # kernelModules = [ "amdgpu" ];
 
-      supportedFilesystems = { btrfs = true; };
+      supportedFilesystems = {
+        btrfs = true;
+      };
     };
   };
 
@@ -38,7 +49,10 @@ in
     "${DRIVE_BASE_PATH}/samsung" = {
       device = "/dev/disk/by-uuid/e7e653c3-361c-4fb2-a65e-13fdcb1e6e25";
       fsType = "btrfs";
-      options = [ "defaults" "nofail" ];
+      options = [
+        "defaults"
+        "nofail"
+      ];
     };
 
     # "${DRIVE_BASE_PATH}/personal/shares" = {
@@ -72,7 +86,9 @@ in
 
   # Services
   services = {
-    rpcbind = { enable = lib.mkOptionDefault true; };
+    rpcbind = {
+      enable = lib.mkOptionDefault true;
+    };
 
     btrfs = {
       autoScrub = {

@@ -1,13 +1,18 @@
 /**
- * This NixOS module configures the Tailscale service with default settings.
- * It enables the Tailscale service, opens the firewall for Tailscale traffic,
- * and specifies the path to the Tailscale authentication key file.
- * Additionally, it ensures that the Tailscale package is included in the system environment packages.
- *
- * - authKeyFile: The path to the Tailscale authentication key file.
- */
+  This NixOS module configures the Tailscale service with default settings.
+  It enables the Tailscale service, opens the firewall for Tailscale traffic,
+  and specifies the path to the Tailscale authentication key file.
+  Additionally, it ensures that the Tailscale package is included in the system environment packages.
 
-{ config, lib, pkgs, ... }:
+  - authKeyFile: The path to the Tailscale authentication key file.
+*/
+
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   services = {
@@ -22,7 +27,10 @@
         ephemeral = false;
       };
 
-      extraUpFlags = [ "--reset" "--ssh" ];
+      extraUpFlags = [
+        "--reset"
+        "--ssh"
+      ];
     };
 
     # Snippet below is to optimize the performance of subnet routers and exit nodes

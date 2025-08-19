@@ -1,9 +1,14 @@
 /**
- * This Nix expression defines shared environment configuration defaults.
- * It sets up environment variables that are applied globally.
- */
+  This Nix expression defines shared environment configuration defaults.
+  It sets up environment variables that are applied globally.
+*/
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   environment = {

@@ -1,5 +1,11 @@
 # Filesystem configuration defaults
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 
 {
   # systemd.services.zfs-mount.enable = false;
@@ -10,7 +16,9 @@
     initrd = {
       enable = true;
 
-      supportedFilesystems = { zfs = true; };
+      supportedFilesystems = {
+        zfs = true;
+      };
 
       systemd = {
         enable = true;
@@ -20,7 +28,9 @@
     };
 
     kernel = {
-      sysctl = { "net.ipv4.conf.all.src_valid_mark" = 1; };
+      sysctl = {
+        "net.ipv4.conf.all.src_valid_mark" = 1;
+      };
     };
 
     zfs = {

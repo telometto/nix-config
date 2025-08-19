@@ -1,6 +1,16 @@
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 let
-  LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
+  LANGUAGES = [
+    "nb-NO"
+    "it-IT"
+    "en-US"
+  ];
 in
 {
   programs = {
@@ -94,7 +104,9 @@ in
       };
     };
 
-    mpv = { enable = true; };
+    mpv = {
+      enable = true;
+    };
 
     zellij = {
       enable = true;

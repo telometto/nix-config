@@ -1,9 +1,15 @@
 /**
- * This file configures the Plymouth boot splash screen for the system.
- * It enables Plymouth, sets the theme, and configures various boot parameters for silent boot.
- */
+  This file configures the Plymouth boot splash screen for the system.
+  It enables Plymouth, sets the theme, and configures various boot parameters for silent boot.
+*/
 
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 
 {
   boot = {

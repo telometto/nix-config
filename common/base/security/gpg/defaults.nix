@@ -1,16 +1,21 @@
 /**
- * This NixOS configuration file sets up default programs and system packages.
- * It enables and configures specific programs and their features.
- * 
- * - `programs`: Contains configurations for various programs.
- *   - `gnupg`: Configures GnuPG (GNU Privacy Guard) settings.
- *     - `agent`: Enables the GnuPG agent and SSH support.
- * 
- * - `environment.systemPackages`: Specifies system-wide packages to be installed.
- *   - Includes `gnupg` as a system package.
- */
+  This NixOS configuration file sets up default programs and system packages.
+  It enables and configures specific programs and their features.
 
-{ config, lib, pkgs, ... }:
+  - `programs`: Contains configurations for various programs.
+    - `gnupg`: Configures GnuPG (GNU Privacy Guard) settings.
+      - `agent`: Enables the GnuPG agent and SSH support.
+
+  - `environment.systemPackages`: Specifies system-wide packages to be installed.
+    - Includes `gnupg` as a system package.
+*/
+
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   programs = {

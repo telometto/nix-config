@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   services.searx = {
@@ -14,7 +19,11 @@
       };
 
       search = {
-        formats = [ "html" "json" "rss" ];
+        formats = [
+          "html"
+          "json"
+          "rss"
+        ];
       };
     };
   };

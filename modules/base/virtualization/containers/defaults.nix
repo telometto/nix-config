@@ -1,4 +1,10 @@
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 let
   IS_DESKTOP = config.networking.hostName == VARS.systems.desktop.hostName;
   IS_PODMAN_ENABLED = config.virtualisation.podman.enable; # Set this true/false as needed
@@ -11,8 +17,10 @@ let
   STORAGEDRIVER =
     if IS_DESKTOP then
       if IS_PODMAN_ENABLED then "overlay" else "overlay2"
+    else if IS_PODMAN_ENABLED then
+      "overlay"
     else
-      if IS_PODMAN_ENABLED then "overlay" else "overlay2";
+      "overlay2";
 
   ROOTPATH =
     if IS_DESKTOP then
@@ -57,16 +65,23 @@ in
     oci-containers.backend = OCI_BACKEND;
   };
 
-  environment.systemPackages = with pkgs; (if IS_PODMAN_ENABLED then [
-    podman
-    podman-compose
-    podman-tui
-    shadow # Required for rootless podman on ZFS
-  ] else [
-    docker
-    docker-client
-    docker-compose
-    docker-compose-language-service
-    docker-gc
-  ]);
+  environment.systemPackages =
+    with pkgs;
+    (
+      if IS_PODMAN_ENABLED then
+        [
+          podman
+          podman-compose
+          podman-tui
+          shadow # Required for rootless podman on ZFS
+        ]
+      else
+        [
+          docker
+          docker-client
+          docker-compose
+          docker-compose-language-service
+          docker-gc
+        ]
+    );
 }

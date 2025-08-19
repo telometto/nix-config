@@ -1,4 +1,10 @@
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 
 {
   programs = {
@@ -15,12 +21,13 @@
     bash = {
       enable = true;
       enableCompletion = true;
-      enableVteIntegration =
-        true; # Enable VTE integration to track current directory
+      enableVteIntegration = true; # Enable VTE integration to track current directory
       historyControl = [ "erasedups" ]; # Remove duplicates in history
     };
 
-    bat = { enable = true; };
+    bat = {
+      enable = true;
+    };
 
     direnv = {
       enable = true;
@@ -47,7 +54,9 @@
       ];
     };
 
-    fastfetch = { enable = true; };
+    fastfetch = {
+      enable = true;
+    };
 
     fzf = {
       enable = true;
@@ -58,7 +67,9 @@
     git = {
       enable = true;
 
-      diff-so-fancy = { enable = true; };
+      diff-so-fancy = {
+        enable = true;
+      };
     };
 
     gpg = {
@@ -83,16 +94,12 @@
 
         # List and verify options
         list-options = "show-uid-validity"; # Show the validity of user IDs
-        verify-options =
-          "show-uid-validity show-keyserver-urls"; # Show the validity of user IDs and keyserver URLs
+        verify-options = "show-uid-validity show-keyserver-urls"; # Show the validity of user IDs and keyserver URLs
 
         # Cipher and digest preferences
-        personal-cipher-preferences =
-          "AES256"; # Set the personal cipher preferences
-        personal-digest-preferences =
-          "SHA512"; # Set the personal digest preferences
-        default-preference-list =
-          "SHA512 SHA384 SHA256 RIPEMD160 AES256 TWOFISH BLOWFISH ZLIB BZIP2 ZIP Uncompressed"; # Set the default preference list
+        personal-cipher-preferences = "AES256"; # Set the personal cipher preferences
+        personal-digest-preferences = "SHA512"; # Set the personal digest preferences
+        default-preference-list = "SHA512 SHA384 SHA256 RIPEMD160 AES256 TWOFISH BLOWFISH ZLIB BZIP2 ZIP Uncompressed"; # Set the default preference list
         cipher-algo = "AES256"; # Set the cipher algorithm
         digest-algo = "SHA512"; # Set the digest algorithm
         cert-digest-algo = "SHA512"; # Set the certificate digest algorithm
@@ -187,8 +194,12 @@
       enable = true;
 
       enableCompletion = true;
-      autosuggestion = { enable = true; };
-      syntaxHighlighting = { enable = true; };
+      autosuggestion = {
+        enable = true;
+      };
+      syntaxHighlighting = {
+        enable = true;
+      };
       autocd = true;
       enableVteIntegration = true;
 

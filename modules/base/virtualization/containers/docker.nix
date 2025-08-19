@@ -1,18 +1,24 @@
 /**
- * This Nix module configures Docker for different host systems. It sets up
- * host-specific system configuration defaults for Docker, including storage
- * driver and root path based on the hostname of the machine. It also enables
- * rootless Docker with specific daemon settings and includes Docker-related
- * packages in the system environment.
- *
- * - `STORAGEDRIVER`: Determines the Docker storage driver based on the hostname.
- * - `ROOTPATH`: Sets the Docker data root path based on the hostname.
- * - `virtualisation.docker`: Configures Docker settings, including enabling rootless mode and setting daemon options.
- * - `virtualisation.oci-containers`: Configures OCI containers to use Docker as the backend if Docker is enabled and Podman is not.
- * - `environment.systemPackages`: Installs Docker-related packages.
- */
+  This Nix module configures Docker for different host systems. It sets up
+  host-specific system configuration defaults for Docker, including storage
+  driver and root path based on the hostname of the machine. It also enables
+  rootless Docker with specific daemon settings and includes Docker-related
+  packages in the system environment.
 
-{ config, lib, pkgs, VARS, ... }:
+  - `STORAGEDRIVER`: Determines the Docker storage driver based on the hostname.
+  - `ROOTPATH`: Sets the Docker data root path based on the hostname.
+  - `virtualisation.docker`: Configures Docker settings, including enabling rootless mode and setting daemon options.
+  - `virtualisation.oci-containers`: Configures OCI containers to use Docker as the backend if Docker is enabled and Podman is not.
+  - `environment.systemPackages`: Installs Docker-related packages.
+*/
+
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 let
   isPodmanEnabled = !config.virtualisation.podman.enable;
 
@@ -35,8 +41,7 @@ let
     else
       "${config.home.homeDirectory}/.containers"; # Fallback path
 in
-lib.mkIf isPodmanEnabled
-{
+lib.mkIf isPodmanEnabled {
   virtualisation = {
     docker = {
       enable = true;
