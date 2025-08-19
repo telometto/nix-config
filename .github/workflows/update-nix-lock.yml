@@ -1,14 +1,16 @@
 # GitHub Actions workflow to automate updating the Nix flake.lock file
-# Triggered manually or every 4 hours via cron schedule
+# Triggered manually or every hour via cron schedule
 # Steps:
 # 1. **SSH Agent Setup**: Uses `webfactory/ssh-agent` to set up SSH access with deploy keys (ensure the deploy key is added to the repository settings)
 # 2. **Checkout Repository**: Checks out the repository using `actions/checkout`
 # 3. **Install Nix**: Installs Nix with `DeterminateSystems/nix-installer-action`
-# 4. **Update flake.lock**: Updates the `flake.lock` file using `DeterminateSystems/update-flake-lock`, creating or updating a pull request with specified commit message, PR body, title, and labels
-# 5. **Create Compare URLs**: If a pull request is created or updated, runs a script using `actions/github-script` to add a comment with compare URLs
+# 4. **Format Check**: Uses `nix fmt` (treefmt-nix) to format all files according to the treefmt.nix configuration
+# 5. **Update flake.lock**: Updates the `flake.lock` file using `DeterminateSystems/update-flake-lock`, creating or updating a pull request with specified commit message, PR body, title, and labels
+# 6. **Create Compare URLs**: If a pull request is created or updated, runs a script using `actions/github-script` to add a comment with compare URLs
 # Notes:
-# - Secrets (`secrets.GH_ACTIONS` and `secrets.TESTING`) are used for authentication
+# - Secrets (`secrets.GH_ACTIONS` and `secrets.BOT_PAT`) are used for authentication
 # - `nix-options` includes the GitHub token for accessing private repositories
+# - Uses treefmt-nix for unified formatting of multiple file types (Nix, YAML, Markdown, Shell, etc.)
 
 name: Update flake
 on:
@@ -41,23 +43,26 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Check linting
+      - name: Check and format files
         id: check-formatting
-        run: nix run nixpkgs#nixfmt -- --check .
-        continue-on-error: true
-
-      - name: Format files
-        if: ${{ steps.check-formatting.outcome == 'failure' }}
         run: |
-          nix run nixpkgs#nixfmt .
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "style: automatic formatting by nixfmt"
+          # Run formatter and check if any files were changed
+          nix fmt
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes were made by formatter"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "style: automatic formatting by treefmt"
+            echo "formatted=true" >> $GITHUB_OUTPUT
+          else
+            echo "No formatting changes needed"
+            echo "formatted=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set formatting message
-        if: ${{ steps.check-formatting.outcome == 'failure' }}
-        run: echo "NIXFMT_MESSAGE=Changes were automatically formatted by nixfmt." >> $GITHUB_ENV
+        if: ${{ steps.check-formatting.outputs.formatted == 'true' }}
+        run: echo "TREEFMT_MESSAGE=Changes were automatically formatted by treefmt." >> $GITHUB_ENV
 
       - name: Update flake.lock
         uses: DeterminateSystems/update-flake-lock@main # The action to update the flake.lock file

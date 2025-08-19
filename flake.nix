@@ -61,6 +61,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nix-colors.url = "github:misterio77/nix-colors";
   };
 
@@ -161,5 +166,25 @@
             };
           })
         hosts;
+
+      # Formatting configuration
+      formatter = nixpkgs.lib.genAttrs [ "x86_64-linux" ] (system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
+        in
+        treefmtEval.config.build.wrapper
+      );
+
+      # Formatting check for CI
+      checks = nixpkgs.lib.genAttrs [ "x86_64-linux" ] (system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
+        in
+        {
+          formatting = treefmtEval.config.build.check self;
+        }
+      );
     };
 }
