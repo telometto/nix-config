@@ -27,10 +27,10 @@
     ./packages/defaults.nix
 
     # 0.5 Utilities
-    #./utilities/filesystem/filebrowser.nix
-    # ./utilities/filesystem/sanoid.nix
-    ./utilities/filesystem/scrutiny.nix
-    ./utilities/monitoring/cockpit.nix
+    # ./utilities/filesystem/filebrowser.nix
+    ./utilities/filesystem/sanoid.nix
+    #./utilities/filesystem/scrutiny.nix
+    #./utilities/monitoring/cockpit.nix
 
     # 0.6 Virtualization
     ./virtualization/orchestration/k3s.nix
@@ -71,9 +71,9 @@
     # ../../modules/base/security/crowdsec/crowdsec.nix
 
     # 2.7 Services
-    ../../modules/base/services/backups/borg.nix
+    #../../modules/base/services/backups/borg.nix
     # ../../modules/base/services/documents/paperless.nix
-    ../../modules/base/services/finance/actual.nix
+    #../../modules/base/services/finance/actual.nix
     # ../../modules/base/services/finance/firefly.nix
     # ../../modules/base/services/internet/nginx.nix
     # ../../modules/base/services/internet/searx.nix
