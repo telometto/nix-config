@@ -1,4 +1,10 @@
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 
 {
   home = {
@@ -21,8 +27,7 @@
       enable = true;
 
       settings = {
-        plugins =
-          "fetchart embedart convert scrub replaygain lastgenre chroma web inline";
+        plugins = "fetchart embedart convert scrub replaygain lastgenre chroma web inline";
 
         directory = config.xdg.userDirs.music;
         # library = "${config.home.homeDirectory}/.config/beets/musiclibrary.blb";
@@ -31,8 +36,7 @@
         art_filename = "albumart";
         threaded = true;
         original_date = false;
-        per_disc_numbering =
-          true; # Starts numbering from 1 again for each disk set
+        per_disc_numbering = true; # Starts numbering from 1 again for each disk set
 
         convert = {
           auto = true;
@@ -75,16 +79,13 @@
           };
         };
 
-        item_fields.disk_folder =
-          ''return f"Disk-{disc}" if disctotal > 1 else ""'';
+        item_fields.disk_folder = ''return f"Disk-{disc}" if disctotal > 1 else ""'';
 
         paths = {
-          default =
-            "Albums/$albumartist/$year/$album%aunique{}/$disk_folder/$track - $title";
+          default = "Albums/$albumartist/$year/$album%aunique{}/$disk_folder/$track - $title";
           singleton = "Non-Albums/$artist/$title";
           comp = "Compilations/$album%aunique{}/$disk_folder/$track - $title";
-          albumtype_soundtrack =
-            "Soundtracks/$album%aunique{}/$disk_folder/$track - $title";
+          albumtype_soundtrack = "Soundtracks/$album%aunique{}/$disk_folder/$track - $title";
         };
 
         import = {
@@ -130,20 +131,30 @@
           # singleton_album_disambig = true;
         };
 
-        ui = { color = true; };
+        ui = {
+          color = true;
+        };
 
         lastgenre = {
           auto = true;
           source = "album";
         };
 
-        embedart = { auto = true; };
+        embedart = {
+          auto = true;
+        };
 
-        fetchart = { auto = true; };
+        fetchart = {
+          auto = true;
+        };
 
-        replaygain = { auto = false; };
+        replaygain = {
+          auto = false;
+        };
 
-        scrub = { auto = true; };
+        scrub = {
+          auto = true;
+        };
 
         replace = {
           "^\\." = "_";

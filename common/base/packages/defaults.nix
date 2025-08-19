@@ -1,8 +1,13 @@
 /**
- * This Nix expression defines a set of system packages to be installed in the environment.
- * It includes a variety of tools and utilities grouped by their functionality.
- */
-{ config, lib, pkgs, ... }:
+  This Nix expression defines a set of system packages to be installed in the environment.
+  It includes a variety of tools and utilities grouped by their functionality.
+*/
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   environment.systemPackages = with pkgs; [

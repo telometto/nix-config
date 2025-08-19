@@ -1,14 +1,19 @@
 /**
- * This NixOS configuration enables and configures zram swap and the zram-generator service.
- *
- * Note: ZFS does not support swap on either zvols or swapfiles on ZFS datasets.
- *
- * - `zramSwap.enable`: Enables zram swap.
- * - `services.zram-generator.enable`: Enables the zram-generator service.
- * - `environment.systemPackages`: Installs the zram-generator package.
+  This NixOS configuration enables and configures zram swap and the zram-generator service.
+
+  Note: ZFS does not support swap on either zvols or swapfiles on ZFS datasets.
+
+  - `zramSwap.enable`: Enables zram swap.
+  - `services.zram-generator.enable`: Enables the zram-generator service.
+  - `environment.systemPackages`: Installs the zram-generator package.
 */
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   zramSwap = {

@@ -1,6 +1,18 @@
-{ config, lib, pkgs, VARS, ... }:
-let LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
-in {
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
+let
+  LANGUAGES = [
+    "nb-NO"
+    "it-IT"
+    "en-US"
+  ];
+in
+{
   home = {
     # file.".ssh/config".text = ''
     #   Host *
@@ -122,7 +134,9 @@ in {
       enableBashIntegration = true;
       enableZshIntegration = true;
 
-      settings = { theme = "catppuccin-frappe"; };
+      settings = {
+        theme = "catppuccin-frappe";
+      };
     };
 
     git = {
@@ -144,10 +158,12 @@ in {
         user.signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
       };
 
-      includes = [{
-        condition = "gitdir:~/.versioncontrol/github/";
-        contents.user.email = "65364211+telometto@users.noreply.github.com";
-      }];
+      includes = [
+        {
+          condition = "gitdir:~/.versioncontrol/github/";
+          contents.user.email = "65364211+telometto@users.noreply.github.com";
+        }
+      ];
     };
 
     keychain = {
@@ -247,11 +263,12 @@ in {
     # # userKnownHostsFile = ""; # String
     # };
 
-    /* thunderbird = {
-       enable = true;
+    /*
+      thunderbird = {
+      enable = true;
 
-       # TODO: Declaratively configure Thunderbird
-       };
+      # TODO: Declaratively configure Thunderbird
+      };
     */
 
     vesktop = {
@@ -277,14 +294,15 @@ in {
       };
     };
 
-    /* vscode = {
-       enable = true;
+    /*
+      vscode = {
+      enable = true;
 
-       enableUpdateCheck = false; # Disable update checks
-       mutableExtensionsDir = true; # Allow extensions to be installed in the user's home directory
+      enableUpdateCheck = false; # Disable update checks
+      mutableExtensionsDir = true; # Allow extensions to be installed in the user's home directory
 
-       # TODO: Declaratively configure Visual Studio Code
-       };
+      # TODO: Declaratively configure Visual Studio Code
+      };
     */
 
     zellij = {

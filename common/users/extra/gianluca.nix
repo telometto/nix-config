@@ -1,8 +1,19 @@
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 
 {
   users.extraUsers.${VARS.users.luke.user} = {
-    inherit (VARS.users.luke) description isNormalUser extraGroups hashedPassword;
+    inherit (VARS.users.luke)
+      description
+      isNormalUser
+      extraGroups
+      hashedPassword
+      ;
     shell = pkgs.zsh;
 
     openssh.authorizedKeys.keys = [

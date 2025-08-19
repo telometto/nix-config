@@ -29,7 +29,7 @@
   # Deadnix - remove dead Nix code (optional)
   # programs.deadnix.enable = true;
 
-  # Statix - Nix linter (optional) 
+  # Statix - Nix linter (optional)
   # programs.statix.enable = true;
 
   settings = {
@@ -38,14 +38,14 @@
       # Ignore build artifacts and cache directories
       "result*"
       ".direnv/"
-      
+
       # Ignore lock files that shouldn't be formatted
       "*.lock"
-      
+
       # Ignore GitHub Actions workflows to prevent permission issues
       ".github/workflows/*.yml"
       ".github/workflows/*.yaml"
-      
+
       # Ignore binary files
       "*.png"
       "*.jpg"
@@ -54,10 +54,10 @@
       "*.ico"
       "*.svg"
       "*.pdf"
-      
+
       # Ignore theme files that might have specific formatting
       "**/*.theme.css"
-      
+
       # Ignore secrets and keys
       "*.key"
       "*.pem"
@@ -76,16 +76,23 @@
 
       shfmt = {
         # Shell script formatting options
-        includes = [ "*.sh" "*.bash" ];
+        includes = [
+          "*.sh"
+          "*.bash"
+        ];
         options = [
-          "-i" "2"    # Use 2-space indentation
-          "-ci"       # Indent switch cases
-          "-sr"       # Redirect operators will be followed by a space
+          "-i"
+          "2" # Use 2-space indentation
+          "-ci" # Indent switch cases
+          "-sr" # Redirect operators will be followed by a space
         ];
       };
 
       yamlfmt = {
-        includes = [ "*.yml" "*.yaml" ];
+        includes = [
+          "*.yml"
+          "*.yaml"
+        ];
         excludes = [
           # GitHub Actions workflows might have specific formatting needs
           # ".github/workflows/*.yml"

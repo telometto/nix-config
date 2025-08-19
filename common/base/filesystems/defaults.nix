@@ -1,7 +1,13 @@
 /**
- * This file is the common configuration of filesystems across all devices.
- */
-{ config, lib, pkgs, VARS, ... }:
+  This file is the common configuration of filesystems across all devices.
+*/
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 
 {
   services = {

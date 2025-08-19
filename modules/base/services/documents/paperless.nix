@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   #environment.etc."paperlessFile".text = "admin";
@@ -17,7 +22,8 @@
     mediaDir = "/rpool/enc/personal/paperless-media"; # Defaults to "${dataDir}/media"
     passwordFile = config.sops.secrets."general/paperlessKeyFilePath".path; # config.sops.secrets.paperlessKeyFilePath.path;
 
-    /* The following configuration does not work
+    /*
+      The following configuration does not work
       settings = {
       PAPERLESS_OCR_LANGUAGE = "eng+nor+ita";
       #PAPERLESS_OCR_LANGUAGES = "eng+nor+ita";

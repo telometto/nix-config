@@ -1,6 +1,14 @@
-{ config, lib, pkgs, VARS, ... }:
-let INTERFACE = "enp5s0";
-in {
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
+let
+  INTERFACE = "enp5s0";
+in
+{
   networking = {
     inherit (VARS.systems.desktop) hostName hostId;
 
@@ -15,11 +23,12 @@ in {
     firewall = rec {
       enable = true;
 
-      allowedTCPPortRanges = [{
-        # Required by KDE Connect
-        from = 1714;
-        to = 1764;
-      }
+      allowedTCPPortRanges = [
+        {
+          # Required by KDE Connect
+          from = 1714;
+          to = 1764;
+        }
         # {
         #   # Required for Steam LAN sharing; to be removed
         #   from = 27031;
@@ -51,7 +60,9 @@ in {
       allowedUDPPorts = allowedTCPPorts;
     };
 
-    nftables = { enable = false; }; # Use nftables instead of iptables
+    nftables = {
+      enable = false;
+    }; # Use nftables instead of iptables
 
     useNetworkd = lib.mkForce false;
     useDHCP = lib.mkForce true;

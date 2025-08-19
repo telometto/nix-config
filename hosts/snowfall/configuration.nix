@@ -1,11 +1,17 @@
 /**
- * Host-specific system configuration defaults
- * Edit this configuration file to define what should be installed on
- * your system.  Help is available in the configuration.nix(5) man page
- * and in the NixOS manual (accessible by running ‘nixos-help’).
- */
+  Host-specific system configuration defaults
+  Edit this configuration file to define what should be installed on
+  your system.  Help is available in the configuration.nix(5) man page
+  and in the NixOS manual (accessible by running ‘nixos-help’).
+*/
 
-{ config, lib, inputs, pkgs, ... }:
+{
+  config,
+  lib,
+  inputs,
+  pkgs,
+  ...
+}:
 
 {
   imports = [
@@ -127,7 +133,7 @@
     * and migrated your data accordingly.
     *
     * For more information, see `man configuration.nix` or https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion
-    */
+  */
 
   system = {
     # copySystemConfiguration = true; # Unsupported with Flakes enabled

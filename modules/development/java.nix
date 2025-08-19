@@ -1,5 +1,11 @@
 # Host-specific system configuration defaults
-{ config, lib, pkgs, VARS, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 let
   jdkWithFX = pkgs.jdk23.override {
     enableJavaFX = true;
