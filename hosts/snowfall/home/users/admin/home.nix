@@ -119,7 +119,7 @@ in
 
       # Development
       pkgs.nixd # Nix language server for VS Code
-      pkgs.nixpkgs-fmt # Nix language formatter
+      pkgs.nixfmt # Nix language formatter
       pkgs.nixfmt-classic # Nix language formatter
       pkgs.vscode # Visual Studio Code
       # pkgs.jetbrains.idea-community-bin # IntelliJ IDEA Community Edition
