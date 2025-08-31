@@ -1,17 +1,6 @@
-{
-  config,
-  lib,
-  inputs,
-  pkgs,
-  VARS,
-  pkgs-stable,
-  pkgs-unstable,
-  ...
-}:
-let
-  DEFAULT_LANG = "nb_NO.UTF-8";
-in
-{
+{ config, lib, inputs, pkgs, VARS, pkgs-stable, pkgs-unstable, ... }:
+let DEFAULT_LANG = "nb_NO.UTF-8";
+in {
   imports = [
     inputs.nix-colors.homeManagerModules.default
 
@@ -119,7 +108,7 @@ in
 
       # Development
       pkgs.nixd # Nix language server for VS Code
-      pkgs.nixfmt # Nix language formatter
+      # pkgs.nixfmt # Nix language formatter
       pkgs.nixfmt-classic # Nix language formatter
       pkgs.vscode # Visual Studio Code
       # pkgs.jetbrains.idea-community-bin # IntelliJ IDEA Community Edition
