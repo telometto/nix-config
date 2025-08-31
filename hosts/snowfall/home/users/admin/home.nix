@@ -1,6 +1,17 @@
-{ config, lib, inputs, pkgs, VARS, pkgs-stable, pkgs-unstable, ... }:
-let DEFAULT_LANG = "nb_NO.UTF-8";
-in {
+{
+  config,
+  lib,
+  inputs,
+  pkgs,
+  VARS,
+  pkgs-stable,
+  pkgs-unstable,
+  ...
+}:
+let
+  DEFAULT_LANG = "nb_NO.UTF-8";
+in
+{
   imports = [
     inputs.nix-colors.homeManagerModules.default
 
