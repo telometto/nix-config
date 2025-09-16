@@ -20,11 +20,16 @@ in
         AddKeysToAgent yes
         Compression yes
 
-      Host github.com
+      Host github-personal
         Hostname ssh.github.com
         Port 443
         User git
         IdentityFile ${config.home.homeDirectory}/.ssh/github-key
+
+      Host github-work
+        Hostname github.com
+        User git
+        IdentityFile ${config.home.homeDirectory}/.ssh/amonomega
 
       Host 192.168.*
         IdentityFile ${config.home.homeDirectory}/.ssh/id_ed25519
@@ -32,8 +37,11 @@ in
         SetEnv TERM=xterm-256color
     '';
 
-    file.".ssh/allowed_signers".text =
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com";
+    file.".ssh/allowed_signers".text = ''
+      ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com
+
+      ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMdEoq7fpm5wfF6GKpOaebHJUccxcPimffler4ohmRsH 226052356+amonomega@users.noreply.github.com
+      '';
   };
 
   programs = {
