@@ -86,6 +86,8 @@
     ../../modules/development/java.nix
   ];
 
+  hardware.bluetooth.powerOnBoot = false;
+
   services.teamviewer.enable = true;
 
   nixpkgs = {
