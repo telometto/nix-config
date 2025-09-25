@@ -105,7 +105,9 @@ in
     };
 
     floorp = {
-      enable = true;
+      enable = false;
+
+      package = "floorp-bin";
 
       policies = {
         DisableTelemetry = true;

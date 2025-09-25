@@ -30,7 +30,7 @@
         #protontricks
         #steam
         #steam-run
-        steamcontroller
+        sc-controller
         steamtinkerlaunch
       ];
     };
