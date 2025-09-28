@@ -12,8 +12,15 @@ jobs:
   health-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@main
+      - name: Access private repository
+        uses: webfactory/ssh-agent@master
+        with:
+          ssh-private-key: ${{ secrets.GH_ACTIONS }}
+
+      - name: Checkout main repository
+        uses: actions/checkout@main # The action to checkout the repository
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
