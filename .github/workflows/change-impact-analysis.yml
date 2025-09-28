@@ -1,0 +1,301 @@
+name: Change Impact Analysis
+on:
+  pull_request:
+    paths:
+      - "hosts/**"
+      - "modules/**"
+      - "common/**"
+      - "flake.nix"
+      - "flake.lock"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  impact-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0 # Full history for comparison
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Analyze changed files
+        id: changes
+        run: |
+          echo "## 📊 Change Impact Analysis" > impact-report.md
+          echo "*Analyzing changes in PR #${{ github.event.number }}*" >> impact-report.md
+          echo "" >> impact-report.md
+
+          # Get changed files
+          git diff --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+
+          echo "### 📝 Changed Files" >> impact-report.md
+          echo "\`\`\`" >> impact-report.md
+          cat changed_files.txt >> impact-report.md
+          echo "\`\`\`" >> impact-report.md
+          echo "" >> impact-report.md
+
+          # Categorize changes
+          host_changes=()
+          module_changes=()
+          common_changes=()
+          flake_changes=false
+
+          while IFS= read -r file; do
+            if [[ "$file" =~ ^hosts/ ]]; then
+              host=$(echo "$file" | cut -d/ -f2)
+              if [[ ! " ${host_changes[@]} " =~ " ${host} " ]]; then
+                host_changes+=("$host")
+              fi
+            elif [[ "$file" =~ ^modules/ ]]; then
+              module=$(echo "$file" | cut -d/ -f2)
+              if [[ ! " ${module_changes[@]} " =~ " ${module} " ]]; then
+                module_changes+=("$module")
+              fi
+            elif [[ "$file" =~ ^common/ ]]; then
+              common_area=$(echo "$file" | cut -d/ -f2)
+              if [[ ! " ${common_changes[@]} " =~ " ${common_area} " ]]; then
+                common_changes+=("$common_area")
+              fi
+            elif [[ "$file" =~ ^flake\.(nix|lock)$ ]]; then
+              flake_changes=true
+            fi
+          done < changed_files.txt
+
+          # Export for later steps
+          printf '%s\n' "${host_changes[@]}" > affected_hosts.txt
+          printf '%s\n' "${module_changes[@]}" > affected_modules.txt
+          printf '%s\n' "${common_changes[@]}" > affected_common.txt
+          echo "$flake_changes" > flake_changed.txt
+
+      - name: Analyze host impacts
+        run: |
+          echo "### 🖥️ Host Impact Analysis" >> impact-report.md
+          echo "" >> impact-report.md
+
+          if [ -s affected_hosts.txt ]; then
+            echo "**Directly affected hosts:**" >> impact-report.md
+            while IFS= read -r host; do
+              echo "- **$host**" >> impact-report.md
+              
+              # Analyze what changed in this host
+              host_files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep "^hosts/$host/")
+              for file in $host_files; do
+                echo "  - Modified: \`$file\`" >> impact-report.md
+                
+                # Try to determine what was changed
+                if [[ "$file" =~ configuration\.nix$ ]]; then
+                  echo "    - ⚠️ **High Impact**: Main configuration file" >> impact-report.md
+                elif [[ "$file" =~ hardware-configuration\.nix$ ]]; then
+                  echo "    - ⚠️ **Hardware Impact**: May require reboot" >> impact-report.md
+                elif [[ "$file" =~ /boot/ ]]; then
+                  echo "    - 🔄 **Boot Impact**: Bootloader changes" >> impact-report.md
+                elif [[ "$file" =~ /networking/ ]]; then
+                  echo "    - 🌐 **Network Impact**: Connectivity changes" >> impact-report.md
+                elif [[ "$file" =~ /packages/ ]]; then
+                  echo "    - 📦 **Package Impact**: Software changes" >> impact-report.md
+                fi
+              done
+              echo "" >> impact-report.md
+            done
+          else
+            echo "*No hosts directly modified*" >> impact-report.md
+            echo "" >> impact-report.md
+          fi
+
+          # Check if common/module changes affect all hosts
+          if [ -s affected_common.txt ] || [ -s affected_modules.txt ]; then
+            echo "**Potentially affected hosts (via common/modules):**" >> impact-report.md
+            for host in snowfall blizzard avalanche; do
+              echo "- **$host** (indirect impact)" >> impact-report.md
+            done
+            echo "" >> impact-report.md
+          fi
+
+      - name: Analyze service impacts
+        run: |
+          echo "### ⚙️ Service Impact Analysis" >> impact-report.md
+          echo "" >> impact-report.md
+
+          # Look for service-related changes
+          services_mentioned=()
+
+          # Check diff for service mentions
+          git diff origin/${{ github.base_ref }}...HEAD | grep -oE 'services\.[a-zA-Z0-9_-]+' | sort -u > services_changed.txt || touch services_changed.txt
+
+          if [ -s services_changed.txt ]; then
+            echo "**Services that may be affected:**" >> impact-report.md
+            while IFS= read -r service; do
+              echo "- \`$service\`" >> impact-report.md
+              
+              # Determine impact level
+              case "$service" in
+                *nginx*|*apache*|*httpd*)
+                  echo "  - 🌐 **Web server**: May cause temporary service interruption" >> impact-report.md
+                  ;;
+                *ssh*)
+                  echo "  - 🔐 **SSH**: ⚠️ May affect remote access" >> impact-report.md
+                  ;;
+                *postgresql*|*mysql*|*database*)
+                  echo "  - 🗄️ **Database**: ⚠️ May require service restart" >> impact-report.md
+                  ;;
+                *docker*|*podman*|*container*)
+                  echo "  - 🐳 **Container runtime**: May affect running containers" >> impact-report.md
+                  ;;
+                *systemd*)
+                  echo "  - ⚙️ **System service**: Core system impact" >> impact-report.md
+                  ;;
+                *)
+                  echo "  - ℹ️ **Service change**: Review impact manually" >> impact-report.md
+                  ;;
+              esac
+            done < services_changed.txt
+            echo "" >> impact-report.md
+          else
+            echo "*No specific services identified in changes*" >> impact-report.md
+            echo "" >> impact-report.md
+          fi
+
+      - name: Analyze dependency impacts
+        run: |
+          echo "### 📦 Dependency Impact Analysis" >> impact-report.md
+          echo "" >> impact-report.md
+
+          if [ "$(cat flake_changed.txt)" = "true" ]; then
+            echo "**Flake changes detected:**" >> impact-report.md
+            
+            if git diff origin/${{ github.base_ref }}...HEAD flake.nix | grep -q "inputs\."; then
+              echo "- 🔄 **Input changes**: Dependencies updated" >> impact-report.md
+              echo "  - All hosts will be affected" >> impact-report.md
+              echo "  - Build times may increase" >> impact-report.md
+              echo "  - New security updates may be included" >> impact-report.md
+            fi
+            
+            if git diff origin/${{ github.base_ref }}...HEAD flake.lock > /dev/null 2>&1; then
+              echo "- 🔒 **Lock file updated**: Dependency versions pinned" >> impact-report.md
+              
+              # Show some statistics about lock changes
+              added_deps=$(git diff origin/${{ github.base_ref }}...HEAD flake.lock | grep -c '^+.*"locked"' || echo "0")
+              removed_deps=$(git diff origin/${{ github.base_ref }}...HEAD flake.lock | grep -c '^-.*"locked"' || echo "0")
+              
+              if [ "$added_deps" -gt 0 ] || [ "$removed_deps" -gt 0 ]; then
+                echo "  - Dependencies added: $added_deps" >> impact-report.md
+                echo "  - Dependencies removed: $removed_deps" >> impact-report.md
+              fi
+            fi
+            echo "" >> impact-report.md
+          else
+            echo "*No flake changes detected*" >> impact-report.md
+            echo "" >> impact-report.md
+          fi
+
+      - name: Generate deployment recommendations
+        run: |
+          echo "### 🚀 Deployment Recommendations" >> impact-report.md
+          echo "" >> impact-report.md
+
+          high_impact=false
+
+          # Check for high-impact changes
+          if grep -q "hardware-configuration" changed_files.txt; then
+            echo "- ⚠️ **Hardware changes detected**: Plan for potential reboot" >> impact-report.md
+            high_impact=true
+          fi
+
+          if grep -q "boot/" changed_files.txt; then
+            echo "- ⚠️ **Boot configuration changes**: System reboot required" >> impact-report.md
+            high_impact=true
+          fi
+
+          if grep -q "networking/" changed_files.txt; then
+            echo "- 🌐 **Network changes**: May temporarily affect connectivity" >> impact-report.md
+            high_impact=true
+          fi
+
+          if grep -q "services.ssh" <(git diff origin/${{ github.base_ref }}...HEAD) 2>/dev/null; then
+            echo "- 🔐 **SSH changes detected**: Ensure alternative access method before deployment" >> impact-report.md
+            high_impact=true
+          fi
+
+          if [ "$(cat flake_changed.txt)" = "true" ]; then
+            echo "- 📦 **Dependency updates**: Consider staging deployment first" >> impact-report.md
+          fi
+
+          if [ "$high_impact" = true ]; then
+            echo "" >> impact-report.md
+            echo "**⚠️ HIGH IMPACT DEPLOYMENT**" >> impact-report.md
+            echo "- Schedule during maintenance window" >> impact-report.md
+            echo "- Ensure backup access methods" >> impact-report.md
+            echo "- Have rollback plan ready" >> impact-report.md
+            echo "- Consider blue-green deployment if available" >> impact-report.md
+          else
+            echo "- ✅ **Low impact deployment**: Can be deployed during normal hours" >> impact-report.md
+          fi
+
+          echo "" >> impact-report.md
+          echo "### 🧪 Testing Recommendations" >> impact-report.md
+          echo "" >> impact-report.md
+
+          if [ -s affected_hosts.txt ]; then
+            echo "**Build test all affected hosts:**" >> impact-report.md
+            while IFS= read -r host; do
+              echo "- \`nix build .#nixosConfigurations.$host.config.system.build.toplevel\`" >> impact-report.md
+            done < affected_hosts.txt
+          else
+            echo "**Build test all hosts:**" >> impact-report.md
+            for host in snowfall blizzard avalanche; do
+              echo "- \`nix build .#nixosConfigurations.$host.config.system.build.toplevel\`" >> impact-report.md
+            done
+          fi
+
+          echo "" >> impact-report.md
+          echo "**Integration testing:**" >> impact-report.md
+          echo "- Run health checks post-deployment" >> impact-report.md
+          echo "- Verify affected services are running" >> impact-report.md
+          echo "- Test critical functionality" >> impact-report.md
+
+      - name: Upload impact report
+        uses: actions/upload-artifact@v4
+        with:
+          name: impact-analysis-report
+          path: impact-report.md
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('impact-report.md', 'utf8');
+
+            // Find existing comment or create new one
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Change Impact Analysis')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: report
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: report
+              });
+            }

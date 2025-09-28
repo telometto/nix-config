@@ -1,0 +1,108 @@
+name: Configuration Validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**.nix"
+      - "flake.lock"
+      - "treefmt.nix"
+  push:
+    branches: [main]
+    paths:
+      - "**.nix"
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        host: [snowfall, blizzard, avalanche]
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Format check
+        run: |
+          nix fmt
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "❌ Files are not properly formatted"
+            git diff
+            exit 1
+          else
+            echo "✅ All files are properly formatted"
+          fi
+
+      - name: Validate syntax
+        run: |
+          echo "## 🔍 Syntax Validation for ${{ matrix.host }}" >> $GITHUB_STEP_SUMMARY
+
+          # Check Nix syntax
+          if nix-instantiate --parse --quiet hosts/${{ matrix.host }}/configuration.nix > /dev/null; then
+            echo "✅ Syntax validation passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Syntax validation failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Build configuration
+        run: |
+          echo "Building NixOS configuration for ${{ matrix.host }}..."
+          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --no-link
+
+      - name: Build home-manager configurations
+        run: |
+          echo "Building Home Manager configurations for ${{ matrix.host }}..."
+          # Test home-manager builds if they exist
+          if nix eval ".#nixosConfigurations.${{ matrix.host }}.config.home-manager" 2>/dev/null; then
+            nix build ".#nixosConfigurations.${{ matrix.host }}.config.home-manager.users" --no-link || true
+          fi
+
+      - name: Check for evaluation warnings
+        run: |
+          echo "## ⚠️ Evaluation Warnings" >> $GITHUB_STEP_SUMMARY
+          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --no-link --show-trace 2>&1 | grep -i warning || echo "No warnings found"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Run linters
+        run: |
+          echo "## 🔍 Linting Results" >> $GITHUB_STEP_SUMMARY
+
+          # Statix for Nix linting
+          if nix run nixpkgs#statix -- check . --format=json > statix-results.json; then
+            echo "✅ Statix: No issues" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Statix: Issues found" >> $GITHUB_STEP_SUMMARY
+            cat statix-results.json
+          fi
+
+          # Deadnix for dead code detection
+          if nix run nixpkgs#deadnix -- --fail .; then
+            echo "✅ Deadnix: No dead code" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Deadnix: Dead code detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload lint results
+        if: always()
+        uses: actions/upload-artifact@main
+        with:
+          name: lint-results
+          path: "*.json"

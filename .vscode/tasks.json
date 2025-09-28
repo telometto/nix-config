@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "nix flake check",
+			"type": "shell",
+			"command": "nix flake check --show-trace",
+			"group": "build"
+		}
+	]
+}

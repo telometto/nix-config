@@ -1,0 +1,24 @@
+{ lib, config, pkgs, ... }:
+let
+  cfg = config.telometto.desktop;
+  flavor = cfg.flavor or "none";
+  is = v: flavor == v;
+  mkNone = {
+    services.xserver.enable = lib.mkForce false;
+    services.displayManager.gdm.enable = lib.mkForce false;
+    services.displayManager.sddm.enable = lib.mkForce false;
+  };
+in {
+  options.telometto.desktop.flavor = lib.mkOption {
+    type = lib.types.enum [ "none" "gnome" "kde" "hyprland" ];
+    default = "none";
+    description =
+      "Select Desktop Environment: none (headless), gnome, kde (Plasma), or hyprland.";
+  };
+
+  # The concrete GNOME/KDE/Hyprland settings live under modules/desktop/flavors/*.nix
+  # Each flavor module wraps config in lib.mkIf (flavor == "...") to keep things
+  # exclusive and avoid bloat.
+
+  config = lib.mkMerge [ (lib.mkIf (is "none") mkNone) ];
+}

@@ -1,0 +1,67 @@
+name: Security Audit
+on:
+  schedule:
+    - cron: "0 2 * * 1" # Weekly on Monday at 2 AM
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Audit Nix configurations
+        run: |
+          echo "## 🔍 Security Audit Results" >> $GITHUB_STEP_SUMMARY
+
+          # Check for statix (Nix linter)
+          echo "### Static Analysis" >> $GITHUB_STEP_SUMMARY
+          if nix run nixpkgs#statix -- check .; then
+            echo "✅ Statix: No issues found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Statix: Issues detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check for deadnix (dead Nix code)
+          echo "### Dead Code Analysis" >> $GITHUB_STEP_SUMMARY
+          if nix run nixpkgs#deadnix -- --fail .; then
+            echo "✅ Deadnix: No dead code found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Deadnix: Dead code detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check secrets exposure
+        run: |
+          echo "### Secrets Scanning" >> $GITHUB_STEP_SUMMARY
+
+          # Check for potential secrets in code
+          if nix run nixpkgs#gitleaks -- detect --verbose --no-git; then
+            echo "✅ Gitleaks: No secrets detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Gitleaks: Potential secrets found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Audit system services
+        run: |
+          echo "### Service Configuration Audit" >> $GITHUB_STEP_SUMMARY
+
+          # Check for services with potential security issues
+          echo "Auditing service configurations..."
+          find . -name "*.nix" -exec grep -l "openFirewall.*true" {} \; | while read file; do
+            echo "📋 Firewall opened in: $file" >> $GITHUB_STEP_SUMMARY
+          done
+
+      - name: Generate security report
+        run: |
+          echo "## 📊 Security Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Audit completed at: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY

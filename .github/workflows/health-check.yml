@@ -1,0 +1,56 @@
+name: Infrastructure Health Check
+on:
+  schedule:
+    - cron: "0 6 * * *" # Daily at 6 AM
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Build configurations
+        run: |
+          echo "## 🏗️ Build Results" >> $GITHUB_STEP_SUMMARY
+
+          for host in snowfall blizzard avalanche; do
+            echo "Building $host..."
+            if nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link; then
+              echo "✅ $host: Build successful" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ $host: Build failed" >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+          done
+
+      - name: Check for security updates
+        run: |
+          echo "## 🔒 Security Status" >> $GITHUB_STEP_SUMMARY
+          # Check for CVEs in nixpkgs
+          if nix run nixpkgs#vulnix -- --system; then
+            echo "✅ No known vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Potential security issues detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Create issue if failures
+        if: failure()
+        uses: actions/github-script@main
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Infrastructure Health Check Failed',
+              body: 'Automated health check detected issues. Please review the workflow run for details.',
+              labels: ['infrastructure', 'urgent']
+            })

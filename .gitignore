@@ -1,1 +1,5 @@
+# sensitive stuff
+nix-secrets/
 vars/
+
+result

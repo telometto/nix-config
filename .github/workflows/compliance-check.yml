@@ -1,0 +1,271 @@
+name: Configuration Compliance Check
+on:
+  pull_request:
+    paths:
+      - "**.nix"
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 9 * * 1" # Weekly on Mondays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  compliance-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Install compliance tools
+        run: |
+          nix profile install nixpkgs#deadnix
+          nix profile install nixpkgs#statix
+
+      - name: Run dead code detection
+        id: deadnix
+        run: |
+          echo "## 🔍 Dead Code Analysis" > compliance-report.md
+          echo "" >> compliance-report.md
+
+          if deadnix --fail --no-lambda-arg --no-lambda-pattern-names .; then
+            echo "✅ No dead code found" >> compliance-report.md
+            echo "dead_code=clean" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Dead code detected" >> compliance-report.md
+            deadnix --no-lambda-arg --no-lambda-pattern-names . || true
+            echo "dead_code=found" >> $GITHUB_OUTPUT
+          fi
+          echo "" >> compliance-report.md
+
+      - name: Run static analysis
+        id: statix
+        run: |
+          echo "## 🔎 Static Analysis (Statix)" >> compliance-report.md
+          echo "" >> compliance-report.md
+
+          if statix check .; then
+            echo "✅ No static analysis issues found" >> compliance-report.md
+            echo "static_analysis=clean" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Static analysis issues detected:" >> compliance-report.md
+            echo "\`\`\`" >> compliance-report.md
+            statix check . || true
+            echo "\`\`\`" >> compliance-report.md
+            echo "static_analysis=issues" >> $GITHUB_OUTPUT
+          fi
+          echo "" >> compliance-report.md
+
+      - name: Check configuration patterns
+        id: patterns
+        run: |
+          echo "## 📋 Configuration Best Practices" >> compliance-report.md
+          echo "" >> compliance-report.md
+
+          patterns_failed=0
+
+          # Check for hardcoded secrets
+          echo "### Security Checks" >> compliance-report.md
+          if grep -r "password.*=" --include="*.nix" . | grep -v "passwordAuthentication\|passwordFile\|hashedPassword"; then
+            echo "❌ **Hardcoded passwords detected**" >> compliance-report.md
+            echo "\`\`\`" >> compliance-report.md
+            grep -r "password.*=" --include="*.nix" . | grep -v "passwordAuthentication\|passwordFile\|hashedPassword" || true
+            echo "\`\`\`" >> compliance-report.md
+            patterns_failed=1
+          else
+            echo "✅ No hardcoded passwords found" >> compliance-report.md
+          fi
+
+          # Check for proper module structure
+          echo "" >> compliance-report.md
+          echo "### Module Structure" >> compliance-report.md
+
+          # Check if modules have proper enable options
+          module_issues=0
+          for module_dir in modules/*/; do
+            if [ -d "$module_dir" ]; then
+              module_name=$(basename "$module_dir")
+              if ! find "$module_dir" -name "*.nix" -exec grep -l "enable.*mkEnableOption\|enable.*mkOption.*bool" {} \; | head -1 > /dev/null; then
+                echo "⚠️ Module \`$module_name\` may be missing enable option" >> compliance-report.md
+                module_issues=1
+              fi
+            fi
+          done
+
+          if [ $module_issues -eq 0 ]; then
+            echo "✅ Module structure looks good" >> compliance-report.md
+          fi
+
+          # Check for documentation
+          echo "" >> compliance-report.md
+          echo "### Documentation" >> compliance-report.md
+
+          if [ ! -f "README.md" ] || [ $(wc -l < "README.md") -lt 10 ]; then
+            echo "⚠️ README.md is missing or too short" >> compliance-report.md
+            patterns_failed=1
+          else
+            echo "✅ README.md exists and has content" >> compliance-report.md
+          fi
+
+          # Check for version pinning
+          echo "" >> compliance-report.md
+          echo "### Dependency Management" >> compliance-report.md
+
+          if grep -q "nixos-unstable" flake.nix && ! grep -q "nixos-[0-9][0-9]\.[0-9][0-9]" flake.nix; then
+            echo "ℹ️ Using unstable channel - consider pinning stable versions for production" >> compliance-report.md
+          else
+            echo "✅ Good use of version pinning" >> compliance-report.md
+          fi
+
+          # Check host naming consistency
+          echo "" >> compliance-report.md
+          echo "### Naming Conventions" >> compliance-report.md
+
+          host_names=$(ls hosts/ | grep -v "README" || true)
+          consistent_naming=true
+
+          for host in $host_names; do
+            if [[ ! "$host" =~ ^[a-z][a-z0-9-]*[a-z0-9]$ ]]; then
+              echo "⚠️ Host name '$host' doesn't follow kebab-case convention" >> compliance-report.md
+              consistent_naming=false
+            fi
+          done
+
+          if [ "$consistent_naming" = true ]; then
+            echo "✅ Host naming follows conventions" >> compliance-report.md
+          fi
+
+          echo "patterns_result=$patterns_failed" >> $GITHUB_OUTPUT
+
+      - name: Check configuration completeness
+        run: |
+          echo "" >> compliance-report.md
+          echo "## 🎯 Configuration Completeness" >> compliance-report.md
+          echo "" >> compliance-report.md
+
+          for host in snowfall blizzard avalanche; do
+            echo "### Host: $host" >> compliance-report.md
+            
+            # Check required files exist
+            required_files=(
+              "hosts/$host/configuration.nix"
+              "hosts/$host/hardware-configuration.nix"
+            )
+            
+            missing_files=0
+            for file in "${required_files[@]}"; do
+              if [ ! -f "$file" ]; then
+                echo "❌ Missing: $file" >> compliance-report.md
+                missing_files=1
+              fi
+            done
+            
+            if [ $missing_files -eq 0 ]; then
+              echo "✅ All required files present" >> compliance-report.md
+            fi
+            
+            # Check for common configurations
+            if [ -f "hosts/$host/configuration.nix" ]; then
+              config_file="hosts/$host/configuration.nix"
+              
+              if ! grep -q "networking.hostName" "$config_file"; then
+                echo "⚠️ Missing explicit hostname setting" >> compliance-report.md
+              fi
+              
+              if ! grep -q "time.timeZone" "$config_file" && ! grep -q "time.timeZone" common/*/environment/defaults.nix 2>/dev/null; then
+                echo "⚠️ Missing timezone configuration" >> compliance-report.md
+              fi
+              
+              if ! grep -q "services.openssh" "$config_file" && ! find common modules -name "*.nix" -exec grep -l "services.openssh" {} \; > /dev/null 2>&1; then
+                echo "ℹ️ No SSH configuration found (may be intentional)" >> compliance-report.md
+              fi
+            fi
+            echo "" >> compliance-report.md
+          done
+
+      - name: Generate compliance score
+        run: |
+          echo "" >> compliance-report.md
+          echo "## 📊 Compliance Score" >> compliance-report.md
+          echo "" >> compliance-report.md
+
+          # Calculate score based on checks
+          score=100
+
+          if [ "${{ steps.deadnix.outputs.dead_code }}" = "found" ]; then
+            score=$((score - 10))
+            echo "- Dead code found: -10 points" >> compliance-report.md
+          fi
+
+          if [ "${{ steps.statix.outputs.static_analysis }}" = "issues" ]; then
+            score=$((score - 15))
+            echo "- Static analysis issues: -15 points" >> compliance-report.md
+          fi
+
+          if [ "${{ steps.patterns.outputs.patterns_result }}" = "1" ]; then
+            score=$((score - 20))
+            echo "- Pattern violations: -20 points" >> compliance-report.md
+          fi
+
+          echo "" >> compliance-report.md
+          echo "**Overall Score: $score/100**" >> compliance-report.md
+
+          if [ $score -ge 90 ]; then
+            echo "🏆 **Grade: Excellent** - Configuration follows best practices" >> compliance-report.md
+          elif [ $score -ge 80 ]; then
+            echo "🥈 **Grade: Good** - Minor improvements recommended" >> compliance-report.md
+          elif [ $score -ge 70 ]; then
+            echo "🥉 **Grade: Fair** - Several areas need attention" >> compliance-report.md
+          else
+            echo "📝 **Grade: Needs Improvement** - Multiple issues to address" >> compliance-report.md
+          fi
+
+      - name: Upload compliance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-report
+          path: compliance-report.md
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('compliance-report.md', 'utf8');
+
+            // Find existing comment or create new one
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Configuration Compliance Check')
+            );
+
+            const body = `## 📋 Configuration Compliance Check\n\n${report}`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
