@@ -10,7 +10,7 @@ in {
 
   config = lib.mkIf cfg.enable {
     programs = {
-      element-desktop.enable = lib.mkIf cfg.element-desktop.enable { enable = true;};
+      element-desktop.enable = cfg.element-desktop.enable;
 
       vesktop = lib.mkIf cfg.vesktop.enable {
         enable = true;
