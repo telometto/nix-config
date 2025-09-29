@@ -20,7 +20,7 @@ let
   };
 
   # Collect all imports from various sources
-  collectImports = username: userAttrs:
+  collectImports = username: _:
     let
       override = lib.attrByPath [ username ] cfg.users { };
       hostOverridePath =

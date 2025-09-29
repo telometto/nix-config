@@ -1,6 +1,7 @@
 # Automatically imported
 { lib, pkgs, VARS, ... }:
-let admin = VARS.users.admin;
+let
+  inherit (VARS.users) admin;
 in {
   users.users.${admin.user} = {
     inherit (admin) description isNormalUser hashedPassword;

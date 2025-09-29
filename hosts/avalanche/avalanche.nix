@@ -1,4 +1,4 @@
-{ lib, config, pkgs, VARS, inputs, ... }: {
+{ lib, VARS, inputs, ... }: {
   imports = [
     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p51
     ./hardware-configuration.nix

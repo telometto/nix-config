@@ -1,4 +1,4 @@
-{ lib, config, pkgs, VARS, ... }:
+{ lib, config, ... }:
 let cfg = config.hm.programs.tools;
 in {
   options.hm.programs.tools = {

@@ -1,4 +1,4 @@
-{ lib, config, pkgs, inputs, VARS, ... }:
+{ lib, config, inputs, VARS, ... }:
 let cfg = config.telometto.home;
 in {
   # Configure home-manager when enabled

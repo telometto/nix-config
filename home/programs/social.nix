@@ -1,4 +1,4 @@
-{ lib, config, pkgs, VARS, ... }:
+{ lib, config, ... }:
 let cfg = config.hm.programs.social;
 in {
   options.hm.programs.social = {

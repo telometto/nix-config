@@ -22,8 +22,7 @@ in {
   config = lib.mkIf cfg.enable {
     programs.git = {
       enable = true;
-      userName = cfg.git.userName;
-      userEmail = cfg.git.userEmail;
+      inherit (cfg.git) userName userEmail;
       extraConfig = {
         init.defaultBranch = "master";
         commit.gpgSign = true;

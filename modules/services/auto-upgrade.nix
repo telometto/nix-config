@@ -49,15 +49,8 @@ in {
   config = lib.mkIf cfg.enable {
     system.autoUpgrade = {
       enable = true;
-      flake = cfg.flake;
-      operation = cfg.operation;
-      flags = cfg.flags;
-      dates = cfg.dates;
-      rebootWindow = cfg.rebootWindow;
-      persistent = cfg.persistent;
-      allowReboot = cfg.allowReboot;
-      fixedRandomDelay = cfg.fixedRandomDelay;
-      randomizedDelaySec = cfg.randomizedDelaySec;
+      inherit (cfg) flake operation flags dates rebootWindow persistent
+        allowReboot fixedRandomDelay randomizedDelaySec;
     };
   };
 }

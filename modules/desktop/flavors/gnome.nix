@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 # Single-owner GNOME flavor module replicated under rewrite/, gated by telometto.desktop.flavor
 let
-  flavor = (config.telometto.desktop.flavor or "none");
+  flavor = config.telometto.desktop.flavor or "none";
   is = v: flavor == v;
 in {
   config = lib.mkIf (is "gnome") {

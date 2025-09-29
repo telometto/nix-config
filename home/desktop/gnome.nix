@@ -1,4 +1,4 @@
-{ lib, config, pkgs, VARS, ... }:
+{ lib, config, pkgs, ... }:
 let cfg = config.hm.desktop.gnome;
 in {
   options.hm.desktop.gnome = {

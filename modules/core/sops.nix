@@ -1,5 +1,5 @@
 # Automatically imported
-{ lib, config, inputs, VARS, ... }: {
+{ lib, config, inputs, ... }: {
   sops = {
     defaultSopsFile = lib.mkDefault inputs.nix-secrets.secrets.secretsFile;
     defaultSopsFormat = lib.mkDefault "yaml";
@@ -41,14 +41,11 @@
   };
 
   # Bridge SOPS -> telometto.secrets (legacy path mapping) as runtime path strings
-  telometto.secrets.tsKeyFile =
-    toString config.sops.secrets."general/tsKeyFilePath".path;
-  telometto.secrets.paperlessKeyFile =
-    toString config.sops.secrets."general/paperlessKeyFilePath".path;
-  telometto.secrets.searxSecretKeyFile =
-    toString config.sops.secrets."general/searxSecretKey".path;
-  telometto.secrets.borgKeyFile =
-    toString config.sops.secrets."general/borgKeyFilePath".path;
-  telometto.secrets.borgRepo =
-    toString config.sops.secrets."general/borgRepo".path;
+  telometto.secrets = {
+    tsKeyFile = toString config.sops.secrets."general/tsKeyFilePath".path;
+    paperlessKeyFile = toString config.sops.secrets."general/paperlessKeyFilePath".path;
+    searxSecretKeyFile = toString config.sops.secrets."general/searxSecretKey".path;
+    borgKeyFile = toString config.sops.secrets."general/borgKeyFilePath".path;
+    borgRepo = toString config.sops.secrets."general/borgRepo".path;
+  };
 }

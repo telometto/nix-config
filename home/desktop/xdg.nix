@@ -22,7 +22,7 @@ in {
 
       userDirs = {
         enable = true;
-        createDirectories = cfg.createDirectories;
+        inherit (cfg) createDirectories;
       };
 
       autostart = { enable = true; };

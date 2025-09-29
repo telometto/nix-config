@@ -1,4 +1,4 @@
-{ lib, config, pkgs, inputs, VARS, ... }:
+{ lib, config, pkgs, inputs, ... }:
 let cfg = config.hm.desktop.hyprland;
 in {
   options.hm.desktop.hyprland = {

@@ -1,8 +1,12 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 let
-  base = [ ];
+  base = [
+    # base packages
+  ];
 
-  development = [ ];
+  development = [
+    # base packages
+  ];
 
   containers = [
     # pkgs.distrobox 
@@ -25,12 +29,12 @@ let
     pkgs.winetricks
   ];
 
-  extras = [ ];
-in {
-  # Compose from local categories; add/remove lists as needed
-  environment.systemPackages = storage ++ desktop ++ wine ++ [
+  extras = [
     # inputs.agenix.packages."x86_64-linux".default
   ];
+in {
+  # Compose from local categories; add/remove lists as needed
+  environment.systemPackages = storage ++ desktop ++ wine ++ extras;
 
   fonts.packages = [
     pkgs.google-fonts

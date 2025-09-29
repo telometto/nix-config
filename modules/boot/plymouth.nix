@@ -1,5 +1,5 @@
 # Enabled (role)
-{ config, lib, pkgs, VARS, ... }:
+{ config, lib, ... }:
 let
   cfg = config.telometto.boot.plymouth;
 in {

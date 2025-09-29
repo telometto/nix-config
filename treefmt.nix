@@ -1,36 +1,38 @@
 # treefmt-nix configuration
 # Documentation: https://github.com/numtide/treefmt-nix
-{ pkgs, ... }:
+{ _ }:
 {
   # Used to find the project root
   projectRootFile = "flake.nix";
 
-  # Nix formatting
-  programs.nixfmt.enable = true;
+  programs = {
+    # Nix formatting
+    nixfmt.enable = true;
 
-  # Shell script formatting
-  programs.shfmt.enable = true;
+    # Shell script formatting
+    shfmt.enable = true;
 
-  # YAML formatting
-  programs.yamlfmt.enable = true;
+    # YAML formatting
+    yamlfmt.enable = true;
 
-  # Markdown formatting
-  programs.mdformat.enable = true;
+    # Markdown formatting
+    mdformat.enable = true;
 
-  # JSON formatting
-  programs.jsonfmt.enable = true;
+    # JSON formatting
+    jsonfmt.enable = true;
 
-  # GitHub Actions workflow linting (disabled to avoid shellcheck conflicts)
-  # programs.actionlint.enable = true;
+    # GitHub Actions workflow linting (disabled to avoid shellcheck conflicts)
+    # actionlint.enable = true;
 
-  # Spell checking (optional)
-  # programs.typos.enable = true;
+    # Spell checking (optional)
+    # typos.enable = true;
 
-  # Deadnix - remove dead Nix code (optional)
-  # programs.deadnix.enable = true;
+    # Deadnix - remove dead Nix code (optional)
+    # deadnix.enable = true;
 
-  # Statix - Nix linter (optional)
-  # programs.statix.enable = true;
+    # Statix - Nix linter (optional)
+    # statix.enable = true;
+  };
 
   settings = {
     # Global excludes

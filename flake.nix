@@ -59,7 +59,7 @@
     nix-colors.url = "github:misterio77/nix-colors";
   };
 
-  outputs = inputs@{ self, nixpkgs, nix-secrets, ... }:
+  outputs = inputs@{ nixpkgs, nix-secrets, ... }:
     let
       system = "x86_64-linux";
       # Import VARS from your secrets repository

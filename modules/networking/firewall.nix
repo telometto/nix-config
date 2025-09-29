@@ -1,7 +1,7 @@
 { lib, config, ... }:
 let
   cfg = config.telometto.networking.firewall;
-  portRangeType = lib.types.submodule ({ ... }: {
+  portRangeType = lib.types.submodule (_: {
     options = {
       from = lib.mkOption {
         type = lib.types.port;

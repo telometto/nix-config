@@ -1,5 +1,5 @@
 # User-specific configuration for admin user on avalanche host
-{ lib, config, pkgs, VARS, ... }: {
+{ config, ... }: {
   # Enable file management for SSH configuration
   hm.files = {
     enable = true;

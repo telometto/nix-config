@@ -1,4 +1,4 @@
-{ lib, config, pkgs, VARS, ... }:
+{ lib, config, pkgs, ... }:
 let cfg = config.hm.desktop.kde;
 in {
   options.hm.desktop.kde = {

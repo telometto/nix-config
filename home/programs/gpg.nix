@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, ... }:
 let cfg = config.hm.programs.gpg;
 in {
   options.hm.programs.gpg = {
@@ -33,9 +33,7 @@ in {
     programs.gpg = {
       enable = true;
 
-      homedir = cfg.homedir;
-      mutableTrust = cfg.mutableTrust;
-      mutableKeys = cfg.mutableKeys;
+      inherit (cfg) homedir mutableTrust mutableKeys;
 
       settings = lib.mkMerge [
         {

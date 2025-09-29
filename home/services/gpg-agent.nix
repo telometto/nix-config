@@ -1,4 +1,4 @@
-{ config, lib, pkgs, VARS, ... }:
+{ config, lib, ... }:
 let cfg = config.hm.services.gpgAgent;
 in {
   options.hm.services.gpgAgent = {
@@ -38,7 +38,7 @@ in {
       maxCacheTtl = cfg.defaultCacheTimes; # 400 days
       maxCacheTtlSsh = cfg.defaultCacheTimes; # 400 days
 
-      sshKeys = cfg.sshKeys;
+      inherit (cfg) sshKeys;
 
       extraConfig = ''
         allow-preset-passphrase

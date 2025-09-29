@@ -1,6 +1,6 @@
-{ lib, config, pkgs, inputs, VARS, ... }:
+{ lib, config, pkgs, inputs, ... }:
 # Single-owner Hyprland flavor under rewrite/, gated by telometto.desktop.flavor
-let flavor = (config.telometto.desktop.flavor or "none");
+let flavor = config.telometto.desktop.flavor or "none";
     is = v: flavor == v;
     haveHypr = inputs ? hyprland;
 in {

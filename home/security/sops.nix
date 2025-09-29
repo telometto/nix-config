@@ -1,4 +1,4 @@
-{ lib, config, pkgs, inputs, ... }:
+{ lib, config, inputs, ... }:
 let cfg = config.hm.security.sops;
 in {
   options.hm.security.sops = {
@@ -27,9 +27,9 @@ in {
     sops = {
       defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
       defaultSopsFormat = "yaml"; # Default format for sops files
-      defaultSymlinkPath = cfg.defaultSymlinkPath;
+      inherit (cfg) defaultSymlinkPath;
       defaultSecretsMountPoint = "/run/user/1000/secrets.d";
-      secrets = cfg.secrets;
+      inherit (cfg) secrets;
 
       age = {
         sshKeyPaths = cfg.ageSshKeyPaths;

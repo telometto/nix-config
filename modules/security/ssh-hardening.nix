@@ -1,7 +1,7 @@
 # SSH hardening extension module (non-owner)
 # - Contributes to the OpenSSH owner module via extension points
 # - Does NOT declare options.telometto.services.openssh.* (owner only)
-{ lib, config, ... }: {
+{ lib, ... }: {
   # Harden defaults using the owner's extension points
   telometto.services.openssh.extraSettings = lib.mkOverride 50 {
     PasswordAuthentication = false;

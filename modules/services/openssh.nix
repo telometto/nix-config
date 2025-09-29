@@ -1,4 +1,4 @@
-{ lib, config, VARS, ... }:
+{ lib, config, ... }:
 # Namespace & layering notes:
 # - This module owns options under `telometto.services.openssh.*`.
 # - Other modules should not redeclare these options; they may set sub-options
@@ -37,7 +37,7 @@ in {
       banner = lib.mkDefault ":: Welcome back to The Matrix! ::";
       # Merge defaults with contributed settings from other modules
       settings = lib.mkMerge [ defaultSettings cfg.extraSettings ];
-      extraConfig = cfg.extraConfig;
+      inherit (cfg) extraConfig;
       openFirewall = lib.mkDefault true;
     };
   };

@@ -1,12 +1,16 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, ... }:
 let
   cfg = config.telometto.desktop;
   flavor = cfg.flavor or "none";
   is = v: flavor == v;
   mkNone = {
-    services.xserver.enable = lib.mkForce false;
-    services.displayManager.gdm.enable = lib.mkForce false;
-    services.displayManager.sddm.enable = lib.mkForce false;
+    services = {
+      xserver.enable = lib.mkForce false;
+      displayManager = {
+        gdm.enable = lib.mkForce false;
+        sddm.enable = lib.mkForce false;
+      };
+    };
   };
 in {
   options.telometto.desktop.flavor = lib.mkOption {

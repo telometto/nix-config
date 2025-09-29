@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 let
   media = [
     pkgs.jellyfin-ffmpeg # Conversion tools
