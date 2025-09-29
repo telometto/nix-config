@@ -87,25 +87,6 @@ in {
       pkgs.gnomeExtensions.thinkpad-battery-threshold
       pkgs.gnomeExtensions.tray-icons-reloaded
       pkgs.gnomeExtensions.user-themes
-
-      /* # Migrated?
-         # Utils from old config
-         pkgs.gparted # Partition manager
-         pkgs.meld # Diff tool
-         pkgs.variety # Wallpaper changer
-         pkgs.zsh-powerlevel10k
-         pkgs.polychromatic # Razer configuration tool
-         pkgs.flameshot
-         pkgs.czkawka # Duplicate file finder
-         pkgs.ansible
-         pkgs.figma-linux
-
-         # Media
-         pkgs.jamesdsp
-
-         # Internet
-         pkgs.brave # Web browser
-      */
     ] ++ cfg.extraExtensions;
 
     # GTK theme configuration
