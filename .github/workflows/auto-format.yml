@@ -1,0 +1,76 @@
+name: Auto Format
+on:
+    pull_request:
+        types: [opened, synchronize]
+        paths:
+            - "**.nix"
+            - "**.sh"
+            - "**.yml"
+            - "**.yaml"
+            - "**.md"
+            - "**.json"
+
+permissions:
+    contents: write
+    pull-requests: write
+
+jobs:
+    format:
+        runs-on: ubuntu-latest
+        if: github.event.pull_request.head.repo.full_name == github.repository
+
+        steps:
+            - name: Access private repository
+              uses: webfactory/ssh-agent@master
+              with:
+                  ssh-private-key: ${{ secrets.GH_ACTIONS }}
+
+            - name: Checkout repository
+              uses: actions/checkout@main
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  fetch-depth: 0
+
+            - name: Install Nix
+              uses: DeterminateSystems/nix-installer-action@main
+
+            - name: Check and format files
+              id: check-formatting
+              continue-on-error: true
+              run: |
+                  # Run formatter and check if any files were changed
+                  if nix fmt; then
+                    echo "Formatting completed successfully"
+                  else
+                    echo "Warning: Formatting encountered issues but continuing..."
+                  fi
+
+                  if [ -n "$(git status --porcelain)" ]; then
+                    echo "Changes were made by formatter"
+                    git config user.name "github-actions[bot]"
+                    git config user.email "github-actions[bot]@users.noreply.github.com"
+                    git add .
+                    git commit -m "style: automatic formatting by treefmt [skip ci]"
+                    git push origin HEAD:${{ github.event.pull_request.head.ref }}
+                    echo "formatted=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "No formatting changes needed"
+                    echo "formatted=false" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Comment on PR if formatted
+              if: steps.check-formatting.outputs.formatted == 'true'
+              uses: actions/github-script@main
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  script: |
+                      const { owner, repo } = context.repo;
+                      const issue_number = context.payload.pull_request.number;
+
+                      await github.rest.issues.createComment({
+                        owner,
+                        repo,
+                        issue_number,
+                        body: '🎨 **Auto-formatted**: Files have been automatically formatted with treefmt to maintain code consistency.'
+                      });
