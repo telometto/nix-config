@@ -1,19 +1,19 @@
 { lib, pkgs, config, ... }:
 let
   cfg = config.telometto.services.nfs;
-  types = lib.types;
+  inherit (lib) types;
 
   mkWhat = m: "${m.server}:${m.export}";
-  mkMount = name: m: {
+  mkMount = _: m: {
     type = "nfs";
     what = mkWhat m;
     where = m.target;
     # systemd [Mount] section uses Options= (capital O)
     mountConfig.Options = lib.concatStringsSep "," m.options;
   };
-  mkAutomount = name: m: {
+  mkAutomount = _: m: {
     where = m.target;
-    wantedBy = m.wantedBy;
+    inherit (m) wantedBy;
     automountConfig.TimeoutIdleSec = toString m.idleTimeout;
   };
 
@@ -115,10 +115,7 @@ in {
       services.rpcbind.enable = lib.mkDefault true;
       services.nfs.server = {
         enable = true;
-        lockdPort = cfg.server.lockdPort;
-        mountdPort = cfg.server.mountdPort;
-        statdPort = cfg.server.statdPort;
-        exports = cfg.server.exports;
+        inherit (cfg.server) lockdPort mountdPort statdPort exports;
       };
       networking.firewall = lib.mkIf cfg.server.openFirewall {
         allowedTCPPorts = nfsPorts ++ serverPorts;

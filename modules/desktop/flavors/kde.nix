@@ -1,6 +1,6 @@
 { lib, config, pkgs, ... }:
 # Single-owner KDE (Plasma 6) flavor module replicated under rewrite/, gated by telometto.desktop.flavor
-let flavor = (config.telometto.desktop.flavor or "none");
+let flavor = config.telometto.desktop.flavor or "none";
     is = v: flavor == v;
 in {
   config = lib.mkIf (is "kde") {
@@ -19,7 +19,27 @@ in {
     };
 
     # Askpass and Wayland bits carried from legacy
-    environment.variables.SSH_ASKPASS = lib.mkForce "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
+    environment = {
+      variables.SSH_ASKPASS =
+        lib.mkForce "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
+
+      # Useful KDE packages
+      systemPackages = [
+        pkgs.kdePackages.kwallet
+        pkgs.kdePackages.kwalletmanager
+        pkgs.kdePackages.kwallet-pam
+        pkgs.kdePackages.ksshaskpass
+        pkgs.kdePackages.qtwayland
+        pkgs.xwayland
+        pkgs.kdePackages.xwaylandvideobridge
+        (pkgs.sddm-astronaut.override {
+          embeddedTheme = "post-apocalyptic_hacker";
+        })
+      ];
+
+      plasma6.excludePackages = with pkgs.kdePackages; [ gwenview ];
+    };
+
     programs.xwayland.enable = lib.mkDefault true;
 
     # Prefer KDE portal
@@ -29,20 +49,6 @@ in {
     #   xdgOpenUsePortal = lib.mkDefault true;
     #   config.common.default = lib.mkDefault "*";
     # };
-
-    # Useful KDE packages
-    environment.systemPackages = [
-      pkgs.kdePackages.kwallet
-      pkgs.kdePackages.kwalletmanager
-      pkgs.kdePackages.kwallet-pam
-      pkgs.kdePackages.ksshaskpass
-      pkgs.kdePackages.qtwayland
-      pkgs.xwayland
-      pkgs.kdePackages.xwaylandvideobridge
-      (pkgs.sddm-astronaut.override { embeddedTheme = "post-apocalyptic_hacker"; })
-    ];
-
-    environment.plasma6.excludePackages = with pkgs.kdePackages; [ gwenview ];
 
     security.pam.services = {
       login = { enableAppArmor = true; gnupg.enable = true; kwallet.enable = true; };

@@ -52,11 +52,11 @@ in {
 
   config = lib.mkIf cfg.enable {
     # Configure fileSystems
-    fileSystems = lib.mapAttrs' (name: mount:
+    fileSystems = lib.mapAttrs' (_: mount:
       lib.nameValuePair "/run/media/${cfg.baseUser}/${mount.mountPoint}" {
         device = "/dev/disk/by-uuid/${mount.device}";
         fsType = "btrfs";
-        options = mount.options;
+        inherit (mount) options;
       }) cfg.mounts;
 
     # Enable BTRFS support
@@ -68,7 +68,7 @@ in {
     # Auto-scrub
     services.btrfs.autoScrub = lib.mkIf cfg.autoScrub.enable {
       enable = true;
-      interval = cfg.autoScrub.interval;
+      inherit (cfg.autoScrub) interval;
     };
   };
 }

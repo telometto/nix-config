@@ -1,25 +1,26 @@
 { lib, config, pkgs, ... }:
 let cfg = config.telometto.services.tailscale;
 in {
-  options.telometto.services.tailscale.enable =
-    lib.mkEnableOption "Tailscale VPN";
-  options.telometto.services.tailscale.extraUpFlags = lib.mkOption {
-    type = lib.types.listOf lib.types.str;
-    default = [ "--reset" "--ssh" ];
-    description =
-      "Extra flags appended to tailscale up (owner extension point).";
-  };
-  options.telometto.services.tailscale.interface = lib.mkOption {
-    type = lib.types.str;
-    default = "eth0";
-    description =
-      "Network interface name for networkd-dispatcher rule (e.g., eth0, enp5s0).";
-  };
-  options.telometto.services.tailscale.settings = lib.mkOption {
-    type = lib.types.attrsOf lib.types.anything;
-    default = { };
-    description =
-      "Extra attributes merged into services.tailscale (owner extension point).";
+  options.telometto.services.tailscale = {
+    enable = lib.mkEnableOption "Tailscale VPN";
+    extraUpFlags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "--reset" "--ssh" ];
+      description =
+        "Extra flags appended to tailscale up (owner extension point).";
+    };
+    interface = lib.mkOption {
+      type = lib.types.str;
+      default = "eth0";
+      description =
+        "Network interface name for networkd-dispatcher rule (e.g., eth0, enp5s0).";
+    };
+    settings = lib.mkOption {
+      type = lib.types.attrsOf lib.types.anything;
+      default = { };
+      description =
+        "Extra attributes merged into services.tailscale (owner extension point).";
+    };
   };
   config = lib.mkIf cfg.enable {
     services = {
@@ -34,7 +35,7 @@ in {
             preauthorized = lib.mkDefault true;
             ephemeral = lib.mkDefault false;
           };
-          extraUpFlags = cfg.extraUpFlags;
+          inherit (cfg) extraUpFlags;
         }
         cfg.settings
       ];

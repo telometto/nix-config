@@ -1,4 +1,4 @@
-{ lib, pkgs, config, ... }:
+{ lib, config, ... }:
 let cfg = config.telometto.programs.jellyfinWebSkipIntro;
 in {
   options.telometto.programs.jellyfinWebSkipIntro.enable =
@@ -13,8 +13,8 @@ in {
 
     (lib.mkIf cfg.enable {
       nixpkgs.overlays = [
-        (final: prev: {
-          jellyfin-web = prev.jellyfin-web.overrideAttrs (_: previousAttrs: {
+        (_: prev: {
+          jellyfin-web = prev.jellyfin-web.overrideAttrs (_: _: {
             installPhase = ''
               runHook preInstall
 

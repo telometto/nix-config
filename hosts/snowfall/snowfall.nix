@@ -1,4 +1,4 @@
-{ lib, config, pkgs, VARS, ... }: {
+{ lib, VARS, ... }: {
   imports = [ ./hardware-configuration.nix ./packages.nix ];
 
   networking = {
