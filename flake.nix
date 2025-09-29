@@ -57,6 +57,11 @@
     hyprland.url = "github:hyprwm/Hyprland";
 
     nix-colors.url = "github:misterio77/nix-colors";
+
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs@{ nixpkgs, nix-secrets, ... }:
@@ -64,6 +69,9 @@
       system = "x86_64-linux";
       # Import VARS from your secrets repository
       VARS = import nix-secrets.vars.varsFile;
+
+      # Treefmt configuration
+      treefmtEval = inputs.treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} ./treefmt.nix;
 
       # Host configuration template
       mkHost = hostname: extraModules:
@@ -87,5 +95,11 @@
         blizzard = mkHost "blizzard" [ ];
         avalanche = mkHost "avalanche" [ ];
       };
+
+      # Formatter (treefmt)
+      formatter.${system} = treefmtEval.config.build.wrapper;
+      
+      # Expose treefmt as a check
+      checks.${system}.formatting = treefmtEval.config.build.check;
     };
 }
