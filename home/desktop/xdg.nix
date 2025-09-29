@@ -1,6 +1,13 @@
-{ lib, config, pkgs, ... }:
-let cfg = config.hm.desktop.xdg;
-in {
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.hm.desktop.xdg;
+in
+{
   options.hm.desktop.xdg = {
     enable = lib.mkEnableOption "XDG directories and desktop integration";
 
@@ -25,11 +32,16 @@ in {
         inherit (cfg) createDirectories;
       };
 
-      autostart = { enable = true; };
+      autostart = {
+        enable = true;
+      };
 
       # mimeApps.enable = true;
     };
 
-    home.packages = [ pkgs.xdg-utils pkgs.xdg-user-dirs ];
+    home.packages = [
+      pkgs.xdg-utils
+      pkgs.xdg-user-dirs
+    ];
   };
 }

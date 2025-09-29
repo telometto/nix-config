@@ -1,13 +1,14 @@
 { lib, config, ... }:
-let cfg = config.hm.programs.tools;
-in {
+let
+  cfg = config.hm.programs.tools;
+in
+{
   options.hm.programs.tools = {
     enable = lib.mkEnableOption "Gaming tools and configuration";
 
     flameshot.enable = lib.mkEnableOption "Flameshot screenshot utility";
     texlive.enable = lib.mkEnableOption "LaTeX";
-    onlyoffice.enable =
-      lib.mkEnableOption "OnlyOffice (Office 365 alternative)";
+    onlyoffice.enable = lib.mkEnableOption "OnlyOffice (Office 365 alternative)";
   };
 
   config = lib.mkIf cfg.enable {

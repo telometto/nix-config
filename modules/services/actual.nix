@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.actual or { };
-in {
+let
+  cfg = config.telometto.services.actual or { };
+in
+{
   options.telometto.services.actual.enable = lib.mkEnableOption "Actual Budget";
   options.telometto.services.actual.port = lib.mkOption {
     type = lib.types.port;

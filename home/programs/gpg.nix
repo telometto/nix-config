@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.hm.programs.gpg;
-in {
+let
+  cfg = config.hm.programs.gpg;
+in
+{
   options.hm.programs.gpg = {
     enable = lib.mkEnableOption "GPG configuration";
 
@@ -55,8 +57,7 @@ in {
           # Cipher and digest preferences
           personal-cipher-preferences = "AES256";
           personal-digest-preferences = "SHA512";
-          default-preference-list =
-            "SHA512 SHA384 SHA256 RIPEMD160 AES256 TWOFISH BLOWFISH ZLIB BZIP2 ZIP Uncompressed";
+          default-preference-list = "SHA512 SHA384 SHA256 RIPEMD160 AES256 TWOFISH BLOWFISH ZLIB BZIP2 ZIP Uncompressed";
           cipher-algo = "AES256";
           digest-algo = "SHA512";
           cert-digest-algo = "SHA512";

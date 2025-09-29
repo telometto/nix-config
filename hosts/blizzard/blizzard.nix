@@ -1,5 +1,15 @@
-{ lib, config, VARS, pkgs, ... }: {
-  imports = [ ./hardware-configuration.nix ./packages.nix ];
+{
+  lib,
+  config,
+  VARS,
+  pkgs,
+  ...
+}:
+{
+  imports = [
+    ./hardware-configuration.nix
+    ./packages.nix
+  ];
 
   telometto = {
     # Enable server role (provides server defaults)
@@ -12,24 +22,53 @@
 
       firewall = {
         enable = true;
-        extraTCPPortRanges = [{
-          from = 4000;
-          to = 4002;
-        }];
-        extraUDPPortRanges = [{
-          from = 4000;
-          to = 4002;
-        }];
+        extraTCPPortRanges = [
+          {
+            from = 4000;
+            to = 4002;
+          }
+        ];
+        extraUDPPortRanges = [
+          {
+            from = 4000;
+            to = 4002;
+          }
+        ];
         # Include service ports for k3s, HTTP/HTTPS, NFS, Paperless, Actual, Searx, Scrutiny, Cockpit
-        extraTCPPorts = [ 6443 80 443 111 2049 20048 28981 3838 7777 8072 9090 ];
-        extraUDPPorts = [ 6443 80 443 111 2049 20048 28981 3838 7777 8072 9090 ];
+        extraTCPPorts = [
+          6443
+          80
+          443
+          111
+          2049
+          20048
+          28981
+          3838
+          7777
+          8072
+          9090
+        ];
+        extraUDPPorts = [
+          6443
+          80
+          443
+          111
+          2049
+          20048
+          28981
+          3838
+          7777
+          8072
+          9090
+        ];
       };
     };
 
     services = {
       # Private networking (enabled in legacy)
       tailscale.enable = lib.mkDefault true;
-      networkd-dispatcher.rules."50-tailscale".script = lib.mkForce "${lib.getExe pkgs.ethtool} -K enp8s0 rx-udp-gro-forwarding on rx-gro-list off";
+      networkd-dispatcher.rules."50-tailscale".script =
+        lib.mkForce "${lib.getExe pkgs.ethtool} -K enp8s0 rx-udp-gro-forwarding on rx-gro-list off";
 
       # Enable NFS (owner module) and run as a server
       nfs = {
@@ -121,10 +160,10 @@
         enable = lib.mkDefault true;
         jobs.homeserver = {
           paths = [ "/home/${VARS.users.admin.user}" ];
-          environment.BORG_RSH =
-            "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.admin.user}/.ssh/borg-blizzard";
-          repo = lib.mkDefault
-            (config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo");
+          environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.admin.user}/.ssh/borg-blizzard";
+          repo = lib.mkDefault (
+            config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo"
+          );
           compression = "zstd,8";
           startAt = "daily";
 
@@ -180,8 +219,7 @@
   };
 
   # Export kubeconfig for the admin user (used by server tooling)
-  environment.variables.KUBECONFIG =
-    "/home/${VARS.users.admin.user}/.kube/config";
+  environment.variables.KUBECONFIG = "/home/${VARS.users.admin.user}/.kube/config";
 
   system.stateVersion = "24.11";
 }

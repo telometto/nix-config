@@ -1,6 +1,14 @@
-{ lib, config, pkgs, inputs, ... }:
-let cfg = config.hm.desktop.hyprland;
-in {
+{
+  lib,
+  config,
+  pkgs,
+  inputs,
+  ...
+}:
+let
+  cfg = config.hm.desktop.hyprland;
+in
+{
   options.hm.desktop.hyprland = {
     enable = lib.mkEnableOption "Hyprland window manager configuration";
 
@@ -21,25 +29,32 @@ in {
     wayland.windowManager.hyprland = {
       enable = true;
       # set the flake package
-      package =
-        inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
+      package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
 
       settings = lib.mkMerge [
         {
           "$mod" = "SUPER";
-          bind =
-            [ "$mod, F, exec, firefox" ", Print, exec, grimblast copy area" ]
-            ++ (
-              # workspaces
-              # binds $mod + [shift +] {1..9} to [move to] workspace {1..9}
-              builtins.concatLists (builtins.genList (i:
-                let ws = i + 1;
-                in [
+          bind = [
+            "$mod, F, exec, firefox"
+            ", Print, exec, grimblast copy area"
+          ]
+          ++ (
+            # workspaces
+            # binds $mod + [shift +] {1..9} to [move to] workspace {1..9}
+            builtins.concatLists (
+              builtins.genList (
+                i:
+                let
+                  ws = i + 1;
+                in
+                [
                   "$mod, code:1${toString i}, workspace, ${toString ws}"
-                  "$mod SHIFT, code:1${toString i}, movetoworkspace, ${
-                    toString ws
-                  }"
-                ]) 9)) ++ cfg.extraBinds;
+                  "$mod SHIFT, code:1${toString i}, movetoworkspace, ${toString ws}"
+                ]
+              ) 9
+            )
+          )
+          ++ cfg.extraBinds;
         }
         cfg.extraConfig
       ];

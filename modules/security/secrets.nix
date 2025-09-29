@@ -1,11 +1,11 @@
 # telometto.secrets.*: central secrets options
 # Define stable, project-owned options to reference secrets throughout modules.
-{ lib, ... }: {
+{ lib, ... }:
+{
   options.telometto.secrets = {
     # Tailscale auth key file path (resolved from SOPS centrally)
     tsKeyFile = lib.mkOption {
-      type = lib.types.nullOr
-        lib.types.str; # runtime path string (do not coerce into store)
+      type = lib.types.nullOr lib.types.str; # runtime path string (do not coerce into store)
       default = null;
       description = ''
         Path to the Tailscale auth key file. This is resolved from SOPS in core/sops.nix

@@ -1,6 +1,13 @@
-{ lib, config, pkgs, ... }:
-let cfg = config.telometto.programs.gaming;
-in {
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.telometto.programs.gaming;
+in
+{
   options.telometto.programs.gaming.enable =
     lib.mkEnableOption "Gaming stack (gamescope, steam, gamemode)";
   config = lib.mkIf cfg.enable {
@@ -18,7 +25,7 @@ in {
         gamescopeSession.enable = lib.mkDefault true;
         extraPackages = with pkgs; [
           steam-run
-          sc-controller  # Replaced deprecated steamcontroller
+          sc-controller # Replaced deprecated steamcontroller
           steamtinkerlaunch
         ];
       };

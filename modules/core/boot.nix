@@ -1,5 +1,10 @@
 # Automatically imported
-{ lib, config, VARS, ... }:
+{
+  lib,
+  config,
+  VARS,
+  ...
+}:
 {
   boot = {
     initrd = {

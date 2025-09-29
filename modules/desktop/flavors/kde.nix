@@ -1,8 +1,15 @@
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 # Single-owner KDE (Plasma 6) flavor module replicated under rewrite/, gated by telometto.desktop.flavor
-let flavor = config.telometto.desktop.flavor or "none";
-    is = v: flavor == v;
-in {
+let
+  flavor = config.telometto.desktop.flavor or "none";
+  is = v: flavor == v;
+in
+{
   config = lib.mkIf (is "kde") {
     # Plasma + SDDM
     services.desktopManager.plasma6.enable = true;
@@ -20,8 +27,7 @@ in {
 
     # Askpass and Wayland bits carried from legacy
     environment = {
-      variables.SSH_ASKPASS =
-        lib.mkForce "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
+      variables.SSH_ASKPASS = lib.mkForce "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
 
       # Useful KDE packages
       systemPackages = [
@@ -51,9 +57,21 @@ in {
     # };
 
     security.pam.services = {
-      login = { enableAppArmor = true; gnupg.enable = true; kwallet.enable = true; };
-      sddm  = { enableAppArmor = true; gnupg.enable = true; kwallet.enable = true; };
-      kwallet = { enableAppArmor = true; gnupg.enable = true; kwallet.enable = true; };
+      login = {
+        enableAppArmor = true;
+        gnupg.enable = true;
+        kwallet.enable = true;
+      };
+      sddm = {
+        enableAppArmor = true;
+        gnupg.enable = true;
+        kwallet.enable = true;
+      };
+      kwallet = {
+        enableAppArmor = true;
+        gnupg.enable = true;
+        kwallet.enable = true;
+      };
     };
   };
 }

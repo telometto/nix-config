@@ -1,6 +1,13 @@
-{ lib, config, pkgs, ... }:
-let cfg = config.hm.programs.terminal;
-in {
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.hm.programs.terminal;
+in
+{
   options.hm.programs.terminal = {
     enable = lib.mkEnableOption "Terminal tools and shell configuration";
 
@@ -28,7 +35,9 @@ in {
         historyControl = [ "erasedups" ];
       };
 
-      bat = { enable = true; };
+      bat = {
+        enable = true;
+      };
 
       direnv = {
         enable = true;
@@ -137,8 +146,7 @@ in {
         };
 
         initContent = lib.mkMerge [
-          (lib.mkOrder 550
-            "source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme")
+          (lib.mkOrder 550 "source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme")
 
           (lib.mkOrder 1000 "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh")
         ];

@@ -1,5 +1,9 @@
-{ lib, VARS, ... }: {
-  imports = [ ./hardware-configuration.nix ./packages.nix ];
+{ lib, VARS, ... }:
+{
+  imports = [
+    ./hardware-configuration.nix
+    ./packages.nix
+  ];
 
   networking = {
     hostName = lib.mkForce "snowfall";
@@ -13,14 +17,18 @@
 
     networking = {
       firewall = {
-        extraTCPPortRanges = [{
-          from = 1714;
-          to = 1764;
-        }];
-        extraUDPPortRanges = [{
-          from = 1714;
-          to = 1764;
-        }];
+        extraTCPPortRanges = [
+          {
+            from = 1714;
+            to = 1764;
+          }
+        ];
+        extraUDPPortRanges = [
+          {
+            from = 1714;
+            to = 1764;
+          }
+        ];
       };
     };
 
@@ -53,7 +61,10 @@
           samsung = {
             device = "e7e653c3-361c-4fb2-a65e-13fdcb1e6e25";
             mountPoint = "samsung";
-            options = [ "defaults" "nofail" ]; # Secondary drive - with nofail
+            options = [
+              "defaults"
+              "nofail"
+            ]; # Secondary drive - with nofail
           };
         };
 

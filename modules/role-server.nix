@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.role.server;
-in {
+let
+  cfg = config.telometto.role.server;
+in
+{
   config = lib.mkIf cfg.enable {
     telometto = {
       boot = {

@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.borgbackup or { };
-in {
+let
+  cfg = config.telometto.services.borgbackup or { };
+in
+{
   options.telometto.services.borgbackup = {
     enable = lib.mkEnableOption "BorgBackup jobs";
 
@@ -8,8 +10,7 @@ in {
     jobs = lib.mkOption {
       type = lib.types.attrsOf lib.types.attrs;
       default = { };
-      description =
-        "Map of borgbackup jobs to configure under services.borgbackup.jobs";
+      description = "Map of borgbackup jobs to configure under services.borgbackup.jobs";
     };
   };
 

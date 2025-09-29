@@ -1,8 +1,14 @@
-{ lib, config, pkgs, ... }:
-let cfg = config.telometto.virtualisation;
-in {
-  options.telometto.virtualisation.enable = lib.mkEnableOption
-    "Virtualisation stack (podman, containers, libvirt, virt-manager)";
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.telometto.virtualisation;
+in
+{
+  options.telometto.virtualisation.enable = lib.mkEnableOption "Virtualisation stack (podman, containers, libvirt, virt-manager)";
   config = lib.mkIf cfg.enable {
     virtualisation = {
       podman = {

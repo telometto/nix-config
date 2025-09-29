@@ -13,7 +13,8 @@ let
     PasswordAuthentication = lib.mkDefault false;
     UsePAM = lib.mkDefault true;
   };
-in {
+in
+{
   options.telometto.services.openssh = {
     enable = lib.mkEnableOption "Enable OpenSSH service (owner module)";
     # Extension points owned by this module; other modules can set these instead of
@@ -26,8 +27,7 @@ in {
     extraConfig = lib.mkOption {
       type = lib.types.lines;
       default = "";
-      description =
-        "Additional raw sshd_config lines appended via services.openssh.extraConfig.";
+      description = "Additional raw sshd_config lines appended via services.openssh.extraConfig.";
     };
   };
 
@@ -36,7 +36,10 @@ in {
       enable = true;
       banner = lib.mkDefault ":: Welcome back to The Matrix! ::";
       # Merge defaults with contributed settings from other modules
-      settings = lib.mkMerge [ defaultSettings cfg.extraSettings ];
+      settings = lib.mkMerge [
+        defaultSettings
+        cfg.extraSettings
+      ];
       inherit (cfg) extraConfig;
       openFirewall = lib.mkDefault true;
     };

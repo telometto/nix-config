@@ -1,6 +1,14 @@
-{ lib, config, pkgs, VARS, ... }:
-let cfg = config.hm.programs.development;
-in {
+{
+  lib,
+  config,
+  pkgs,
+  VARS,
+  ...
+}:
+let
+  cfg = config.hm.programs.development;
+in
+{
   options.hm.programs.development = {
     enable = lib.mkEnableOption "Development tools and configuration";
 
@@ -41,12 +49,16 @@ in {
         user.signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
       };
 
-      includes = [{
-        condition = "gitdir:~/.versioncontrol/github/";
-        contents.user.email = "65364211+telometto@users.noreply.github.com";
-      }];
+      includes = [
+        {
+          condition = "gitdir:~/.versioncontrol/github/";
+          contents.user.email = "65364211+telometto@users.noreply.github.com";
+        }
+      ];
 
-      diff-so-fancy = { enable = true; };
+      diff-so-fancy = {
+        enable = true;
+      };
     };
 
     home.packages = [

@@ -1,6 +1,8 @@
 { config, lib, ... }:
-let cfg = config.hm.services.gpgAgent;
-in {
+let
+  cfg = config.hm.services.gpgAgent;
+in
+{
   options.hm.services.gpgAgent = {
     enable = lib.mkEnableOption "GPG Agent for home-manager";
 

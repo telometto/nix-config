@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.tautulli or { };
-in {
+let
+  cfg = config.telometto.services.tautulli or { };
+in
+{
   options.telometto.services.tautulli = {
     enable = lib.mkEnableOption "Tautulli";
     dataDir = lib.mkOption {

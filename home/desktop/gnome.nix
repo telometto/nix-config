@@ -1,6 +1,13 @@
-{ lib, config, pkgs, ... }:
-let cfg = config.hm.desktop.gnome;
-in {
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.hm.desktop.gnome;
+in
+{
   options.hm.desktop.gnome = {
     enable = lib.mkEnableOption "GNOME desktop environment configuration";
 
@@ -35,22 +42,30 @@ in {
           show-battery-percentage = true;
         };
 
-        "org/gnome/desktop/datetime" = { automatic-timezone = true; };
+        "org/gnome/desktop/datetime" = {
+          automatic-timezone = true;
+        };
 
         "org/gnome/desktop/peripherals/mouse" = {
           # speed = "-0.5";
           accel-profile = "flat";
         };
 
-        "org/gtk/Settings/FileChooser" = { sort-directories-first = true; };
+        "org/gtk/Settings/FileChooser" = {
+          sort-directories-first = true;
+        };
 
         "org/gnome/desktop/wm/preferences" = {
           button-layout = "appmenu:minimize,maximize,close";
         };
 
-        "org/gnome/desktop/calendar" = { show-weekdate = true; };
+        "org/gnome/desktop/calendar" = {
+          show-weekdate = true;
+        };
 
-        "system/proxy" = { mode = "auto"; };
+        "system/proxy" = {
+          mode = "auto";
+        };
 
         "org/gnome/settings-daemon/plugins/color" = {
           night-light-enabled = true;
@@ -87,7 +102,8 @@ in {
       pkgs.gnomeExtensions.thinkpad-battery-threshold
       pkgs.gnomeExtensions.tray-icons-reloaded
       pkgs.gnomeExtensions.user-themes
-    ] ++ cfg.extraExtensions;
+    ]
+    ++ cfg.extraExtensions;
 
     # GTK theme configuration
     gtk = {
@@ -109,8 +125,12 @@ in {
       };
 
       # THIS
-      gtk3.extraConfig = { gtk-application-prefer-dark-theme = 1; };
-      gtk4.extraConfig = { gtk-application-prefer-dark-theme = 1; };
+      gtk3.extraConfig = {
+        gtk-application-prefer-dark-theme = 1;
+      };
+      gtk4.extraConfig = {
+        gtk-application-prefer-dark-theme = 1;
+      };
 
       # OR
       # gtk3.extraConfig = {

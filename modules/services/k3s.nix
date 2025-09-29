@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.k3s or { };
-in {
+let
+  cfg = config.telometto.services.k3s or { };
+in
+{
   options.telometto.services.k3s = {
     enable = lib.mkEnableOption "k3s Kubernetes";
     role = lib.mkOption {
@@ -22,8 +24,7 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    services.rpcbind.enable =
-      lib.mkDefault true; # legacy requirement for some NFS-on-k3s setups
+    services.rpcbind.enable = lib.mkDefault true; # legacy requirement for some NFS-on-k3s setups
     services.k3s = {
       enable = lib.mkDefault true;
       inherit (cfg) role gracefulNodeShutdown extraFlags;

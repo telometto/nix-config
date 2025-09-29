@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.hm.programs.gaming;
-in {
+let
+  cfg = config.hm.programs.gaming;
+in
+{
   options.hm.programs.gaming = {
     enable = lib.mkEnableOption "Gaming tools and configuration";
 
@@ -10,8 +12,7 @@ in {
       extraSettings = lib.mkOption {
         type = lib.types.attrs;
         default = { };
-        description =
-          "Additional mangohud extra settings merged with the shared defaults.";
+        description = "Additional mangohud extra settings merged with the shared defaults.";
       };
     };
   };
@@ -55,7 +56,8 @@ in {
           media_player_format = "title,artist,album";
 
           text_outline = true;
-        } // cfg.mangohud.extraSettings;
+        }
+        // cfg.mangohud.extraSettings;
       };
     };
 

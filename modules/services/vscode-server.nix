@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.vscodeServer;
-in {
+let
+  cfg = config.telometto.services.vscodeServer;
+in
+{
   options.telometto.services.vscodeServer.enable =
     lib.mkEnableOption "VS Code Server for remote editing over SSH";
   config = lib.mkIf cfg.enable {

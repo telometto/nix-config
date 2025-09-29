@@ -64,7 +64,8 @@
     };
   };
 
-  outputs = inputs@{ nixpkgs, nix-secrets, ... }:
+  outputs =
+    inputs@{ nixpkgs, nix-secrets, ... }:
     let
       system = "x86_64-linux";
       # Import VARS from your secrets repository
@@ -74,7 +75,8 @@
       treefmtEval = inputs.treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} ./treefmt.nix;
 
       # Host configuration template
-      mkHost = hostname: extraModules:
+      mkHost =
+        hostname: extraModules:
         nixpkgs.lib.nixosSystem {
           inherit system;
           modules = [
@@ -86,10 +88,12 @@
             inputs.sops-nix.nixosModules.sops
             inputs.lanzaboote.nixosModules.lanzaboote
             inputs.microvm.nixosModules.host
-          ] ++ extraModules;
+          ]
+          ++ extraModules;
           specialArgs = { inherit inputs system VARS; };
         };
-    in {
+    in
+    {
       nixosConfigurations = {
         snowfall = mkHost "snowfall" [ ];
         blizzard = mkHost "blizzard" [ ];
@@ -98,7 +102,7 @@
 
       # Formatter (treefmt)
       formatter.${system} = treefmtEval.config.build.wrapper;
-      
+
       # Expose treefmt as a check
       checks.${system}.formatting = treefmtEval.config.build.check;
     };

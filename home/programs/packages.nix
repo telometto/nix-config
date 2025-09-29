@@ -13,7 +13,8 @@ let
   development = [ ];
 
   extras = [ ];
-in {
+in
+{
   options.hm.programs.packages = {
     enable = lib.mkEnableOption "Shared Home Manager packages";
 

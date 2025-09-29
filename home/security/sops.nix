@@ -1,6 +1,13 @@
-{ lib, config, inputs, ... }:
-let cfg = config.hm.security.sops;
-in {
+{
+  lib,
+  config,
+  inputs,
+  ...
+}:
+let
+  cfg = config.hm.security.sops;
+in
+{
   options.hm.security.sops = {
     enable = lib.mkEnableOption "SOPS secrets management for home-manager";
 
@@ -12,7 +19,7 @@ in {
 
     ageSshKeyPaths = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [];
+      default = [ ];
       description = "SSH key paths for Age";
     };
 

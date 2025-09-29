@@ -1,21 +1,21 @@
 { lib, config, ... }:
-let cfg = config.hm.programs.fastfetch;
-in {
+let
+  cfg = config.hm.programs.fastfetch;
+in
+{
   options.hm.programs.fastfetch = {
     enable = lib.mkEnableOption "Fastfetch system information utility";
 
     extraModules = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description =
-        "Modules appended to the shared Fastfetch list for specific hosts.";
+      description = "Modules appended to the shared Fastfetch list for specific hosts.";
     };
 
     extraSettings = lib.mkOption {
       type = lib.types.attrs;
       default = { };
-      description =
-        "Additional Fastfetch settings merged with the shared defaults.";
+      description = "Additional Fastfetch settings merged with the shared defaults.";
     };
   };
 
@@ -64,7 +64,8 @@ in {
               "timeout" = 1000;
             }
             "break"
-          ] ++ cfg.extraModules;
+          ]
+          ++ cfg.extraModules;
         }
         cfg.extraSettings
       ];

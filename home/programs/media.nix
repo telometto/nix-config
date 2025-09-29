@@ -1,6 +1,13 @@
-{ lib, config, pkgs, ... }:
-let cfg = config.hm.programs.media;
-in {
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.hm.programs.media;
+in
+{
   options.hm.programs.media = {
     enable = lib.mkEnableOption "Media tools and applications";
 

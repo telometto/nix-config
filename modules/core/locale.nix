@@ -1,7 +1,9 @@
 # Automatically imported
 { lib, pkgs, ... }:
-let LANGUAGE = "nb_NO.UTF-8";
-in {
+let
+  LANGUAGE = "nb_NO.UTF-8";
+in
+{
   time.timeZone = lib.mkDefault "Europe/Oslo";
 
   i18n = {

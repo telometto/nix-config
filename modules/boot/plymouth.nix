@@ -2,8 +2,10 @@
 { config, lib, ... }:
 let
   cfg = config.telometto.boot.plymouth;
-in {
-  options.telometto.boot.plymouth.enable = lib.mkEnableOption "Enable Plymouth splash screen with silent boot tweaks";
+in
+{
+  options.telometto.boot.plymouth.enable =
+    lib.mkEnableOption "Enable Plymouth splash screen with silent boot tweaks";
 
   config = lib.mkIf cfg.enable {
     boot = {

@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.zfs or { };
-in {
+let
+  cfg = config.telometto.services.zfs or { };
+in
+{
   options.telometto.services.zfs.enable =
     lib.mkEnableOption "ZFS service helpers (scrub/snapshot/trim)";
 

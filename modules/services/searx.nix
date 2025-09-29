@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.searx or { };
-in {
+let
+  cfg = config.telometto.services.searx or { };
+in
+{
   options.telometto.services.searx = {
     enable = lib.mkEnableOption "Searx Meta Search";
     port = lib.mkOption {
@@ -30,7 +32,11 @@ in {
             inherit (cfg) port;
             bind_address = cfg.bind;
           };
-          search.formats = [ "html" "json" "rss" ];
+          search.formats = [
+            "html"
+            "json"
+            "rss"
+          ];
         }
         cfg.settings
       ];

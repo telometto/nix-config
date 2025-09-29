@@ -1,5 +1,6 @@
 # Automatically imported
-{ lib, ... }: {
+{ lib, ... }:
+{
   security = {
     apparmor.enable = lib.mkDefault true;
     polkit.enable = lib.mkDefault true;

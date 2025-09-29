@@ -17,8 +17,14 @@ let
     })
   ];
 
-  storage = [ pkgs.btrfs-progs pkgs.zfs pkgs.zfstools pkgs.shadow ];
-in {
+  storage = [
+    pkgs.btrfs-progs
+    pkgs.zfs
+    pkgs.zfstools
+    pkgs.shadow
+  ];
+in
+{
   environment.systemPackages = media ++ kubernetes ++ storage;
 
   fonts.packages = [

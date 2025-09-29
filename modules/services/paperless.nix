@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.paperless or { };
-in {
+let
+  cfg = config.telometto.services.paperless or { };
+in
+{
   options.telometto.services.paperless = {
     enable = lib.mkEnableOption "Paperless-ngx";
     address = lib.mkOption {
@@ -39,7 +41,8 @@ in {
         consumptionDir
         mediaDir
         passwordFile
-        consumptionDirIsPublic;
+        consumptionDirIsPublic
+        ;
     };
   };
 }

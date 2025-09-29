@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.hm.programs.social;
-in {
+let
+  cfg = config.hm.programs.social;
+in
+{
   options.hm.programs.social = {
     enable = lib.mkEnableOption "Gaming tools and configuration";
 
@@ -21,14 +23,16 @@ in {
           useSystem = true;
 
           themes = {
-            clearvision =
-              ../files/vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;
+            clearvision = ../files/vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;
             glass = ../files/vesktop-themes/glass_local.theme.css;
           };
 
           settings = {
             useQuickCss = true;
-            enabledThemes = [ "clearvision.css" "glass.css" ];
+            enabledThemes = [
+              "clearvision.css"
+              "glass.css"
+            ];
           };
         };
       };

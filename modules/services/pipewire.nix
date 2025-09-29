@@ -1,9 +1,10 @@
 # OK
 { lib, config, ... }:
-let cfg = config.telometto.services.pipewire;
-in {
-  options.telometto.services.pipewire.enable =
-    lib.mkEnableOption "PipeWire (disables PulseAudio)";
+let
+  cfg = config.telometto.services.pipewire;
+in
+{
+  options.telometto.services.pipewire.enable = lib.mkEnableOption "PipeWire (disables PulseAudio)";
   config = lib.mkIf cfg.enable {
     security.rtkit.enable = lib.mkDefault true;
 

@@ -2,7 +2,8 @@
 let
   cfg = config.hm;
   locale = cfg.langs;
-in {
+in
+{
   options.hm.langs = lib.mkOption {
     type = lib.types.str;
     default = "en_US.UTF-8";
@@ -62,7 +63,9 @@ in {
         sshAgent.enable = lib.mkDefault true;
       };
 
-      security = { sops.enable = lib.mkDefault true; };
+      security = {
+        sops.enable = lib.mkDefault true;
+      };
     };
 
     home = {
@@ -87,7 +90,9 @@ in {
       };
 
       # Default keyboard layout - can be overridden per user
-      keyboard = { layout = lib.mkDefault "no"; };
+      keyboard = {
+        layout = lib.mkDefault "no";
+      };
     };
   };
 }

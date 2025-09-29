@@ -1,9 +1,15 @@
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 # Single-owner GNOME flavor module replicated under rewrite/, gated by telometto.desktop.flavor
 let
   flavor = config.telometto.desktop.flavor or "none";
   is = v: flavor == v;
-in {
+in
+{
   config = lib.mkIf (is "gnome") {
     programs = {
       gnome-disks.enable = true;

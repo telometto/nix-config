@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.firefly or { };
-in {
+let
+  cfg = config.telometto.services.firefly or { };
+in
+{
   options.telometto.services.firefly = {
     enable = lib.mkEnableOption "Firefly III";
     enableNginx = lib.mkOption {

@@ -13,7 +13,8 @@ let
       };
     };
   });
-in {
+in
+{
   options.telometto.networking.firewall = {
     enable = lib.mkEnableOption "Firewall base policy";
     extraTCPPorts = lib.mkOption {
@@ -29,14 +30,12 @@ in {
     extraTCPPortRanges = lib.mkOption {
       type = lib.types.listOf portRangeType;
       default = [ ];
-      description =
-        "TCP port ranges to allow; service modules (e.g. kdeconnect) should manage their own if openFirewall is set.";
+      description = "TCP port ranges to allow; service modules (e.g. kdeconnect) should manage their own if openFirewall is set.";
     };
     extraUDPPortRanges = lib.mkOption {
       type = lib.types.listOf portRangeType;
       default = [ ];
-      description =
-        "UDP port ranges to allow; service modules handle theirs when openFirewall = true.";
+      description = "UDP port ranges to allow; service modules handle theirs when openFirewall = true.";
     };
   };
 

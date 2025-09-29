@@ -1,9 +1,19 @@
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.hm.programs.browsers;
 
-  LANGUAGES = [ "nb-NO" "it-IT" "en-US" ];
-in {
+  LANGUAGES = [
+    "nb-NO"
+    "it-IT"
+    "en-US"
+  ];
+in
+{
   options.hm.programs.browsers = {
     enable = lib.mkEnableOption "Web browsers configuration";
 

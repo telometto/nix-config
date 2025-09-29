@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.autoUpgrade or { };
-in {
+let
+  cfg = config.telometto.services.autoUpgrade or { };
+in
+{
   options.telometto.services.autoUpgrade = {
     enable = lib.mkEnableOption "Automatic system upgrades via flakes";
     flake = lib.mkOption {
@@ -49,8 +51,17 @@ in {
   config = lib.mkIf cfg.enable {
     system.autoUpgrade = {
       enable = true;
-      inherit (cfg) flake operation flags dates rebootWindow persistent
-        allowReboot fixedRandomDelay randomizedDelaySec;
+      inherit (cfg)
+        flake
+        operation
+        flags
+        dates
+        rebootWindow
+        persistent
+        allowReboot
+        fixedRandomDelay
+        randomizedDelaySec
+        ;
     };
   };
 }

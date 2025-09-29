@@ -9,14 +9,14 @@ let
   ];
 
   containers = [
-    # pkgs.distrobox 
-    # pkgs.distrobox-tui 
+    # pkgs.distrobox
+    # pkgs.distrobox-tui
   ];
 
   virtualization = [
-    # pkgs.libvirt 
-    # pkgs.qemu 
-    # pkgs.OVMFFull 
+    # pkgs.libvirt
+    # pkgs.qemu
+    # pkgs.OVMFFull
   ];
 
   storage = [ pkgs.btrfs-progs ];
@@ -32,7 +32,8 @@ let
   extras = [
     # inputs.agenix.packages."x86_64-linux".default
   ];
-in {
+in
+{
   # Compose from local categories; add/remove lists as needed
   environment.systemPackages = storage ++ desktop ++ wine ++ extras;
 

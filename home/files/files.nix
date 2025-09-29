@@ -3,22 +3,21 @@ let
   cfg = config.hm.files;
 
   # User-defined SSH hosts - no defaults, full user control
-  allSshHosts =
-    cfg.sshConfig.hosts; # Generate SSH config block for a single host
-  renderSshHost = hostPattern: hostConfig:
+  allSshHosts = cfg.sshConfig.hosts; # Generate SSH config block for a single host
+  renderSshHost =
+    hostPattern: hostConfig:
     let
-      configLines =
-        lib.mapAttrsToList (key: value: "  ${key} ${value}") hostConfig;
-    in ''
+      configLines = lib.mapAttrsToList (key: value: "  ${key} ${value}") hostConfig;
+    in
+    ''
       Host ${hostPattern}
       ${lib.concatStringsSep "\n" configLines}'';
 
   # Generate the complete SSH config
-  sshConfigText =
-    lib.concatStringsSep "\n\n" (lib.mapAttrsToList renderSshHost allSshHosts)
-    + "\n";
+  sshConfigText = lib.concatStringsSep "\n\n" (lib.mapAttrsToList renderSshHost allSshHosts) + "\n";
 
-in {
+in
+{
   options.hm.files = {
     enable = lib.mkEnableOption "Home directory file management";
 
@@ -28,8 +27,7 @@ in {
       hosts = lib.mkOption {
         type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
         default = { };
-        description =
-          "SSH host configurations. Users define host names and their options.";
+        description = "SSH host configurations. Users define host names and their options.";
         example = {
           "*" = {
             ForwardAgent = "yes";
@@ -63,11 +61,13 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    home.file = lib.mkIf cfg.sshConfig.enable ({
-      ".ssh/config".text = sshConfigText;
-    } // lib.optionalAttrs (cfg.sshConfig.allowedSigners != [ ]) {
-      ".ssh/allowed_signers".text =
-        lib.concatStringsSep "\n" cfg.sshConfig.allowedSigners + "\n";
-    });
+    home.file = lib.mkIf cfg.sshConfig.enable (
+      {
+        ".ssh/config".text = sshConfigText;
+      }
+      // lib.optionalAttrs (cfg.sshConfig.allowedSigners != [ ]) {
+        ".ssh/allowed_signers".text = lib.concatStringsSep "\n" cfg.sshConfig.allowedSigners + "\n";
+      }
+    );
   };
 }

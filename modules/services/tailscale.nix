@@ -1,25 +1,32 @@
-{ lib, config, pkgs, ... }:
-let cfg = config.telometto.services.tailscale;
-in {
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.telometto.services.tailscale;
+in
+{
   options.telometto.services.tailscale = {
     enable = lib.mkEnableOption "Tailscale VPN";
     extraUpFlags = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "--reset" "--ssh" ];
-      description =
-        "Extra flags appended to tailscale up (owner extension point).";
+      default = [
+        "--reset"
+        "--ssh"
+      ];
+      description = "Extra flags appended to tailscale up (owner extension point).";
     };
     interface = lib.mkOption {
       type = lib.types.str;
       default = "eth0";
-      description =
-        "Network interface name for networkd-dispatcher rule (e.g., eth0, enp5s0).";
+      description = "Network interface name for networkd-dispatcher rule (e.g., eth0, enp5s0).";
     };
     settings = lib.mkOption {
       type = lib.types.attrsOf lib.types.anything;
       default = { };
-      description =
-        "Extra attributes merged into services.tailscale (owner extension point).";
+      description = "Extra attributes merged into services.tailscale (owner extension point).";
     };
   };
   config = lib.mkIf cfg.enable {
@@ -43,9 +50,7 @@ in {
         enable = lib.mkDefault true;
         rules."50-tailscale" = {
           onState = [ "routable" ];
-          script = "${
-              lib.getExe pkgs.ethtool
-            } -K ${cfg.interface} rx-udp-gro-forwarding on rx-gro-list off";
+          script = "${lib.getExe pkgs.ethtool} -K ${cfg.interface} rx-udp-gro-forwarding on rx-gro-list off";
         };
       };
     };

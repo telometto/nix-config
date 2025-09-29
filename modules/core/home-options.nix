@@ -1,9 +1,10 @@
 { lib, config, ... }:
-let cfg = config.telometto.home;
-in {
+let
+  cfg = config.telometto.home;
+in
+{
   options.telometto.home = {
-    enable =
-      lib.mkEnableOption "Home-manager integration across all telometto hosts";
+    enable = lib.mkEnableOption "Home-manager integration across all telometto hosts";
 
     template = lib.mkOption {
       type = lib.types.attrs;
@@ -23,39 +24,37 @@ in {
     };
 
     users = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.submodule (_: {
-        options = {
-          enable = lib.mkOption {
-            type = lib.types.bool;
-            default = true;
-            description = "Enable Home Manager configuration for this user";
-          };
+      type = lib.types.attrsOf (
+        lib.types.submodule (_: {
+          options = {
+            enable = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              description = "Enable Home Manager configuration for this user";
+            };
 
-          extraConfig = lib.mkOption {
-            type = lib.types.attrs;
-            default = { };
-            description =
-              "Per-user overrides merged on top of the shared template.";
-          };
+            extraConfig = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+              description = "Per-user overrides merged on top of the shared template.";
+            };
 
-          extraModules = lib.mkOption {
-            type = lib.types.listOf lib.types.anything;
-            default = [ ];
-            description =
-              "Additional modules to import for this specific user.";
+            extraModules = lib.mkOption {
+              type = lib.types.listOf lib.types.anything;
+              default = [ ];
+              description = "Additional modules to import for this specific user.";
+            };
           };
-        };
-      }));
+        })
+      );
       default = { };
-      description =
-        "Per-user overrides for generated Home Manager configurations.";
+      description = "Per-user overrides for generated Home Manager configurations.";
     };
 
     systemUsers = lib.mkOption {
       type = lib.types.attrsOf lib.types.attrs;
       default = { };
-      description =
-        "Internal registry of system user metadata exposed to Home Manager automation.";
+      description = "Internal registry of system user metadata exposed to Home Manager automation.";
       internal = true;
     };
   };

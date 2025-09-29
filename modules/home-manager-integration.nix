@@ -1,6 +1,14 @@
-{ lib, config, inputs, VARS, ... }:
-let cfg = config.telometto.home;
-in {
+{
+  lib,
+  config,
+  inputs,
+  VARS,
+  ...
+}:
+let
+  cfg = config.telometto.home;
+in
+{
   # Configure home-manager when enabled
   config = lib.mkIf cfg.enable {
     home-manager = {

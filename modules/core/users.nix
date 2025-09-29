@@ -1,13 +1,22 @@
 # Automatically imported
-{ lib, pkgs, VARS, ... }:
+{
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 let
   inherit (VARS.users) admin;
-in {
+in
+{
   users.users.${admin.user} = {
     inherit (admin) description isNormalUser hashedPassword;
     shell = lib.mkForce pkgs.zsh;
     extraGroups = lib.mkDefault admin.extraGroups;
-    openssh.authorizedKeys.keys = [ admin.sshPubKey admin.gpgSshPubKey ];
+    openssh.authorizedKeys.keys = [
+      admin.sshPubKey
+      admin.gpgSshPubKey
+    ];
   };
 
   telometto.home.systemUsers.${admin.user} = admin;

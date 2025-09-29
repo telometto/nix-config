@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.jellyfin;
-in {
+let
+  cfg = config.telometto.services.jellyfin;
+in
+{
   options.telometto.services.jellyfin = {
     enable = lib.mkEnableOption "Jellyfin service";
     openFirewall = lib.mkOption {

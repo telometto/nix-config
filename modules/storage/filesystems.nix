@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.storage.filesystems;
-in {
+let
+  cfg = config.telometto.storage.filesystems;
+in
+{
   options.telometto.storage.filesystems = {
     enable = lib.mkEnableOption "BTRFS filesystem management";
 
@@ -11,26 +13,27 @@ in {
     };
 
     mounts = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.submodule {
-        options = {
-          device = lib.mkOption {
-            type = lib.types.str;
-            description = "Device UUID (without /dev/disk/by-uuid/ prefix)";
-          };
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = {
+            device = lib.mkOption {
+              type = lib.types.str;
+              description = "Device UUID (without /dev/disk/by-uuid/ prefix)";
+            };
 
-          mountPoint = lib.mkOption {
-            type = lib.types.str;
-            description =
-              "Mount point name (will be under /run/media/\${baseUser}/)";
-          };
+            mountPoint = lib.mkOption {
+              type = lib.types.str;
+              description = "Mount point name (will be under /run/media/\${baseUser}/)";
+            };
 
-          options = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ "defaults" ];
-            description = "Mount options (include 'nofail' for non-critical mounts)";
+            options = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [ "defaults" ];
+              description = "Mount options (include 'nofail' for non-critical mounts)";
+            };
           };
-        };
-      });
+        }
+      );
       default = { };
       description = "BTRFS filesystem mounts";
     };
@@ -52,12 +55,14 @@ in {
 
   config = lib.mkIf cfg.enable {
     # Configure fileSystems
-    fileSystems = lib.mapAttrs' (_: mount:
+    fileSystems = lib.mapAttrs' (
+      _: mount:
       lib.nameValuePair "/run/media/${cfg.baseUser}/${mount.mountPoint}" {
         device = "/dev/disk/by-uuid/${mount.device}";
         fsType = "btrfs";
         inherit (mount) options;
-      }) cfg.mounts;
+      }
+    ) cfg.mounts;
 
     # Enable BTRFS support
     boot = {

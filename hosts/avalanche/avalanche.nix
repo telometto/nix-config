@@ -1,4 +1,10 @@
-{ lib, VARS, inputs, ... }: {
+{
+  lib,
+  VARS,
+  inputs,
+  ...
+}:
+{
   imports = [
     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p51
     ./hardware-configuration.nix
@@ -71,7 +77,9 @@
     #   };
     # };
   };
-  hardware = { cpu.intel.updateMicrocode = lib.mkDefault true; };
+  hardware = {
+    cpu.intel.updateMicrocode = lib.mkDefault true;
+  };
 
   # Additional services
   programs.virt-manager.enable = true;

@@ -1,5 +1,6 @@
 # User-specific configuration for admin user on snowfall host
-{ config, pkgs, ... }: {
+{ config, pkgs, ... }:
+{
   # User-specific packages for admin on snowfall
   home.packages = with pkgs; [
     variety # Wallpaper changer

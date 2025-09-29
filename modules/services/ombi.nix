@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.ombi or { };
-in {
+let
+  cfg = config.telometto.services.ombi or { };
+in
+{
   options.telometto.services.ombi = {
     enable = lib.mkEnableOption "Ombi";
     dataDir = lib.mkOption {

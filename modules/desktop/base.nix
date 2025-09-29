@@ -12,12 +12,17 @@ let
       };
     };
   };
-in {
+in
+{
   options.telometto.desktop.flavor = lib.mkOption {
-    type = lib.types.enum [ "none" "gnome" "kde" "hyprland" ];
+    type = lib.types.enum [
+      "none"
+      "gnome"
+      "kde"
+      "hyprland"
+    ];
     default = "none";
-    description =
-      "Select Desktop Environment: none (headless), gnome, kde (Plasma), or hyprland.";
+    description = "Select Desktop Environment: none (headless), gnome, kde (Plasma), or hyprland.";
   };
 
   # The concrete GNOME/KDE/Hyprland settings live under modules/desktop/flavors/*.nix

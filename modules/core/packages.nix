@@ -62,7 +62,10 @@ let
     pkgs.udisks
   ];
 
-  containers = [ pkgs.podman-compose pkgs.podman-tui ];
+  containers = [
+    pkgs.podman-compose
+    pkgs.podman-tui
+  ];
 
   security = [
     pkgs.sbctl
@@ -74,7 +77,8 @@ let
     pkgs.libapparmor
     pkgs.tpm2-tools
   ];
-in {
+in
+{
   environment.systemPackages = lib.concatLists [
     base
     networking

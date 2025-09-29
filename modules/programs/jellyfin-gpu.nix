@@ -1,16 +1,23 @@
-{ lib, pkgs, config, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
 let
   cfg = config.telometto.programs.jellyfinGpu;
   jellyfinEnabled = config.telometto.services.jellyfin.enable or false;
-in {
+in
+{
   options.telometto.programs.jellyfinGpu.enable =
     lib.mkEnableOption "Jellyfin VAAPI/Intel GPU support packages";
 
   config = lib.mkMerge [
     # Follow Jellyfin service by default (host can still override explicitly)
     {
-      telometto.programs.jellyfinGpu.enable =
-        lib.mkDefault (config.telometto.services.jellyfin.enable or false);
+      telometto.programs.jellyfinGpu.enable = lib.mkDefault (
+        config.telometto.services.jellyfin.enable or false
+      );
     }
 
     (lib.mkIf cfg.enable {
@@ -33,7 +40,10 @@ in {
     # Avoid creating the user when the service is disabled
     # (the upstream service module defines the user; we just add extra groups)
     (lib.mkIf (cfg.enable && jellyfinEnabled) {
-      users.users.jellyfin.extraGroups = [ "video" "render" ];
+      users.users.jellyfin.extraGroups = [
+        "video"
+        "render"
+      ];
     })
   ];
 }

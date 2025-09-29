@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.sanoid or { };
-in {
+let
+  cfg = config.telometto.services.sanoid or { };
+in
+{
   options.telometto.services.sanoid = {
     enable = lib.mkEnableOption "Sanoid snapshot management";
 

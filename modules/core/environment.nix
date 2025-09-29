@@ -1,5 +1,6 @@
 # Automatically imported
-{ lib, ... }: {
+{ lib, ... }:
+{
   environment.variables = {
     EDITOR = lib.mkForce "micro";
     SSH_ASKPASS_REQUIRE = lib.mkDefault "prefer";

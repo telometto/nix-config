@@ -1,6 +1,8 @@
 { lib, config, ... }:
-let cfg = config.telometto.services.immich or { };
-in {
+let
+  cfg = config.telometto.services.immich or { };
+in
+{
   options.telometto.services.immich = {
     enable = lib.mkEnableOption "Immich media server";
     host = lib.mkOption {
@@ -59,48 +61,59 @@ in {
     };
     redis = lib.mkOption {
       type = lib.types.attrs;
-      default = { enable = true; };
+      default = {
+        enable = true;
+      };
     };
     ml = lib.mkOption {
       type = lib.types.attrs;
       default = {
         enable = true;
-        environment = { MACHINE_LEARNING_MODEL_TTL = "600"; };
+        environment = {
+          MACHINE_LEARNING_MODEL_TTL = "600";
+        };
       };
     };
     addVideoGroups = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description =
-        "Add 'immich' service user to video/render groups (for HW accel)";
+      description = "Add 'immich' service user to video/render groups (for HW accel)";
     };
   };
 
-  config = lib.mkIf cfg.enable (lib.mkMerge [
-    {
-      services.immich = {
-        enable = true;
-        inherit (cfg)
-          host
-          port
-          user
-          group
-          secretsFile
-          mediaLocation
-          accelerationDevices
-          openFirewall
-          environment
-          database
-          redis;
-        settings = lib.recursiveUpdate {
-          newVersionCheck = { enabled = cfg.newVersionCheck; };
-        } cfg.settings;
-        machine-learning = cfg.ml;
-      };
-    }
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        services.immich = {
+          enable = true;
+          inherit (cfg)
+            host
+            port
+            user
+            group
+            secretsFile
+            mediaLocation
+            accelerationDevices
+            openFirewall
+            environment
+            database
+            redis
+            ;
+          settings = lib.recursiveUpdate {
+            newVersionCheck = {
+              enabled = cfg.newVersionCheck;
+            };
+          } cfg.settings;
+          machine-learning = cfg.ml;
+        };
+      }
 
-    (lib.mkIf cfg.addVideoGroups {
-      users.users.${cfg.user}.extraGroups = [ "video" "render" ];
-    })
-  ]);
+      (lib.mkIf cfg.addVideoGroups {
+        users.users.${cfg.user}.extraGroups = [
+          "video"
+          "render"
+        ];
+      })
+    ]
+  );
 }

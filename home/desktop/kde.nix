@@ -1,6 +1,13 @@
-{ lib, config, pkgs, ... }:
-let cfg = config.hm.desktop.kde;
-in {
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.hm.desktop.kde;
+in
+{
   options.hm.desktop.kde = {
     enable = lib.mkEnableOption "KDE Plasma desktop environment configuration";
 
@@ -24,7 +31,8 @@ in {
       pkgs.kdePackages.kdeconnect-kde
       pkgs.kdePackages.kcalc
       pkgs.kdePackages.kolourpaint
-    ] ++ cfg.extraPackages;
+    ]
+    ++ cfg.extraPackages;
 
     # Qt configuration - can be extended via qtConfig option
     # qt = lib.mkMerge [

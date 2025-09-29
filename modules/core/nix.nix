@@ -1,9 +1,16 @@
 # Automatically imported
-{ lib, config, ... }: {
+{ lib, config, ... }:
+{
   nix = {
     settings = {
-      trusted-users = lib.mkDefault [ "root" "@wheel" ];
-      experimental-features = lib.mkDefault [ "nix-command" "flakes" ];
+      trusted-users = lib.mkDefault [
+        "root"
+        "@wheel"
+      ];
+      experimental-features = lib.mkDefault [
+        "nix-command"
+        "flakes"
+      ];
       auto-optimise-store = lib.mkDefault true;
       download-buffer-size = lib.mkDefault 536870912;
     };
