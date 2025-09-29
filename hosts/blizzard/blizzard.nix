@@ -1,134 +1,153 @@
 { lib, config, VARS, pkgs, ... }: {
-  # Enable server role (provides server defaults)
-  telometto.role.server.enable = true;
-
   imports = [ ./hardware-configuration.nix ./packages.nix ];
 
+  telometto = {
+    # Enable server role (provides server defaults)
+    role.server.enable = true;
+
+    # Firewall policy via owner module (role enables it); host adds extra ports/ranges
+    networking = {
+      hostName = lib.mkForce VARS.systems.server.hostName;
+      hostId = lib.mkForce VARS.systems.server.hostId;
+
+      firewall = {
+        enable = true;
+        extraTCPPortRanges = [{
+          from = 4000;
+          to = 4002;
+        }];
+        extraUDPPortRanges = [{
+          from = 4000;
+          to = 4002;
+        }];
+        # Include service ports for k3s, HTTP/HTTPS, NFS, Paperless, Actual, Searx, Scrutiny, Cockpit
+        extraTCPPorts = [ 6443 80 443 111 2049 20048 28981 3838 7777 8072 9090 ];
+        extraUDPPorts = [ 6443 80 443 111 2049 20048 28981 3838 7777 8072 9090 ];
+      };
+    };
+
+    services = {
+      # Private networking (enabled in legacy)
+      tailscale.enable = lib.mkDefault true;
+      networkd-dispatcher.rules."50-tailscale".script = lib.mkForce "${lib.getExe pkgs.ethtool} -K enp8s0 rx-udp-gro-forwarding on rx-gro-list off";
+
+      # Enable NFS (owner module) and run as a server
+      nfs = {
+        enable = lib.mkDefault false; # matches legacy default (server block kept for quick flip)
+        server = {
+          enable = true;
+          exports = ''
+            /rpool/enc/transfers 192.168.2.0/24(rw,sync,nohide,no_subtree_check)
+          '';
+        };
+      };
+
+      # ZFS helpers and snapshot management
+      zfs.enable = lib.mkDefault true;
+
+      # Sanoid: rely on module default template "production" (autoprune=false) and just declare datasets
+      sanoid = {
+        enable = true;
+        datasets = {
+          tank = {
+            useTemplate = [ "production" ];
+            recursive = true;
+          };
+          flash_temp = {
+            useTemplate = [ "production" ];
+            recursive = true;
+          };
+        };
+      };
+
+      # Monitoring and admin UIs
+      scrutiny.enable = lib.mkDefault true; # port 8072
+      cockpit.enable = lib.mkDefault true; # port 9090
+
+      # Kubernetes (k3s) server
+      k3s.enable = lib.mkDefault true;
+
+      # Maintenance bundle provided by role; host can override if needed
+
+      # Apps and media
+      paperless = {
+        enable = lib.mkDefault false;
+        consumptionDirIsPublic = lib.mkDefault true;
+        consumptionDir = lib.mkDefault "/rpool/enc/personal/documents";
+        mediaDir = lib.mkDefault "/rpool/enc/personal/paperless-media";
+      };
+
+      actual = {
+        enable = lib.mkDefault true; # port 3838
+        port = lib.mkDefault 3838;
+      };
+
+      firefly.enable = lib.mkDefault true; # APP_KEY_FILE via defaults
+
+      searx = {
+        enable = lib.mkDefault true; # port 7777 bind 0.0.0.0
+        port = lib.mkDefault 7777;
+      };
+
+      immich = {
+        enable = lib.mkDefault true;
+        host = lib.mkDefault "0.0.0.0";
+        port = lib.mkDefault 2283;
+        openFirewall = lib.mkDefault true;
+        mediaLocation = lib.mkDefault "/flash/enc/personal/immich-library";
+        secretsFile = lib.mkDefault "/opt/sec/immich-file";
+        environment = {
+          IMMICH_LOG_LEVEL = "verbose";
+          IMMICH_TELEMETRY_INCLUDE = "all";
+        };
+      };
+
+      ombi = {
+        enable = lib.mkDefault true;
+        dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/ombi";
+      };
+
+      plex.enable = lib.mkDefault true;
+
+      tautulli = {
+        enable = lib.mkDefault true;
+        dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
+      };
+
+      jellyfin.enable = lib.mkDefault true;
+
+      # Backups: Borg (daily)
+      borgbackup = {
+        enable = lib.mkDefault true;
+        jobs.homeserver = {
+          paths = [ "/home/${VARS.users.admin.user}" ];
+          environment.BORG_RSH =
+            "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.admin.user}/.ssh/borg-blizzard";
+          repo = lib.mkDefault
+            (config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo");
+          compression = "zstd,8";
+          startAt = "daily";
+
+          encryption = {
+            mode = "repokey-blake2";
+            passCommand = "cat ${config.telometto.secrets.borgKeyFile}";
+          };
+        };
+      };
+    };
+
+    # Virtualisation stack (podman, containers, libvirt)
+    virtualisation.enable = lib.mkDefault true;
+
+    # Client program defaults
+    programs = {
+      ssh.enable = lib.mkDefault true;
+      mtr.enable = lib.mkDefault true;
+      gnupg.enable = lib.mkDefault true;
+    };
+  };
+
   hardware.cpu.intel.updateMicrocode = lib.mkDefault true;
-  networking.hostName = lib.mkForce VARS.systems.server.hostName;
-  networking.hostId = lib.mkForce VARS.systems.server.hostId;
-  # Firewall policy via owner module (role enables it); host adds extra ports/ranges
-  telometto.networking.firewall = {
-    enable = true;
-    extraTCPPortRanges = [{
-      from = 4000;
-      to = 4002;
-    }];
-    extraUDPPortRanges = [{
-      from = 4000;
-      to = 4002;
-    }];
-    # Include service ports for k3s, HTTP/HTTPS, NFS, Paperless, Actual, Searx, Scrutiny, Cockpit
-    extraTCPPorts = [ 6443 80 443 111 2049 20048 28981 3838 7777 8072 9090 ];
-    extraUDPPorts = [ 6443 80 443 111 2049 20048 28981 3838 7777 8072 9090 ];
-  };
-
-  # Private networking (enabled in legacy)
-  telometto.services.tailscale.enable = lib.mkDefault true;
-  services.networkd-dispatcher.rules."50-tailscale".script = lib.mkForce "${
-      lib.getExe pkgs.ethtool
-    } -K enp8s0 rx-udp-gro-forwarding on rx-gro-list off";
-
-  # Enable NFS (owner module) and run as a server
-  telometto.services.nfs = {
-    enable = lib.mkDefault
-      false; # matches legacy default (server block kept for quick flip)
-    server = {
-      enable = true;
-      exports = ''
-        /rpool/enc/transfers 192.168.2.0/24(rw,sync,nohide,no_subtree_check)
-      '';
-    };
-  };
-
-  # ZFS helpers and snapshot management
-  telometto.services.zfs.enable = lib.mkDefault true;
-  # Sanoid: rely on module default template "production" (autoprune=false) and just declare datasets
-  telometto.services.sanoid = {
-    enable = true;
-    datasets = {
-      tank = {
-        useTemplate = [ "production" ];
-        recursive = true;
-      };
-      flash_temp = {
-        useTemplate = [ "production" ];
-        recursive = true;
-      };
-    };
-  };
-
-  # Monitoring and admin UIs
-  telometto.services.scrutiny.enable = lib.mkDefault true; # port 8072
-  telometto.services.cockpit.enable = lib.mkDefault true; # port 9090
-
-  # Kubernetes (k3s) server
-  telometto.services.k3s.enable = lib.mkDefault true;
-
-  # Maintenance bundle provided by role; host can override if needed
-
-  # Apps and media
-  telometto.services.paperless = {
-    enable = lib.mkDefault false;
-    consumptionDirIsPublic = lib.mkDefault true;
-    consumptionDir = lib.mkDefault "/rpool/enc/personal/documents";
-    mediaDir = lib.mkDefault "/rpool/enc/personal/paperless-media";
-  };
-  telometto.services.actual.enable = lib.mkDefault true; # port 3838
-  telometto.services.firefly.enable =
-    lib.mkDefault true; # APP_KEY_FILE via defaults
-  telometto.services.searx.enable = lib.mkDefault true; # port 7777 bind 0.0.0.0
-  telometto.services.immich = {
-    enable = lib.mkDefault true;
-    host = lib.mkDefault "0.0.0.0";
-    port = lib.mkDefault 2283;
-    openFirewall = lib.mkDefault true;
-    mediaLocation = lib.mkDefault "/flash/enc/personal/immich-library";
-    secretsFile = lib.mkDefault "/opt/sec/immich-file";
-    environment = {
-      IMMICH_LOG_LEVEL = "verbose";
-      IMMICH_TELEMETRY_INCLUDE = "all";
-    };
-  };
-  telometto.services.ombi = {
-    enable = lib.mkDefault true;
-    dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/ombi";
-  };
-  telometto.services.plex.enable = lib.mkDefault true;
-  telometto.services.tautulli = {
-    enable = lib.mkDefault true;
-    dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
-  };
-  telometto.services.jellyfin.enable = lib.mkDefault true;
-
-  # Virtualisation stack (podman, containers, libvirt)
-  telometto.virtualisation.enable = lib.mkDefault true;
-
-  # Client program defaults
-  telometto.programs.ssh.enable = lib.mkDefault true;
-  telometto.programs.mtr.enable = lib.mkDefault true;
-  telometto.programs.gnupg.enable = lib.mkDefault true;
-
-  # Automatic upgrades provided by role; host can override if needed
-
-  # Backups: Borg (daily)
-  telometto.services.borgbackup = {
-    enable = lib.mkDefault true;
-    jobs.homeserver = {
-      paths = [ "/home/${VARS.users.admin.user}" ];
-      environment.BORG_RSH =
-        "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.admin.user}/.ssh/borg-blizzard";
-      repo = lib.mkDefault
-        (config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo");
-      compression = "zstd,8";
-      startAt = "daily";
-
-      encryption = {
-        mode = "repokey-blake2";
-        passCommand = "cat ${config.telometto.secrets.borgKeyFile}";
-      };
-    };
-  };
 
   # ZFS boot support (host-specific)
   boot = {
@@ -163,10 +182,6 @@
   # Export kubeconfig for the admin user (used by server tooling)
   environment.variables.KUBECONFIG =
     "/home/${VARS.users.admin.user}/.kube/config";
-
-  # Optional: enable or adjust service module settings at host level
-  telometto.services.searx.port = lib.mkDefault 7777;
-  telometto.services.actual.port = lib.mkDefault 3838;
 
   system.stateVersion = "24.11";
 }
