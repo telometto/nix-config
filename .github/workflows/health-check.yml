@@ -7,7 +7,6 @@ on:
 permissions:
   contents: read
   issues: write
-
 jobs:
   build-hosts:
     runs-on: ubuntu-latest
@@ -43,6 +42,14 @@ jobs:
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v4
+
+      - name: Expand build sandbox for avalanche
+        if: matrix.host == 'avalanche'
+        run: |
+          mkdir -p ~/.config/nix
+          cat <<'EOF' >> ~/.config/nix/nix.conf
+          sandbox = false
+          EOF
 
       - name: Build ${{ matrix.host }}
         run: |
