@@ -22,6 +22,18 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Reclaim disk space on runner
+        run: |
+          echo "## 📦 Disk Usage (before cleanup)" >> $GITHUB_STEP_SUMMARY
+          df -h >> $GITHUB_STEP_SUMMARY
+
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache || true
+          sudo docker system prune -af || true
+          sudo rm -rf /home/linuxbrew || true
+
+          echo "## ♻️ Disk Usage (after cleanup)" >> $GITHUB_STEP_SUMMARY
+          df -h >> $GITHUB_STEP_SUMMARY
+
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
@@ -38,6 +50,11 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Collect Nix garbage
+        if: always()
+        run: |
+          nix store gc || nix-collect-garbage || true
 
       - name: Check for security updates
         run: |
