@@ -12,7 +12,7 @@
 # - `nix-options` includes the GitHub token for accessing private repositories
 # - Uses treefmt-nix for unified formatting of multiple file types (Nix, YAML, Markdown, Shell, etc.)
 
-name: update lockfile
+name: Update Lockfile
 on:
   workflow_dispatch:
   schedule:
