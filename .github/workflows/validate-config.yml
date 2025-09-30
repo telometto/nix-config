@@ -46,8 +46,8 @@ jobs:
         run: |
           echo "## 🔍 Syntax Validation for ${{ matrix.host }}" >> $GITHUB_STEP_SUMMARY
 
-          # Check Nix syntax
-          if nix-instantiate --parse --quiet hosts/${{ matrix.host }}/configuration.nix > /dev/null; then
+          # Check Nix syntax (files are named after the host, not configuration.nix)
+          if nix-instantiate --parse --quiet hosts/${{ matrix.host }}/${{ matrix.host }}.nix > /dev/null; then
             echo "✅ Syntax validation passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ Syntax validation failed" >> $GITHUB_STEP_SUMMARY
