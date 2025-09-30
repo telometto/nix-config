@@ -27,14 +27,13 @@ in
 
     # Askpass and Wayland bits carried from legacy
     environment = {
-      variables.SSH_ASKPASS = lib.mkForce "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
+      # variables.SSH_ASKPASS = lib.mkForce "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
 
       # Useful KDE packages
       systemPackages = [
         pkgs.kdePackages.kwallet
         pkgs.kdePackages.kwalletmanager
         pkgs.kdePackages.kwallet-pam
-        pkgs.kdePackages.ksshaskpass
         pkgs.kdePackages.qtwayland
         pkgs.xwayland
         pkgs.kdePackages.xwaylandvideobridge
