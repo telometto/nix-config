@@ -1,5 +1,6 @@
 name: Auto Format
 on:
+  workflow_dispatch:
   pull_request:
     types: [opened, synchronize]
     paths:
@@ -59,6 +60,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add .
+            formatted_files=$(git diff --cached --name-only)
             git commit -m "style: automatic formatting by treefmt [skip ci]"
             
             # Push to appropriate branch based on event type
@@ -69,6 +71,11 @@ jobs:
             fi
             
             echo "formatted=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "formatted-files<<EOF"
+              printf '%s\n' "$formatted_files"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
           else
             echo "No formatting changes needed"
             echo "formatted=false" >> "$GITHUB_OUTPUT"
@@ -77,17 +84,27 @@ jobs:
       - name: Comment on PR if formatted
         if: steps.check-formatting.outputs.formatted == 'true' && github.event_name == 'pull_request'
         uses: actions/github-script@main
+        env:
+          FORMATTED_FILES: ${{ steps.check-formatting.outputs.formatted-files }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
             const issue_number = context.payload.pull_request.number;
+            const formattedFiles = (process.env.FORMATTED_FILES || '')
+              .split(/\r?\n/)
+              .map((file) => file.trim())
+              .filter(Boolean);
+
+            const formattedList = formattedFiles.length
+              ? '\n\n**Files formatted:**\n' + formattedFiles.map((file) => `- \`${file}\``).join('\n')
+              : '';
 
             await github.rest.issues.createComment({
               owner,
               repo,
               issue_number,
-              body: '🎨 **Auto-formatted**: Files have been automatically formatted with treefmt to maintain code consistency.'
+              body: `🎨 **Auto-formatted**: Files have been automatically formatted with treefmt to maintain code consistency.${formattedList}`
             });
 
       - name: Enable auto-merge for formatted PR
