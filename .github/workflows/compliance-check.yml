@@ -194,8 +194,8 @@ jobs:
             if [ -f "hosts/$host/$host.nix" ]; then
               config_file="hosts/$host/$host.nix"
               
-              # Check for hostname setting (looks for hostName anywhere in the file)
-              if grep -q "hostName\s*=.*\(lib\.mkForce\|lib\.mkDefault\|\"\)" "$config_file"; then
+              # Check for hostname setting
+              if grep -q "networking\.hostName" "$config_file"; then
                 echo "✅ Hostname configured" >> compliance-report.md
               else
                 echo "⚠️ Missing explicit hostname setting" >> compliance-report.md
