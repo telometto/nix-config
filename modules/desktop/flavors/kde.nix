@@ -27,10 +27,11 @@ in
 
     # Askpass and Wayland bits carried from legacy
     environment = {
-      # variables.SSH_ASKPASS = lib.mkForce "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
+      variables.SSH_ASKPASS_REQUIRE = lib.mkDefault "prefer";
 
       # Useful KDE packages
       systemPackages = [
+        pkgs.kdePackages.ksshaskpass
         pkgs.kdePackages.kwallet
         pkgs.kdePackages.kwalletmanager
         pkgs.kdePackages.kwallet-pam
@@ -46,6 +47,11 @@ in
     };
 
     programs.xwayland.enable = lib.mkDefault true;
+
+    programs.ssh = {
+      startAgent = lib.mkDefault true;
+      enableAskPassword = lib.mkDefault true;
+    };
 
     # Prefer KDE portal
     # xdg.portal = {
