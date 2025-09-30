@@ -1,5 +1,6 @@
 name: Change Impact Analysis
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "hosts/**"
