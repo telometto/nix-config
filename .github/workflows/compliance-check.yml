@@ -54,18 +54,15 @@ jobs:
           echo "## 🔎 Static Analysis (Statix)" >> compliance-report.md
           echo "" >> compliance-report.md
 
-          # Capture statix output without color codes
-          # Use --format option if available, or strip ANSI codes
-          if statix_output=$(statix check . 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); then
+          # Capture statix output
+          if statix_output=$(statix check . 2>&1); then
             echo "✅ No static analysis issues found" >> compliance-report.md
             echo "static_analysis=clean" >> $GITHUB_OUTPUT
           else
-            # Strip ANSI escape codes from the output
-            statix_output_clean=$(echo "$statix_output" | sed 's/\x1b\[[0-9;]*m//g')
             echo "⚠️ Static analysis issues detected:" >> compliance-report.md
             echo "" >> compliance-report.md
             echo "\`\`\`" >> compliance-report.md
-            echo "$statix_output_clean" >> compliance-report.md
+            echo "$statix_output" >> compliance-report.md
             echo "\`\`\`" >> compliance-report.md
             echo "static_analysis=issues" >> $GITHUB_OUTPUT
           fi
@@ -194,8 +191,8 @@ jobs:
             if [ -f "hosts/$host/$host.nix" ]; then
               config_file="hosts/$host/$host.nix"
               
-              # Check for hostname setting
-              if grep -q "networking\.hostName" "$config_file"; then
+              # Check for hostname setting (looks for hostName anywhere in the file)
+              if grep -q "hostName\s*=.*\(lib\.mkForce\|lib\.mkDefault\|\"\)" "$config_file"; then
                 echo "✅ Hostname configured" >> compliance-report.md
               else
                 echo "⚠️ Missing explicit hostname setting" >> compliance-report.md
