@@ -78,10 +78,14 @@ jobs:
 
           # Check for hardcoded secrets
           echo "### Security Checks" >> compliance-report.md
-          if grep -r "password.*=" --include="*.nix" . | grep -v "passwordAuthentication\|passwordFile\|hashedPassword"; then
+
+          # Use a more robust approach to avoid broken pipe errors
+          password_matches=$(grep -r "password.*=" --include="*.nix" . 2>/dev/null | grep -v "passwordAuthentication\|passwordFile\|hashedPassword" || true)
+
+          if [ -n "$password_matches" ]; then
             echo "❌ **Hardcoded passwords detected**" >> compliance-report.md
             echo "\`\`\`" >> compliance-report.md
-            grep -r "password.*=" --include="*.nix" . | grep -v "passwordAuthentication\|passwordFile\|hashedPassword" || true
+            echo "$password_matches" >> compliance-report.md
             echo "\`\`\`" >> compliance-report.md
             patterns_failed=1
           else
@@ -123,7 +127,10 @@ jobs:
           echo "" >> compliance-report.md
           echo "### Dependency Management" >> compliance-report.md
 
-          if grep -q "nixos-unstable" flake.nix && ! grep -q "nixos-[0-9][0-9]\.[0-9][0-9]" flake.nix; then
+          has_unstable=$(grep -c "nixos-unstable" flake.nix 2>/dev/null || echo "0")
+          has_stable_version=$(grep -c "nixos-[0-9][0-9]\.[0-9][0-9]" flake.nix 2>/dev/null || echo "0")
+
+          if [ "$has_unstable" -gt 0 ] && [ "$has_stable_version" -eq 0 ]; then
             echo "ℹ️ Using unstable channel - consider pinning stable versions for production" >> compliance-report.md
           else
             echo "✅ Good use of version pinning" >> compliance-report.md
@@ -133,18 +140,22 @@ jobs:
           echo "" >> compliance-report.md
           echo "### Naming Conventions" >> compliance-report.md
 
-          host_names=$(ls hosts/ | grep -v "README" || true)
+          host_names=$(ls hosts/ 2>/dev/null | grep -v "README" || true)
           consistent_naming=true
+          naming_issues=""
 
           for host in $host_names; do
-            if [[ ! "$host" =~ ^[a-z][a-z0-9-]*[a-z0-9]$ ]]; then
-              echo "⚠️ Host name '$host' doesn't follow kebab-case convention" >> compliance-report.md
+            # Check if host name follows kebab-case (lowercase, with hyphens, no leading/trailing hyphens)
+            if [[ ! "$host" =~ ^[a-z]([a-z0-9-]*[a-z0-9])?$ ]]; then
+              naming_issues="${naming_issues}⚠️ Host name '$host' doesn't follow kebab-case convention\n"
               consistent_naming=false
             fi
           done
 
           if [ "$consistent_naming" = true ]; then
             echo "✅ Host naming follows conventions" >> compliance-report.md
+          else
+            echo -e "$naming_issues" >> compliance-report.md
           fi
 
           echo "patterns_result=$patterns_failed" >> $GITHUB_OUTPUT
@@ -180,11 +191,20 @@ jobs:
             if [ -f "hosts/$host/$host.nix" ]; then
               config_file="hosts/$host/$host.nix"
               
-              if ! grep -q "networking.hostName" "$config_file"; then
+              # Check for hostname setting
+              if grep -q "networking\.hostName" "$config_file"; then
+                echo "✅ Hostname configured" >> compliance-report.md
+              else
                 echo "⚠️ Missing explicit hostname setting" >> compliance-report.md
               fi
               
-              if ! grep -q "time.timeZone" "$config_file" && ! grep -q "time.timeZone" modules/*/core/locale.nix 2>/dev/null; then
+              # Check for timezone setting (either in host file or global locale module)
+              has_local_timezone=$(grep -q "time\.timeZone" "$config_file" && echo "true" || echo "false")
+              has_global_timezone=$(grep -q "time\.timeZone" modules/core/locale.nix 2>/dev/null && echo "true" || echo "false")
+              
+              if [ "$has_local_timezone" = "true" ] || [ "$has_global_timezone" = "true" ]; then
+                echo "✅ Timezone configured" >> compliance-report.md
+              else
                 echo "⚠️ Missing timezone configuration" >> compliance-report.md
               fi
               
