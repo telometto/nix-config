@@ -1,76 +1,96 @@
 name: Auto Format
 on:
-    pull_request:
-        types: [opened, synchronize]
-        paths:
-            - "**.nix"
-            - "**.sh"
-            - "**.yml"
-            - "**.yaml"
-            - "**.md"
-            - "**.json"
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "**.nix"
+      - "**.sh"
+      - "**.yml"
+      - "**.yaml"
+      - "**.md"
+      - "**.json"
+  push:
+    branches: [main, testing]
+    paths:
+      - "**.nix"
+      - "**.sh"
+      - "**.yml"
+      - "**.yaml"
+      - "**.md"
+      - "**.json"
 
 permissions:
-    contents: write
-    pull-requests: write
+  contents: write
+  pull-requests: write
 
 jobs:
-    format:
-        runs-on: ubuntu-latest
-        if: github.event.pull_request.head.repo.full_name == github.repository
+  format:
+    runs-on: ubuntu-latest
+    # Run on PRs from same repo, or on direct pushes to main/testing
+    if: |
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'push' && contains(fromJson('["main", "testing"]'), github.ref_name))
 
-        steps:
-            - name: Access private repository
-              uses: webfactory/ssh-agent@master
-              with:
-                  ssh-private-key: ${{ secrets.GH_ACTIONS }}
+    steps:
+      - name: Access private repository
+        uses: webfactory/ssh-agent@master
+        with:
+          ssh-private-key: ${{ secrets.GH_ACTIONS }}
 
-            - name: Checkout repository
-              uses: actions/checkout@main
-              with:
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  ref: ${{ github.event.pull_request.head.ref }}
-                  fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@main
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # For PRs, checkout the PR branch; for pushes, use default ref
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
+          fetch-depth: 0
 
-            - name: Install Nix
-              uses: DeterminateSystems/nix-installer-action@main
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
 
-            - name: Check and format files
-              id: check-formatting
-              continue-on-error: true
-              run: |
-                  # Run formatter and check if any files were changed
-                  if nix fmt; then
-                    echo "Formatting completed successfully"
-                  else
-                    echo "Warning: Formatting encountered issues but continuing..."
-                  fi
+      - name: Check and format files
+        id: check-formatting
+        continue-on-error: true
+        run: |
+          # Run formatter and check if any files were changed
+          if nix fmt; then
+            echo "Formatting completed successfully"
+          else
+            echo "Warning: Formatting encountered issues but continuing..."
+          fi
 
-                  if [ -n "$(git status --porcelain)" ]; then
-                    echo "Changes were made by formatter"
-                    git config user.name "github-actions[bot]"
-                    git config user.email "github-actions[bot]@users.noreply.github.com"
-                    git add .
-                    git commit -m "style: automatic formatting by treefmt [skip ci]"
-                    git push origin HEAD:${{ github.event.pull_request.head.ref }}
-                    echo "formatted=true" >> "$GITHUB_OUTPUT"
-                  else
-                    echo "No formatting changes needed"
-                    echo "formatted=false" >> "$GITHUB_OUTPUT"
-                  fi
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes were made by formatter"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "style: automatic formatting by treefmt [skip ci]"
+            
+            # Push to appropriate branch based on event type
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              git push origin HEAD:${{ github.event.pull_request.head.ref }}
+            else
+              git push origin HEAD:${{ github.ref_name }}
+            fi
+            
+            echo "formatted=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No formatting changes needed"
+            echo "formatted=false" >> "$GITHUB_OUTPUT"
+          fi
 
-            - name: Comment on PR if formatted
-              if: steps.check-formatting.outputs.formatted == 'true'
-              uses: actions/github-script@main
-              with:
-                  github-token: ${{ secrets.GITHUB_TOKEN }}
-                  script: |
-                      const { owner, repo } = context.repo;
-                      const issue_number = context.payload.pull_request.number;
+      - name: Comment on PR if formatted
+        if: steps.check-formatting.outputs.formatted == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
 
-                      await github.rest.issues.createComment({
-                        owner,
-                        repo,
-                        issue_number,
-                        body: '🎨 **Auto-formatted**: Files have been automatically formatted with treefmt to maintain code consistency.'
-                      });
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body: '🎨 **Auto-formatted**: Files have been automatically formatted with treefmt to maintain code consistency.'
+            });
