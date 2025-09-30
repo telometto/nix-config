@@ -1,5 +1,6 @@
 name: Configuration Validation
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths:
