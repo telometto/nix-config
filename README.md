@@ -48,12 +48,14 @@ This repository contains my personal NixOS configuration for managing multiple m
 ### Installation
 
 1. **Clone the repository:**
+
 ```bash
 git clone https://github.com/yourusername/nix-config.git
 cd nix-config
 ```
 
 2. **Build a specific host configuration:**
+
 ```bash
 # Build the snowfall (laptop) configuration
 nix build .#nixosConfigurations.snowfall.config.system.build.toplevel
@@ -63,6 +65,7 @@ nix build .#nixosConfigurations.avalanche.config.system.build.toplevel
 ```
 
 3. **Switch to a configuration:**
+
 ```bash
 # Apply the configuration (requires root)
 nixos-rebuild boot .# --sudo
@@ -184,16 +187,19 @@ gh workflow run compliance-check.yml
 ## 📋 Host Configurations
 
 ### snowfall (Laptop)
+
 - **Purpose**: Daily driver laptop
 - **Features**: Power management, WiFi, Bluetooth
 - **Display**: Configured for mobility
 
 ### blizzard (Server)
+
 - **Purpose**: Home server / NAS
 - **Features**: Container hosting, file sharing
 - **Services**: Media server, backups
 
 ### avalanche (Desktop)
+
 - **Purpose**: Main workstation
 - **Features**: Development environment
 - **Display**: Multi-monitor support
@@ -210,10 +216,10 @@ gh workflow run compliance-check.yml
 While this is a personal configuration, suggestions and improvements are welcome:
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Ensure `nix fmt` and `nix flake check` pass
-5. Submit a pull request
+1. Create a feature branch
+1. Make your changes
+1. Ensure `nix fmt` and `nix flake check` pass
+1. Submit a pull request
 
 ## 📜 License
 
@@ -226,6 +232,6 @@ This configuration is provided as-is for reference and learning purposes. Feel f
 - [treefmt-nix](https://github.com/numtide/treefmt-nix) for unified formatting
 - All the Nix package maintainers who make this possible
 
----
+______________________________________________________________________
 
 *Configuration tested on NixOS 24.05*
