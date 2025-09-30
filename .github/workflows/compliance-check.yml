@@ -34,12 +34,16 @@ jobs:
           echo "## 🔍 Dead Code Analysis" > compliance-report.md
           echo "" >> compliance-report.md
 
-          if deadnix --fail --no-lambda-arg --no-lambda-pattern-names .; then
+          # Capture deadnix output
+          if deadnix_output=$(deadnix --no-lambda-arg --no-lambda-pattern-names . 2>&1); then
             echo "✅ No dead code found" >> compliance-report.md
             echo "dead_code=clean" >> $GITHUB_OUTPUT
           else
-            echo "⚠️ Dead code detected" >> compliance-report.md
-            deadnix --no-lambda-arg --no-lambda-pattern-names . || true
+            echo "⚠️ Dead code detected:" >> compliance-report.md
+            echo "" >> compliance-report.md
+            echo "\`\`\`" >> compliance-report.md
+            echo "$deadnix_output" >> compliance-report.md
+            echo "\`\`\`" >> compliance-report.md
             echo "dead_code=found" >> $GITHUB_OUTPUT
           fi
           echo "" >> compliance-report.md
@@ -50,13 +54,15 @@ jobs:
           echo "## 🔎 Static Analysis (Statix)" >> compliance-report.md
           echo "" >> compliance-report.md
 
-          if statix check .; then
+          # Capture statix output
+          if statix_output=$(statix check . 2>&1); then
             echo "✅ No static analysis issues found" >> compliance-report.md
             echo "static_analysis=clean" >> $GITHUB_OUTPUT
           else
             echo "⚠️ Static analysis issues detected:" >> compliance-report.md
+            echo "" >> compliance-report.md
             echo "\`\`\`" >> compliance-report.md
-            statix check . || true
+            echo "$statix_output" >> compliance-report.md
             echo "\`\`\`" >> compliance-report.md
             echo "static_analysis=issues" >> $GITHUB_OUTPUT
           fi
@@ -152,9 +158,9 @@ jobs:
           for host in snowfall blizzard avalanche; do
             echo "### Host: $host" >> compliance-report.md
             
-            # Check required files exist
+            # Check required files exist (files are named after the host)
             required_files=(
-              "hosts/$host/configuration.nix"
+              "hosts/$host/$host.nix"
               "hosts/$host/hardware-configuration.nix"
             )
             
@@ -170,19 +176,19 @@ jobs:
               echo "✅ All required files present" >> compliance-report.md
             fi
             
-            # Check for common configurations
-            if [ -f "hosts/$host/configuration.nix" ]; then
-              config_file="hosts/$host/configuration.nix"
+            # Check for common configurations (uses host-named file)
+            if [ -f "hosts/$host/$host.nix" ]; then
+              config_file="hosts/$host/$host.nix"
               
               if ! grep -q "networking.hostName" "$config_file"; then
                 echo "⚠️ Missing explicit hostname setting" >> compliance-report.md
               fi
               
-              if ! grep -q "time.timeZone" "$config_file" && ! grep -q "time.timeZone" common/*/environment/defaults.nix 2>/dev/null; then
+              if ! grep -q "time.timeZone" "$config_file" && ! grep -q "time.timeZone" modules/*/core/locale.nix 2>/dev/null; then
                 echo "⚠️ Missing timezone configuration" >> compliance-report.md
               fi
               
-              if ! grep -q "services.openssh" "$config_file" && ! find common modules -name "*.nix" -exec grep -l "services.openssh" {} \; > /dev/null 2>&1; then
+              if ! grep -q "services.openssh" "$config_file" && ! find modules -name "*.nix" -exec grep -l "services.openssh" {} \; > /dev/null 2>&1; then
                 echo "ℹ️ No SSH configuration found (may be intentional)" >> compliance-report.md
               fi
             fi
