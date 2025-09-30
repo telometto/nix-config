@@ -82,8 +82,16 @@ in
   systemd.user.services."ssh-add-keys" = {
     Unit = {
       Description = "Load SSH keys into the agent";
-      After = [ "graphical-session.target" "kwallet.service" "ssh-agent.service" ];
-      Wants = [ "graphical-session.target" "kwallet.service" "ssh-agent.service" ];
+      After = [
+        "graphical-session.target"
+        "kwallet.service"
+        "ssh-agent.service"
+      ];
+      Wants = [
+        "graphical-session.target"
+        "kwallet.service"
+        "ssh-agent.service"
+      ];
     };
     Service = {
       Type = "oneshot";
@@ -91,7 +99,12 @@ in
         "SSH_ASKPASS=${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass"
         "SSH_ASKPASS_REQUIRE=prefer"
       ];
-      PassEnvironment = [ "DISPLAY" "WAYLAND_DISPLAY" "DBUS_SESSION_BUS_ADDRESS" "XAUTHORITY" ];
+      PassEnvironment = [
+        "DISPLAY"
+        "WAYLAND_DISPLAY"
+        "DBUS_SESSION_BUS_ADDRESS"
+        "XAUTHORITY"
+      ];
       ExecStart = sshAddKeysScript;
     };
     Install = {
