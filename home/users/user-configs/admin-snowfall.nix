@@ -1,5 +1,23 @@
 # User-specific configuration for admin user on snowfall host
 { config, pkgs, ... }:
+let
+  sshAddKeysScript = pkgs.writeShellScript "ssh-add-keys" ''
+    set -eu
+
+    export SSH_ASKPASS="${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass"
+    export SSH_ASKPASS_REQUIRE="prefer"
+
+    for key in \
+      "${config.home.homeDirectory}/.ssh/github-key" \
+      "${config.home.homeDirectory}/.ssh/amonomega" \
+      "${config.home.homeDirectory}/.ssh/id_ed25519"
+    do
+      if [ -f "$key" ]; then
+        ${pkgs.openssh}/bin/ssh-add -q "$key" </dev/null || true
+      fi
+    done
+  '';
+in
 {
   # User-specific packages for admin on snowfall
   home.packages = with pkgs; [
@@ -53,14 +71,31 @@
     };
   };
 
-  # GPG Agent configuration with SSH keys
+  # Use gpg-agent for GPG only; ssh-agent handles SSH keys
   hm.services.gpgAgent = {
     enable = true;
-    enableSsh = true;
-    sshKeys = [
-      "B77831B9FEB4A078E8C0A92F5CD3DD364C2622F6"
-      "42E575D7C88F6316332022D0A9472AE2951CAB47"
-      "40C5082C45D9BD46357E15AA7BE343A6D068C74D"
-    ];
+    enableSsh = false;
+  };
+
+  hm.services.sshAgent.enable = true;
+
+  systemd.user.services."ssh-add-keys" = {
+    Unit = {
+      Description = "Load SSH keys into the agent";
+      After = [ "graphical-session.target" "kwallet.service" "ssh-agent.service" ];
+      Wants = [ "graphical-session.target" "kwallet.service" "ssh-agent.service" ];
+    };
+    Service = {
+      Type = "oneshot";
+      Environment = [
+        "SSH_ASKPASS=${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass"
+        "SSH_ASKPASS_REQUIRE=prefer"
+      ];
+      PassEnvironment = [ "DISPLAY" "WAYLAND_DISPLAY" "DBUS_SESSION_BUS_ADDRESS" "XAUTHORITY" ];
+      ExecStart = sshAddKeysScript;
+    };
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
   };
 }
