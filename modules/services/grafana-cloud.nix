@@ -47,12 +47,12 @@ in
     telometto.services.prometheus = {
       enable = true;
       listenAddress = lib.mkDefault "127.0.0.1"; # Local only by default
-      scrapeInterval = cfg.scrapeInterval;
+      scrapeInterval = lib.mkDefault cfg.scrapeInterval;
     };
 
     # Configure Prometheus remote write to Grafana Cloud
     services.prometheus = {
-      retentionTime = cfg.localRetention;
+      retentionTime = lib.mkForce cfg.localRetention; # Override prometheus module default
 
       remoteWrite = [
         {

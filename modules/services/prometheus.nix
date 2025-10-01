@@ -58,7 +58,7 @@ in
       enable = true;
       port = cfg.port;
       listenAddress = cfg.listenAddress;
-      retentionTime = cfg.retentionTime;
+      retentionTime = lib.mkDefault cfg.retentionTime;
 
       globalConfig = {
         scrape_interval = cfg.scrapeInterval;
