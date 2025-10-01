@@ -26,6 +26,11 @@ jobs:
       fail-fast: false
 
     steps:
+      - name: Access private repository
+        uses: webfactory/ssh-agent@master
+        with:
+          ssh-private-key: ${{ secrets.GH_ACTIONS }}
+
       - name: Checkout repository
         uses: actions/checkout@main
 
