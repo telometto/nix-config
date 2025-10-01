@@ -59,6 +59,11 @@
         addr = "0.0.0.0"; # Listen on all interfaces (including Tailscale)
         openFirewall = lib.mkDefault false; # Firewall handled by Tailscale
         domain = "super.secret.tailnet.net";
+
+        # Declaratively provision dashboards
+        provision.dashboards = {
+          "node-exporter-full" = ./dashboards/node-exporter-full.json;
+        };
       };
     };
 
