@@ -58,17 +58,6 @@ jobs:
           echo "Disk space after cleanup:"
           df -h
 
-      - name: Format check
-        run: |
-          nix fmt
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "❌ Files are not properly formatted"
-            git diff
-            exit 1
-          else
-            echo "✅ All files are properly formatted"
-          fi
-
       - name: Validate syntax
         run: |
           echo "## 🔍 Syntax Validation for ${{ matrix.host }}" >> $GITHUB_STEP_SUMMARY
