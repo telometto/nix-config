@@ -35,6 +35,16 @@
         group = "searx";
         mode = "0400";
       };
+      # Grafana Cloud secrets
+      "grafana_cloud/api_key" = {
+        mode = "0400";
+      };
+      "grafana_cloud/username" = {
+        mode = "0400";
+      };
+      "grafana_cloud/remote_write_url" = {
+        mode = "0400";
+      };
     };
     templates."access-tokens".content = ''
       access-tokens = "github.com=${config.sops.placeholder."tokens/github-ns"}"
@@ -52,6 +62,11 @@
     searxSecretKeyFile = toString config.sops.secrets."general/searxSecretKey".path;
     borgKeyFile = toString config.sops.secrets."general/borgKeyFilePath".path;
     borgRepo = toString config.sops.secrets."general/borgRepo".path;
+    grafanaCloudApiKeyFile = toString config.sops.secrets."grafana_cloud/api_key".path;
+    # Username & URL: Read as strings (not sensitive, needed for config generation)
+    # Remove trailing newlines that SOPS adds when storing values
+    grafanaCloudUsername = lib.removeSuffix "\n" (builtins.readFile config.sops.secrets."grafana_cloud/username".path);
+    grafanaCloudRemoteWriteUrl = lib.removeSuffix "\n" (builtins.readFile config.sops.secrets."grafana_cloud/remote_write_url".path);
   };
 
   environment.systemPackages = [
