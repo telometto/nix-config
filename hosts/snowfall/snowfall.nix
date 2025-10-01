@@ -45,6 +45,21 @@
           openFirewall = true;
         };
       };
+
+      # Testing Prometheus and Grafana setup
+      prometheus = {
+        enable = lib.mkDefault false; # Set to true to test
+        listenAddress = "0.0.0.0"; # Listen on all interfaces (including Tailscale)
+        openFirewall = lib.mkDefault false; # Firewall handled by Tailscale, no need to open public ports
+        scrapeInterval = "15s";
+      };
+
+      grafana = {
+        enable = lib.mkDefault false; # Set to true to test
+        addr = "0.0.0.0"; # Listen on all interfaces (including Tailscale)
+        openFirewall = lib.mkDefault false; # Firewall handled by Tailscale
+        domain = "super.secret.tailnet.net";
+      };
     };
 
     storage = {
