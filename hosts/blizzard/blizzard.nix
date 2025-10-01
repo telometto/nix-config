@@ -68,9 +68,10 @@
 
     services = {
       # Private networking (enabled in legacy)
-      tailscale.enable = lib.mkDefault true;
-      networkd-dispatcher.rules."50-tailscale".script =
-        lib.mkForce "${lib.getExe pkgs.ethtool} -K enp8s0 rx-udp-gro-forwarding on rx-gro-list off";
+      tailscale = {
+        enable = lib.mkDefault true;
+        interface = "enp8s0"; # Overrides the interface for this host
+      };
 
       # Enable NFS (owner module) and run as a server
       nfs = {
