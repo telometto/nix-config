@@ -3,6 +3,7 @@
   lib,
   config,
   inputs,
+  pkgs,
   ...
 }:
 {
@@ -52,4 +53,9 @@
     borgKeyFile = toString config.sops.secrets."general/borgKeyFilePath".path;
     borgRepo = toString config.sops.secrets."general/borgRepo".path;
   };
+
+  environment.systemPackages = [
+    pkgs.age
+    pkgs.sops-nix
+  ];
 }
