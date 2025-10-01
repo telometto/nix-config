@@ -11,15 +11,17 @@
     ./packages.nix
   ];
 
+  networking = {
+    hostName = lib.mkForce "blizzard";
+    hostId = lib.mkForce "86bc16e3";
+  };
+
   telometto = {
     # Enable server role (provides server defaults)
     role.server.enable = true;
 
     # Firewall policy via owner module (role enables it); host adds extra ports/ranges
     networking = {
-      hostName = lib.mkForce VARS.systems.server.hostName;
-      hostId = lib.mkForce VARS.systems.server.hostId;
-
       firewall = {
         enable = true;
         extraTCPPortRanges = [
