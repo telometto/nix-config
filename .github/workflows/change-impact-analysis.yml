@@ -29,11 +29,19 @@ jobs:
         id: changes
         run: |
           echo "## 📊 Change Impact Analysis" > impact-report.md
-          echo "*Analyzing changes in PR #${{ github.event.number }}*" >> impact-report.md
+
+          # Determine base ref and PR number
+          if [ -n "${{ github.event.number }}" ]; then
+            echo "*Analyzing changes in PR #${{ github.event.number }}*" >> impact-report.md
+            BASE_REF="${{ github.base_ref }}"
+          else
+            echo "*Analyzing changes against main*" >> impact-report.md
+            BASE_REF="main"
+          fi
           echo "" >> impact-report.md
 
           # Get changed files
-          git diff --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+          git diff --name-only origin/${BASE_REF}...HEAD > changed_files.txt
 
           echo "### 📝 Changed Files" >> impact-report.md
           echo "\`\`\`" >> impact-report.md
@@ -76,6 +84,13 @@ jobs:
 
       - name: Analyze host impacts
         run: |
+          # Determine base ref
+          if [ -n "${{ github.base_ref }}" ]; then
+            BASE_REF="${{ github.base_ref }}"
+          else
+            BASE_REF="main"
+          fi
+
           echo "### 🖥️ Host Impact Analysis" >> impact-report.md
           echo "" >> impact-report.md
 
@@ -85,7 +100,7 @@ jobs:
               echo "- **$host**" >> impact-report.md
               
               # Analyze what changed in this host
-              host_files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep "^hosts/$host/")
+              host_files=$(git diff --name-only origin/${BASE_REF}...HEAD | grep "^hosts/$host/")
               for file in $host_files; do
                 echo "  - Modified: \`$file\`" >> impact-report.md
                 
@@ -120,6 +135,13 @@ jobs:
 
       - name: Analyze service impacts
         run: |
+          # Determine base ref
+          if [ -n "${{ github.base_ref }}" ]; then
+            BASE_REF="${{ github.base_ref }}"
+          else
+            BASE_REF="main"
+          fi
+
           echo "### ⚙️ Service Impact Analysis" >> impact-report.md
           echo "" >> impact-report.md
 
@@ -127,7 +149,7 @@ jobs:
           services_mentioned=()
 
           # Check diff for service mentions
-          git diff origin/${{ github.base_ref }}...HEAD | grep -oE 'services\.[a-zA-Z0-9_-]+' | sort -u > services_changed.txt || touch services_changed.txt
+          git diff origin/${BASE_REF}...HEAD | grep -oE 'services\.[a-zA-Z0-9_-]+' | sort -u > services_changed.txt || touch services_changed.txt
 
           if [ -s services_changed.txt ]; then
             echo "**Services that may be affected:**" >> impact-report.md
@@ -164,25 +186,32 @@ jobs:
 
       - name: Analyze dependency impacts
         run: |
+          # Determine base ref
+          if [ -n "${{ github.base_ref }}" ]; then
+            BASE_REF="${{ github.base_ref }}"
+          else
+            BASE_REF="main"
+          fi
+
           echo "### 📦 Dependency Impact Analysis" >> impact-report.md
           echo "" >> impact-report.md
 
           if [ "$(cat flake_changed.txt)" = "true" ]; then
             echo "**Flake changes detected:**" >> impact-report.md
             
-            if git diff origin/${{ github.base_ref }}...HEAD flake.nix | grep -q "inputs\."; then
+            if git diff origin/${BASE_REF}...HEAD flake.nix | grep -q "inputs\."; then
               echo "- 🔄 **Input changes**: Dependencies updated" >> impact-report.md
               echo "  - All hosts will be affected" >> impact-report.md
               echo "  - Build times may increase" >> impact-report.md
               echo "  - New security updates may be included" >> impact-report.md
             fi
             
-            if git diff origin/${{ github.base_ref }}...HEAD flake.lock > /dev/null 2>&1; then
+            if git diff origin/${BASE_REF}...HEAD flake.lock > /dev/null 2>&1; then
               echo "- 🔒 **Lock file updated**: Dependency versions pinned" >> impact-report.md
               
               # Show some statistics about lock changes
-              added_deps=$(git diff origin/${{ github.base_ref }}...HEAD flake.lock | grep -c '^+.*"locked"' || echo "0")
-              removed_deps=$(git diff origin/${{ github.base_ref }}...HEAD flake.lock | grep -c '^-.*"locked"' || echo "0")
+              added_deps=$(git diff origin/${BASE_REF}...HEAD flake.lock | grep -c '^+.*"locked"' || echo "0")
+              removed_deps=$(git diff origin/${BASE_REF}...HEAD flake.lock | grep -c '^-.*"locked"' || echo "0")
               
               if [ "$added_deps" -gt 0 ] || [ "$removed_deps" -gt 0 ]; then
                 echo "  - Dependencies added: $added_deps" >> impact-report.md
@@ -197,6 +226,13 @@ jobs:
 
       - name: Generate deployment recommendations
         run: |
+          # Determine base ref
+          if [ -n "${{ github.base_ref }}" ]; then
+            BASE_REF="${{ github.base_ref }}"
+          else
+            BASE_REF="main"
+          fi
+
           echo "### 🚀 Deployment Recommendations" >> impact-report.md
           echo "" >> impact-report.md
 
@@ -218,7 +254,7 @@ jobs:
             high_impact=true
           fi
 
-          if grep -q "services.ssh" <(git diff origin/${{ github.base_ref }}...HEAD) 2>/dev/null; then
+          if grep -q "services.ssh" <(git diff origin/${BASE_REF}...HEAD) 2>/dev/null; then
             echo "- 🔐 **SSH changes detected**: Ensure alternative access method before deployment" >> impact-report.md
             high_impact=true
           fi
