@@ -53,6 +53,12 @@
         config.sops.placeholder."tokens/gitlab-ns"
       }" "gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}"
     '';
+
+    # Grafana Cloud configuration template (username and URL as plain text)
+    templates."grafana-cloud-config".content = ''
+      GRAFANA_CLOUD_USERNAME=${config.sops.placeholder."grafana_cloud/username"}
+      GRAFANA_CLOUD_REMOTE_WRITE_URL=${config.sops.placeholder."grafana_cloud/remote_write_url"}
+    '';
   };
 
   # Bridge SOPS -> telometto.secrets (legacy path mapping) as runtime path strings
@@ -62,11 +68,11 @@
     searxSecretKeyFile = toString config.sops.secrets."general/searxSecretKey".path;
     borgKeyFile = toString config.sops.secrets."general/borgKeyFilePath".path;
     borgRepo = toString config.sops.secrets."general/borgRepo".path;
+    
+    # Grafana Cloud: Use file paths, values will be read at runtime
     grafanaCloudApiKeyFile = toString config.sops.secrets."grafana_cloud/api_key".path;
-    # Username & URL: Read as strings (not sensitive, needed for config generation)
-    # Remove trailing newlines that SOPS adds when storing values
-    grafanaCloudUsername = lib.removeSuffix "\n" (builtins.readFile config.sops.secrets."grafana_cloud/username".path);
-    grafanaCloudRemoteWriteUrl = lib.removeSuffix "\n" (builtins.readFile config.sops.secrets."grafana_cloud/remote_write_url".path);
+    grafanaCloudUsername = toString config.sops.secrets."grafana_cloud/username".path;
+    grafanaCloudRemoteWriteUrl = toString config.sops.secrets."grafana_cloud/remote_write_url".path;
   };
 
   environment.systemPackages = [
