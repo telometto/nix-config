@@ -56,6 +56,6 @@
 
   environment.systemPackages = [
     pkgs.age
-    pkgs.sops-nix
+    pkgs.sops
   ];
 }
