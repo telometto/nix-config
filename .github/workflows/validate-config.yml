@@ -37,6 +37,27 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
+      - name: Setup Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Free up disk space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+
+          # Remove unnecessary tools and files
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+          # Docker cleanup
+          docker system prune -af || true
+
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: Format check
         run: |
           nix fmt
@@ -63,7 +84,14 @@ jobs:
       - name: Build configuration
         run: |
           echo "Building NixOS configuration for ${{ matrix.host }}..."
-          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --no-link
+          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --no-link --print-build-logs
+
+      - name: Collect garbage after build
+        if: always()
+        run: |
+          nix-collect-garbage -d
+          echo "Disk space after garbage collection:"
+          df -h
 
       - name: Build home-manager configurations
         run: |
