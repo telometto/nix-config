@@ -13,7 +13,10 @@ in
     enable = lib.mkEnableOption "Jellyfin VAAPI/Intel GPU support packages";
 
     driver = lib.mkOption {
-      type = lib.types.enum [ "iHD" "i965" ];
+      type = lib.types.enum [
+        "iHD"
+        "i965"
+      ];
       default = "iHD";
       description = ''
         VAAPI driver to use for hardware acceleration.
@@ -32,7 +35,10 @@ in
     };
 
     intelGeneration = lib.mkOption {
-      type = lib.types.enum [ "newer" "older" ];
+      type = lib.types.enum [
+        "newer"
+        "older"
+      ];
       default = "newer";
       description = ''
         Intel CPU generation for package selection:
@@ -55,7 +61,8 @@ in
       # 1. Enable graphics stack and VAAPI userspace with comprehensive Intel support
       hardware.graphics = {
         enable = true;
-        extraPackages = with pkgs;
+        extraPackages =
+          with pkgs;
           [
             intel-ocl # Generic OpenCL support for all processors
 
