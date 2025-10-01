@@ -8,16 +8,15 @@ in
 
     remoteWriteUrl = lib.mkOption {
       type = lib.types.str;
-      default = config.telometto.secrets.grafanaCloudRemoteWriteUrl or "";
-      description = "Grafana Cloud Prometheus remote write endpoint URL (from SOPS by default)";
+      default = "";
+      description = "Grafana Cloud Prometheus remote write endpoint URL";
       example = "https://prometheus-prod-XX-XX.grafana.net/api/prom/push";
     };
 
-    username = lib.mkOption {
-      type = lib.types.str;
-      default = config.telometto.secrets.grafanaCloudUsername or "";
-      description = "Grafana Cloud username (Instance ID) (from SOPS by default)";
-      example = "123456";
+    usernameFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = config.telometto.secrets.grafanaCloudUsername or null;
+      description = "Path to file containing Grafana Cloud username (Instance ID)";
     };
 
     apiKeyFile = lib.mkOption {
@@ -58,28 +57,28 @@ in
         {
           url = cfg.remoteWriteUrl;
 
-          # Authentication
-          basicAuth = {
-            username = cfg.username;
-            passwordFile = cfg.apiKeyFile;
+          # Authentication using basic auth
+          basic_auth = {
+            username_file = cfg.usernameFile;
+            password_file = cfg.apiKeyFile;
           };
 
           # Queue configuration for reliability
-          queueConfig = {
+          queue_config = {
             capacity = 10000; # Buffer capacity
-            maxShards = 5; # Parallel upload streams
-            minShards = 1;
-            maxSamplesPerSend = 5000; # Batch size
-            batchSendDeadline = "5s"; # Send batches every 5s
-            minBackoff = "30ms"; # Retry backoff
-            maxBackoff = "5s";
+            max_shards = 5; # Parallel upload streams
+            min_shards = 1;
+            max_samples_per_send = 5000; # Batch size
+            batch_send_deadline = "5s"; # Send batches every 5s
+            min_backoff = "30ms"; # Retry backoff
+            max_backoff = "5s";
           };
 
           # Add hostname to all metrics
-          writeRelabelConfigs = [
+          write_relabel_configs = [
             {
-              sourceLabels = [ "__address__" ];
-              targetLabel = "instance";
+              source_labels = [ "__address__" ];
+              target_label = "instance";
               replacement = config.networking.hostName;
             }
           ];
