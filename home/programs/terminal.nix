@@ -35,9 +35,9 @@ in
         historyControl = [ "erasedups" ];
       };
 
-      bat = {
-        enable = true;
-      };
+      bat.enable = true;
+
+      btop.enable = true;
 
       direnv = {
         enable = true;
