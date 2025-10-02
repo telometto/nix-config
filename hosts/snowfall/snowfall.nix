@@ -15,6 +15,8 @@
 
     desktop.flavor = "kde";
 
+    programs.nix-ld.enable = false;
+
     networking = {
       firewall = {
         extraTCPPortRanges = [
