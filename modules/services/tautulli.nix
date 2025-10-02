@@ -5,7 +5,7 @@ in
 {
   options.telometto.services.tautulli = {
     enable = lib.mkEnableOption "Tautulli";
-    
+
     dataDir = lib.mkOption {
       type = lib.types.str;
       default = "/rpool/unenc/apps/nixos/tautulli";
@@ -15,7 +15,7 @@ in
       type = lib.types.str;
       default = "/rpool/unenc/apps/nixos/tautulli/config.ini";
       description = "This should be set so that config isn't reset every time the app (re)starts.";
-    }
+    };
 
     openFirewall = lib.mkOption {
       type = lib.types.bool;
