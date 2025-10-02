@@ -25,7 +25,10 @@ in
         type = lib.types.listOf lib.types.str;
         default = [ "systemd" ];
         description = "List of enabled collectors";
-        example = [ "systemd" "processes" ];
+        example = [
+          "systemd"
+          "processes"
+        ];
       };
 
       extraFlags = lib.mkOption {
@@ -52,10 +55,12 @@ in
     (lib.mkIf cfg.node.enable {
       services.prometheus.exporters.node = {
         enable = true;
-        port = cfg.node.port;
-        openFirewall = cfg.node.openFirewall;
-        enabledCollectors = cfg.node.enabledCollectors;
-        extraFlags = cfg.node.extraFlags;
+        inherit (cfg.node)
+          port
+          openFirewall
+          enabledCollectors
+          extraFlags
+          ;
       };
     })
   ];
