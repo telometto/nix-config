@@ -85,10 +85,7 @@
       };
 
       # ZFS helpers and snapshot management
-      zfs = {
-        enable = lib.mkDefault true;
-        autoSnapshot.enable = lib.mkForce false;
-      };
+      zfs.enable = lib.mkDefault true;
 
       # Sanoid: rely on module default template "production" (autoprune=false) and just declare datasets
       sanoid = {
