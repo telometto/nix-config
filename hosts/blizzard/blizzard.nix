@@ -202,7 +202,6 @@
     supportedFilesystems = [ "zfs" ];
     initrd.supportedFilesystems.zfs = true;
     zfs = {
-      enabled = true;
       forceImportAll = true;
       requestEncryptionCredentials = true;
       devNodes = "/dev/disk/by-id";
