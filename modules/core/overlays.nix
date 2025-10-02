@@ -1,4 +1,9 @@
-{ lib, config, inputs, ... }:
+{
+  lib,
+  config,
+  inputs,
+  ...
+}:
 let
   cfg = config.telometto.overlays;
 
@@ -22,9 +27,9 @@ let
 
   # Generate overlays from the configured package mappings
   generatedOverlays = lib.flatten (
-    lib.mapAttrsToList (
-      inputName: packageNames: [ (mkOverlayFromInput inputName packageNames) ]
-    ) cfg.fromInputs
+    lib.mapAttrsToList (inputName: packageNames: [
+      (mkOverlayFromInput inputName packageNames)
+    ]) cfg.fromInputs
   );
 in
 {
