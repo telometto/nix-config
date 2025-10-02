@@ -85,26 +85,35 @@
       };
 
       # ZFS helpers and snapshot management
-      zfs.enable = lib.mkDefault true;
+      zfs = {
+        enable = lib.mkDefault true;
+        autoSnapshot.enable = lib.mkForce false;
+      };
 
       # Sanoid: rely on module default template "production" (autoprune=false) and just declare datasets
       sanoid = {
-        enable = true;
+        enable = false;
         datasets = {
+          flash = {
+            useTemplate = [ "production" ];
+            recursive = "zfs";
+          };
+
+          rpool = {
+            useTemplate = [ "production" ];
+            recursive = "zfs";
+          };
+
           tank = {
             useTemplate = [ "production" ];
-            recursive = true;
-          };
-          flash_temp = {
-            useTemplate = [ "production" ];
-            recursive = true;
+            recursive = "zfs";
           };
         };
       };
 
       # Monitoring and admin UIs
       scrutiny.enable = lib.mkDefault true; # port 8072
-      cockpit.enable = lib.mkDefault true; # port 9090
+      cockpit.enable = lib.mkDefault false; # port 9090
 
       # Kubernetes (k3s) server
       k3s.enable = lib.mkDefault true;
@@ -120,11 +129,11 @@
       };
 
       actual = {
-        enable = lib.mkDefault true; # port 3838
+        enable = lib.mkDefault false; # port 3838
         port = lib.mkDefault 3838;
       };
 
-      firefly.enable = lib.mkDefault true; # APP_KEY_FILE via defaults
+      firefly.enable = lib.mkDefault false; # APP_KEY_FILE via defaults
 
       searx = {
         enable = lib.mkDefault true; # port 7777 bind 0.0.0.0
@@ -132,7 +141,7 @@
       };
 
       immich = {
-        enable = lib.mkDefault true;
+        enable = lib.mkDefault false;
         host = lib.mkDefault "0.0.0.0";
         port = lib.mkDefault 2283;
         openFirewall = lib.mkDefault true;
@@ -196,9 +205,16 @@
     supportedFilesystems = [ "zfs" ];
     initrd.supportedFilesystems.zfs = true;
     zfs = {
+      enabled = true;
       forceImportAll = true;
       requestEncryptionCredentials = true;
       devNodes = "/dev/disk/by-id";
+
+        extraPools = [
+    # "flash" # SSD
+    "tank"
+    "rpool"
+  ];
     };
     kernel.sysctl = {
       "net.ipv4.conf.all.src_valid_mark" = 1;
