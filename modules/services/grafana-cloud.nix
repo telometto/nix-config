@@ -6,17 +6,18 @@ in
   options.telometto.services.grafanaCloud = {
     enable = lib.mkEnableOption "Grafana Cloud remote write integration";
 
+    username = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Grafana Cloud username (Instance ID) - can be public, or use fileContents to read from a secret";
+      example = "123456";
+    };
+
     remoteWriteUrl = lib.mkOption {
       type = lib.types.str;
       default = "";
       description = "Grafana Cloud Prometheus remote write endpoint URL";
       example = "https://prometheus-prod-XX-XX.grafana.net/api/prom/push";
-    };
-
-    usernameFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.path;
-      default = config.telometto.secrets.grafanaCloudUsername or null;
-      description = "Path to file containing Grafana Cloud username (Instance ID)";
     };
 
     apiKeyFile = lib.mkOption {
@@ -53,13 +54,13 @@ in
     services.prometheus = {
       retentionTime = lib.mkForce cfg.localRetention; # Override prometheus module default
 
-      remoteWrite = [
+      remoteWrite = lib.mkIf (cfg.username != null && cfg.remoteWriteUrl != "") [
         {
           url = cfg.remoteWriteUrl;
 
           # Authentication using basic auth
           basic_auth = {
-            username_file = cfg.usernameFile;
+            inherit (cfg) username;
             password_file = cfg.apiKeyFile;
           };
 
