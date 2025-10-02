@@ -1,4 +1,9 @@
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.telometto.programs.nix-ld;
 in
@@ -23,7 +28,8 @@ in
   config = lib.mkIf cfg.enable {
     programs.nix-ld = {
       enable = true;
-      libraries = with pkgs;
+      libraries =
+        with pkgs;
         # Base libraries (always included)
         [
           zlib
