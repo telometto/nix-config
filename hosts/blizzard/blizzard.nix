@@ -210,11 +210,11 @@
       requestEncryptionCredentials = true;
       devNodes = "/dev/disk/by-id";
 
-        extraPools = [
-    # "flash" # SSD
-    "tank"
-    "rpool"
-  ];
+      extraPools = [
+        # "flash" # SSD
+        "tank"
+        "rpool"
+      ];
     };
     kernel.sysctl = {
       "net.ipv4.conf.all.src_valid_mark" = 1;
