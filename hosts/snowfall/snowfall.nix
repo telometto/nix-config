@@ -48,22 +48,31 @@
 
       # Testing Prometheus and Grafana setup
       prometheus = {
-        enable = lib.mkDefault false; # Set to true to test
+        enable = lib.mkDefault true; # Set to true to test
         listenAddress = "0.0.0.0"; # Listen on all interfaces (including Tailscale)
         openFirewall = lib.mkDefault false; # Firewall handled by Tailscale, no need to open public ports
         scrapeInterval = "15s";
       };
 
       grafana = {
-        enable = lib.mkDefault false; # Set to true to test
+        enable = lib.mkDefault true; # Set to true to test
         addr = "0.0.0.0"; # Listen on all interfaces (including Tailscale)
         openFirewall = lib.mkDefault false; # Firewall handled by Tailscale
-        domain = "super.secret.tailnet.net";
+        domain = "snowfall.mole-delta.ts.net";
 
         # Declaratively provision dashboards
         provision.dashboards = {
           "node-exporter-full" = ./dashboards/node-exporter-full.json;
         };
+      };
+
+      grafanaCloud = {
+        enable = true;
+        # Replace with your actual Grafana Cloud instance ID and URL
+        # These are not secret values - they identify your Grafana Cloud instance
+        # NB! DO NOT PUT THE API-KEY HERE!
+        username = "2710025";
+        remoteWriteUrl = "https://prometheus-prod-39-prod-eu-north-0.grafana.net/api/prom/push";
       };
     };
 
