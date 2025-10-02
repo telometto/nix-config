@@ -56,8 +56,7 @@ in
   config = lib.mkIf cfg.enable {
     services.prometheus = {
       enable = true;
-      port = cfg.port;
-      listenAddress = cfg.listenAddress;
+      inherit (cfg) port listenAddress;
       retentionTime = lib.mkDefault cfg.retentionTime;
 
       globalConfig = {
