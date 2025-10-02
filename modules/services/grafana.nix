@@ -1,4 +1,9 @@
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.telometto.services.grafana;
 in
@@ -88,7 +93,7 @@ in
         server = {
           http_addr = cfg.addr;
           http_port = cfg.port;
-          domain = cfg.domain;
+          inherit (cfg) domain;
           enforce_domain = true;
           enable_gzip = true;
         };
