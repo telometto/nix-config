@@ -17,6 +17,21 @@
 
     programs.nix-ld.enable = false;
 
+    # Pull specific packages from different nixpkgs inputs
+    # overlays.fromInputs = {
+    #   nixpkgs-unstable = [ "firefox" "discord" ];
+    #   nixpkgs-stable = [ "thunderbird" ];
+    # };
+    #
+    # Add custom overlays
+    # overlays.custom = [
+    #   (final: prev: {
+    #     firefox = prev.firefox.override {
+    #       enablePlasmaBrowserIntegration = true;
+    #     };
+    #   })
+    # ];
+
     networking = {
       firewall = {
         extraTCPPortRanges = [
