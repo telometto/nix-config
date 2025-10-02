@@ -17,17 +17,7 @@ let
   hasSearx = config.services.searx.enable or false;
   hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
 in
-let
-  # Helper: only include secrets/config when condition is true
-  whenEnabled = condition: attrs: lib.optionalAttrs condition attrs;
 
-  # Service enablement checks
-  hasTailscale = config.services.tailscale.enable or false;
-  hasBorg = config.services.borgbackup.jobs != { };
-  hasPaperless = config.services.paperless.enable or false;
-  hasSearx = config.services.searx.enable or false;
-  hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
-in
 {
   sops = {
     defaultSopsFile = lib.mkDefault inputs.nix-secrets.secrets.secretsFile;
