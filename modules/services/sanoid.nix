@@ -12,10 +12,10 @@ in
         production = {
           autosnap = true;
           autoprune = false;
-          yearly = 4;
-          monthly = 4;
-          weekly = 3;
-          daily = 4;
+          yearly = 2;
+          monthly = 6;
+          weekly = 4;
+          daily = 7;
           hourly = 0;
         };
       };

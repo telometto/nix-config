@@ -42,6 +42,7 @@ in
         media = {
           enable = lib.mkDefault true;
           mpv.enable = lib.mkDefault true;
+          yt-dlp.enable = lib.mkDefault true;
         };
 
         social = {
@@ -55,6 +56,7 @@ in
         tools = {
           enable = lib.mkDefault true;
           onlyoffice.enable = lib.mkDefault true;
+          podman.enable = lib.mkDefault true;
         };
       };
 

@@ -9,10 +9,14 @@ in
     flameshot.enable = lib.mkEnableOption "Flameshot screenshot utility";
     texlive.enable = lib.mkEnableOption "LaTeX";
     onlyoffice.enable = lib.mkEnableOption "OnlyOffice (Office 365 alternative)";
+    podman.enable = lib.mkEnableOption "Podman";
   };
 
   config = lib.mkIf cfg.enable {
-    services.flameshot = lib.mkIf cfg.flameshot.enable { enable = true; };
+    services = {
+      flameshot = lib.mkIf cfg.flameshot.enable { enable = true; };
+      podman = lib.mkIf cfg.podman.enable { enable = true; };
+    };
 
     programs = {
       texlive = lib.mkIf cfg.texlive.enable { enable = true; };

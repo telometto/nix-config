@@ -41,13 +41,38 @@
       '';
     };
 
-    # Optional: Borg repository URL (if you prefer not to hard-code it in host config)
+    # Optional: Borg repository URL (if prefer not to hard-code in host config)
     borgRepo = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = ''
         Borg repository URL. If null, set per-host under telometto.services.borgbackup.jobs.<name>.repo.
         If provided here, hosts can reference config.telometto.secrets.borgRepo.
+      '';
+    };
+
+    # Grafana Cloud credentials (resolved from SOPS centrally)
+    grafanaCloudApiKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the Grafana Cloud API key. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    grafanaCloudUsername = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Grafana Cloud username (Instance ID). Resolved from SOPS in core/sops.nix.
+      '';
+    };
+
+    grafanaCloudRemoteWriteUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Grafana Cloud Prometheus remote write endpoint URL. Resolved from SOPS in core/sops.nix.
       '';
     };
   };

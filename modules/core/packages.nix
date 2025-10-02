@@ -8,20 +8,12 @@ let
     pkgs.coreutils-full
     pkgs.util-linux
     pkgs.curl
-    pkgs.eza
     pkgs.p7zip
     pkgs.xclip
-    pkgs.bat
-    pkgs.direnv
-    pkgs.fzf
-    pkgs.nix-direnv
-    pkgs.zoxide
     pkgs.lsof
     pkgs.envsubst
     pkgs.tree
-    pkgs.btop
     pkgs.ffmpeg
-    pkgs.micro
   ];
 
   networking = [
@@ -46,11 +38,7 @@ let
     pkgs.clang
     pkgs.cmake
     pkgs.autoconf
-    pkgs.git
     pkgs.pipx
-    pkgs.tmux
-    pkgs.tmuxPlugins.dracula
-    pkgs.tmuxPlugins.gruvbox
   ];
 
   storage = [
