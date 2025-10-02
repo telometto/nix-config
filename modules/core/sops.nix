@@ -17,6 +17,17 @@ let
   hasSearx = config.services.searx.enable or false;
   hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
 in
+let
+  # Helper: only include secrets/config when condition is true
+  whenEnabled = condition: attrs: lib.optionalAttrs condition attrs;
+
+  # Service enablement checks
+  hasTailscale = config.services.tailscale.enable or false;
+  hasBorg = config.services.borgbackup.jobs != { };
+  hasPaperless = config.services.paperless.enable or false;
+  hasSearx = config.services.searx.enable or false;
+  hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
+in
 {
   sops = {
     defaultSopsFile = lib.mkDefault inputs.nix-secrets.secrets.secretsFile;
@@ -45,7 +56,9 @@ in
         "general/borgRepo" = { };
       }
       // whenEnabled hasPaperless {
-        "general/paperlessKeyFilePath" = { mode = "0400"; };
+        "general/paperlessKeyFilePath" = {
+          mode = "0400";
+        };
       }
       // whenEnabled hasSearx {
         "general/searxSecretKey" = {
@@ -60,27 +73,30 @@ in
           group = "prometheus";
           mode = "0400";
         };
-        "grafana_cloud/username" = { mode = "0400"; };
-        "grafana_cloud/remote_write_url" = { mode = "0400"; };
+        "grafana_cloud/username" = {
+          mode = "0400";
+        };
+        "grafana_cloud/remote_write_url" = {
+          mode = "0400";
+        };
       };
 
     # Templates for combining secrets (only created when needed)
-    templates =
-      {
-        "access-tokens".content = ''
-          access-tokens = "github.com=${config.sops.placeholder."tokens/github-ns"}"
+    templates = {
+      "access-tokens".content = ''
+        access-tokens = "github.com=${config.sops.placeholder."tokens/github-ns"}"
 
-          extra-access-tokens = "github.com=${config.sops.placeholder."tokens/gh-ns-test"}" "gitlab.com=${
-            config.sops.placeholder."tokens/gitlab-ns"
-          }" "gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}"
-        '';
-      }
-      // whenEnabled hasGrafanaCloud {
-        "grafana-cloud-config".content = ''
-          GRAFANA_CLOUD_USERNAME=${config.sops.placeholder."grafana_cloud/username"}
-          GRAFANA_CLOUD_REMOTE_WRITE_URL=${config.sops.placeholder."grafana_cloud/remote_write_url"}
-        '';
-      };
+        extra-access-tokens = "github.com=${config.sops.placeholder."tokens/gh-ns-test"}" "gitlab.com=${
+          config.sops.placeholder."tokens/gitlab-ns"
+        }" "gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}"
+      '';
+    }
+    // whenEnabled hasGrafanaCloud {
+      "grafana-cloud-config".content = ''
+        GRAFANA_CLOUD_USERNAME=${config.sops.placeholder."grafana_cloud/username"}
+        GRAFANA_CLOUD_REMOTE_WRITE_URL=${config.sops.placeholder."grafana_cloud/remote_write_url"}
+      '';
+    };
   };
 
   # Bridge SOPS -> telometto.secrets (legacy path mapping) as runtime path strings
