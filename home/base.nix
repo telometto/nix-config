@@ -55,6 +55,7 @@ in
         tools = {
           enable = lib.mkDefault true;
           onlyoffice.enable = lib.mkDefault true;
+          podman.enable = lib.mkDefault true;
         };
       };
 
