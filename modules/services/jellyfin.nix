@@ -51,11 +51,13 @@ in
     # Enable Jellyfin service with configured options
     services.jellyfin = {
       enable = true;
-      inherit (cfg) openFirewall;
-      user = cfg.user;
-      group = cfg.group;
-      dataDir = cfg.dataDir;
-      cacheDir = cfg.cacheDir;
+      inherit (cfg)
+        openFirewall
+        user
+        group
+        dataDir
+        cacheDir
+        ;
     };
 
     # Install required Jellyfin packages as per NixOS wiki
