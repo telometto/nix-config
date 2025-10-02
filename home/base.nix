@@ -42,6 +42,7 @@ in
         media = {
           enable = lib.mkDefault true;
           mpv.enable = lib.mkDefault true;
+          yt-dlp.enable = lib.mkDefault true;
         };
 
         social = {
