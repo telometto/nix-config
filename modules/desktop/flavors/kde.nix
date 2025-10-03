@@ -49,8 +49,8 @@ in
     programs.xwayland.enable = lib.mkDefault true;
 
     programs.ssh = {
-      startAgent = lib.mkDefault true;
-      enableAskPassword = lib.mkDefault true;
+      startAgent = lib.mkDefault false;
+      enableAskPassword = lib.mkDefault false;
     };
 
     # Prefer KDE portal
