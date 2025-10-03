@@ -99,6 +99,10 @@
       traefik = {
         enable = true;
 
+        # Certificate files (will be loaded securely via systemd LoadCredential)
+        certFile = "/opt/sec/certs/${config.networking.hostName}.${config.networking.domain}.crt";
+        keyFile = "/opt/sec/certs/${config.networking.hostName}.${config.networking.domain}.key";
+
         staticConfigOptions = {
           # Define entrypoints for HTTP and HTTPS
           # Firewall restricts these to Tailscale network only
@@ -130,12 +134,12 @@
         };
 
         dynamicConfigOptions = {
-          # TLS configuration using Tailscale certificates
+          # TLS configuration using Tailscale certificates loaded via systemd credentials
           tls = {
             certificates = [
               {
-                certFile = "/opt/sec/certs/${config.networking.hostName}.${config.networking.domain}.crt";
-                keyFile = "/opt/sec/certs/${config.networking.hostName}.${config.networking.domain}.key";
+                certFile = "\${CREDENTIALS_DIRECTORY}/tls.crt";
+                keyFile = "\${CREDENTIALS_DIRECTORY}/tls.key";
               }
             ];
           };

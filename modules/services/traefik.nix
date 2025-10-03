@@ -12,6 +12,24 @@ in
       description = "Directory where Traefik stores its data (e.g., acme.json for Let's Encrypt).";
     };
 
+    certFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = ''
+        Path to the TLS certificate file.
+        If set, will be loaded securely via systemd LoadCredential.
+      '';
+    };
+
+    keyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = ''
+        Path to the TLS private key file.
+        If set, will be loaded securely via systemd LoadCredential.
+      '';
+    };
+
     staticConfigOptions = lib.mkOption {
       type = lib.types.attrs;
       default = { };
@@ -38,6 +56,14 @@ in
       enable = true;
 
       inherit (cfg) dataDir staticConfigOptions dynamicConfigOptions;
+    };
+
+    # Securely load TLS certificates via systemd credentials
+    systemd.services.traefik.serviceConfig = {
+      LoadCredential = lib.optionals (cfg.certFile != null && cfg.keyFile != null) [
+        "tls.crt:${cfg.certFile}"
+        "tls.key:${cfg.keyFile}"
+      ];
     };
   };
 }
