@@ -17,10 +17,11 @@ in
       };
 
       programs = {
-        gaming.enable = true;
-        java.enable = true;
-        ssh.enable = true;
-        gnupg.enable = true;
+        gaming.enable = lib.mkDefault true;
+        java.enable = lib.mkDefault true;
+        # SSH and GPG managed per-user via home-manager by default
+        ssh.enable = lib.mkDefault false;
+        gnupg.enable = lib.mkDefault false;
       };
 
       services = {
