@@ -108,18 +108,22 @@ in
       interfaces = {
         # Tailscale interface
         "tailscale0" = {
-          allowedTCPPorts = cfg.tailscale.allowedTCPPorts;
-          allowedUDPPorts = cfg.tailscale.allowedUDPPorts;
-          allowedTCPPortRanges = cfg.tailscale.allowedTCPPortRanges;
-          allowedUDPPortRanges = cfg.tailscale.allowedUDPPortRanges;
+          inherit (cfg.tailscale)
+            allowedTCPPorts
+            allowedUDPPorts
+            allowedTCPPortRanges
+            allowedUDPPortRanges
+            ;
         };
 
         # LAN interface (typically eth0, enp8s0, etc.)
         "${cfg.lan.interface}" = {
-          allowedTCPPorts = cfg.lan.allowedTCPPorts;
-          allowedUDPPorts = cfg.lan.allowedUDPPorts;
-          allowedTCPPortRanges = cfg.lan.allowedTCPPortRanges;
-          allowedUDPPortRanges = cfg.lan.allowedUDPPortRanges;
+          inherit (cfg.lan)
+            allowedTCPPorts
+            allowedUDPPorts
+            allowedTCPPortRanges
+            allowedUDPPortRanges
+            ;
         };
       };
     };
