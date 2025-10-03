@@ -7,7 +7,7 @@ in
     enable = lib.mkEnableOption "Fastfetch system information utility";
 
     extraModules = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
+      type = lib.types.listOf (lib.types.either lib.types.str lib.types.attrs);
       default = [ ];
       description = "Modules appended to the shared Fastfetch list for specific hosts.";
     };
