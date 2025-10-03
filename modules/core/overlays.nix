@@ -14,7 +14,7 @@ let
       input = inputs.${inputName} or (throw "Input '${inputName}' not found in flake inputs");
       pkgs = import input {
         system = config.nixpkgs.system or "x86_64-linux";
-        config = config.nixpkgs.config;
+        inherit (config.nixpkgs) config;
       };
     in
     final: prev:
