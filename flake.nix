@@ -104,6 +104,6 @@
       formatter.${system} = treefmtEval.config.build.wrapper;
 
       # Expose treefmt as a check
-      checks.${system}.formatting = treefmtEval.config.build.check;
+      checks.${system}.formatting = treefmtEval.config.build.check inputs.self;
     };
 }
