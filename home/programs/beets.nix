@@ -198,8 +198,7 @@ in
         }
         (lib.optionalAttrs cfg.webInterface.enable {
           web = {
-            host = cfg.webInterface.host;
-            port = cfg.webInterface.port;
+            inherit (cfg.webInterface) host port;
           };
         })
         cfg.extraSettings
