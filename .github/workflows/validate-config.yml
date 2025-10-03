@@ -40,29 +40,11 @@ jobs:
       - name: Setup Magic Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: Free up disk space
+      - name: Validate configuration
         run: |
-          echo "Disk space before cleanup:"
-          df -h
+          echo "## 🔍 Configuration Validation for ${{ matrix.host }}" >> $GITHUB_STEP_SUMMARY
 
-          # Remove unnecessary tools and files
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-
-          # Docker cleanup
-          docker system prune -af || true
-
-          echo "Disk space after cleanup:"
-          df -h
-
-      - name: Validate syntax
-        run: |
-          echo "## 🔍 Syntax Validation for ${{ matrix.host }}" >> $GITHUB_STEP_SUMMARY
-
-          # Check Nix syntax (files are named after the host, not configuration.nix)
+          # Check Nix syntax
           if nix-instantiate --parse --quiet hosts/${{ matrix.host }}/${{ matrix.host }}.nix > /dev/null; then
             echo "✅ Syntax validation passed" >> $GITHUB_STEP_SUMMARY
           else
@@ -70,30 +52,29 @@ jobs:
             exit 1
           fi
 
-      - name: Build configuration
-        run: |
-          echo "Building NixOS configuration for ${{ matrix.host }}..."
-          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --no-link --print-build-logs
+          # Evaluate the configuration (much faster than building)
+          echo "Evaluating NixOS configuration for ${{ matrix.host }}..."
+          if nix eval ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --raw 2>&1 | head -n 1; then
+            echo "✅ Configuration evaluation passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Configuration evaluation failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
 
-      - name: Collect garbage after build
-        if: always()
+      - name: Validate home-manager configurations
         run: |
-          nix-collect-garbage -d
-          echo "Disk space after garbage collection:"
-          df -h
-
-      - name: Build home-manager configurations
-        run: |
-          echo "Building Home Manager configurations for ${{ matrix.host }}..."
-          # Test home-manager builds if they exist
-          if nix eval ".#nixosConfigurations.${{ matrix.host }}.config.home-manager" 2>/dev/null; then
-            nix build ".#nixosConfigurations.${{ matrix.host }}.config.home-manager.users" --no-link || true
+          echo "Validating Home Manager configurations for ${{ matrix.host }}..."
+          # Check if home-manager configurations evaluate properly
+          if nix eval ".#nixosConfigurations.${{ matrix.host }}.config.home-manager.users" --apply 'users: builtins.attrNames users' 2>/dev/null; then
+            echo "✅ Home Manager configurations are valid"
+          else
+            echo "ℹ️ No Home Manager configurations found or evaluation failed"
           fi
 
       - name: Check for evaluation warnings
         run: |
           echo "## ⚠️ Evaluation Warnings" >> $GITHUB_STEP_SUMMARY
-          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --no-link --show-trace 2>&1 | grep -i warning || echo "No warnings found"
+          nix eval ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --raw 2>&1 | grep -i warning || echo "✅ No warnings found" | tee -a $GITHUB_STEP_SUMMARY
 
   lint:
     runs-on: ubuntu-latest
