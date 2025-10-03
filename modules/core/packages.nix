@@ -8,6 +8,7 @@ let
     pkgs.coreutils-full
     pkgs.util-linux
     pkgs.curl
+    pkgs.eza
     pkgs.p7zip
     pkgs.xclip
     pkgs.lsof
@@ -34,6 +35,7 @@ let
   ];
 
   development = [
+    pkgs.git # required for the system to be able to perform autoupdates
     pkgs.automake
     pkgs.clang
     pkgs.cmake
