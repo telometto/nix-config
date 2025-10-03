@@ -189,9 +189,10 @@
 
     # Client program defaults
     programs = {
-      ssh.enable = lib.mkDefault true;
+      # SSH and GPG managed per-user via home-manager
+      ssh.enable = lib.mkDefault false;
       mtr.enable = lib.mkDefault true;
-      gnupg.enable = lib.mkDefault true;
+      gnupg.enable = lib.mkDefault false;
     };
   };
 
