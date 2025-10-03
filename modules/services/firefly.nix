@@ -7,7 +7,7 @@ in
     enable = lib.mkEnableOption "Firefly III";
     enableNginx = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
     };
     settings = lib.mkOption {
       type = lib.types.attrs;
@@ -21,8 +21,8 @@ in
   config = lib.mkIf cfg.enable {
     services.firefly-iii = {
       enable = lib.mkDefault true;
-      enableNginx = lib.mkDefault cfg.enableNginx;
-      inherit (cfg) settings;
+
+      inherit (cfg) settings enableNginx;
     };
   };
 }
