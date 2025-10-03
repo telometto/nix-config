@@ -33,7 +33,12 @@ in
         List of Beets plugins to enable.
         The 'web' plugin is automatically added when webInterface.enable is true.
       '';
-      example = [ "fetchart" "embedart" "lastfm" "lyrics" ];
+      example = [
+        "fetchart"
+        "embedart"
+        "lastfm"
+        "lyrics"
+      ];
     };
 
     webInterface = {
@@ -71,8 +76,7 @@ in
             in
             lib.concatStringsSep " " allPlugins;
 
-          directory =
-            if cfg.musicDirectory != null then cfg.musicDirectory else config.xdg.userDirs.music;
+          directory = if cfg.musicDirectory != null then cfg.musicDirectory else config.xdg.userDirs.music;
           statefile = "${config.home.homeDirectory}/.config/beets/state.pickle";
 
           art_filename = "albumart";

@@ -113,7 +113,7 @@
     klo = "kubectl logs";
     kev = "kubectl events";
     kds = "kubectl describe";
-    
+
     # systemd
     sysstat = "systemctl status";
     systart = "systemctl start";
@@ -123,27 +123,27 @@
     sysdisable = "systemctl disable";
     syslist = "systemctl list-units --type=service";
     sysfail = "systemctl --failed";
-    
+
     # journalctl
     jctl = "journalctl";
     jctlf = "journalctl -f";
     jctlu = "journalctl -u";
     jctlb = "journalctl -b";
     jctlerr = "journalctl -p err -b";
-    
+
     # ZFS management
     zlist = "zfs list";
     zsnap = "zfs list -t snapshot";
     zpool-status = "zpool status";
     zpool-list = "zpool list";
-    
+
     # Docker/Podman (if enabled)
     dps = "podman ps";
     dpsa = "podman ps -a";
     dimg = "podman images";
     dlog = "podman logs";
     dexec = "podman exec -it";
-    
+
     # System monitoring
     ports = "ss -tulpn";
     listening = "ss -tlnp";
@@ -151,18 +151,18 @@
     diskinfo = "df -h";
     topme = "htop --sort-key PERCENT_CPU";
     topmem = "htop --sort-key PERCENT_MEM";
-    
+
     # Network
     myip = "curl -s ifconfig.me";
     localip = "ip -4 addr show | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'";
     pingCf = "ping 1.1.1.1";
-    
+
     # File operations
     ll = "eza -la --git --icons";
     lt = "eza -la --git --icons --tree --level=2";
     lsize = "eza -la --git --icons --sort=size";
     ldate = "eza -la --git --icons --sort=modified";
-    
+
     # Git shortcuts (server side)
     gs = "git status";
     ga = "git add";
@@ -171,18 +171,18 @@
     gl = "git pull";
     gd = "git diff";
     glog = "git log --oneline --graph --decorate";
-    
+
     # Nix specific
     nix-gc = "nix-collect-garbage -d";
     nix-update = "sudo nixos-rebuild switch --flake .#blizzard";
     nix-test = "sudo nixos-rebuild test --flake .#blizzard";
     nix-boot = "sudo nixos-rebuild boot --flake .#blizzard";
-    
+
     # Quick navigation
     ".." = "cd ..";
     "..." = "cd ../..";
     "...." = "cd ../../..";
-    
+
     # Safety aliases
     rm = "rm -i";
     cp = "cp -i";
