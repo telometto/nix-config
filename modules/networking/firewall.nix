@@ -17,7 +17,7 @@ in
 {
   options.telometto.networking.firewall = {
     enable = lib.mkEnableOption "Firewall base policy";
-    
+
     # Global ports (exposed on ALL interfaces - use sparingly!)
     extraTCPPorts = lib.mkOption {
       type = lib.types.listOf lib.types.port;
@@ -44,7 +44,7 @@ in
     lan = {
       interface = lib.mkOption {
         type = lib.types.str;
-        default = "enp8s0";  # Your physical LAN interface
+        default = "enp8s0"; # Your physical LAN interface
         description = "Network interface connected to your LAN.";
       };
       allowedTCPPorts = lib.mkOption {
@@ -97,7 +97,7 @@ in
   config = lib.mkIf cfg.enable {
     networking.firewall = {
       enable = lib.mkDefault true;
-      
+
       # Global rules (ALL interfaces)
       allowedTCPPorts = cfg.extraTCPPorts;
       allowedUDPPorts = cfg.extraUDPPorts;
@@ -113,7 +113,7 @@ in
           allowedTCPPortRanges = cfg.tailscale.allowedTCPPortRanges;
           allowedUDPPortRanges = cfg.tailscale.allowedUDPPortRanges;
         };
-        
+
         # LAN interface (typically eth0, enp8s0, etc.)
         "${cfg.lan.interface}" = {
           allowedTCPPorts = cfg.lan.allowedTCPPorts;

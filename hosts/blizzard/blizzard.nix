@@ -33,7 +33,7 @@
           # Add other public-facing services here if needed
         ];
         extraUDPPorts = [ ];
-        
+
         extraTCPPortRanges = [ ];
         extraUDPPortRanges = [ ];
 
@@ -56,21 +56,21 @@
         # These are safe from both internet AND LAN (unless you're on Tailscale)
         tailscale = {
           allowedTCPPorts = [
-            80    # HTTP (Traefik)
-            443   # HTTPS (Traefik)
-            6443  # k3s API
-            111   # NFS rpcbind
-            2049  # NFS
+            80 # HTTP (Traefik)
+            443 # HTTPS (Traefik)
+            6443 # k3s API
+            111 # NFS rpcbind
+            2049 # NFS
             20048 # NFS mountd
             28981 # Service port
-            3838  # Actual
-            7777  # Searx
-            8072  # Scrutiny
-            9090  # Cockpit
+            3838 # Actual
+            7777 # Searx
+            8072 # Scrutiny
+            9090 # Cockpit
           ];
           allowedUDPPorts = [
-            111   # NFS rpcbind
-            2049  # NFS
+            111 # NFS rpcbind
+            2049 # NFS
             20048 # NFS mountd
           ];
           allowedTCPPortRanges = [
@@ -157,7 +157,10 @@
                 rule = "Host(`${config.networking.hostName}.${config.networking.domain}`) && PathPrefix(`/jellyfin`)";
                 entryPoints = [ "websecure" ];
                 service = "jellyfin";
-                middlewares = [ "jellyfin-headers" "strip-jellyfin-prefix" ];
+                middlewares = [
+                  "jellyfin-headers"
+                  "strip-jellyfin-prefix"
+                ];
                 tls = { };
               };
 
