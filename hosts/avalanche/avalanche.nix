@@ -49,7 +49,7 @@
       #     exports = ''
       #       /run/media/zeno/personal/nfs-oldie 192.168.2.0/24(rw,sync,nohide,no_subtree_check)
       #     '';
-      #     openFirewall = true;
+      #     openFirewall = false;
       #   };
       # };
     };

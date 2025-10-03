@@ -288,7 +288,7 @@
         enable = lib.mkDefault false;
         host = lib.mkDefault "0.0.0.0";
         port = lib.mkDefault 2283;
-        openFirewall = lib.mkDefault true;
+        openFirewall = lib.mkDefault false;
         mediaLocation = lib.mkDefault "/flash/enc/personal/immich-library";
         secretsFile = lib.mkDefault "/opt/sec/immich-file";
         environment = {

@@ -41,7 +41,7 @@ in
         cfg.extraSettings
       ];
       inherit (cfg) extraConfig;
-      openFirewall = lib.mkDefault true;
+      openFirewall = lib.mkDefault false;
     };
   };
 }

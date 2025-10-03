@@ -11,7 +11,7 @@ in
   config = lib.mkIf cfg.enable {
     services.actual = {
       enable = lib.mkDefault true;
-      openFirewall = lib.mkDefault true;
+      openFirewall = lib.mkDefault false;
       settings.port = cfg.port;
     };
   };

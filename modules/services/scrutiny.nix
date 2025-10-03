@@ -11,7 +11,7 @@ in
   config = lib.mkIf cfg.enable {
     services.scrutiny = {
       enable = lib.mkDefault true;
-      openFirewall = lib.mkDefault true;
+      openFirewall = lib.mkDefault false;
       settings.web.listen.port = cfg.port;
     };
   };

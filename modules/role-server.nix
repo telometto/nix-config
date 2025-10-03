@@ -23,7 +23,7 @@ in
         resolved.enable = lib.mkDefault true;
         maintenance.enable = lib.mkDefault true;
         autoUpgrade.enable = lib.mkDefault true;
-        nfs.server.openFirewall = lib.mkDefault true;
+        nfs.server.openFirewall = lib.mkDefault false;
       };
     };
 
