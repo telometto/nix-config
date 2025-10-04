@@ -1,6 +1,15 @@
 # User-specific configuration for admin user on avalanche host
-{ config, ... }:
 {
+  lib,
+  config,
+  hostName,
+  VARS,
+  ...
+}:
+let
+  adminUser = lib.attrByPath [ "users" "admin" "user" ] VARS null;
+in
+lib.mkIf (adminUser != null && hostName == "avalanche" && config.home.username == adminUser) {
   # Enable file management for SSH configuration
   hm.files = {
     enable = true;

@@ -1,6 +1,14 @@
 # User-specific configuration for admin user on snowfall host
-{ config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  hostName,
+  VARS,
+  ...
+}:
 let
+  adminUser = lib.attrByPath [ "users" "admin" "user" ] VARS null;
   sshAddKeysScript = pkgs.writeShellScript "ssh-add-keys" ''
     set -eu
 
@@ -18,7 +26,7 @@ let
     done
   '';
 in
-{
+lib.mkIf (adminUser != null && hostName == "snowfall" && config.home.username == adminUser) {
   # User-specific packages for admin on snowfall
   home.packages = with pkgs; [
     variety # Wallpaper changer

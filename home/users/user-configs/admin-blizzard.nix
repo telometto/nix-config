@@ -1,6 +1,16 @@
 # User-specific configuration for admin user on blizzard host
-{ config, pkgs, ... }:
 {
+  lib,
+  config,
+  pkgs,
+  hostName,
+  VARS,
+  ...
+}:
+let
+  adminUser = lib.attrByPath [ "users" "admin" "user" ] VARS null;
+in
+lib.mkIf (adminUser != null && hostName == "blizzard" && config.home.username == adminUser) {
   # User-specific packages for admin on blizzard
   home.packages = with pkgs; [
     sqlite
