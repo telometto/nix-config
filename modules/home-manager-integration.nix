@@ -21,7 +21,10 @@ in
         inputs.hyprland.homeManagerModules.default
       ];
 
-      extraSpecialArgs = { inherit inputs VARS; };
+      extraSpecialArgs = {
+        inherit inputs VARS;
+        inherit (config.networking) hostName;
+      };
     };
   };
 }
