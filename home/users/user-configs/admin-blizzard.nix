@@ -8,9 +8,17 @@
   ...
 }:
 let
-  adminUser = lib.attrByPath [ "users" "admin" "user" ] VARS null;
+  adminUser = lib.getAttrFromPath [ "users" "admin" "user" ] VARS;
+  homeUsername =
+    if config.home ? username then
+      let
+        raw = config.home.username;
+      in
+      if builtins.isAttrs raw && raw ? content then raw.content else raw
+    else
+      null;
 in
-lib.mkIf (adminUser != null && hostName == "blizzard" && config.home.username == adminUser) {
+lib.mkIf (adminUser != null && hostName == "blizzard" && homeUsername == adminUser) {
   # User-specific packages for admin on blizzard
   home.packages = with pkgs; [
     sqlite

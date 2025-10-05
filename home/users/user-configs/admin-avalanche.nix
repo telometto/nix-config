@@ -7,9 +7,17 @@
   ...
 }:
 let
-  adminUser = lib.attrByPath [ "users" "admin" "user" ] VARS null;
+  adminUser = lib.getAttrFromPath [ "users" "admin" "user" ] VARS;
+  homeUsername =
+    if config.home ? username then
+      let
+        raw = config.home.username;
+      in
+      if builtins.isAttrs raw && raw ? content then raw.content else raw
+    else
+      null;
 in
-lib.mkIf (adminUser != null && hostName == "avalanche" && config.home.username == adminUser) {
+lib.mkIf (adminUser != null && hostName == "avalanche" && homeUsername == adminUser) {
   # Enable file management for SSH configuration
   hm.files = {
     enable = true;
