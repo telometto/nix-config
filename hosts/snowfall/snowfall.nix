@@ -123,7 +123,7 @@
   # Home Manager profiles are generated automatically. Override via telometto.home users when needed.
 
   # Add openrazer group to admin user for Razer device support
-  users.users.${VARS.users.admin.user}.extraGroups = VARS.users.admin.extraGroups ++ [ "openrazer" ];
+  users.users.${VARS.users.zeno.user}.extraGroups = VARS.users.zeno.extraGroups ++ [ "openrazer" ];
 
   hardware = {
     cpu.amd.updateMicrocode = lib.mkDefault true;

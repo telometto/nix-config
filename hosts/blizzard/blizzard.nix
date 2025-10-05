@@ -319,8 +319,8 @@
       borgbackup = {
         enable = lib.mkDefault true;
         jobs.homeserver = {
-          paths = [ "/home/${VARS.users.admin.user}" ];
-          environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.admin.user}/.ssh/borg-blizzard";
+          paths = [ "/home/${VARS.users.zeno.user}" ];
+          environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
           repo = lib.mkDefault (
             config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo"
           );
@@ -386,7 +386,7 @@
   };
 
   # Export kubeconfig for the admin user (used by server tooling)
-  environment.variables.KUBECONFIG = "/home/${VARS.users.admin.user}/.kube/config";
+  environment.variables.KUBECONFIG = "/home/${VARS.users.zeno.user}/.kube/config";
 
   system.stateVersion = "24.11";
 }

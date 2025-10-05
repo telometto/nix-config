@@ -15,7 +15,7 @@ in
     git = {
       userName = lib.mkOption {
         type = lib.types.str;
-        default = VARS.users.admin.description or "Admin User";
+        default = VARS.users.zeno.user or "Admin User";
         description = "Git user name";
       };
 

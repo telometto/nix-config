@@ -22,7 +22,7 @@
     desktop.flavor = "gnome";
 
     # User-specific configuration for admin user on avalanche
-    home.users.${VARS.users.admin.user} = {
+    home.users.${VARS.users.zeno.user} = {
       extraModules = [ ../../home/users/user-configs/admin-avalanche.nix ];
     };
 
