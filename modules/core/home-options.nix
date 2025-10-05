@@ -50,13 +50,6 @@ in
       default = { };
       description = "Per-user overrides for generated Home Manager configurations.";
     };
-
-    systemUsers = lib.mkOption {
-      type = lib.types.attrsOf lib.types.attrs;
-      default = { };
-      description = "Internal registry of system user metadata exposed to Home Manager automation.";
-      internal = true;
-    };
   };
 
   # Legacy compatibility toggle - mirrors telometto.home.enable
