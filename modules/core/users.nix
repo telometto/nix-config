@@ -5,19 +5,19 @@
   VARS,
   ...
 }:
-let
-  inherit (VARS.users) admin;
-in
 {
-  users.users.${admin.user} = {
-    inherit (admin) description isNormalUser hashedPassword;
-    shell = lib.mkForce pkgs.zsh;
-    extraGroups = lib.mkDefault admin.extraGroups;
-    openssh.authorizedKeys.keys = [
-      admin.sshPubKey
-      admin.gpgSshPubKey
-    ];
-  };
-
-  telometto.home.systemUsers.${admin.user} = admin;
+  # Create NixOS users from VARS.users
+  # Transform from role-keyed (zeno, other) to username-keyed (zeno, <other's username>)
+  users.users = lib.mapAttrs' (
+    _roleName: userData:
+    lib.nameValuePair userData.user {
+      inherit (userData) description isNormalUser hashedPassword;
+      shell = lib.mkForce pkgs.zsh;
+      extraGroups = lib.mkDefault userData.extraGroups;
+      openssh.authorizedKeys.keys = [
+        userData.sshPubKey
+        userData.gpgSshPubKey
+      ];
+    }
+  ) VARS.users;
 }
