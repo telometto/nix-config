@@ -1,23 +1,11 @@
 # User-specific configuration for admin user on avalanche host
+# This file is automatically imported only for the admin user on avalanche
 {
   lib,
   config,
-  hostName,
-  VARS,
   ...
 }:
-let
-  adminUser = lib.getAttrFromPath [ "users" "admin" "user" ] VARS;
-  homeUsername =
-    if config.home ? username then
-      let
-        raw = config.home.username;
-      in
-      if builtins.isAttrs raw && raw ? content then raw.content else raw
-    else
-      null;
-in
-lib.mkIf (adminUser != null && hostName == "avalanche" && homeUsername == adminUser) {
+{
   # Enable file management for SSH configuration
   hm.files = {
     enable = true;
