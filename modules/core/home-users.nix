@@ -8,38 +8,19 @@
 let
   cfg = config.telometto.home;
 
-  # Get system users from either systemUsers or VARS
-  # Only use VARS.users entries that have the 'user' attribute and isNormalUser = true
-  varsUsers = lib.filterAttrs (_name: userCfg: (userCfg ? user) && (userCfg.isNormalUser or false)) (
-    VARS.users or { }
+  # Transform VARS.users from role-keyed to username-keyed
+  varsUsersByUsername = lib.listToAttrs (
+    map (userData: {
+      name = userData.user;
+      value = userData;
+    }) (builtins.attrValues (VARS.users or { }))
   );
 
-  systemUsersSource = if cfg.systemUsers != { } then cfg.systemUsers else varsUsers;
+  # Use VARS as the source of truth for which users to configure
+  # Filter to only normal users
+  systemUsers = lib.filterAttrs (_: userData: userData.isNormalUser or false) varsUsersByUsername;
 
-  systemUsers = lib.listToAttrs (
-    map
-      (userCfg: {
-        name = userCfg.user;
-        value = userCfg;
-      })
-      (
-        lib.filter (userCfg: (userCfg ? user) && (userCfg.isNormalUser or false)) (
-          builtins.attrValues systemUsersSource
-        )
-      )
-  );
-
-  systemUserNames = builtins.attrNames systemUsersSource;
-
-  systemUserCfg = name: lib.attrByPath [ name ] systemUsersSource { };
-
-  disabledSystemUsers = lib.filter (
-    name:
-    let
-      userCfg = systemUserCfg name;
-    in
-    (userCfg ? user) && !(userCfg.isNormalUser or false)
-  ) systemUserNames; # Auto-enable desktop flavor based on system config
+  # Auto-enable desktop flavor based on system config
   autoDesktopConfig =
     let
       flavor = config.telometto.desktop.flavor or null;
@@ -120,19 +101,10 @@ in
 {
   config = lib.mkIf cfg.enable {
     # Warn about users defined in cfg.users but not in system
-    warnings =
-      (map (
-        username:
-        "telometto.home.users.${username} is defined, but there is no matching NixOS user. Home Manager configuration will be skipped."
-      ) missingUsers)
-      ++ (map (
-        name:
-        let
-          userCfg = systemUserCfg name;
-          username = userCfg.user or name;
-        in
-        "Home Manager configuration for ${username} is skipped because isNormalUser is not true."
-      ) disabledSystemUsers);
+    warnings = map (
+      username:
+      "telometto.home.users.${username} is defined, but there is no matching NixOS user. Home Manager configuration will be skipped."
+    ) missingUsers;
 
     home-manager.users = lib.mapAttrs (
       username: userAttrs:
