@@ -8,23 +8,13 @@
 let
   cfg = config.telometto.home;
 
-  hostOverridePath = ../../home/users/host-overrides/${config.networking.hostName}.nix;
-
-  hostOverride =
-    if builtins.pathExists hostOverridePath then
-      import hostOverridePath {
-        inherit
-          lib
-          config
-          pkgs
-          VARS
-          ;
-      }
-    else
-      { };
-
   # Get system users from either systemUsers or VARS
-  systemUsersSource = if cfg.systemUsers != { } then cfg.systemUsers else (VARS.users or { });
+  # Only use VARS.users entries that have the 'user' attribute and isNormalUser = true
+  varsUsers = lib.filterAttrs (_name: userCfg: (userCfg ? user) && (userCfg.isNormalUser or false)) (
+    VARS.users or { }
+  );
+
+  systemUsersSource = if cfg.systemUsers != { } then cfg.systemUsers else varsUsers;
 
   systemUsers = lib.listToAttrs (
     map
@@ -43,17 +33,13 @@ let
 
   systemUserCfg = name: lib.attrByPath [ name ] systemUsersSource { };
 
-  missingUserAttr = lib.filter (name: !(systemUserCfg name ? user)) systemUserNames;
-
   disabledSystemUsers = lib.filter (
     name:
     let
       userCfg = systemUserCfg name;
     in
     (userCfg ? user) && !(userCfg.isNormalUser or false)
-  ) systemUserNames;
-
-  # Auto-enable desktop flavor based on system config
+  ) systemUserNames; # Auto-enable desktop flavor based on system config
   autoDesktopConfig =
     let
       flavor = config.telometto.desktop.flavor or null;
@@ -76,15 +62,21 @@ let
     username: _:
     let
       override = lib.attrByPath [ username ] cfg.users { };
-      hostPerUser = lib.attrByPath [ "perUser" username ] hostOverride { };
+
+      # Path to host-specific override file
+      hostOverridePath = ../../home/users/host-overrides/${config.networking.hostName}.nix;
+
+      # Path to user-specific config file
+      userConfigPath = ../../home/users/user-configs/${username}-${config.networking.hostName}.nix;
     in
     lib.unique (
       [ ../../hm-loader.nix ]
       ++ cfg.extraModules
       ++ lib.toList (cfg.template.imports or [ ])
-      # Host overrides can expose shared modules via `imports` and per-user modules via `perUser.<name>.imports`.
-      ++ lib.toList (hostOverride.imports or [ ])
-      ++ lib.toList (hostPerUser.imports or [ ])
+      # Import host-override if it exists (applies to all users on this host)
+      ++ (lib.optional (builtins.pathExists hostOverridePath) hostOverridePath)
+      # Import user-specific config if it exists (applies only to this user on this host)
+      ++ (lib.optional (builtins.pathExists userConfigPath) userConfigPath)
       ++ lib.toList (override.extraModules or [ ])
       ++ lib.toList (override.extraConfig.imports or [ ])
     );
@@ -106,20 +98,12 @@ let
         "/home/${username}"
       ];
       homeDir = lib.findFirst (home: home != null) preferredHomes "/home/${username}";
-      hostPerUser = lib.attrByPath [ "perUser" username ] hostOverride { };
-      hostGlobalConfig = builtins.removeAttrs hostOverride [
-        "imports"
-        "perUser"
-      ];
-      hostPerUserConfig = builtins.removeAttrs hostPerUser [ "imports" ];
     in
     {
       imports = collectImports username userAttrs;
     }
     // lib.foldl' lib.recursiveUpdate { } [
       (builtins.removeAttrs cfg.template [ "imports" ])
-      hostGlobalConfig
-      hostPerUserConfig
       (builtins.removeAttrs (override.extraConfig or { }) [ "imports" ])
       autoDesktopConfig
       {
@@ -141,10 +125,6 @@ in
         username:
         "telometto.home.users.${username} is defined, but there is no matching NixOS user. Home Manager configuration will be skipped."
       ) missingUsers)
-      ++ (map (
-        name:
-        "telometto.home.systemUsers.${name} is missing the `user` attribute; Home Manager configuration will be skipped."
-      ) missingUserAttr)
       ++ (map (
         name:
         let
