@@ -1,4 +1,9 @@
-{config, lib, VARS, ... }:
+{
+  config,
+  lib,
+  VARS,
+  ...
+}:
 {
   imports = [
     ./hardware-configuration.nix
