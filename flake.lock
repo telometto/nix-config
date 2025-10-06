@@ -592,11 +592,11 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1759631065,
-        "narHash": "sha256-EzV4mAjSxIO4qgb03T1/Z08yTSNJ1fQ9qyhN9VyQLn8=",
+        "lastModified": 1759708185,
+        "narHash": "sha256-s8bRMSQVILQlhbBqCKBFtIcsxbcuH2oX35JJ7FHw4BI=",
         "owner": "microvm-nix",
         "repo": "microvm.nix",
-        "rev": "8899a948db0f1cd750df201a8e557c63fdb97d83",
+        "rev": "901c80e256d41f63d8036b042d1675c745c1a617",
         "type": "github"
       },
       "original": {
@@ -628,13 +628,9 @@
       "locked": {
         "lastModified": 1759694423,
         "narHash": "sha256-KAzmQgassrNPN1aCGTv/9VPfeSCutKg0RmAtiSS3Hd4=",
-        "lastModified": 1759693636,
-        "narHash": "sha256-eByKdeKBejOS8nnrsRCq9zspruRy1m2Y3pJmxtvVfZs=",
         "ref": "refs/heads/master",
         "rev": "b01597f61012ed21cf7c5a3d1f8946887088a6cc",
         "revCount": 42,
-        "rev": "9330659e0189cad6cb088b7770a8c48b5603fc8b",
-        "revCount": 41,
         "type": "git",
         "url": "ssh://git@github.com/telometto/nix-secrets.git"
       },
@@ -762,14 +758,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1759692353,
-        "narHash": "sha256-Gylxzjx1a9YGnzfKtL5gBCpJiq1ZL1dLTh4lcietO3Y=",
-        "lastModified": 1759692353,
-        "narHash": "sha256-Gylxzjx1a9YGnzfKtL5gBCpJiq1ZL1dLTh4lcietO3Y=",
+        "lastModified": 1759696599,
+        "narHash": "sha256-GkGJdNkR9gnVQt9OXwhGrD72EpK185jNVT7qoCh/3q4=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "46aa2238f1ac51f3f2bceb26ed9a18702519df09",
-        "rev": "46aa2238f1ac51f3f2bceb26ed9a18702519df09",
+        "rev": "dce08ba6904fcaad93c17ab65cf6b3e5dfc2d301",
         "type": "github"
       },
       "original": {
@@ -892,11 +885,11 @@
     "spectrum": {
       "flake": false,
       "locked": {
-        "lastModified": 1754675037,
-        "narHash": "sha256-afS08F7lfMUBR4qrBxinN1kuxu+DoHQ5TPNVp9VS/OA=",
+        "lastModified": 1759482047,
+        "narHash": "sha256-H1wiXRQHxxPyMMlP39ce3ROKCwI5/tUn36P8x6dFiiQ=",
         "ref": "refs/heads/main",
-        "rev": "586577f3015397afacd83bc185454f4cc3c8028f",
-        "revCount": 955,
+        "rev": "c5d5786d3dc938af0b279c542d1e43bce381b4b9",
+        "revCount": 996,
         "type": "git",
         "url": "https://spectrum-os.org/git/spectrum"
       },
