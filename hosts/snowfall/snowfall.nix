@@ -1,4 +1,4 @@
-{ lib, VARS, ... }:
+{config, lib, VARS, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -8,6 +8,53 @@
   networking = {
     hostName = lib.mkForce "snowfall";
     hostId = lib.mkForce "131b6b39";
+  };
+
+  services.tailscale.permitCertUid = "traefik"; # let traefik use tailscales tls
+  #enable traefik
+  services.traefik = {
+    enable = true;
+    staticConfigOptions = {
+      log = {
+        level = "WARN";
+      };
+      api = { }; # enable API handler
+      entryPoints = {
+        web = {
+          address = ":80";
+          http.redirections.entryPoint = {
+            # I guess this redirects traffic from 80 (http) to port 443 (https)
+            to = "websecure";
+            scheme = "https";
+          };
+        };
+        websecure = {
+          address = ":443";
+        };
+      };
+      certificatesResolvers = {
+        myresolver.tailscale = { };
+      };
+    };
+    dynamicConfigOptions = {
+      http = {
+        services.grafana.loadBalancer.servers = [
+          {
+            url = "http://localhost:3000/"; # Redirecting traffic from 443 to 8080 (the port that stirling listens)
+          }
+        ];
+        routers.grafana = {
+          rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(/metrics)";
+          #$MACHINENAME=whatever you've set at networking.hostName (or the name of your container)
+          #$TAILNETNAME=Tailnet DNS name (https://login.tailscale.com/admin/dns)
+          service = "grafana";
+          entrypoints = [ "websecure" ];
+          tls = {
+            certResolver = "myresolver";
+          };
+        };
+      };
+    };
   };
 
   telometto = {
@@ -34,18 +81,18 @@
 
     networking = {
       firewall = {
-        extraTCPPortRanges = [
-          {
-            from = 1714;
-            to = 1764;
-          }
-        ];
-        extraUDPPortRanges = [
-          {
-            from = 1714;
-            to = 1764;
-          }
-        ];
+        # extraTCPPortRanges = [
+        #   {
+        #     from = 1714;
+        #     to = 1764;
+        #   }
+        # ];
+        # extraUDPPortRanges = [
+        #   {
+        #     from = 1714;
+        #     to = 1764;
+        #   }
+        # ];
       };
     };
 
