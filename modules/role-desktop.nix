@@ -33,7 +33,7 @@ in
         pipewire.enable = lib.mkDefault true;
         printing.enable = lib.mkDefault true;
         flatpak.enable = lib.mkDefault true;
-        tailscale.enable = true;
+        tailscale.enable = lib.mkDefault true;
       };
 
       virtualisation.enable = lib.mkDefault true;
