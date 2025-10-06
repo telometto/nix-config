@@ -24,6 +24,7 @@ in
         maintenance.enable = lib.mkDefault true;
         autoUpgrade.enable = lib.mkDefault true;
         nfs.server.openFirewall = lib.mkDefault false;
+        tailscale.enable = lib.mkDefault true;
       };
     };
 
