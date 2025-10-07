@@ -16,15 +16,21 @@
     hostId = lib.mkForce "86bc16e3";
   };
 
+  ## TODO: Edit traefik.nix template so that re-usable template defs can be used in order to reduce bloat of this file!
+
   services.tailscale.permitCertUid = "traefik"; # let traefik use tailscales tls
   #enable traefik
   services.traefik = {
     enable = true;
     staticConfigOptions = {
-      log = {
-        level = "WARN";
+      log.level = "WARN";
+
+      # Enable API and dashboard
+      api = {
+        dashboard = true;
+        insecure = false; # Don't expose on :8080, use through entrypoint
       };
-      # api = { }; # enable API handler
+
       entryPoints = {
         web = {
           address = ":80";
@@ -34,17 +40,32 @@
             scheme = "https";
           };
         };
-        websecure = {
-          address = ":443";
-        };
+        websecure.address = ":443";
       };
-      certificatesResolvers = {
-        myresolver.tailscale = { };
-      };
+      certificatesResolvers.myresolver.tailscale = { };
     };
 
     dynamicConfigOptions = {
       http = {
+        # Universal middleware for reverse proxy headers
+        middlewares = {
+          # Add standard reverse proxy headers to help apps understand they're behind a proxy
+          add-proxy-headers = {
+            headers.customRequestHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+          
+          # Strip prefix for apps that don't support URL base
+          strip-qbit = {
+            stripPrefix.prefixes = [ "/qbit" ];
+          };
+          strip-firefox = {
+            stripPrefix.prefixes = [ "/firefox" ];
+          };
+        };
+
         services = {
           # Host services (running on NixOS directly)
           searx.loadBalancer.servers = [ { url = "http://localhost:7777/"; } ];
@@ -54,13 +75,19 @@
           qbit.loadBalancer.servers = [ { url = "http://192.168.2.100:8090/"; } ];
           sabnzbd.loadBalancer.servers = [ { url = "http://192.168.2.100:8080/"; } ];
           prowlarr.loadBalancer.servers = [ { url = "http://192.168.2.100:9696/"; } ];
+          firefox.loadBalancer.servers = [ { url = "http://192.168.2.100:3001/"; } ]; # TODO: Replace HTTP_PORT
+          radarr.loadBalancer.servers = [ { url = "http://192.168.2.100:7878/"; } ];
+          sonarr.loadBalancer.servers = [ { url = "http://192.168.2.100:8989/"; } ];
+          readarr.loadBalancer.servers = [ { url = "http://192.168.2.100:8787/"; } ];
+          bazarr.loadBalancer.servers = [ { url = "http://192.168.2.100:6767/"; } ];
         };
 
         routers = {
-          # Host service router
+          # Searx - configured with base_url, no stripping needed
           searx = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/searx`)";
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/searx`)";
             service = "searx";
+            middlewares = [ "add-proxy-headers" ];
             entrypoints = [ "websecure" ];
             tls = {
               certResolver = "myresolver";
@@ -68,35 +95,76 @@
             };
           };
 
-          # K8s service routers
+          # qBittorrent - doesn't support URL base, use stripPrefix
           qbit = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/qbit`)";
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/qbit`)";
             service = "qbit";
+            middlewares = [ "add-proxy-headers" "strip-qbit" ];
             entrypoints = [ "websecure" ];
-            tls = {
-              certResolver = "myresolver";
-              domains = [ { main = "${config.networking.hostName}.mole-delta.ts.net"; } ];
-            };
+            tls.certResolver = "myresolver";
           };
 
           sabnzbd = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/sabnzbd`)";
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/sabnzbd`)";
             service = "sabnzbd";
+            middlewares = [ "add-proxy-headers" ];
             entrypoints = [ "websecure" ];
-            tls = {
-              certResolver = "myresolver";
-              domains = [ { main = "${config.networking.hostName}.mole-delta.ts.net"; } ];
-            };
+            tls.certResolver = "myresolver";
           };
 
           prowlarr = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/prowlarr`)";
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/prowlarr`)";
             service = "prowlarr";
+            middlewares = [ "add-proxy-headers" ];
             entrypoints = [ "websecure" ];
-            tls = {
-              certResolver = "myresolver";
-              domains = [ { main = "${config.networking.hostName}.mole-delta.ts.net"; } ];
-            };
+            tls.certResolver = "myresolver";
+          };
+
+          firefox = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/firefox`)";
+            service = "firefox";
+            middlewares = [ "add-proxy-headers" "strip-firefox" ];
+            entrypoints = [ "websecure" ];
+            tls.certResolver = "myresolver";
+          };
+
+          radarr = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/radarr`)";
+            service = "radarr";
+            middlewares = [ "add-proxy-headers" ];
+            entrypoints = [ "websecure" ];
+            tls.certResolver = "myresolver";
+          };
+
+          sonarr = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/sonarr`)";
+            service = "sonarr";
+            middlewares = [ "add-proxy-headers" ];
+            entrypoints = [ "websecure" ];
+            tls.certResolver = "myresolver";
+          };
+
+          readarr = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/readarr`)";
+            service = "readarr";
+            middlewares = [ "add-proxy-headers" ];
+            entrypoints = [ "websecure" ];
+            tls.certResolver = "myresolver";
+          };
+
+          bazarr = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/bazarr`)";
+            service = "bazarr";
+            middlewares = [ "add-proxy-headers" ];
+            entrypoints = [ "websecure" ];
+            tls.certResolver = "myresolver";
+          };
+
+          traefik-dashboard = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
+            service = "api@internal";
+            entrypoints = [ "websecure" ];
+            tls.certResolver = "myresolver";
           };
         };
       };
@@ -219,6 +287,7 @@
       searx = {
         enable = lib.mkDefault true; # port 7777 bind 0.0.0.0
         port = lib.mkDefault 7777;
+        settings.server.base_url = "https://${config.networking.hostName}.mole-delta.ts.net/searx/";
       };
 
       immich = {
