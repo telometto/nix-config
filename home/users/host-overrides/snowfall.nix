@@ -9,9 +9,11 @@
   # programs.git.extraConfig.snowfall = "specific-setting";
 
   hm = {
-    development.extraPackages = [
-      pkgs.vscode
-      # pkgs.jetbrains.idea-community-bin # disabled until lidbm issue has been solved
-    ];
+    programs = {
+      development.extraPackages = [
+        pkgs.vscode
+        # pkgs.jetbrains.idea-community-bin # disabled until lidbm issue has been solved
+      ];
+    };
   };
 }
