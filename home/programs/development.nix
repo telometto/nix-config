@@ -25,6 +25,13 @@ in
         description = "Git user email";
       };
     };
+
+    extraPackages = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      default = [ ];
+      description = "Additional development packages to install beyond the standard set";
+      example = lib.literalExpression "[ pkgs.go pkgs.rustc ]";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -61,12 +68,13 @@ in
       };
     };
 
-    home.packages = [
-      # Development tools
-      pkgs.nixd
-      pkgs.vscode
-      pkgs.jetbrains.idea-community-bin
-      pkgs.ansible
-    ];
+    home.packages = lib.mkIf cfg.enable (
+      [
+        # Standard development tools
+        pkgs.nixd
+        pkgs.ansible
+      ]
+      ++ cfg.extraPackages
+    );
   };
 }
