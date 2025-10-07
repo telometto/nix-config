@@ -37,6 +37,9 @@ in
             "json"
             "rss"
           ];
+          # Redis has been renamed to Valkey in NixOS
+          valkey.url = lib.mkIf config.services.searx.redisCreateLocally
+            "unix://${config.services.redis.servers.searx.unixSocket}";
         }
         cfg.settings
       ];
