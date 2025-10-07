@@ -16,167 +16,6 @@
     hostId = lib.mkForce "86bc16e3";
   };
 
-  ## TODO: Edit traefik.nix template so that re-usable template defs can be used in order to reduce bloat of this file!
-
-  services.tailscale.permitCertUid = "traefik"; # let traefik use tailscales tls
-  #enable traefik
-  services.traefik = {
-    enable = true;
-    staticConfigOptions = {
-      log.level = "WARN";
-
-      # Enable API and dashboard
-      api = {
-        dashboard = true;
-        insecure = false; # Don't expose on :8080, use through entrypoint
-      };
-
-      entryPoints = {
-        web = {
-          address = ":80";
-          http.redirections.entryPoint = {
-            # I guess this redirects traffic from 80 (http) to port 443 (https)
-            to = "websecure";
-            scheme = "https";
-          };
-        };
-        websecure.address = ":443";
-      };
-      certificatesResolvers.myresolver.tailscale = { };
-    };
-
-    dynamicConfigOptions = {
-      http = {
-        # Universal middleware for reverse proxy headers
-        middlewares = {
-          # Add standard reverse proxy headers to help apps understand they're behind a proxy
-          add-proxy-headers = {
-            headers.customRequestHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-            };
-          };
-
-          # Strip prefix for apps that don't support URL base
-          strip-qbit = {
-            stripPrefix.prefixes = [ "/qbit" ];
-          };
-          strip-firefox = {
-            stripPrefix.prefixes = [ "/firefox" ];
-          };
-        };
-
-        services = {
-          # Host services (running on NixOS directly)
-          searx.loadBalancer.servers = [ { url = "http://localhost:7777/"; } ];
-
-          # K8s services (running in k3s cluster)
-          # Note: Using the LoadBalancer IPs from kubectl output
-          qbit.loadBalancer.servers = [ { url = "http://192.168.2.100:8090/"; } ];
-          sabnzbd.loadBalancer.servers = [ { url = "http://192.168.2.100:8080/"; } ];
-          prowlarr.loadBalancer.servers = [ { url = "http://192.168.2.100:9696/"; } ];
-          firefox.loadBalancer.servers = [ { url = "http://192.168.2.100:3001/"; } ]; # TODO: Replace HTTP_PORT
-          radarr.loadBalancer.servers = [ { url = "http://192.168.2.100:7878/"; } ];
-          sonarr.loadBalancer.servers = [ { url = "http://192.168.2.100:8989/"; } ];
-          readarr.loadBalancer.servers = [ { url = "http://192.168.2.100:8787/"; } ];
-          bazarr.loadBalancer.servers = [ { url = "http://192.168.2.100:6767/"; } ];
-        };
-
-        routers = {
-          # Searx - configured with base_url, no stripping needed
-          searx = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/searx`)";
-            service = "searx";
-            middlewares = [ "add-proxy-headers" ];
-            entrypoints = [ "websecure" ];
-            tls = {
-              certResolver = "myresolver";
-              domains = [ { main = "${config.networking.hostName}.mole-delta.ts.net"; } ];
-            };
-          };
-
-          # qBittorrent - doesn't support URL base, use stripPrefix
-          qbit = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/qbit`)";
-            service = "qbit";
-            middlewares = [
-              "add-proxy-headers"
-              "strip-qbit"
-            ];
-            entrypoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-          };
-
-          sabnzbd = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/sabnzbd`)";
-            service = "sabnzbd";
-            middlewares = [ "add-proxy-headers" ];
-            entrypoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-          };
-
-          prowlarr = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/prowlarr`)";
-            service = "prowlarr";
-            middlewares = [ "add-proxy-headers" ];
-            entrypoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-          };
-
-          firefox = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/firefox`)";
-            service = "firefox";
-            middlewares = [
-              "add-proxy-headers"
-              "strip-firefox"
-            ];
-            entrypoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-          };
-
-          radarr = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/radarr`)";
-            service = "radarr";
-            middlewares = [ "add-proxy-headers" ];
-            entrypoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-          };
-
-          sonarr = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/sonarr`)";
-            service = "sonarr";
-            middlewares = [ "add-proxy-headers" ];
-            entrypoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-          };
-
-          readarr = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/readarr`)";
-            service = "readarr";
-            middlewares = [ "add-proxy-headers" ];
-            entrypoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-          };
-
-          bazarr = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/bazarr`)";
-            service = "bazarr";
-            middlewares = [ "add-proxy-headers" ];
-            entrypoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-          };
-
-          traefik-dashboard = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
-            service = "api@internal";
-            entrypoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-          };
-        };
-      };
-    };
-  };
-
   telometto = {
     # Enable server role (provides server defaults)
     role.server.enable = true;
@@ -224,6 +63,147 @@
       # Private networking (enabled in legacy)
       tailscale.interface = "enp8s0";
 
+      # Traefik reverse proxy configuration
+      traefik = {
+        enable = lib.mkDefault true;
+        enableTailscaleCerts = true; # Allow Traefik to use Tailscale's TLS certificates
+        domain = "${config.networking.hostName}.mole-delta.ts.net";
+        certResolver = "myresolver";
+
+        # Static configuration for Traefik
+        staticConfigOptions = {
+          log.level = "WARN";
+
+          # Enable API and dashboard
+          api = {
+            dashboard = true;
+            insecure = false; # Don't expose on :8080, use through entrypoint
+          };
+
+          entryPoints = {
+            web = {
+              address = ":80";
+              http.redirections.entryPoint = {
+                to = "websecure";
+                scheme = "https";
+              };
+            };
+            websecure.address = ":443";
+          };
+          certificatesResolvers.myresolver.tailscale = { };
+        };
+
+        # Service definitions - automatically generates routers, services, and middlewares
+        services = {
+          # Host services (running on NixOS directly)
+          searx = {
+            backendUrl = "http://localhost:7777/";
+            pathPrefix = "/searx";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          # K8s services (running in k3s cluster)
+          qbit = {
+            backendUrl = "http://192.168.2.100:8090/";
+            pathPrefix = "/qbit";
+            stripPrefix = true;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+              X-Forwarded-Prefix = "/qbit";
+            };
+          };
+
+          sabnzbd = {
+            backendUrl = "http://192.168.2.100:8080/";
+            pathPrefix = "/sabnzbd";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          prowlarr = {
+            backendUrl = "http://192.168.2.100:9696/";
+            pathPrefix = "/prowlarr";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          firefox = {
+            backendUrl = "http://192.168.2.100:3001/";
+            pathPrefix = "/firefox";
+            stripPrefix = true;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          radarr = {
+            backendUrl = "http://192.168.2.100:7878/";
+            pathPrefix = "/radarr";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          sonarr = {
+            backendUrl = "http://192.168.2.100:8989/";
+            pathPrefix = "/sonarr";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          readarr = {
+            backendUrl = "http://192.168.2.100:8787/";
+            pathPrefix = "/readarr";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          bazarr = {
+            backendUrl = "http://192.168.2.100:6767/";
+            pathPrefix = "/bazarr";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+        };
+
+        # Additional manual configuration for Traefik dashboard
+        dynamicConfigOptions = {
+          http = {
+            routers = {
+              traefik-dashboard = {
+                rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
+                service = "api@internal";
+                entrypoints = [ "websecure" ];
+                tls.certResolver = "myresolver";
+              };
+            };
+          };
+        };
+      };
+
       # Enable NFS (owner module) and run as a server
       nfs = {
         enable = lib.mkDefault false; # matches legacy default (server block kept for quick flip)
@@ -269,7 +249,7 @@
         # Disable k3s built-in Traefik since we're using NixOS Traefik as the main ingress
         extraFlags = [
           "--snapshotter native"
-          "--disable traefik"
+          "--disable traefik" # using traefik from the repo packages
         ];
       };
 
