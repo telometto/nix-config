@@ -56,7 +56,7 @@
               X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
             };
           };
-          
+
           # Strip prefix for apps that don't support URL base
           strip-qbit = {
             stripPrefix.prefixes = [ "/qbit" ];
@@ -99,7 +99,10 @@
           qbit = {
             rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/qbit`)";
             service = "qbit";
-            middlewares = [ "add-proxy-headers" "strip-qbit" ];
+            middlewares = [
+              "add-proxy-headers"
+              "strip-qbit"
+            ];
             entrypoints = [ "websecure" ];
             tls.certResolver = "myresolver";
           };
@@ -123,7 +126,10 @@
           firefox = {
             rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/firefox`)";
             service = "firefox";
-            middlewares = [ "add-proxy-headers" "strip-firefox" ];
+            middlewares = [
+              "add-proxy-headers"
+              "strip-firefox"
+            ];
             entrypoints = [ "websecure" ];
             tls.certResolver = "myresolver";
           };
