@@ -66,8 +66,7 @@ let
     serviceName: serviceCfg:
     let
       appliedMiddlewares =
-        [ ]
-        ++ lib.optional (serviceCfg.customHeaders != null) (mkMiddlewareName serviceName "headers")
+        lib.optional (serviceCfg.customHeaders != null) (mkMiddlewareName serviceName "headers")
         ++ lib.optional serviceCfg.stripPrefix (mkMiddlewareName serviceName "strip")
         ++ serviceCfg.extraMiddlewares;
     in
@@ -77,7 +76,7 @@ let
       middlewares = appliedMiddlewares;
       entrypoints = [ "websecure" ];
       tls = {
-        certResolver = cfg.certResolver;
+        inherit (cfg) certResolver;
         domains = lib.optionals (cfg.domain != null) [
           { main = cfg.domain; }
         ];
@@ -97,8 +96,23 @@ let
   generatedRouters = lib.mapAttrs mkServiceRouter cfg.services;
   generatedServices = lib.mapAttrs mkServiceDef cfg.services;
 
+  # Build observability config
+  observabilityConfig = {
+    accessLog = lib.mkIf cfg.accessLog {
+      # Log to stdout/journald
+      format = "json";
+    };
+    metrics = lib.mkIf cfg.metrics {
+      prometheus = {
+        addEntryPointsLabels = true;
+        addRoutersLabels = true;
+        addServicesLabels = true;
+      };
+    };
+  };
+
   # Merge with user-provided configs
-  finalStaticConfig = lib.recursiveUpdate cfg.staticConfigOptions cfg.staticConfigOverrides;
+  finalStaticConfig = lib.recursiveUpdate (lib.recursiveUpdate cfg.staticConfigOptions observabilityConfig) cfg.staticConfigOverrides;
 
   finalDynamicConfig = {
     http = {
@@ -143,6 +157,24 @@ in
       description = ''
         Enable Tailscale certificate integration.
         This will configure Traefik to use Tailscale's TLS certificates.
+      '';
+    };
+
+    accessLog = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Enable access logs for all HTTP requests.
+        Logs will be written to stdout/journald.
+      '';
+    };
+
+    metrics = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Enable Prometheus metrics endpoint.
+        Metrics will be available at http://traefik:8080/metrics
       '';
     };
 
@@ -211,7 +243,7 @@ in
   config = lib.mkIf cfg.enable {
     services.traefik = {
       enable = true;
-      dataDir = cfg.dataDir;
+      inherit (cfg) dataDir;
       staticConfigOptions = finalStaticConfig;
       dynamicConfigOptions = finalDynamicConfig;
     };
