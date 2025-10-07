@@ -70,6 +70,10 @@
         domain = "${config.networking.hostName}.mole-delta.ts.net";
         certResolver = "myresolver";
 
+        # Enable observability
+        accessLog = true; # Log all HTTP requests to journald
+        metrics = true; # Export Prometheus metrics
+
         # Static configuration for Traefik
         staticConfigOptions = {
           log.level = "WARN";
@@ -99,6 +103,26 @@
           searx = {
             backendUrl = "http://localhost:7777/";
             pathPrefix = "/searx";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          grafana = {
+            backendUrl = "http://localhost:3000/";
+            pathPrefix = "/grafana";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          prometheus = {
+            backendUrl = "http://localhost:9090/";
+            pathPrefix = "/prometheus";
             stripPrefix = false;
             customHeaders = {
               X-Forwarded-Proto = "https";
@@ -242,6 +266,41 @@
       # Monitoring and admin UIs
       scrutiny.enable = lib.mkDefault true; # port 8072
       cockpit.enable = lib.mkDefault false; # port 9090
+
+      # Prometheus and Grafana monitoring stack
+      prometheus = {
+        enable = lib.mkDefault true;
+        listenAddress = "127.0.0.1"; # Only accessible via Traefik
+        openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
+        scrapeInterval = "15s";
+        webExternalUrl = "https://${config.networking.hostName}.mole-delta.ts.net/prometheus/";
+
+        # Scrape Traefik metrics
+        extraScrapeConfigs = [
+          {
+            job_name = "traefik";
+            static_configs = [
+              {
+                targets = [ "localhost:8080" ]; # Traefik internal metrics port
+              }
+            ];
+          }
+        ];
+      };
+
+      grafana = {
+        enable = lib.mkDefault true;
+        addr = "127.0.0.1"; # Only accessible via Traefik
+        openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
+        domain = "${config.networking.hostName}.mole-delta.ts.net";
+        subPath = "/grafana"; # Configure Grafana for subpath routing
+
+        # Automatically provisions Prometheus datasource (handled by module)
+        # Declaratively provision dashboards can be added here if needed
+        # provision.dashboards = {
+        #   "traefik" = ./dashboards/traefik.json;
+        # };
+      };
 
       # Kubernetes (k3s) server
       k3s = {
