@@ -82,6 +82,29 @@ in
       default = true;
       description = "Disable Grafana phone-home telemetry";
     };
+
+    subPath = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        URL subpath for Grafana when behind a reverse proxy.
+        Example: "/grafana" will make Grafana accessible at https://domain.com/grafana/
+      '';
+      example = "/grafana";
+    };
+
+    extraSettings = lib.mkOption {
+      type = lib.types.attrs;
+      default = { };
+      description = "Additional settings to merge into services.grafana.settings";
+      example = lib.literalExpression ''
+        {
+          security = {
+            admin_password = "$__file{/run/secrets/grafana-admin-password}";
+          };
+        }
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -89,18 +112,22 @@ in
       enable = true;
       declarativePlugins = cfg.plugins;
 
-      settings = {
+      settings = lib.recursiveUpdate {
         server = {
           http_addr = cfg.addr;
           http_port = cfg.port;
           inherit (cfg) domain;
           enforce_domain = true;
           enable_gzip = true;
+        }
+        // lib.optionalAttrs (cfg.subPath != null) {
+          root_url = "https://${cfg.domain}${cfg.subPath}/";
+          serve_from_sub_path = true;
         };
 
         # Prevent Grafana from phoning home
         analytics.reporting_enabled = !cfg.disableTelemetry;
-      };
+      } cfg.extraSettings;
 
       provision = lib.mkIf cfg.provision.enable {
         enable = true;
