@@ -47,13 +47,13 @@
       http = {
         services = {
           # Host services (running on NixOS directly)
-          searx.loadBalancer.servers = [{ url = "http://localhost:7777/"; }];
-          
+          searx.loadBalancer.servers = [ { url = "http://localhost:7777/"; } ];
+
           # K8s services (running in k3s cluster)
           # Note: Using the LoadBalancer IPs from kubectl output
-          qbit.loadBalancer.servers = [{ url = "http://192.168.2.100:8090/"; }];
-          sabnzbd.loadBalancer.servers = [{ url = "http://192.168.2.100:8080/"; }];
-          prowlarr.loadBalancer.servers = [{ url = "http://192.168.2.100:9696/"; }];
+          qbit.loadBalancer.servers = [ { url = "http://192.168.2.100:8090/"; } ];
+          sabnzbd.loadBalancer.servers = [ { url = "http://192.168.2.100:8080/"; } ];
+          prowlarr.loadBalancer.servers = [ { url = "http://192.168.2.100:9696/"; } ];
         };
 
         routers = {
@@ -64,7 +64,7 @@
             entrypoints = [ "websecure" ];
             tls = {
               certResolver = "myresolver";
-              domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
+              domains = [ { main = "${config.networking.hostName}.mole-delta.ts.net"; } ];
             };
           };
 
@@ -75,7 +75,7 @@
             entrypoints = [ "websecure" ];
             tls = {
               certResolver = "myresolver";
-              domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
+              domains = [ { main = "${config.networking.hostName}.mole-delta.ts.net"; } ];
             };
           };
 
@@ -85,7 +85,7 @@
             entrypoints = [ "websecure" ];
             tls = {
               certResolver = "myresolver";
-              domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
+              domains = [ { main = "${config.networking.hostName}.mole-delta.ts.net"; } ];
             };
           };
 
@@ -95,7 +95,7 @@
             entrypoints = [ "websecure" ];
             tls = {
               certResolver = "myresolver";
-              domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
+              domains = [ { main = "${config.networking.hostName}.mole-delta.ts.net"; } ];
             };
           };
         };
