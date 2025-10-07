@@ -24,7 +24,7 @@
       log = {
         level = "WARN";
       };
-      api = { }; # enable API handler
+      # api = { }; # enable API handler
       entryPoints = {
         web = {
           address = ":80";
@@ -42,22 +42,45 @@
         myresolver.tailscale = { };
       };
     };
+
     dynamicConfigOptions = {
       http = {
-        services.qbit.loadBalancer.servers = [
-          {
-            url = "http://localhost:8090/"; # Redirecting traffic from 443 to 8080 (the port that stirling listens)
-          }
-        ];
-        routers.qbit = {
-          rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(/qbit)";
-          #$MACHINENAME=whatever you've set at networking.hostName (or the name of your container)
-          #$TAILNETNAME=Tailnet DNS name (https://login.tailscale.com/admin/dns)
-          service = "qbit";
-          entrypoints = [ "websecure" ];
-          tls = {
-            certResolver = "myresolver";
+        services = {
+          searx.loadBalancer.servers = [{ url = "http://localhost:7777/"; }];
+          # qbit.loadBalancer.servers = [{ url = "http://localhost:8090/"; }];
+          # metrics.loadBalancer.servers = [{ url = "http://localhost:8096/"; }];
+        };
+
+        routers = {
+          searx = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/searx`)";
+            service = "searx";
+            entrypoints = [ "websecure" ];
+            tls = {
+              certResolver = "myresolver";
+              domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
+            };
           };
+
+          # qbit = {
+          #   rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/qbit`)";
+          #   service = "qbit";
+          #   entrypoints = [ "websecure" ];
+          #   tls = {
+          #     certResolver = "myresolver";
+          #     domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
+          #   };
+          # };
+
+          # metrics = {
+          #   rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/monitoring`)";
+          #   service = "metrics";
+          #   entrypoints = [ "websecure" ];
+          #   tls = {
+          #     certResolver = "myresolver";
+          #     domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
+          #   };
+          # };
         };
       };
     };
