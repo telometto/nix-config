@@ -46,12 +46,18 @@
     dynamicConfigOptions = {
       http = {
         services = {
+          # Host services (running on NixOS directly)
           searx.loadBalancer.servers = [{ url = "http://localhost:7777/"; }];
-          # qbit.loadBalancer.servers = [{ url = "http://localhost:8090/"; }];
-          # metrics.loadBalancer.servers = [{ url = "http://localhost:8096/"; }];
+          
+          # K8s services (running in k3s cluster)
+          # Note: Using the LoadBalancer IPs from kubectl output
+          qbit.loadBalancer.servers = [{ url = "http://192.168.2.100:8090/"; }];
+          sabnzbd.loadBalancer.servers = [{ url = "http://192.168.2.100:8080/"; }];
+          prowlarr.loadBalancer.servers = [{ url = "http://192.168.2.100:9696/"; }];
         };
 
         routers = {
+          # Host service router
           searx = {
             rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/searx`)";
             service = "searx";
@@ -62,25 +68,36 @@
             };
           };
 
-          # qbit = {
-          #   rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/qbit`)";
-          #   service = "qbit";
-          #   entrypoints = [ "websecure" ];
-          #   tls = {
-          #     certResolver = "myresolver";
-          #     domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
-          #   };
-          # };
+          # K8s service routers
+          qbit = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/qbit`)";
+            service = "qbit";
+            entrypoints = [ "websecure" ];
+            tls = {
+              certResolver = "myresolver";
+              domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
+            };
+          };
 
-          # metrics = {
-          #   rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/monitoring`)";
-          #   service = "metrics";
-          #   entrypoints = [ "websecure" ];
-          #   tls = {
-          #     certResolver = "myresolver";
-          #     domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
-          #   };
-          # };
+          sabnzbd = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/sabnzbd`)";
+            service = "sabnzbd";
+            entrypoints = [ "websecure" ];
+            tls = {
+              certResolver = "myresolver";
+              domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
+            };
+          };
+
+          prowlarr = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(`/prowlarr`)";
+            service = "prowlarr";
+            entrypoints = [ "websecure" ];
+            tls = {
+              certResolver = "myresolver";
+              domains = [{ main = "${config.networking.hostName}.mole-delta.ts.net"; }];
+            };
+          };
         };
       };
     };
@@ -93,68 +110,39 @@
     # Firewall policy via owner module (role enables it); host adds extra ports/ranges
     networking = {
       firewall = {
-        # enable = true;
-
-        # # Ports accessible from anywhere (PUBLIC INTERNET)
-        # # Only put ports here that MUST be accessible from outside Tailscale
-        # extraTCPPorts = [
-        #   # SSH is typically already allowed by services.openssh.openFirewall
-        #   # Add other public-facing services here if needed
-        # ];
-        # extraUDPPorts = [ ];
-
-        # extraTCPPortRanges = [ ];
-        # extraUDPPortRanges = [ ];
-
-        # # LAN-only access (COMMENTED OUT - Using Tailscale-only for security)
-        # # Note: Interface-specific rules on the same physical interface that handles
-        # # internet traffic will expose ports to BOTH LAN and internet.
-        # # Use Tailscale for secure, private access instead.
-        # # lan = {
-        # #   interface = "enp8s0";  # Your network interface
-        # #   allowedTCPPorts = [
-        # #     80    # HTTP (Traefik) - accessible from LAN
-        # #     443   # HTTPS (Traefik) - accessible from LAN
-        # #     8096  # Jellyfin direct (optional, if you want to bypass Traefik from LAN)
-        # #   ];
-        # #   allowedTCPPortRanges = [ ];
-        # #   allowedUDPPortRanges = [ ];
-        # # };
-
-        # # Ports ONLY accessible via Tailscale (PRIVATE VPN)
-        # # These are safe from both internet AND LAN (unless you're on Tailscale)
-        # tailscale = {
-        #   allowedTCPPorts = [
-        #     80 # HTTP (Traefik)
-        #     443 # HTTPS (Traefik)
-        #     6443 # k3s API
-        #     111 # NFS rpcbind
-        #     2049 # NFS
-        #     20048 # NFS mountd
-        #     28981 # Service port
-        #     3838 # Actual
-        #     7777 # Searx
-        #     8072 # Scrutiny
-        #     9090 # Cockpit
-        #   ];
-        #   allowedUDPPorts = [
-        #     111 # NFS rpcbind
-        #     2049 # NFS
-        #     20048 # NFS mountd
-        #   ];
-        #   allowedTCPPortRanges = [
-        #     {
-        #       from = 4000;
-        #       to = 4002;
-        #     }
-        #   ];
-        #   allowedUDPPortRanges = [
-        #     {
-        #       from = 4000;
-        #       to = 4002;
-        #     }
-        #   ];
-        # };
+        # Ports ONLY accessible via Tailscale (PRIVATE VPN)
+        # These are safe from both internet AND LAN (unless you're on Tailscale)
+        tailscale = {
+          allowedTCPPorts = [
+            80 # HTTP (Traefik)
+            443 # HTTPS (Traefik)
+            6443 # k3s API
+            111 # NFS rpcbind
+            2049 # NFS
+            20048 # NFS mountd
+            3838 # Actual
+            7777 # Searx
+            8072 # Scrutiny
+            9090 # Cockpit
+          ];
+          allowedUDPPorts = [
+            111 # NFS rpcbind
+            2049 # NFS
+            20048 # NFS mountd
+          ];
+          allowedTCPPortRanges = [
+            {
+              from = 4000;
+              to = 4002;
+            }
+          ];
+          allowedUDPPortRanges = [
+            {
+              from = 4000;
+              to = 4002;
+            }
+          ];
+        };
       };
     };
 
@@ -202,7 +190,14 @@
       cockpit.enable = lib.mkDefault false; # port 9090
 
       # Kubernetes (k3s) server
-      k3s.enable = lib.mkDefault true;
+      k3s = {
+        enable = lib.mkDefault true;
+        # Disable k3s built-in Traefik since we're using NixOS Traefik as the main ingress
+        extraFlags = [
+          "--snapshotter native"
+          "--disable traefik"
+        ];
+      };
 
       # Maintenance bundle provided by role; host can override if needed
 
