@@ -295,6 +295,21 @@
         domain = "${config.networking.hostName}.mole-delta.ts.net";
         subPath = "/grafana"; # Configure Grafana for subpath routing
 
+        # Override the auto-provisioned Prometheus datasource to use the external URL
+        provision.datasources = [
+          {
+            name = "Prometheus";
+            type = "prometheus";
+            url = "https://${config.networking.hostName}.mole-delta.ts.net/prometheus";
+            isDefault = true;
+            editable = false;
+            jsonData = {
+              httpMethod = "POST";
+              timeInterval = "15s";
+            };
+          }
+        ];
+
         # Automatically provisions Prometheus datasource (handled by module)
         # Declaratively provision dashboards can be added here if needed
         # provision.dashboards = {
