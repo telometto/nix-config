@@ -228,7 +228,7 @@
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
       };
 
-      jellyfin.enable = lib.mkDefault true;
+      jellyfin.enable = lib.mkForce false; # disabled until lidbm issue has been solved
 
       # Backups: Borg (daily)
       borgbackup = {
