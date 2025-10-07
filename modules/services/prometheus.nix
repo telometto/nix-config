@@ -51,6 +51,16 @@ in
         ]
       '';
     };
+
+    webExternalUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        The URL under which Prometheus is externally reachable.
+        Used when Prometheus is behind a reverse proxy with a subpath.
+      '';
+      example = "https://example.com/prometheus/";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -58,6 +68,7 @@ in
       enable = true;
       inherit (cfg) port listenAddress;
       retentionTime = lib.mkDefault cfg.retentionTime;
+      webExternalUrl = lib.mkIf (cfg.webExternalUrl != null) cfg.webExternalUrl;
 
       globalConfig = {
         scrape_interval = cfg.scrapeInterval;
