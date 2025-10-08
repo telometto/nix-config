@@ -285,7 +285,7 @@
         openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
         scrapeInterval = "15s";
 
-        # Scrape Traefik and ZFS metrics
+        # Scrape Traefik, ZFS, and K3s metrics
         extraScrapeConfigs = [
           {
             job_name = "traefik";
@@ -300,6 +300,22 @@
             static_configs = [
               {
                 targets = [ "localhost:9134" ]; # ZFS exporter port
+              }
+            ];
+          }
+          {
+            job_name = "k3s";
+            static_configs = [
+              {
+                targets = [ "localhost:10250" ]; # k3s kubelet metrics
+              }
+            ];
+          }
+          {
+            job_name = "kube-state-metrics";
+            static_configs = [
+              {
+                targets = [ "192.168.2.100:8080" ]; # kube-state-metrics if deployed in cluster
               }
             ];
           }
