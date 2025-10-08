@@ -15,53 +15,6 @@
     hostId = lib.mkForce "131b6b39";
   };
 
-  services.tailscale.permitCertUid = "traefik"; # let traefik use tailscales tls
-  #enable traefik
-  services.traefik = {
-    enable = true;
-    staticConfigOptions = {
-      log = {
-        level = "WARN";
-      };
-      api = { }; # enable API handler
-      entryPoints = {
-        web = {
-          address = ":80";
-          http.redirections.entryPoint = {
-            # I guess this redirects traffic from 80 (http) to port 443 (https)
-            to = "websecure";
-            scheme = "https";
-          };
-        };
-        websecure = {
-          address = ":443";
-        };
-      };
-      certificatesResolvers = {
-        myresolver.tailscale = { };
-      };
-    };
-    dynamicConfigOptions = {
-      http = {
-        services.grafana.loadBalancer.servers = [
-          {
-            url = "http://localhost:3000/"; # Redirecting traffic from 443 to 8080 (the port that stirling listens)
-          }
-        ];
-        routers.grafana = {
-          rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && Path(/metrics)";
-          #$MACHINENAME=whatever you've set at networking.hostName (or the name of your container)
-          #$TAILNETNAME=Tailnet DNS name (https://login.tailscale.com/admin/dns)
-          service = "grafana";
-          entrypoints = [ "websecure" ];
-          tls = {
-            certResolver = "myresolver";
-          };
-        };
-      };
-    };
-  };
-
   telometto = {
     role.desktop.enable = true;
 
@@ -84,25 +37,80 @@
     #   })
     # ];
 
-    networking = {
-      firewall = {
-        # extraTCPPortRanges = [
-        #   {
-        #     from = 1714;
-        #     to = 1764;
-        #   }
-        # ];
-        # extraUDPPortRanges = [
-        #   {
-        #     from = 1714;
-        #     to = 1764;
-        #   }
-        # ];
-      };
-    };
-
     services = {
       tailscale.interface = "enp5s0";
+
+      # Traefik reverse proxy configuration
+      traefik = {
+        enable = lib.mkDefault true;
+        enableTailscaleCerts = true; # Allow Traefik to use Tailscale's TLS certificates
+        domain = "${config.networking.hostName}.mole-delta.ts.net";
+        certResolver = "myresolver";
+
+        # Enable observability
+        accessLog = true; # Log all HTTP requests to journald
+        metrics = true; # Export Prometheus metrics
+
+        # Static configuration for Traefik
+        staticConfigOptions = {
+          log.level = "WARN";
+
+          # Enable API and dashboard
+          api = {
+            dashboard = true;
+            insecure = false; # Don't expose on :8080, use through entrypoint
+          };
+
+          entryPoints = {
+            web = {
+              address = ":80";
+              http.redirections.entryPoint = {
+                to = "websecure";
+                scheme = "https";
+              };
+            };
+            websecure.address = ":443";
+          };
+          certificatesResolvers.myresolver.tailscale = { };
+        };
+
+        # Service definitions - automatically generates routers, services, and middlewares
+        services = {
+          grafana = {
+            backendUrl = "http://localhost:3000/";
+            pathPrefix = "/grafana";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          prometheus = {
+            backendUrl = "http://localhost:9090/";
+            pathPrefix = "/prometheus";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+        };
+
+        # Additional manual configuration for Traefik dashboard
+        dynamicConfigOptions = {
+          http = {
+            routers = {
+              traefik-dashboard = {
+                rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
+                service = "api@internal";
+                entrypoints = [ "websecure" ];
+                tls.certResolver = "myresolver";
+              };
+            };
+          };
+        };
+      };
 
       nfs = {
         enable = true;
@@ -115,19 +123,32 @@
         };
       };
 
-      # Testing Prometheus and Grafana setup
+      # Prometheus and Grafana monitoring stack
       prometheus = {
-        enable = lib.mkDefault true; # Set to true to test
-        listenAddress = "0.0.0.0"; # Listen on all interfaces (including Tailscale)
-        openFirewall = lib.mkDefault false; # Firewall handled by Tailscale, no need to open public ports
+        enable = lib.mkDefault true;
+        listenAddress = "127.0.0.1"; # Only accessible via Traefik
+        openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
         scrapeInterval = "15s";
+
+        # Scrape Traefik metrics
+        extraScrapeConfigs = [
+          {
+            job_name = "traefik";
+            static_configs = [
+              {
+                targets = [ "localhost:8080" ]; # Traefik internal metrics port
+              }
+            ];
+          }
+        ];
       };
 
       grafana = {
-        enable = lib.mkDefault true; # Set to true to test
-        addr = "0.0.0.0"; # Listen on all interfaces (including Tailscale)
-        openFirewall = lib.mkDefault false; # Firewall handled by Tailscale
-        domain = "snowfall.mole-delta.ts.net";
+        enable = lib.mkDefault true;
+        addr = "127.0.0.1"; # Only accessible via Traefik
+        openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
+        domain = "${config.networking.hostName}.mole-delta.ts.net";
+        subPath = "/grafana"; # Configure Grafana for subpath routing
 
         # Declaratively provision dashboards
         provision.dashboards = {
