@@ -35,6 +35,29 @@ let
         default = [ ];
         description = "Additional middleware names to apply";
       };
+
+      passHostHeader = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether to pass the host header to the backend. Set to false for qBittorrent and similar services.";
+      };
+
+      redirectRegex = lib.mkOption {
+        type = lib.types.nullOr (lib.types.submodule {
+          options = {
+            regex = lib.mkOption {
+              type = lib.types.str;
+              description = "Regular expression to match for redirect";
+            };
+            replacement = lib.mkOption {
+              type = lib.types.str;
+              description = "Replacement pattern for redirect";
+            };
+          };
+        });
+        default = null;
+        description = "Redirect regex configuration for adding trailing slashes or other URL transformations";
+      };
     };
   };
 
@@ -53,21 +76,32 @@ let
       stripMiddleware = lib.mkIf serviceCfg.stripPrefix {
         stripPrefix.prefixes = [ serviceCfg.pathPrefix ];
       };
+      redirectMiddleware = lib.mkIf (serviceCfg.redirectRegex != null) {
+        redirectRegex = {
+          regex = serviceCfg.redirectRegex.regex;
+          replacement = serviceCfg.redirectRegex.replacement;
+        };
+      };
     in
     lib.optionalAttrs (serviceCfg.customHeaders != null) {
       "${mkMiddlewareName serviceName "headers"}" = baseMiddlewares.headers;
     }
     // lib.optionalAttrs serviceCfg.stripPrefix {
       "${mkMiddlewareName serviceName "strip"}" = stripMiddleware;
+    }
+    // lib.optionalAttrs (serviceCfg.redirectRegex != null) {
+      "${mkMiddlewareName serviceName "redirect"}" = redirectMiddleware;
     };
 
   # Generate router for a service
   mkServiceRouter =
     serviceName: serviceCfg:
     let
+      # Middleware order matters! For qBittorrent: strip -> redirect -> headers
       appliedMiddlewares =
-        lib.optional (serviceCfg.customHeaders != null) (mkMiddlewareName serviceName "headers")
-        ++ lib.optional serviceCfg.stripPrefix (mkMiddlewareName serviceName "strip")
+        lib.optional serviceCfg.stripPrefix (mkMiddlewareName serviceName "strip")
+        ++ lib.optional (serviceCfg.redirectRegex != null) (mkMiddlewareName serviceName "redirect")
+        ++ lib.optional (serviceCfg.customHeaders != null) (mkMiddlewareName serviceName "headers")
         ++ serviceCfg.extraMiddlewares;
     in
     {
@@ -85,7 +119,10 @@ let
 
   # Generate service definition
   mkServiceDef = serviceName: serviceCfg: {
-    loadBalancer.servers = [ { url = serviceCfg.backendUrl; } ];
+    loadBalancer = {
+      servers = [ { url = serviceCfg.backendUrl; } ];
+      passHostHeader = serviceCfg.passHostHeader;
+    };
   };
 
   # Collect all generated configs
