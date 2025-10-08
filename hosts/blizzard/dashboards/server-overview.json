@@ -965,7 +965,7 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "count(kube_pod_info)",
+          "expr": "count(count by (pod, namespace) (kube_pod_info))",
           "refId": "A",
           "legendFormat": "Total Pods"
         }
@@ -1024,7 +1024,7 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "count(kube_pod_status_phase{phase=\"Running\"})",
+          "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Running\"} == 1))",
           "refId": "A",
           "legendFormat": "Running Pods"
         }
@@ -1083,7 +1083,7 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "count(kube_pod_status_phase{phase=\"Failed\"}) or vector(0)",
+          "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Failed\"} == 1)) or vector(0)",
           "refId": "A",
           "legendFormat": "Failed Pods"
         }
@@ -1450,12 +1450,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               },
               {
-                "color": "red",
-                "value": 0
+                "color": "green",
+                "value": 1
               }
             ]
           }
@@ -1640,7 +1640,7 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])) by (namespace)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\",namespace!=\"\"}[5m])) by (namespace)",
           "refId": "A",
           "legendFormat": "{{namespace}}"
         }
@@ -1727,7 +1727,7 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"}) by (namespace)",
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\",namespace!=\"\"}) by (namespace)",
           "refId": "A",
           "legendFormat": "{{namespace}}"
         }
@@ -1827,13 +1827,13 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(container_network_receive_bytes_total{container!=\"\",container!=\"POD\"}[5m])) by (namespace)",
+          "expr": "sum(rate(container_network_receive_bytes_total{namespace!=\"\"}[5m])) by (namespace)",
           "refId": "A",
           "legendFormat": "{{namespace}} - receive"
         },
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(container_network_transmit_bytes_total{container!=\"\",container!=\"POD\"}[5m])) by (namespace)",
+          "expr": "sum(rate(container_network_transmit_bytes_total{namespace!=\"\"}[5m])) by (namespace)",
           "refId": "B",
           "legendFormat": "{{namespace}} - transmit"
         }

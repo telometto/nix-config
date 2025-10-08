@@ -304,18 +304,30 @@
             ];
           }
           {
-            job_name = "k3s";
+            job_name = "kubelet-metrics";
+            scheme = "http";
             static_configs = [
               {
-                targets = [ "localhost:10250" ]; # k3s kubelet metrics
+                targets = [ "127.0.0.1:10255" ]; # K3s kubelet read-only port
+              }
+            ];
+          }
+          {
+            job_name = "cadvisor-metrics";
+            scheme = "http";
+            metrics_path = "/metrics/cadvisor";
+            static_configs = [
+              {
+                targets = [ "127.0.0.1:10255" ]; # K3s kubelet read-only port for cAdvisor container metrics
               }
             ];
           }
           {
             job_name = "kube-state-metrics";
+            scheme = "http";
             static_configs = [
               {
-                targets = [ "192.168.2.100:8080" ]; # kube-state-metrics if deployed in cluster
+                targets = [ "127.0.0.1:30080" ]; # NodePort for kube-state-metrics
               }
             ];
           }
