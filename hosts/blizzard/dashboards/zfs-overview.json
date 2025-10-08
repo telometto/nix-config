@@ -1,4 +1,27 @@
 {
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "8.0.0"
+    }
+  ],
   "annotations": {
     "list": [
       {
@@ -22,10 +45,7 @@
   "links": [],
   "panels": [
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -120,10 +140,7 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_pool_health{pool=~\"$pool\"}",
           "refId": "A",
           "legendFormat": "{{pool}}"
@@ -133,10 +150,7 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -191,10 +205,7 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_pool_allocated_bytes{pool=~\"$pool\"} / zfs_pool_size_bytes{pool=~\"$pool\"}",
           "refId": "A",
           "legendFormat": "{{pool}}"
@@ -204,10 +215,7 @@
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -284,19 +292,13 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_pool_allocated_bytes{pool=~\"$pool\"}",
           "refId": "A",
           "legendFormat": "{{pool}} - Allocated"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_pool_free_bytes{pool=~\"$pool\"}",
           "refId": "B",
           "legendFormat": "{{pool}} - Free"
@@ -306,10 +308,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -455,10 +454,7 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_pool_size_bytes{pool=~\"$pool\"}",
           "refId": "A",
           "legendFormat": "{{pool}}",
@@ -466,10 +462,7 @@
           "instant": true
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_pool_allocated_bytes{pool=~\"$pool\"}",
           "refId": "B",
           "legendFormat": "{{pool}}",
@@ -477,10 +470,7 @@
           "instant": true
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_pool_free_bytes{pool=~\"$pool\"}",
           "refId": "C",
           "legendFormat": "{{pool}}",
@@ -488,10 +478,7 @@
           "instant": true
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_pool_fragmentation_ratio{pool=~\"$pool\"}",
           "refId": "D",
           "legendFormat": "{{pool}}",
@@ -499,10 +486,7 @@
           "instant": true
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_pool_allocated_bytes{pool=~\"$pool\"} / zfs_pool_size_bytes{pool=~\"$pool\"}",
           "refId": "E",
           "legendFormat": "{{pool}}",
@@ -547,10 +531,7 @@
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -627,10 +608,7 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "rate(zfs_dataset_written_bytes{pool=~\"$pool\"}[$__rate_interval])",
           "refId": "A",
           "legendFormat": "{{name}} - Write"
@@ -640,10 +618,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -765,10 +740,7 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_dataset_used_bytes{pool=~\"$pool\",type=\"filesystem\"}",
           "refId": "A",
           "legendFormat": "{{name}}",
@@ -776,10 +748,7 @@
           "instant": true
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_dataset_available_bytes{pool=~\"$pool\",type=\"filesystem\"}",
           "refId": "B",
           "legendFormat": "{{name}}",
@@ -787,10 +756,7 @@
           "instant": true
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "Prometheus",
           "expr": "zfs_dataset_used_bytes{pool=~\"$pool\",type=\"filesystem\"} / (zfs_dataset_used_bytes{pool=~\"$pool\",type=\"filesystem\"} + zfs_dataset_available_bytes{pool=~\"$pool\",type=\"filesystem\"})",
           "refId": "C",
           "legendFormat": "{{name}}",
@@ -852,10 +818,7 @@
             "$__all"
           ]
         },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheus"
-        },
+        "datasource": "Prometheus",
         "definition": "label_values(zfs_pool_health, pool)",
         "hide": 0,
         "includeAll": true,
@@ -887,3 +850,4 @@
   "version": 1,
   "weekStart": ""
 }
+
