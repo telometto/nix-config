@@ -273,7 +273,6 @@
         listenAddress = "127.0.0.1"; # Only accessible via Traefik
         openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
         scrapeInterval = "15s";
-        webExternalUrl = "https://${config.networking.hostName}.mole-delta.ts.net/prometheus/";
 
         # Scrape Traefik metrics
         extraScrapeConfigs = [
@@ -294,21 +293,6 @@
         openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
         domain = "${config.networking.hostName}.mole-delta.ts.net";
         subPath = "/grafana"; # Configure Grafana for subpath routing
-
-        # Override the auto-provisioned Prometheus datasource to use the external URL
-        provision.datasources = [
-          {
-            name = "Prometheus";
-            type = "prometheus";
-            url = "https://${config.networking.hostName}.mole-delta.ts.net/prometheus";
-            isDefault = true;
-            editable = false;
-            jsonData = {
-              httpMethod = "POST";
-              timeInterval = "15s";
-            };
-          }
-        ];
 
         # Automatically provisions Prometheus datasource (handled by module)
         # Declaratively provision dashboards can be added here if needed
