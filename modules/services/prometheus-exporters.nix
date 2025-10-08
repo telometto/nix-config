@@ -61,7 +61,10 @@ in
         type = lib.types.listOf lib.types.str;
         default = [ ];
         description = "List of ZFS pools to monitor. Empty list means all pools.";
-        example = [ "rpool" "tank" ];
+        example = [
+          "rpool"
+          "tank"
+        ];
       };
     };
   };
