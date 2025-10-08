@@ -75,6 +75,8 @@ in
       pkgs.gnome-maps
       pkgs.epiphany
       pkgs.geary
+      pkgs.xterm
+      pkgs.devhelp
     ];
   };
 }
