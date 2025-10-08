@@ -315,7 +315,8 @@
 
         # Declaratively provision dashboards
         provision.dashboards = {
-          "zfs" = ./dashboards/zfs-overview.json;
+          "server-overview" = ./dashboards/server-overview.json;
+          "zfs-overview" = ./dashboards/zfs-overview.json;
         };
       };
 
