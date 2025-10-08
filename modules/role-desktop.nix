@@ -29,7 +29,7 @@ in
         timesyncd.enable = lib.mkDefault true;
         resolved.enable = lib.mkDefault true;
         maintenance.enable = lib.mkDefault true;
-        autoUpgrade.enable = lib.mkDefault true;
+        autoUpgrade.enable = lib.mkDefault false;
         pipewire.enable = lib.mkDefault true;
         printing.enable = lib.mkDefault true;
         flatpak.enable = lib.mkDefault true;
