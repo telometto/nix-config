@@ -43,18 +43,20 @@ let
       };
 
       redirectRegex = lib.mkOption {
-        type = lib.types.nullOr (lib.types.submodule {
-          options = {
-            regex = lib.mkOption {
-              type = lib.types.str;
-              description = "Regular expression to match for redirect";
+        type = lib.types.nullOr (
+          lib.types.submodule {
+            options = {
+              regex = lib.mkOption {
+                type = lib.types.str;
+                description = "Regular expression to match for redirect";
+              };
+              replacement = lib.mkOption {
+                type = lib.types.str;
+                description = "Replacement pattern for redirect";
+              };
             };
-            replacement = lib.mkOption {
-              type = lib.types.str;
-              description = "Replacement pattern for redirect";
-            };
-          };
-        });
+          }
+        );
         default = null;
         description = "Redirect regex configuration for adding trailing slashes or other URL transformations";
       };
