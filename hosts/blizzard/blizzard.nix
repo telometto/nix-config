@@ -355,6 +355,7 @@
         extraFlags = [
           "--snapshotter native"
           "--disable traefik" # using traefik from the repo packages
+          "--kubelet-arg=read-only-port=10255" # Enable read-only port for metrics
         ];
       };
 
