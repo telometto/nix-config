@@ -219,6 +219,190 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 4
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(zfs_pool_size_bytes{pool=~\"$pool\"})",
+          "refId": "A",
+          "legendFormat": "Total Capacity"
+        }
+      ],
+      "title": "Total Capacity (All Pools)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30000000000000
+              },
+              {
+                "color": "red",
+                "value": 35000000000000
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 4
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(zfs_pool_allocated_bytes{pool=~\"$pool\"})",
+          "refId": "A",
+          "legendFormat": "Used Space"
+        }
+      ],
+      "title": "Total Used (All Pools)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5000000000000
+              },
+              {
+                "color": "green",
+                "value": 10000000000000
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 4
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(zfs_pool_free_bytes{pool=~\"$pool\"})",
+          "refId": "A",
+          "legendFormat": "Free Space"
+        }
+      ],
+      "title": "Total Free (All Pools)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "palette-classic"
           },
           "custom": {
@@ -271,7 +455,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 4
+        "y": 8
       },
       "id": 3,
       "options": {
@@ -436,7 +620,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 16
       },
       "id": 4,
       "options": {
@@ -509,14 +693,6 @@
               "instance": true,
               "job": true
             },
-            "indexByName": {
-              "pool": 0,
-              "Value #A": 1,
-              "Value #B": 2,
-              "Value #C": 3,
-              "Value #E": 4,
-              "Value #D": 5
-            },
             "renameByName": {
               "Value #A": "Total Size",
               "Value #B": "Allocated",
@@ -524,6 +700,58 @@
               "Value #D": "Fragmentation",
               "Value #E": "Usage %",
               "pool": "Pool"
+            }
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "Allocated": {
+                "aggregations": ["lastNotNull"],
+                "operation": "aggregate"
+              },
+              "Fragmentation": {
+                "aggregations": ["lastNotNull"],
+                "operation": "aggregate"
+              },
+              "Free": {
+                "aggregations": ["lastNotNull"],
+                "operation": "aggregate"
+              },
+              "Pool": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "Total Size": {
+                "aggregations": ["lastNotNull"],
+                "operation": "aggregate"
+              },
+              "Usage %": {
+                "aggregations": ["lastNotNull"],
+                "operation": "aggregate"
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Pool": 0,
+              "Total Size (lastNotNull)": 1,
+              "Allocated (lastNotNull)": 2,
+              "Free (lastNotNull)": 3,
+              "Usage % (lastNotNull)": 4,
+              "Fragmentation (lastNotNull)": 5
+            },
+            "renameByName": {
+              "Allocated (lastNotNull)": "Allocated",
+              "Fragmentation (lastNotNull)": "Fragmentation",
+              "Free (lastNotNull)": "Free",
+              "Total Size (lastNotNull)": "Total Size",
+              "Usage % (lastNotNull)": "Usage %"
             }
           }
         }
@@ -587,7 +815,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 22
       },
       "id": 5,
       "options": {
@@ -716,7 +944,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 30
       },
       "id": 6,
       "options": {
@@ -850,3 +1078,4 @@
   "version": 1,
   "weekStart": ""
 }
+
