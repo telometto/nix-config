@@ -708,15 +708,21 @@
           "options": {
             "fields": {
               "Allocated": {
-                "aggregations": ["lastNotNull"],
+                "aggregations": [
+                  "lastNotNull"
+                ],
                 "operation": "aggregate"
               },
               "Fragmentation": {
-                "aggregations": ["lastNotNull"],
+                "aggregations": [
+                  "lastNotNull"
+                ],
                 "operation": "aggregate"
               },
               "Free": {
-                "aggregations": ["lastNotNull"],
+                "aggregations": [
+                  "lastNotNull"
+                ],
                 "operation": "aggregate"
               },
               "Pool": {
@@ -724,11 +730,15 @@
                 "operation": "groupby"
               },
               "Total Size": {
-                "aggregations": ["lastNotNull"],
+                "aggregations": [
+                  "lastNotNull"
+                ],
                 "operation": "aggregate"
               },
               "Usage %": {
-                "aggregations": ["lastNotNull"],
+                "aggregations": [
+                  "lastNotNull"
+                ],
                 "operation": "aggregate"
               }
             }
@@ -1078,4 +1088,3 @@
   "version": 1,
   "weekStart": ""
 }
-
