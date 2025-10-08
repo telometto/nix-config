@@ -41,6 +41,29 @@ in
         description = "Extra flags to pass to node_exporter";
       };
     };
+
+    zfs = {
+      enable = lib.mkEnableOption "Prometheus ZFS Exporter";
+
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 9134;
+        description = "Port on which the ZFS exporter listens";
+      };
+
+      openFirewall = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Open firewall for ZFS exporter port";
+      };
+
+      pools = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "List of ZFS pools to monitor. Empty list means all pools.";
+        example = [ "rpool" "tank" ];
+      };
+    };
   };
 
   config = lib.mkMerge [
@@ -61,6 +84,14 @@ in
           enabledCollectors
           extraFlags
           ;
+      };
+    })
+
+    # Configure ZFS exporter
+    (lib.mkIf cfg.zfs.enable {
+      services.prometheus.exporters.zfs = {
+        enable = true;
+        inherit (cfg.zfs) port openFirewall pools;
       };
     })
   ];

@@ -267,6 +267,17 @@
       scrutiny.enable = lib.mkDefault true; # port 8072
       cockpit.enable = lib.mkDefault false; # port 9090
 
+      # Prometheus exporters
+      prometheusExporters = {
+        zfs = {
+          enable = lib.mkDefault true;
+          pools = [
+            "rpool"
+            "tank"
+          ]; # Monitor these ZFS pools
+        };
+      };
+
       # Prometheus and Grafana monitoring stack
       prometheus = {
         enable = lib.mkDefault true;
@@ -274,13 +285,21 @@
         openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
         scrapeInterval = "15s";
 
-        # Scrape Traefik metrics
+        # Scrape Traefik and ZFS metrics
         extraScrapeConfigs = [
           {
             job_name = "traefik";
             static_configs = [
               {
                 targets = [ "localhost:8080" ]; # Traefik internal metrics port
+              }
+            ];
+          }
+          {
+            job_name = "zfs";
+            static_configs = [
+              {
+                targets = [ "localhost:9134" ]; # ZFS exporter port
               }
             ];
           }
@@ -294,11 +313,10 @@
         domain = "${config.networking.hostName}.mole-delta.ts.net";
         subPath = "/grafana"; # Configure Grafana for subpath routing
 
-        # Automatically provisions Prometheus datasource (handled by module)
-        # Declaratively provision dashboards can be added here if needed
-        # provision.dashboards = {
-        #   "traefik" = ./dashboards/traefik.json;
-        # };
+        # Declaratively provision dashboards
+        provision.dashboards = {
+          "zfs" = ./dashboards/15008_rev3.json;
+        };
       };
 
       # Kubernetes (k3s) server
