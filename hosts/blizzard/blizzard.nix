@@ -315,7 +315,7 @@
 
         # Declaratively provision dashboards
         provision.dashboards = {
-          "zfs" = ./dashboards/15008_rev3.json;
+          "zfs" = ./dashboards/zfs-overview.json;
         };
       };
 
