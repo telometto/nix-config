@@ -400,7 +400,10 @@
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/ombi";
       };
 
-      plex.enable = lib.mkDefault true;
+      plex = {
+        enable = lib.mkDefault true;
+        openFirewall = true;
+      };
 
       tautulli = {
         enable = lib.mkDefault true;
