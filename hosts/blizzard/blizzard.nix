@@ -20,6 +20,11 @@
     # Enable server role (provides server defaults)
     role.server.enable = true;
 
+    overlays.fromInputs = {
+      nixpkgs-unstable = [ "intel-graphics-compiler" ];
+      # nixpkgs-stable = [ "thunderbird" ];
+    };
+
     # Firewall policy via owner module (role enables it); host adds extra ports/ranges
     networking = {
       firewall = {
@@ -410,7 +415,7 @@
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
       };
 
-      jellyfin.enable = lib.mkForce true; # disabled until libdm is fixed
+      jellyfin.enable = lib.mkDefault true; # disabled until libdm is fixed
 
       # Homepage dashboard
       homepage = {
