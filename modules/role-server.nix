@@ -7,7 +7,7 @@ in
     telometto = {
       boot = {
         lanzaboote.enable = lib.mkDefault true;
-        plymouth.enable = lib.mkDefault true;
+        plymouth.enable = lib.mkDefault false;
       };
 
       networking = {
@@ -22,7 +22,10 @@ in
         timesyncd.enable = lib.mkDefault true;
         resolved.enable = lib.mkDefault true;
         maintenance.enable = lib.mkDefault true;
-        autoUpgrade.enable = lib.mkDefault true;
+        autoUpgrade = {
+          enable = lib.mkDefault true;
+          dates = lib.mkDefault "monthly";
+        };
         nfs.server.openFirewall = lib.mkDefault false;
         tailscale.enable = lib.mkDefault true;
       };
