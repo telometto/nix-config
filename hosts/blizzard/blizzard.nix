@@ -412,6 +412,261 @@
 
       jellyfin.enable = lib.mkDefault true;
 
+      # Homepage dashboard
+      homepage = {
+        enable = lib.mkDefault true;
+        port = lib.mkDefault 8082;
+        
+        settings = {
+          title = "Blizzard Home Server";
+          theme = "dark";
+          color = "slate";
+          headerStyle = "boxed";
+          hideVersion = false;
+        };
+
+        services = [
+          {
+            "Media Services" = [
+              {
+                "Plex" = {
+                  icon = "plex.png";
+                  href = "http://blizzard:32400/web";
+                  description = "Media Server";
+                  widget = {
+                    type = "plex";
+                    url = "http://blizzard:32400";
+                    key = "{{HOMEPAGE_VAR_PLEX_TOKEN}}";
+                  };
+                };
+              }
+              {
+                "Jellyfin" = {
+                  icon = "jellyfin.png";
+                  href = "http://blizzard:8096";
+                  description = "Alternative Media Server";
+                  widget = {
+                    type = "jellyfin";
+                    url = "http://blizzard:8096";
+                    key = "{{HOMEPAGE_VAR_JELLYFIN_TOKEN}}";
+                  };
+                };
+              }
+              {
+                "Ombi" = {
+                  icon = "ombi.png";
+                  href = "http://blizzard:5000";
+                  description = "Request Movies & TV Shows";
+                  widget = {
+                    type = "ombi";
+                    url = "http://blizzard:5000";
+                    key = "{{HOMEPAGE_VAR_OMBI_TOKEN}}";
+                  };
+                };
+              }
+              {
+                "Tautulli" = {
+                  icon = "tautulli.png";
+                  href = "http://blizzard:8181";
+                  description = "Plex Statistics";
+                  widget = {
+                    type = "tautulli";
+                    url = "http://blizzard:8181";
+                    key = "{{HOMEPAGE_VAR_TAUTULLI_TOKEN}}";
+                  };
+                };
+              }
+            ];
+          }
+          {
+            "Download & Indexing" = [
+              {
+                "qBittorrent" = {
+                  icon = "qbittorrent.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/qbit";
+                  description = "Torrent Client";
+                  widget = {
+                    type = "qbittorrent";
+                    url = "http://192.168.2.100:8090";
+                  };
+                };
+              }
+              {
+                "SABnzbd" = {
+                  icon = "sabnzbd.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/sabnzbd";
+                  description = "Usenet Client";
+                  widget = {
+                    type = "sabnzbd";
+                    url = "http://192.168.2.100:8080";
+                    key = "{{HOMEPAGE_VAR_SABNZBD_TOKEN}}";
+                  };
+                };
+              }
+              {
+                "Prowlarr" = {
+                  icon = "prowlarr.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/prowlarr";
+                  description = "Indexer Manager";
+                  widget = {
+                    type = "prowlarr";
+                    url = "http://192.168.2.100:9696";
+                    key = "{{HOMEPAGE_VAR_PROWLARR_TOKEN}}";
+                  };
+                };
+              }
+            ];
+          }
+          {
+            "Media Management" = [
+              {
+                "Sonarr" = {
+                  icon = "sonarr.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/sonarr";
+                  description = "TV Show Management";
+                  widget = {
+                    type = "sonarr";
+                    url = "http://192.168.2.100:8989";
+                    key = "{{HOMEPAGE_VAR_SONARR_TOKEN}}";
+                  };
+                };
+              }
+              {
+                "Radarr" = {
+                  icon = "radarr.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/radarr";
+                  description = "Movie Management";
+                  widget = {
+                    type = "radarr";
+                    url = "http://192.168.2.100:7878";
+                    key = "{{HOMEPAGE_VAR_RADARR_TOKEN}}";
+                  };
+                };
+              }
+              {
+                "Readarr" = {
+                  icon = "readarr.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/readarr";
+                  description = "Book Management";
+                  widget = {
+                    type = "readarr";
+                    url = "http://192.168.2.100:8787";
+                    key = "{{HOMEPAGE_VAR_READARR_TOKEN}}";
+                  };
+                };
+              }
+              {
+                "Bazarr" = {
+                  icon = "bazarr.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/bazarr";
+                  description = "Subtitle Management";
+                  widget = {
+                    type = "bazarr";
+                    url = "http://192.168.2.100:6767";
+                    key = "{{HOMEPAGE_VAR_BAZARR_TOKEN}}";
+                  };
+                };
+              }
+            ];
+          }
+          {
+            "Monitoring & Admin" = [
+              {
+                "Grafana" = {
+                  icon = "grafana.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/grafana";
+                  description = "Monitoring Dashboards";
+                };
+              }
+              {
+                "Prometheus" = {
+                  icon = "prometheus.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/prometheus";
+                  description = "Metrics Database";
+                };
+              }
+              {
+                "Traefik" = {
+                  icon = "traefik.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/dashboard/";
+                  description = "Reverse Proxy";
+                  widget = {
+                    type = "traefik";
+                    url = "http://localhost:8080";
+                  };
+                };
+              }
+              {
+                "Scrutiny" = {
+                  icon = "scrutiny.png";
+                  href = "http://blizzard:8072";
+                  description = "Drive Health Monitor";
+                };
+              }
+            ];
+          }
+          {
+            "Utilities" = [
+              {
+                "SearX" = {
+                  icon = "searxng.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/searx";
+                  description = "Private Search Engine";
+                };
+              }
+              {
+                "Firefox" = {
+                  icon = "firefox.png";
+                  href = "https://${config.networking.hostName}.mole-delta.ts.net/firefox";
+                  description = "Remote Browser";
+                };
+              }
+            ];
+          }
+        ];
+
+        widgets = [
+          {
+            resources = {
+              cpu = true;
+              memory = true;
+              disk = "/";
+              uptime = true;
+            };
+          }
+          {
+            search = {
+              provider = "custom";
+              url = "https://${config.networking.hostName}.mole-delta.ts.net/searx/search?q=";
+              target = "_blank";
+            };
+          }
+        ];
+
+        bookmarks = [
+          {
+            "Quick Links" = [
+              {
+                "GitHub" = [
+                  {
+                    abbr = "GH";
+                    href = "https://github.com";
+                  }
+                ];
+              }
+              {
+                "NixOS Manual" = [
+                  {
+                    abbr = "NX";
+                    href = "https://nixos.org/manual/nixos/stable/";
+                  }
+                ];
+              }
+            ];
+          }
+        ];
+      };
+
       # Backups: Borg (daily)
       borgbackup = {
         enable = lib.mkDefault true;
