@@ -219,11 +219,11 @@
               },
               {
                 "color": "yellow",
-                "value": 70
+                "value": 60
               },
               {
                 "color": "red",
-                "value": 90
+                "value": 80
               }
             ]
           },
@@ -272,13 +272,27 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
+          "decimals": 1,
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
               }
             ]
           },
@@ -309,13 +323,16 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
-          "datasource": "Prometheus",
-          "expr": "node_time_seconds - node_boot_time_seconds",
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "node_time_seconds{instance=\"$node\",job=\"$job\"} - node_boot_time_seconds{instance=\"$node\",job=\"$job\"}",
+          "instant": true,
+          "range": false,
           "refId": "A",
-          "legendFormat": "Uptime"
+          "step": 240
         }
       ],
       "title": "System Uptime",
