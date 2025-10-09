@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, pkgs, ... }:
 let
   cfg = config.telometto.role.desktop;
 in
@@ -11,7 +11,7 @@ in
           enable = lib.mkDefault true;
           theme = "lone";
           themePackages = [
-            (adi1090x-plymouth-themes.override {
+            (pkgs.adi1090x-plymouth-themes.override {
               selected_themes = [ "lone" ];
             })
           ];
