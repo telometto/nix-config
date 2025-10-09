@@ -416,7 +416,7 @@
       homepage = {
         enable = lib.mkDefault true;
         port = lib.mkDefault 8082;
-        
+
         settings = {
           title = "Blizzard Home Server";
           theme = "dark";
