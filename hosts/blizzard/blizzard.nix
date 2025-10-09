@@ -410,7 +410,7 @@
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
       };
 
-      jellyfin.enable = lib.mkDefault true;
+      jellyfin.enable = lib.mkForce true; # disabled until libdm is fixed
 
       # Homepage dashboard
       homepage = {
