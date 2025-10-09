@@ -22,7 +22,7 @@ in
       # GNOME needs the display stack; enable X server integration (Wayland still works via GDM)
       xserver = {
         enable = lib.mkDefault true;
-        desktopManager.xterm.enable = lib.mkDefault true;
+        desktopManager.xterm.enable = lib.mkDefault false;
       };
       desktopManager.gnome.enable = true;
       displayManager.gdm = {
