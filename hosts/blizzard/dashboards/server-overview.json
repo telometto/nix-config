@@ -407,7 +407,7 @@
               }
             ]
           },
-          "unit": "dtdurations"
+          "unit": "dthms"
         },
         "overrides": []
       },
