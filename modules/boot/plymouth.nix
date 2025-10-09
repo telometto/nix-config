@@ -1,12 +1,16 @@
 # Enabled (role)
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.telometto.boot.plymouth;
 in
 {
   options.telometto.boot.plymouth = {
-    enable =
-      lib.mkEnableOption "Enable Plymouth splash screen with silent boot tweaks";
+    enable = lib.mkEnableOption "Enable Plymouth splash screen with silent boot tweaks";
 
     theme = lib.mkOption {
       type = lib.types.str;
