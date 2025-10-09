@@ -7,7 +7,15 @@ in
     telometto = {
       boot = {
         lanzaboote.enable = lib.mkDefault true;
-        plymouth.enable = lib.mkDefault true;
+        plymouth = {
+          enable = lib.mkDefault true;
+          theme = "lone";
+          themePackages = [
+            (adi1090x-plymouth-themes.override {
+              selected_themes = [ "lone" ];
+            })
+          ];
+        };
       };
 
       networking = {
