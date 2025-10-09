@@ -65,8 +65,23 @@
     #   };
     # };
   };
+
   hardware = {
     cpu.intel.updateMicrocode = lib.mkDefault true;
+    bluetooth = {
+      enable = true;
+
+      powerOnBoot = true;
+      settings = {
+        General = {
+          ControllerMode = "bredr"; # Fix frequent Bluetooth audio dropouts
+          Experimental = true;
+          FastConnectable = true;
+        };
+
+        Policy.AutoEnable = false;
+      };
+    };
   };
 
   # Additional services
