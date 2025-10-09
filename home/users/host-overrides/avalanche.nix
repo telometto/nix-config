@@ -1,5 +1,5 @@
 # Host-specific user overrides for avalanche (laptop)
-{ ... }:
+{ pkgs, ... }:
 {
   # Avalanche-specific user configuration
   # These settings will be applied to all users on this host
