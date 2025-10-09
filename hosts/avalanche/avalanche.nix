@@ -21,23 +21,11 @@
 
     desktop.flavor = "gnome";
 
-    # User-specific configuration for admin user on avalanche
-    home.users.${VARS.users.zeno.user} = {
-      extraModules = [ ../../home/users/user-configs/admin-avalanche.nix ];
+    # Pull specific packages from different nixpkgs inputs
+    overlays.fromInputs = {
+      nixpkgs-unstable = [ "intel-graphics-compiler" ];
+      # nixpkgs-stable = [ "thunderbird" ];
     };
-
-    # networking = {
-    #   firewall = {
-    #     extraTCPPortRanges = [{
-    #       from = 1714;
-    #       to = 1764;
-    #     }];
-    #     extraUDPPortRanges = [{
-    #       from = 1714;
-    #       to = 1764;
-    #     }];
-    #   };
-    # };
 
     services = {
       tailscale.interface = "changeme";

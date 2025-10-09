@@ -20,7 +20,10 @@ in
 
     services = {
       # GNOME needs the display stack; enable X server integration (Wayland still works via GDM)
-      xserver.enable = lib.mkDefault true;
+      xserver = {
+        enable = lib.mkDefault true;
+        desktopManager.xterm.enable = lib.mkDefault true;
+      };
       desktopManager.gnome.enable = true;
       displayManager.gdm = {
         enable = true;
