@@ -32,10 +32,18 @@ in
     tuxguitar # Guitar tablature editor and player
     pgadmin4-desktopmode # PostgreSQL administration tool
     vorta # Borg backup GUI
+    # pkgs.jellyfin-media-player
   ];
 
   # Enable file management for SSH configuration
   hm = {
+    programs = {
+      development.extraPackages = [
+        pkgs.vscode
+        # pkgs.jetbrains.idea-community-bin # disabled until lidbm issue has been solved
+      ];
+    };
+
     files = {
       enable = true;
 
