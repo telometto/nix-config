@@ -7,13 +7,4 @@
   # Laptop-specific overrides:
   # hm.programs.media.extraPackages = with pkgs; [ laptop-specific-media ];
   # programs.git.extraConfig.avalanche = "laptop-setting";
-
-  hm = {
-    programs = {
-      development.extraPackages = [
-        pkgs.vscode
-        # pkgs.jetbrains.idea-community-bin # disabled until lidbm issue has been solved
-      ];
-    };
-  };
 }
