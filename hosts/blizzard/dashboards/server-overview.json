@@ -105,7 +105,7 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 3,
+        "w": 4,
         "x": 0,
         "y": 1
       },
@@ -219,7 +219,7 @@
       "gridPos": {
         "h": 6,
         "w": 5,
-        "x": 3,
+        "x": 4,
         "y": 1
       },
       "id": 1,
@@ -284,7 +284,7 @@
       "gridPos": {
         "h": 6,
         "w": 5,
-        "x": 8,
+        "x": 9,
         "y": 1
       },
       "id": 2,
@@ -349,7 +349,7 @@
       "gridPos": {
         "h": 6,
         "w": 5,
-        "x": 13,
+        "x": 14,
         "y": 1
       },
       "id": 3,
@@ -413,8 +413,8 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 6,
-        "x": 18,
+        "w": 5,
+        "x": 19,
         "y": 1
       },
       "id": 4,
@@ -720,39 +720,14 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
             },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "inspect": false
           },
           "mappings": [],
           "thresholds": {
@@ -769,13 +744,49 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "/.*transmit.*/"
+              "id": "byName",
+              "options": "Type"
             },
             "properties": [
               {
-                "id": "custom.transform",
-                "value": "negative-Y"
+                "id": "custom.width",
+                "value": 80
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "↓": {
+                        "color": "light-blue",
+                        "index": 0
+                      },
+                      "↑": {
+                        "color": "light-orange",
+                        "index": 1
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Interface"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
               }
             ]
           }
@@ -789,19 +800,22 @@
       },
       "id": 7,
       "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
           ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
+          "show": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Interface"
+          }
+        ]
       },
       "pluginVersion": "11.0.0",
       "targets": [
@@ -809,17 +823,120 @@
           "datasource": "Prometheus",
           "expr": "rate(node_network_receive_bytes_total{device!~\"lo|veth.*|docker.*|br-.*\"}[5m])",
           "refId": "A",
-          "legendFormat": "{{device}} - receive"
+          "legendFormat": "↓",
+          "format": "table",
+          "instant": true
         },
         {
           "datasource": "Prometheus",
           "expr": "rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|docker.*|br-.*\"}[5m])",
           "refId": "B",
-          "legendFormat": "{{device}} - transmit"
+          "legendFormat": "↑",
+          "format": "table",
+          "instant": true
         }
       ],
       "title": "Network Traffic",
-      "type": "timeseries"
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "instance": true,
+              "job": true
+            },
+            "indexByName": {
+              "device": 0,
+              "Type": 1,
+              "Mean": 2,
+              "Max": 3
+            },
+            "renameByName": {
+              "device": "Interface",
+              "__name__": "Type"
+            }
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "Type": {
+                "aggregation": "last",
+                "operation": "groupby"
+              },
+              "Interface": {
+                "aggregation": "last",
+                "operation": "groupby"
+              },
+              "Value": {
+                "aggregation": "mean",
+                "operation": "aggregate"
+              }
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Mean",
+            "binary": {
+              "left": "Value (mean)",
+              "operator": "*",
+              "reducer": "sum",
+              "right": "1"
+            },
+            "mode": "binary",
+            "reduce": {
+              "include": [
+                "Value (mean)"
+              ],
+              "reducer": "mean"
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Max",
+            "binary": {
+              "left": "Value (mean)",
+              "operator": "*",
+              "reducer": "sum",
+              "right": "1"
+            },
+            "mode": "binary",
+            "reduce": {
+              "include": [
+                "Value (mean)"
+              ],
+              "reducer": "max"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Value (mean)": true
+            },
+            "indexByName": {
+              "Type": 0,
+              "Interface": 1,
+              "Mean": 2,
+              "Max": 3
+            },
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
     },
     {
       "collapsed": false,
