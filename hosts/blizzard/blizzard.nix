@@ -216,6 +216,16 @@
               X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
             };
           };
+
+          jellyfin = {
+            backendUrl = "http://localhost:8096/";
+            pathPrefix = "/jellyfin";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
         };
 
         # Additional manual configuration for Traefik dashboard
