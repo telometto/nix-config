@@ -13,6 +13,7 @@ in
 
     mpv.enable = lib.mkEnableOption "MPV media player";
     yt-dlp.enable = lib.mkEnableOption "yt-dlp downloader";
+    jf-mpv.enable = lib.mkEnableOption "Jellyfin player";
   };
 
   config = lib.mkIf cfg.enable {
@@ -24,6 +25,11 @@ in
     programs.yt-dlp = lib.mkIf cfg.yt-dlp.enable {
       enable = true;
       # TODO: Declaratively configure yt-dlp
+    };
+
+    services.jellyfin-mpv-shim.enable = lib.mkIf cfg.jf-mpv.enable {
+      enable = true;
+      # TODO: Declaratively configure
     };
 
     home.packages = [
