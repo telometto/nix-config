@@ -27,7 +27,7 @@ in
       # TODO: Declaratively configure yt-dlp
     };
 
-    services.jellyfin-mpv-shim.enable = lib.mkIf cfg.jf-mpv.enable {
+    services.jellyfin-mpv-shim = lib.mkIf cfg.jf-mpv.enable {
       enable = true;
       # TODO: Declaratively configure
     };
