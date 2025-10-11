@@ -700,6 +700,41 @@
           };
         };
       };
+
+      crowdsec = {
+        enable = lib.mkDefault true;
+
+        settings = {
+          lapi = {
+            enable = true;
+            # credentialsFile is auto-managed by the module at:
+            # /var/lib/crowdsec/data/local_api_credentials.yaml
+          };
+
+          # Only set CAPI if we want to share threat intelligence
+          capi = {
+            # Leave null if we don't have CAPI credentials yet
+            credentialsFile = null; # or "/run/secrets/crowdsec-capi" if using SOPS
+          };
+
+          console = {
+            enable = false; # Enable only if we have a console account
+            tokenFile = null;
+          };
+        };
+
+        localConfig = {
+          acquisitions = [
+            {
+              source = "journalctl";
+              journalctl_filter = [ "_SYSTEMD_UNIT=sshd.service" ];
+              labels = {
+                type = "syslog";
+              };
+            }
+          ];
+        };
+      };
     };
 
     # Virtualisation stack (podman, containers, libvirt)
