@@ -30,7 +30,7 @@ in
       description = "Whether to automatically open firewall ports for CrowdSec.";
     };
 
-    autoUpdate = lib.mkOption {
+    autoUpdateService = lib.mkOption {
       type = lib.types.bool;
       default = true;
       description = "Whether to automatically update the Hub.";
