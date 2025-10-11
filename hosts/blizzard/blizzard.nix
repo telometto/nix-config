@@ -701,40 +701,6 @@
         };
       };
 
-      crowdsec = {
-        enable = lib.mkDefault true;
-
-        settings = {
-          lapi = {
-            enable = true;
-            # credentialsFile is auto-managed by the module at:
-            # /var/lib/crowdsec/data/local_api_credentials.yaml
-          };
-
-          # Only set CAPI if we want to share threat intelligence
-          capi = {
-            # Leave null if we don't have CAPI credentials yet
-            credentialsFile = null; # or "/run/secrets/crowdsec-capi" if using SOPS
-          };
-
-          console = {
-            enable = false; # Enable only if we have a console account
-            tokenFile = null;
-          };
-        };
-
-        localConfig = {
-          acquisitions = [
-            {
-              source = "journalctl";
-              journalctl_filter = [ "_SYSTEMD_UNIT=sshd.service" ];
-              labels = {
-                type = "syslog";
-              };
-            }
-          ];
-        };
-      };
     };
 
     # Virtualisation stack (podman, containers, libvirt)
@@ -746,6 +712,73 @@
       ssh.enable = lib.mkDefault false;
       mtr.enable = lib.mkDefault true;
       gnupg.enable = lib.mkDefault false;
+    };
+  };
+
+  # Direct CrowdSec configuration (bypassing wrapper module)
+  services.crowdsec = {
+    enable = true;
+
+    # Hub collections and scenarios
+    hub = {
+      collections = [
+        "crowdsecurity/linux"
+        "crowdsecurity/traefik"
+      ];
+      scenarios = [
+        "crowdsecurity/ssh-bf"
+        "crowdsecurity/ssh-slow-bf"
+      ];
+      postOverflows = [
+        "crowdsecurity/auditd-nix-wrappers-whitelist-process"
+      ];
+    };
+
+    # Data sources
+    localConfig = {
+      acquisitions = [
+        {
+          source = "journalctl";
+          journalctl_filter = [ "_SYSTEMD_UNIT=sshd.service" ];
+          labels = {
+            type = "syslog";
+          };
+        }
+      ];
+
+      # Default profile for IP bans
+      profiles = [
+        {
+          name = "default_ip_remediation";
+          filters = [ "Alert.Remediation == true && Alert.GetScope() == 'Ip'" ];
+          decisions = [
+            {
+              type = "ban";
+              duration = "4h";
+            }
+          ];
+          on_success = "break";
+        }
+      ];
+    };
+
+    # Settings - let upstream handle credential files
+    settings = {
+      general = {
+        api.server = {
+          enable = true;
+          listen_uri = "127.0.0.1:8080";
+        };
+
+        prometheus = {
+          enabled = true;
+          listen_port = 6060;
+        };
+      };
+
+      simulation = {
+        simulation = false;
+      };
     };
   };
 
