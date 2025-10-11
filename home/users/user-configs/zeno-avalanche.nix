@@ -9,15 +9,14 @@
 {
   home.packages = with pkgs; [
     variety # Wallpaper changer
-    polychromatic # Razer configuration tool
     tuxguitar # Guitar tablature editor and player
     pgadmin4-desktopmode # PostgreSQL administration tool
-    # vorta # Borg backup GUI
+    vorta # Borg backup GUI
     # (pkgs.jellyfin-media-player.override {
     #   qtwebengine = pkgs.kdePackages.qtwebengine; # overridden due to CVEs
     # }) # disabled due to version mismatch; kept as reference
   ];
-  # Enable file management for SSH configuration
+
   hm = {
     programs = {
       development.extraPackages = [
