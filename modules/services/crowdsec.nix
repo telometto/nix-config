@@ -325,23 +325,25 @@ in
 
             simulation = cfg.settings.simulation;
 
-            lapi.credentialsFile =
-              if cfg.settings.lapi.credentialsFile != null then
-                cfg.settings.lapi.credentialsFile
-              else if cfg.settings.lapi.enable then
-                # Provide a default path if LAPI is enabled but no file specified
-                "/var/lib/crowdsec/data/local_api_credentials.yaml"
-              else
-                null;
+            # Comment out credential file paths to use upstream defaults
+            # This prevents issues with machine registration on service startup
+            # lapi.credentialsFile =
+            #   if cfg.settings.lapi.credentialsFile != null then
+            #     cfg.settings.lapi.credentialsFile
+            #   else if cfg.settings.lapi.enable then
+            #     # Provide a default path if LAPI is enabled but no file specified
+            #     "/var/lib/crowdsec/data/local_api_credentials.yaml"
+            #   else
+            #     null;
 
-            capi.credentialsFile =
-              if cfg.settings.capi.credentialsFile != null then cfg.settings.capi.credentialsFile else null;
+            # capi.credentialsFile =
+            #   if cfg.settings.capi.credentialsFile != null then cfg.settings.capi.credentialsFile else null;
 
-            console.tokenFile =
-              if cfg.settings.console.enable && cfg.settings.console.tokenFile != null then
-                cfg.settings.console.tokenFile
-              else
-                null;
+            # console.tokenFile =
+            #   if cfg.settings.console.enable && cfg.settings.console.tokenFile != null then
+            #     cfg.settings.console.tokenFile
+            #   else
+            #     null;
           }
           cfg.extraSettings
         ];
