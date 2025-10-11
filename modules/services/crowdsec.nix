@@ -313,12 +313,12 @@ in
             general = lib.mkMerge [
               {
                 api.server = {
-                  enable = lib.mkDefault cfg.settings.lapi.enable;
-                  listen_uri = lib.mkDefault cfg.settings.lapi.listenUri;
+                  enable = cfg.settings.lapi.enable;
+                  listen_uri = cfg.settings.lapi.listenUri;
                 };
                 prometheus = {
-                  enabled = lib.mkDefault cfg.settings.prometheus.enable;
-                  listen_port = lib.mkDefault cfg.settings.prometheus.port;
+                  enabled = cfg.settings.prometheus.enable;
+                  listen_port = cfg.settings.prometheus.port;
                 };
               }
               cfg.settings.general
