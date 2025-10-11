@@ -44,7 +44,6 @@ in
           "crowdsecurity/linux"
           "crowdsecurity/unifi"
           "crowdsecurity/traefik"
-          "crowdsecurity/windows-firewall"
         ];
         description = "List of hub collections to install.";
         example = [
