@@ -183,9 +183,12 @@ in
       };
 
       patterns = lib.mkOption {
-        type = lib.types.path;
-        default = pkgs.emptyDirectory;
-        description = "Directory containing custom grok patterns.";
+        type = lib.types.listOf lib.types.package;
+        default = [ ];
+        description = "List of pattern packages containing custom grok patterns.";
+        example = lib.literalExpression ''
+          [ pkgs.my-custom-patterns ]
+        '';
       };
     };
 
@@ -327,7 +330,13 @@ in
             simulation = cfg.settings.simulation;
 
             lapi.credentialsFile =
-              if cfg.settings.lapi.credentialsFile != null then cfg.settings.lapi.credentialsFile else null;
+              if cfg.settings.lapi.credentialsFile != null then
+                cfg.settings.lapi.credentialsFile
+              else if cfg.settings.lapi.enable then
+                # Provide a default path if LAPI is enabled but no file specified
+                "/var/lib/crowdsec/data/local_api_credentials.yaml"
+              else
+                null;
 
             capi.credentialsFile =
               if cfg.settings.capi.credentialsFile != null then cfg.settings.capi.credentialsFile else null;
