@@ -58,9 +58,6 @@ in
         default = [
           "crowdsecurity/ssh-bf" # ssh brute force
           "crowdsecurity/ssh-slow-bf" # ssh slow brute force
-          "crowdsecurity/amavis-blocked" # ban IPs blocked by amavis
-          "crowdsecurity/jellyfin-bf" # detect jellyfin brute force
-          "crowdsecurity/overseerr-bf"
         ];
         description = "List of hub scenarios to install.";
         example = [
