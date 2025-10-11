@@ -1,3 +1,6 @@
+# disabled for testing
+{ ... }: { }
+/*
 {
   lib,
   config,
@@ -325,26 +328,19 @@ in
 
             simulation = cfg.settings.simulation;
 
-            # Comment out credential file paths to use upstream defaults
-            # This prevents issues with machine registration on service startup
-            # lapi.credentialsFile =
-            #   if cfg.settings.lapi.credentialsFile != null then
-            #     cfg.settings.lapi.credentialsFile
-            #   else if cfg.settings.lapi.enable then
-            #     # Provide a default path if LAPI is enabled but no file specified
-            #     "/var/lib/crowdsec/data/local_api_credentials.yaml"
-            #   else
-            #     null;
-
-            # capi.credentialsFile =
-            #   if cfg.settings.capi.credentialsFile != null then cfg.settings.capi.credentialsFile else null;
-
-            # console.tokenFile =
-            #   if cfg.settings.console.enable && cfg.settings.console.tokenFile != null then
-            #     cfg.settings.console.tokenFile
-            #   else
-            #     null;
+            # Only set credential files if explicitly provided
+            # Let upstream module handle defaults to avoid machine registration conflicts
           }
+          # Conditionally add credential file settings only if provided
+          (lib.optionalAttrs (cfg.settings.lapi.credentialsFile != null) {
+            lapi.credentialsFile = cfg.settings.lapi.credentialsFile;
+          })
+          (lib.optionalAttrs (cfg.settings.capi.credentialsFile != null) {
+            capi.credentialsFile = cfg.settings.capi.credentialsFile;
+          })
+          (lib.optionalAttrs (cfg.settings.console.enable && cfg.settings.console.tokenFile != null) {
+            console.tokenFile = cfg.settings.console.tokenFile;
+          })
           cfg.extraSettings
         ];
       }
@@ -352,3 +348,4 @@ in
     ];
   };
 }
+*/
