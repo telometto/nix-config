@@ -28,6 +28,9 @@ in
         };
         nfs.server.openFirewall = lib.mkDefault false;
         tailscale.enable = lib.mkDefault true;
+        crowdsec = {
+          enable = lib.mkDefault true;
+        };
       };
     };
 
