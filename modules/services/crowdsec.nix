@@ -277,7 +277,7 @@ in
     services.crowdsec = lib.mkMerge [
       {
         enable = true;
-        inherit (cfg) package openFirewall autoUpdate;
+        inherit (cfg) package openFirewall autoUpdateService;
 
         # Hub configuration
         hub = {
