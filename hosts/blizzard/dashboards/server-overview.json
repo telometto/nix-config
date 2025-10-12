@@ -335,7 +335,7 @@
           "datasource": "Prometheus",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "node_load1 * 100 / count(count(node_cpu_seconds_total) by (cpu))",
+          "expr": "(node_load1 / count(count(node_cpu_seconds_total) by (cpu))) * 100",
           "format": "time_series",
           "instant": true,
           "range": false,
@@ -1263,7 +1263,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Running"
+              "options": "Pods Running"
             },
             "properties": [
               {
@@ -1278,22 +1278,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Pending"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "yellow"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Failed"
+              "options": "Pods Failed"
             },
             "properties": [
               {
@@ -1308,14 +1293,14 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Unknown"
+              "options": "Pods Pending"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "orange"
+                  "fixedColor": "yellow"
                 }
               }
             ]
@@ -1323,7 +1308,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Succeeded"
+              "options": "Deployments"
             },
             "properties": [
               {
@@ -1334,12 +1319,27 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Namespaces"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
           }
         ]
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 4,
+        "w": 24,
         "x": 0,
         "y": 39
       },
@@ -1366,89 +1366,34 @@
           "datasource": "Prometheus",
           "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Running\"} == 1))",
           "refId": "A",
-          "legendFormat": "Running"
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Pending\"} == 1)) or vector(0)",
-          "refId": "B",
-          "legendFormat": "Pending"
+          "legendFormat": "Pods Running"
         },
         {
           "datasource": "Prometheus",
           "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Failed\"} == 1)) or vector(0)",
+          "refId": "B",
+          "legendFormat": "Pods Failed"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Pending\"} == 1)) or vector(0)",
           "refId": "C",
-          "legendFormat": "Failed"
+          "legendFormat": "Pods Pending"
         },
-        {
-          "datasource": "Prometheus",
-          "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Unknown\"} == 1)) or vector(0)",
-          "refId": "D",
-          "legendFormat": "Unknown"
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Succeeded\"} == 1)) or vector(0)",
-          "refId": "E",
-          "legendFormat": "Succeeded"
-        }
-      ],
-      "title": "Pod Status Overview",
-      "type": "stat"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 39
-      },
-      "id": 14,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
         {
           "datasource": "Prometheus",
           "expr": "count(kube_deployment_created)",
-          "refId": "A",
-          "legendFormat": "Total Deployments"
+          "refId": "D",
+          "legendFormat": "Deployments"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "count(count by (namespace) (kube_pod_info))",
+          "refId": "E",
+          "legendFormat": "Namespaces"
         }
       ],
-      "title": "Total Deployments",
+      "title": "K8s Cluster Overview",
       "type": "stat"
     },
     {
@@ -1565,9 +1510,9 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 24,
+        "w": 16,
         "x": 0,
-        "y": 47
+        "y": 43
       },
       "id": 15,
       "options": {
@@ -1668,6 +1613,178 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Namespace"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pods"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "continuous-BlYlRd"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Deployments"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Services"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 43
+      },
+      "id": 21,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": true,
+          "enablePagination": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Pods"
+          }
+        ]
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "count(kube_pod_info) by (namespace)",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "count(kube_deployment_created) by (namespace)",
+          "refId": "B",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "count(kube_service_info) by (namespace)",
+          "refId": "C",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "title": "Resources by Namespace",
+      "transformations": [
+        {
+          "id": "seriesToColumns",
+          "options": {
+            "byField": "namespace"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Time 1": true,
+              "Time 2": true,
+              "Time 3": true
+            },
+            "indexByName": {
+              "namespace": 0,
+              "Value #A": 1,
+              "Value #B": 2,
+              "Value #C": 3
+            },
+            "renameByName": {
+              "namespace": "Namespace",
+              "Value #A": "Pods",
+              "Value #B": "Deployments",
+              "Value #C": "Services"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "palette-classic"
           },
           "custom": {
@@ -1720,7 +1837,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 57
+        "y": 53
       },
       "id": 18,
       "options": {
@@ -1807,7 +1924,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 57
+        "y": 53
       },
       "id": 19,
       "options": {
@@ -1907,7 +2024,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 65
+        "y": 61
       },
       "id": 20,
       "options": {
@@ -1949,7 +2066,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 73
+        "y": 69
       },
       "id": 105,
       "panels": [],
@@ -2094,10 +2211,10 @@
         ]
       },
       "gridPos": {
-        "h": 10,
+        "h": 6,
         "w": 24,
         "x": 0,
-        "y": 74
+        "y": 70
       },
       "id": 10,
       "options": {
