@@ -20,10 +20,10 @@
     # Enable server role (provides server defaults)
     role.server.enable = true;
 
-    overlays.fromInputs = {
-      nixpkgs-unstable = [ "intel-graphics-compiler" ];
-      # nixpkgs-stable = [ "thunderbird" ];
-    };
+    # overlays.fromInputs = {
+    #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
+    #   # nixpkgs-stable = [ "thunderbird" ];
+    # };
 
     # Firewall policy via owner module (role enables it); host adds extra ports/ranges
     networking = {

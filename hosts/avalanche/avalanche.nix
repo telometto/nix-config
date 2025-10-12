@@ -22,10 +22,10 @@
     desktop.flavor = "gnome";
 
     # Pull specific packages from different nixpkgs inputs
-    overlays.fromInputs = {
-      nixpkgs-unstable = [ "intel-graphics-compiler" ];
-      # nixpkgs-stable = [ "thunderbird" ];
-    };
+    # overlays.fromInputs = {
+    #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
+    #   # nixpkgs-stable = [ "thunderbird" ];
+    # };
 
     services = {
       tailscale.interface = "changeme";
