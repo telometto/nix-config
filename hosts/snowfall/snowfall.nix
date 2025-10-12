@@ -20,7 +20,10 @@
 
     desktop.flavor = "kde";
 
-    programs.nix-ld.enable = false;
+    programs = {
+      nix-ld.enable = true;
+      python-venv.enable = true;
+    };
 
     # Pull specific packages from different nixpkgs inputs
     # overlays.fromInputs = {
