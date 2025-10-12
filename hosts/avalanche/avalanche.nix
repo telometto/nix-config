@@ -21,6 +21,12 @@
 
     desktop.flavor = "gnome";
 
+    # Enable Python venv support
+    programs = {
+      nix-ld.enable = true;
+      python-venv.enable = true;
+    };
+
     # Pull specific packages from different nixpkgs inputs
     # overlays.fromInputs = {
     #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
