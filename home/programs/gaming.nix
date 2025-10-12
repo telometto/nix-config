@@ -1,4 +1,9 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.hm.programs.gaming;
 in
@@ -61,6 +66,6 @@ in
       };
     };
 
-    home.packages = [ ];
+    home.packages = [ pkgs.overlayed ];
   };
 }
