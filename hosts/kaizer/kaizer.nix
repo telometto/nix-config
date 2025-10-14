@@ -26,7 +26,7 @@ in
     desktop.flavor = "gnome";
 
     # Disabled secure boot (lanzaboote) for now
-    boot.lanzaboote.enable = lib.mkDefault false;
+    boot.lanzaboote.enable = lib.mkForce false;
 
     # Enable Nvidia hardware support (RTX 3070 - Ampere architecture)
     hardware.nvidia = {
@@ -68,20 +68,16 @@ in
     # ];
 
     services = {
-      tailscale = {
-        interface = "enp42s0"; # Update based on actual interface from hardware-configuration
-
-        # Override to preserve Luke's existing Tailscale authentication
-        # Don't set authKeyFile - this allows the existing connection to persist
-        settings = {
-          authKeyFile = lib.mkForce null;
-        };
-      };
-
+      tailscale.interface = "enp42s0"; # Update based on actual interface from hardware-configuration
+      
       # Disable printing as in nix-conf
       printing.enable = lib.mkForce false;
     };
   };
+
+  # Override Tailscale to preserve Luke's existing authentication
+  # Don't set authKeyFile - this allows the existing connection to persist
+  services.tailscale.authKeyFile = lib.mkForce null;
 
   # Locale overrides for Italian with Oslo timezone and Norwegian keyboard
   i18n.extraLocaleSettings = lib.mkForce (
