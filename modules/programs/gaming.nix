@@ -30,6 +30,11 @@ in
         ];
       };
       gamemode.enable = lib.mkDefault true;
+
+      appimage = {
+        enable = lib.mkDefault true;
+        binfmt = lib.mkDefault true;
+      };
     };
   };
 }
