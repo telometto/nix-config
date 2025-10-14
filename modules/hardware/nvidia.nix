@@ -10,7 +10,7 @@ in
 {
   options.telometto.hardware.nvidia = {
     enable = lib.mkEnableOption "NVIDIA GPU support with proprietary drivers";
-    
+
     package = lib.mkOption {
       type = lib.types.package;
       default = config.boot.kernelPackages.nvidiaPackages.latest;

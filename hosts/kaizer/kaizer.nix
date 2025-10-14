@@ -31,14 +31,14 @@ in
     # Enable Nvidia hardware support (RTX 3070 - Ampere architecture)
     hardware.nvidia = {
       enable = true;
-      
+
       # RTX 3070 (Ampere) supports open-source kernel modules
       # Recommended by NVIDIA for better performance and stability
       open = true;
-      
+
       # Enable if suspend/resume issues occur (experimental)
       # powerManagement.enable = true;
-      
+
       # Ampere supports fine-grained power management
       # Uncomment if you want the GPU to power down when idle
       # powerManagement.finegrained = false;
@@ -70,14 +70,14 @@ in
     services = {
       tailscale = {
         interface = "enp42s0"; # Update based on actual interface from hardware-configuration
-        
+
         # Override to preserve Luke's existing Tailscale authentication
         # Don't set authKeyFile - this allows the existing connection to persist
         settings = {
           authKeyFile = lib.mkForce null;
         };
       };
-      
+
       # Disable printing as in nix-conf
       printing.enable = lib.mkForce false;
     };
