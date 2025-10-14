@@ -9,4 +9,6 @@
   # Example:
   # hm.programs.development.extraPackages = with pkgs; [ kaizer-specific-tool ];
   # programs.git.extraConfig.kaizer = "specific-setting";
+
+  home.packages = [ pkgs.variety ];
 }
