@@ -5,7 +5,7 @@ let
 
   # Gaming and emulation
   gaming = [
-    pkgs.retroarch
+    # pkgs.retroarch
     pkgs.melonDS
   ];
 

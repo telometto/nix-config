@@ -69,7 +69,7 @@ in
 
     services = {
       tailscale.interface = "enp42s0"; # Update based on actual interface from hardware-configuration
-      
+
       # Disable printing as in nix-conf
       printing.enable = lib.mkForce false;
     };
