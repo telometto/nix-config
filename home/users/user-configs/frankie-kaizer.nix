@@ -8,12 +8,5 @@
 }:
 {
   # Frankie-specific packages on kaizer
-  home.packages = with pkgs; [
-    # Add frankie's preferred applications here
-  ];
-
-  # Frankie's personal configurations
-  # Example customizations:
-  # programs.git.userEmail = "frankie@example.com";
-  # programs.vscode.extensions = [ ... ];
+  home.packages = with pkgs; [ ];
 }
