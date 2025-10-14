@@ -4,11 +4,18 @@ let
   cfg = config.telometto.programs.gnupg;
 in
 {
-  options.telometto.programs.gnupg.enable = lib.mkEnableOption "GnuPG agent with long cache TTL";
+  options.telometto.programs.gnupg = {
+    enable = lib.mkEnableOption "GnuPG agent with long cache TTL";
+    enableSSHSupport = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable SSH support in GPG agent";
+    };
+  };
   config = lib.mkIf cfg.enable {
     programs.gnupg.agent = {
       enable = lib.mkDefault true;
-      enableSSHSupport = lib.mkDefault false;
+      enableSSHSupport = cfg.enableSSHSupport;
       settings = {
         default-cache-ttl = lib.mkDefault 34560000;
         max-cache-ttl = lib.mkDefault 34560000;
