@@ -23,7 +23,7 @@ in
   telometto = {
     role.desktop.enable = true;
 
-    desktop.flavor = "gnome";
+    desktop.flavor = "kde";
 
     # Disabled secure boot (lanzaboote) for now
     boot.lanzaboote.enable = lib.mkForce false;
