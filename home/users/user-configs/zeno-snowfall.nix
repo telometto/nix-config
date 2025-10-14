@@ -26,13 +26,12 @@ let
 in
 {
   # User-specific packages for admin on snowfall
-  home.packages = with pkgs; [
-    variety # Wallpaper changer
-    polychromatic # Razer configuration tool
-    tuxguitar # Guitar tablature editor and player
-    pgadmin4-desktopmode # PostgreSQL administration tool
-    vorta # Borg backup GUI
-    # pkgs.jellyfin-media-player
+  home.packages = [
+    pkgs.variety # Wallpaper changer
+    pkgs.polychromatic # Razer configuration tool
+    pkgs.tuxguitar # Guitar tablature editor and player
+    pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
+    pkgs.vorta # Borg backup GUI
   ];
 
   # Enable file management for SSH configuration
@@ -40,7 +39,7 @@ in
     programs = {
       development.extraPackages = [
         pkgs.vscode
-        # pkgs.jetbrains.idea-community-bin # disabled until lidbm issue has been solved
+        pkgs.jetbrains.idea-community-bin
       ];
     };
 

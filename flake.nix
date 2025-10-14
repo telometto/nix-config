@@ -98,6 +98,7 @@
         snowfall = mkHost "snowfall" [ ];
         blizzard = mkHost "blizzard" [ ];
         avalanche = mkHost "avalanche" [ ];
+        kaizer = mkHost "kaizer" [ ];
       };
 
       # Formatter (treefmt)
