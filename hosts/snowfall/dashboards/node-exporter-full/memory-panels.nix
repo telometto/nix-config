@@ -7,7 +7,12 @@
       title = "Memory";
       id = 267;
       collapsed = true;
-      gridPos = { h = 1; w = 24; x = 0; y = 21; };
+      gridPos = {
+        h = 1;
+        w = 24;
+        x = 0;
+        y = 21;
+      };
     })
 
     # Detailed Memory panel
@@ -16,7 +21,12 @@
       id = 24;
       description = "Breakdown of physical memory and swap usage. Hardware-detected memory errors are also displayed";
       unit = "bytes";
-      gridPos = { h = 12; w = 12; x = 12; y = 21; };
+      gridPos = {
+        h = 12;
+        w = 12;
+        x = 12;
+        y = 21;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''node_memory_MemTotal_bytes{instance="$node",job="$job"}'';
@@ -63,7 +73,11 @@
       ];
       options = {
         legend = {
-          calcs = ["min" "mean" "max"];
+          calcs = [
+            "min"
+            "mean"
+            "max"
+          ];
           displayMode = "table";
           placement = "bottom";
           showLegend = true;
@@ -77,35 +91,90 @@
       fieldConfig = {
         defaults = {
           custom = {
-            stacking = { group = "A"; mode = "none"; };
+            stacking = {
+              group = "A";
+              mode = "none";
+            };
             fillOpacity = 20;
           };
           min = 0;
         };
         overrides = [
           {
-            matcher = { id = "byName"; options = "Total RAM"; };
+            matcher = {
+              id = "byName";
+              options = "Total RAM";
+            };
             properties = [
-              { id = "color"; value = { fixedColor = "#E0F9D7"; mode = "fixed"; }; }
-              { id = "custom.fillOpacity"; value = 0; }
-              { id = "custom.lineWidth"; value = 2; }
+              {
+                id = "color";
+                value = {
+                  fixedColor = "#E0F9D7";
+                  mode = "fixed";
+                };
+              }
+              {
+                id = "custom.fillOpacity";
+                value = 0;
+              }
+              {
+                id = "custom.lineWidth";
+                value = 2;
+              }
             ];
           }
           {
-            matcher = { id = "byName"; options = "Used RAM"; };
-            properties = [{ id = "color"; value = { fixedColor = "#7EB26D"; mode = "fixed"; }; }];
-          }
-          {
-            matcher = { id = "byName"; options = "Total Swap"; };
+            matcher = {
+              id = "byName";
+              options = "Used RAM";
+            };
             properties = [
-              { id = "color"; value = { fixedColor = "#E24D42"; mode = "fixed"; }; }
-              { id = "custom.fillOpacity"; value = 0; }
-              { id = "custom.lineWidth"; value = 2; }
+              {
+                id = "color";
+                value = {
+                  fixedColor = "#7EB26D";
+                  mode = "fixed";
+                };
+              }
             ];
           }
           {
-            matcher = { id = "byName"; options = "Used Swap"; };
-            properties = [{ id = "color"; value = { fixedColor = "#E24D42"; mode = "fixed"; }; }];
+            matcher = {
+              id = "byName";
+              options = "Total Swap";
+            };
+            properties = [
+              {
+                id = "color";
+                value = {
+                  fixedColor = "#E24D42";
+                  mode = "fixed";
+                };
+              }
+              {
+                id = "custom.fillOpacity";
+                value = 0;
+              }
+              {
+                id = "custom.lineWidth";
+                value = 2;
+              }
+            ];
+          }
+          {
+            matcher = {
+              id = "byName";
+              options = "Used Swap";
+            };
+            properties = [
+              {
+                id = "color";
+                value = {
+                  fixedColor = "#E24D42";
+                  mode = "fixed";
+                };
+              }
+            ];
           }
         ];
       };
@@ -117,7 +186,12 @@
       id = 138;
       description = "Amount of memory available for starting new applications, without swapping";
       unit = "bytes";
-      gridPos = { h = 12; w = 12; x = 0; y = 33; };
+      gridPos = {
+        h = 12;
+        w = 12;
+        x = 0;
+        y = 33;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''node_memory_MemAvailable_bytes{instance="$node",job="$job"}'';
@@ -128,7 +202,11 @@
       ];
       options = {
         legend = {
-          calcs = ["min" "mean" "max"];
+          calcs = [
+            "min"
+            "mean"
+            "max"
+          ];
           displayMode = "table";
           placement = "bottom";
           showLegend = true;

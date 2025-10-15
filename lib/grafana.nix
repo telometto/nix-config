@@ -11,19 +11,27 @@ rec {
   defaultGaugeFieldConfig = {
     color.mode = "thresholds";
     decimals = 1;
-    mappings = [{
-      options.match = "null";
-      result.text = "N/A";
-      type = "special";
-    }];
+    mappings = [
+      {
+        options.match = "null";
+        result.text = "N/A";
+        type = "special";
+      }
+    ];
     max = 100;
     min = 0;
     thresholds = {
       mode = "absolute";
       steps = [
         { color = "rgba(50, 172, 45, 0.97)"; }
-        { color = "rgba(237, 129, 40, 0.89)"; value = 85; }
-        { color = "rgba(245, 54, 54, 0.9)"; value = 95; }
+        {
+          color = "rgba(237, 129, 40, 0.89)";
+          value = 85;
+        }
+        {
+          color = "rgba(245, 54, 54, 0.9)";
+          value = 95;
+        }
       ];
     };
     unit = "percent";
@@ -61,46 +69,88 @@ rec {
       };
       thresholdsStyle.mode = "off";
     };
-    links = [];
-    mappings = [];
+    links = [ ];
+    mappings = [ ];
     thresholds = {
       mode = "absolute";
-      steps = [{ color = "green"; }];
+      steps = [ { color = "green"; } ];
     };
   };
 
   # Create a row (section header)
-  mkRow = { title, id, gridPos ? { h = 1; w = 24; x = 0; y = 0; }, collapsed ? false }: {
-    inherit collapsed title id;
-    inherit gridPos;
-    panels = [];
-    type = "row";
-  };
+  mkRow =
+    {
+      title,
+      id,
+      gridPos ? {
+        h = 1;
+        w = 24;
+        x = 0;
+        y = 0;
+      },
+      collapsed ? false,
+    }:
+    {
+      inherit collapsed title id;
+      inherit gridPos;
+      panels = [ ];
+      type = "row";
+    };
 
   # Create a gauge panel
-  mkGauge = { title, id, description, gridPos, targets, fieldConfig ? {}, thresholds ? null, unit ? "percent" }:
+  mkGauge =
+    {
+      title,
+      id,
+      description,
+      gridPos,
+      targets,
+      fieldConfig ? { },
+      thresholds ? null,
+      unit ? "percent",
+    }:
     let
-      customThresholds = if thresholds != null then thresholds else {
-        mode = "absolute";
-        steps = [
-          { color = "rgba(50, 172, 45, 0.97)"; }
-          { color = "rgba(237, 129, 40, 0.89)"; value = 85; }
-          { color = "rgba(245, 54, 54, 0.9)"; value = 95; }
-        ];
-      };
-    in {
+      customThresholds =
+        if thresholds != null then
+          thresholds
+        else
+          {
+            mode = "absolute";
+            steps = [
+              { color = "rgba(50, 172, 45, 0.97)"; }
+              {
+                color = "rgba(237, 129, 40, 0.89)";
+                value = 85;
+              }
+              {
+                color = "rgba(245, 54, 54, 0.9)";
+                value = 95;
+              }
+            ];
+          };
+    in
+    {
       datasource = prometheusDatasource;
-      inherit description title id gridPos targets;
+      inherit
+        description
+        title
+        id
+        gridPos
+        targets
+        ;
       fieldConfig = lib.recursiveUpdate {
-        defaults = defaultGaugeFieldConfig // { inherit unit; thresholds = customThresholds; };
-        overrides = [];
+        defaults = defaultGaugeFieldConfig // {
+          inherit unit;
+          thresholds = customThresholds;
+        };
+        overrides = [ ];
       } fieldConfig;
       options = {
         minVizHeight = 75;
         minVizWidth = 75;
         orientation = "auto";
         reduceOptions = {
-          calcs = ["lastNotNull"];
+          calcs = [ "lastNotNull" ];
           fields = "";
           values = false;
         };
@@ -113,174 +163,298 @@ rec {
     };
 
   # Create a stat panel
-  mkStat = { title, id, description ? "", gridPos, targets, unit ? "short", decimals ? 0, fieldConfig ? {} }: {
-    datasource = prometheusDatasource;
-    inherit description title id gridPos targets;
-    fieldConfig = lib.recursiveUpdate {
-      defaults = {
-        color.mode = "thresholds";
-        inherit decimals unit;
-        mappings = [{
-          options.match = "null";
-          result.text = "N/A";
-          type = "special";
-        }];
-        thresholds = {
-          mode = "absolute";
-          steps = [{ color = "green"; }];
+  mkStat =
+    {
+      title,
+      id,
+      description ? "",
+      gridPos,
+      targets,
+      unit ? "short",
+      decimals ? 0,
+      fieldConfig ? { },
+    }:
+    {
+      datasource = prometheusDatasource;
+      inherit
+        description
+        title
+        id
+        gridPos
+        targets
+        ;
+      fieldConfig = lib.recursiveUpdate {
+        defaults = {
+          color.mode = "thresholds";
+          inherit decimals unit;
+          mappings = [
+            {
+              options.match = "null";
+              result.text = "N/A";
+              type = "special";
+            }
+          ];
+          thresholds = {
+            mode = "absolute";
+            steps = [ { color = "green"; } ];
+          };
         };
+        overrides = [ ];
+      } fieldConfig;
+      maxDataPoints = 100;
+      options = {
+        colorMode = "none";
+        graphMode = "none";
+        justifyMode = "auto";
+        orientation = "horizontal";
+        percentChangeColorMode = "standard";
+        reduceOptions = {
+          calcs = [ "lastNotNull" ];
+          fields = "";
+          values = false;
+        };
+        showPercentChange = false;
+        textMode = "auto";
+        wideLayout = true;
       };
-      overrides = [];
-    } fieldConfig;
-    maxDataPoints = 100;
-    options = {
-      colorMode = "none";
-      graphMode = "none";
-      justifyMode = "auto";
-      orientation = "horizontal";
-      percentChangeColorMode = "standard";
-      reduceOptions = {
-        calcs = ["lastNotNull"];
-        fields = "";
-        values = false;
-      };
-      showPercentChange = false;
-      textMode = "auto";
-      wideLayout = true;
+      pluginVersion = "11.6.1";
+      type = "stat";
     };
-    pluginVersion = "11.6.1";
-    type = "stat";
-  };
 
   # Create a timeseries panel
-  mkTimeseries = { title, id, description, gridPos, targets, fieldConfig ? {}, options ? {}, unit ? "short" }: {
-    datasource = prometheusDatasource;
-    inherit description title id gridPos targets;
-    fieldConfig = lib.recursiveUpdate {
-      defaults = defaultTimeseriesFieldConfig // { inherit unit; };
-      overrides = [];
-    } fieldConfig;
-    options = lib.recursiveUpdate {
-      legend = {
-        calcs = [];
-        displayMode = "list";
-        placement = "bottom";
-        showLegend = true;
-      };
-      tooltip = {
-        hideZeros = false;
-        mode = "multi";
-        sort = "none";
-      };
-    } options;
-    pluginVersion = "11.6.1";
-    type = "timeseries";
-  };
+  mkTimeseries =
+    {
+      title,
+      id,
+      description,
+      gridPos,
+      targets,
+      fieldConfig ? { },
+      options ? { },
+      unit ? "short",
+    }:
+    {
+      datasource = prometheusDatasource;
+      inherit
+        description
+        title
+        id
+        gridPos
+        targets
+        ;
+      fieldConfig = lib.recursiveUpdate {
+        defaults = defaultTimeseriesFieldConfig // {
+          inherit unit;
+        };
+        overrides = [ ];
+      } fieldConfig;
+      options = lib.recursiveUpdate {
+        legend = {
+          calcs = [ ];
+          displayMode = "list";
+          placement = "bottom";
+          showLegend = true;
+        };
+        tooltip = {
+          hideZeros = false;
+          mode = "multi";
+          sort = "none";
+        };
+      } options;
+      pluginVersion = "11.6.1";
+      type = "timeseries";
+    };
 
   # Create a bargauge panel
-  mkBargauge = { title, id, description, gridPos, targets, fieldConfig ? {} }: {
-    datasource = prometheusDatasource;
-    inherit description title id gridPos targets;
-    fieldConfig = lib.recursiveUpdate {
-      defaults = {
-        color.mode = "thresholds";
-        decimals = 1;
-        links = [];
-        mappings = [];
-        max = 1;
-        min = 0;
-        thresholds = {
-          mode = "percentage";
-          steps = [
-            { color = "green"; }
-            { color = "dark-yellow"; value = 70; }
-            { color = "dark-red"; value = 90; }
-          ];
+  mkBargauge =
+    {
+      title,
+      id,
+      description,
+      gridPos,
+      targets,
+      fieldConfig ? { },
+    }:
+    {
+      datasource = prometheusDatasource;
+      inherit
+        description
+        title
+        id
+        gridPos
+        targets
+        ;
+      fieldConfig = lib.recursiveUpdate {
+        defaults = {
+          color.mode = "thresholds";
+          decimals = 1;
+          links = [ ];
+          mappings = [ ];
+          max = 1;
+          min = 0;
+          thresholds = {
+            mode = "percentage";
+            steps = [
+              { color = "green"; }
+              {
+                color = "dark-yellow";
+                value = 70;
+              }
+              {
+                color = "dark-red";
+                value = 90;
+              }
+            ];
+          };
+          unit = "percentunit";
         };
-        unit = "percentunit";
+        overrides = [ ];
+      } fieldConfig;
+      options = {
+        displayMode = "basic";
+        legend = {
+          calcs = [ ];
+          displayMode = "list";
+          placement = "bottom";
+          showLegend = false;
+        };
+        maxVizHeight = 300;
+        minVizHeight = 10;
+        minVizWidth = 0;
+        namePlacement = "auto";
+        orientation = "horizontal";
+        reduceOptions = {
+          calcs = [ "lastNotNull" ];
+          fields = "";
+          values = false;
+        };
+        showUnfilled = true;
+        sizing = "auto";
+        text = { };
+        valueMode = "color";
       };
-      overrides = [];
-    } fieldConfig;
-    options = {
-      displayMode = "basic";
-      legend = {
-        calcs = [];
-        displayMode = "list";
-        placement = "bottom";
-        showLegend = false;
-      };
-      maxVizHeight = 300;
-      minVizHeight = 10;
-      minVizWidth = 0;
-      namePlacement = "auto";
-      orientation = "horizontal";
-      reduceOptions = {
-        calcs = ["lastNotNull"];
-        fields = "";
-        values = false;
-      };
-      showUnfilled = true;
-      sizing = "auto";
-      text = {};
-      valueMode = "color";
+      pluginVersion = "11.6.1";
+      type = "bargauge";
     };
-    pluginVersion = "11.6.1";
-    type = "bargauge";
-  };
 
   # Helper to create a target (query)
-  mkTarget = { expr, legendFormat ? "", refId, instant ? true, exemplar ? false }: {
-    editorMode = "code";
-    inherit exemplar expr legendFormat refId instant;
-    format = "time_series";
-    range = !instant;
-    step = 240;
-  };
+  mkTarget =
+    {
+      expr,
+      legendFormat ? "",
+      refId,
+      instant ? true,
+      exemplar ? false,
+    }:
+    {
+      editorMode = "code";
+      inherit
+        exemplar
+        expr
+        legendFormat
+        refId
+        instant
+        ;
+      format = "time_series";
+      range = !instant;
+      step = 240;
+    };
 
   # Create complete dashboard structure
-  mkDashboard = { title, uid ? null, panels, variables ? [], links ? [], tags ? [], annotations ? null }:
+  mkDashboard =
+    {
+      title,
+      uid ? null,
+      panels,
+      variables ? [ ],
+      links ? [ ],
+      tags ? [ ],
+      annotations ? null,
+    }:
     let
       defaultAnnotations = {
-        list = [{
-          builtIn = 1;
-          datasource = { type = "datasource"; uid = "grafana"; };
-          enable = true;
-          hide = true;
-          iconColor = "rgba(0, 211, 255, 1)";
-          name = "Annotations & Alerts";
-          target = {
-            limit = 100;
-            matchAny = false;
-            tags = [];
+        list = [
+          {
+            builtIn = 1;
+            datasource = {
+              type = "datasource";
+              uid = "grafana";
+            };
+            enable = true;
+            hide = true;
+            iconColor = "rgba(0, 211, 255, 1)";
+            name = "Annotations & Alerts";
+            target = {
+              limit = 100;
+              matchAny = false;
+              tags = [ ];
+              type = "dashboard";
+            };
             type = "dashboard";
-          };
-          type = "dashboard";
-        }];
+          }
+        ];
       };
-    in {
+    in
+    {
       __requires = [
-        { type = "panel"; id = "bargauge"; name = "Bar gauge"; version = ""; }
-        { type = "panel"; id = "gauge"; name = "Gauge"; version = ""; }
-        { type = "grafana"; id = "grafana"; name = "Grafana"; version = "11.6.1"; }
-        { type = "datasource"; id = "prometheus"; name = "Prometheus"; version = "1.0.0"; }
-        { type = "panel"; id = "stat"; name = "Stat"; version = ""; }
-        { type = "panel"; id = "timeseries"; name = "Time series"; version = ""; }
+        {
+          type = "panel";
+          id = "bargauge";
+          name = "Bar gauge";
+          version = "";
+        }
+        {
+          type = "panel";
+          id = "gauge";
+          name = "Gauge";
+          version = "";
+        }
+        {
+          type = "grafana";
+          id = "grafana";
+          name = "Grafana";
+          version = "11.6.1";
+        }
+        {
+          type = "datasource";
+          id = "prometheus";
+          name = "Prometheus";
+          version = "1.0.0";
+        }
+        {
+          type = "panel";
+          id = "stat";
+          name = "Stat";
+          version = "";
+        }
+        {
+          type = "panel";
+          id = "timeseries";
+          name = "Time series";
+          version = "";
+        }
       ];
       annotations = if annotations != null then annotations else defaultAnnotations;
       editable = true;
       fiscalYearStartMonth = 0;
       graphTooltip = 1;
       id = null;
-      inherit links panels tags title;
+      inherit
+        links
+        panels
+        tags
+        title
+        ;
       templating.list = variables;
       time = {
         from = "now-24h";
         to = "now";
       };
-      timepicker = {};
+      timepicker = { };
       timezone = "";
       refresh = "30s";
       schemaVersion = 39;
       version = 0;
-    } // lib.optionalAttrs (uid != null) { inherit uid; };
+    }
+    // lib.optionalAttrs (uid != null) { inherit uid; };
 }

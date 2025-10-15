@@ -6,7 +6,12 @@
     (grafana.mkRow {
       title = "Quick CPU / Mem / Disk";
       id = 261;
-      gridPos = { h = 1; w = 24; x = 0; y = 0; };
+      gridPos = {
+        h = 1;
+        w = 24;
+        x = 0;
+        y = 0;
+      };
     })
 
     # Pressure gauge (bargauge)
@@ -14,7 +19,12 @@
       title = "Pressure";
       id = 323;
       description = "Resource pressure via PSI";
-      gridPos = { h = 4; w = 3; x = 0; y = 1; };
+      gridPos = {
+        h = 4;
+        w = 3;
+        x = 0;
+        y = 1;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''irate(node_pressure_cpu_waiting_seconds_total{instance="$node",job="$job"}[$__rate_interval])'';
@@ -44,7 +54,12 @@
       title = "CPU Busy";
       id = 20;
       description = "Overall CPU busy percentage (averaged across all cores)";
-      gridPos = { h = 4; w = 3; x = 3; y = 1; };
+      gridPos = {
+        h = 4;
+        w = 3;
+        x = 3;
+        y = 1;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''100 * (1 - avg(rate(node_cpu_seconds_total{mode="idle", instance="$node"}[$__rate_interval])))'';
@@ -59,7 +74,12 @@
       title = "Sys Load";
       id = 155;
       description = "System load  over all CPU cores together";
-      gridPos = { h = 4; w = 3; x = 6; y = 1; };
+      gridPos = {
+        h = 4;
+        w = 3;
+        x = 6;
+        y = 1;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''scalar(node_load1{instance="$node",job="$job"}) * 100 / count(count(node_cpu_seconds_total{instance="$node",job="$job"}) by (cpu))'';
@@ -74,7 +94,12 @@
       title = "RAM Used";
       id = 16;
       description = "Real RAM usage excluding cache and reclaimable memory";
-      gridPos = { h = 4; w = 3; x = 9; y = 1; };
+      gridPos = {
+        h = 4;
+        w = 3;
+        x = 9;
+        y = 1;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''clamp_min((1 - (node_memory_MemAvailable_bytes{instance="$node", job="$job"} / node_memory_MemTotal_bytes{instance="$node", job="$job"})) * 100, 0)'';
@@ -89,13 +114,24 @@
       title = "SWAP Used";
       id = 21;
       description = "Percentage of swap space currently used by the system";
-      gridPos = { h = 4; w = 3; x = 12; y = 1; };
+      gridPos = {
+        h = 4;
+        w = 3;
+        x = 12;
+        y = 1;
+      };
       thresholds = {
         mode = "absolute";
         steps = [
           { color = "rgba(50, 172, 45, 0.97)"; }
-          { color = "rgba(237, 129, 40, 0.89)"; value = 10; }
-          { color = "rgba(245, 54, 54, 0.9)"; value = 25; }
+          {
+            color = "rgba(237, 129, 40, 0.89)";
+            value = 10;
+          }
+          {
+            color = "rgba(245, 54, 54, 0.9)";
+            value = 25;
+          }
         ];
       };
       targets = [
@@ -112,7 +148,12 @@
       title = "Root FS Used";
       id = 154;
       description = "Used Root FS";
-      gridPos = { h = 4; w = 3; x = 15; y = 1; };
+      gridPos = {
+        h = 4;
+        w = 3;
+        x = 15;
+        y = 1;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''
@@ -133,7 +174,12 @@
       title = "CPU Cores";
       id = 14;
       description = "";
-      gridPos = { h = 2; w = 2; x = 18; y = 1; };
+      gridPos = {
+        h = 2;
+        w = 2;
+        x = 18;
+        y = 1;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''count(count(node_cpu_seconds_total{instance="$node",job="$job"}) by (cpu))'';
@@ -150,7 +196,12 @@
       description = "";
       unit = "bytes";
       decimals = 0;
-      gridPos = { h = 2; w = 2; x = 20; y = 1; };
+      gridPos = {
+        h = 2;
+        w = 2;
+        x = 20;
+        y = 1;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''node_memory_MemTotal_bytes{instance="$node",job="$job"}'';
@@ -167,7 +218,12 @@
       description = "";
       unit = "bytes";
       decimals = 0;
-      gridPos = { h = 2; w = 2; x = 22; y = 1; };
+      gridPos = {
+        h = 2;
+        w = 2;
+        x = 22;
+        y = 1;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''node_memory_SwapTotal_bytes{instance="$node",job="$job"}'';
@@ -184,7 +240,12 @@
       description = "";
       unit = "bytes";
       decimals = 0;
-      gridPos = { h = 2; w = 2; x = 18; y = 3; };
+      gridPos = {
+        h = 2;
+        w = 2;
+        x = 18;
+        y = 3;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''node_filesystem_size_bytes{instance="$node",job="$job",mountpoint="/",fstype!="rootfs"}'';
@@ -201,7 +262,12 @@
       description = "";
       unit = "s";
       decimals = 1;
-      gridPos = { h = 2; w = 4; x = 20; y = 3; };
+      gridPos = {
+        h = 2;
+        w = 4;
+        x = 20;
+        y = 3;
+      };
       targets = [
         (grafana.mkTarget {
           expr = ''node_time_seconds{instance="$node",job="$job"} - node_boot_time_seconds{instance="$node",job="$job"}'';

@@ -2,28 +2,28 @@
 
 let
   grafana = import ../../../../lib/grafana.nix { inherit lib; };
-  
+
   # Import panel modules
   quickOverview = import ./quick-overview.nix { inherit lib grafana; };
   basicPanels = import ./basic-panels.nix { inherit lib grafana; };
   cpuPanels = import ./cpu-panels.nix { inherit lib grafana; };
   memoryPanels = import ./memory-panels.nix { inherit lib grafana; };
-  
+
   # Dashboard variables for datasource and node selection
   variables = [
     {
-      current = {};
+      current = { };
       includeAll = false;
       label = "Datasource";
       name = "ds_prometheus";
-      options = [];
+      options = [ ];
       query = "prometheus";
       refresh = 1;
       regex = "";
       type = "datasource";
     }
     {
-      current = {};
+      current = { };
       datasource = {
         type = "prometheus";
         uid = "\${ds_prometheus}";
@@ -32,7 +32,7 @@ let
       includeAll = false;
       label = "Job";
       name = "job";
-      options = [];
+      options = [ ];
       query = {
         query = "label_values(node_uname_info, job)";
         refId = "Prometheus-job-Variable-Query";
@@ -43,7 +43,7 @@ let
       type = "query";
     }
     {
-      current = {};
+      current = { };
       datasource = {
         type = "prometheus";
         uid = "\${ds_prometheus}";
@@ -52,7 +52,7 @@ let
       includeAll = false;
       label = "Nodename";
       name = "nodename";
-      options = [];
+      options = [ ];
       query = {
         query = "label_values(node_uname_info{job=\"\$job\"}, nodename)";
         refId = "Prometheus-nodename-Variable-Query";
@@ -63,7 +63,7 @@ let
       type = "query";
     }
     {
-      current = {};
+      current = { };
       datasource = {
         type = "prometheus";
         uid = "\${ds_prometheus}";
@@ -72,7 +72,7 @@ let
       includeAll = false;
       label = "Instance";
       name = "node";
-      options = [];
+      options = [ ];
       query = {
         query = "label_values(node_uname_info{job=\"\$job\", nodename=\"\$nodename\"}, instance)";
         refId = "Prometheus-node-Variable-Query";
@@ -88,7 +88,7 @@ let
   links = [
     {
       icon = "external link";
-      tags = [];
+      tags = [ ];
       targetBlank = true;
       title = "GitHub";
       type = "link";
@@ -96,7 +96,7 @@ let
     }
     {
       icon = "external link";
-      tags = [];
+      tags = [ ];
       targetBlank = true;
       title = "Grafana";
       type = "link";
