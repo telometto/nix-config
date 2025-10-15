@@ -2,6 +2,7 @@
   config,
   lib,
   VARS,
+  pkgs,
   ...
 }:
 {
@@ -155,7 +156,10 @@
 
         # Declaratively provision dashboards
         provision.dashboards = {
-          "node-exporter-full" = ./dashboards/node-exporter-full.json;
+          # Generate dashboard JSON from modular Nix structure
+          "node-exporter-full" = pkgs.writeText "node-exporter-full.json" (
+            builtins.toJSON (import ./dashboards/node-exporter-full { inherit lib pkgs; })
+          );
         };
       };
 

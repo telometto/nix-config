@@ -104,8 +104,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
+        "h": 4,
+        "w": 3,
         "x": 0,
         "y": 1
       },
@@ -138,48 +138,48 @@
       "pluginVersion": "11.6.1",
       "targets": [
         {
-          "datasource": "Prometheus",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "irate(node_pressure_cpu_waiting_seconds_total[5m])",
+          "expr": "irate(node_pressure_cpu_waiting_seconds_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
           "format": "time_series",
           "instant": true,
           "legendFormat": "CPU",
           "range": false,
-          "refId": "A"
+          "refId": "A",
+          "step": 240
         },
         {
-          "datasource": "Prometheus",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "irate(node_pressure_memory_waiting_seconds_total[5m])",
+          "expr": "irate(node_pressure_memory_waiting_seconds_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
           "format": "time_series",
           "instant": true,
           "legendFormat": "Mem",
           "range": false,
-          "refId": "B"
+          "refId": "B",
+          "step": 240
         },
         {
-          "datasource": "Prometheus",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "irate(node_pressure_io_waiting_seconds_total[5m])",
+          "expr": "irate(node_pressure_io_waiting_seconds_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
           "format": "time_series",
           "instant": true,
           "legendFormat": "I/O",
           "range": false,
-          "refId": "C"
+          "refId": "C",
+          "step": 240
         },
         {
-          "datasource": "Prometheus",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "irate(node_pressure_irq_stalled_seconds_total[5m])",
+          "expr": "irate(node_pressure_irq_stalled_seconds_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
           "format": "time_series",
           "instant": true,
           "legendFormat": "Irq",
           "range": false,
-          "refId": "D"
+          "refId": "D",
+          "step": 240
         }
       ],
       "title": "Pressure",
@@ -228,9 +228,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 4,
+        "h": 4,
+        "w": 3,
+        "x": 3,
         "y": 1
       },
       "id": 1,
@@ -252,22 +252,25 @@
       "pluginVersion": "11.6.1",
       "targets": [
         {
-          "datasource": "Prometheus",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
+          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\", instance=\"$node\"}[$__rate_interval])))",
           "instant": true,
           "legendFormat": "",
           "range": false,
-          "refId": "A"
+          "refId": "A",
+          "step": 240
         }
       ],
       "title": "CPU Busy",
       "type": "gauge"
     },
     {
-      "datasource": "Prometheus",
-      "description": "System load over all CPU cores together",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prometheus}"
+      },
+      "description": "System load  over all CPU cores together",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -308,12 +311,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 8,
+        "h": 4,
+        "w": 3,
+        "x": 6,
         "y": 1
       },
-      "id": 201,
+      "id": 155,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -332,14 +335,14 @@
       "pluginVersion": "11.6.1",
       "targets": [
         {
-          "datasource": "Prometheus",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(node_load1 / count(count(node_cpu_seconds_total) by (cpu))) * 100",
+          "expr": "scalar(node_load1{instance=\"$node\",job=\"$job\"}) * 100 / count(count(node_cpu_seconds_total{instance=\"$node\",job=\"$job\"}) by (cpu))",
           "format": "time_series",
           "instant": true,
           "range": false,
-          "refId": "A"
+          "refId": "A",
+          "step": 240
         }
       ],
       "title": "Sys Load",
@@ -378,9 +381,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 12,
+        "h": 4,
+        "w": 3,
+        "x": 9,
         "y": 1
       },
       "id": 2,
@@ -397,23 +400,19 @@
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
-        "sizing": "auto",
-        "text": {
-          "titleSize": 12,
-          "valueSize": 24
-        }
+        "sizing": "auto"
       },
       "pluginVersion": "11.6.1",
       "targets": [
         {
-          "datasource": "Prometheus",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "clamp_min((1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100, 0)",
+          "expr": "clamp_min((1 - (node_memory_MemAvailable_bytes{instance=\"$node\", job=\"$job\"} / node_memory_MemTotal_bytes{instance=\"$node\", job=\"$job\"})) * 100, 0)",
           "format": "time_series",
           "instant": true,
           "range": false,
-          "refId": "A"
+          "refId": "B",
+          "step": 240
         }
       ],
       "title": "RAM Used",
@@ -462,9 +461,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 16,
+        "h": 4,
+        "w": 3,
+        "x": 12,
         "y": 1
       },
       "id": 202,
@@ -481,23 +480,19 @@
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
-        "sizing": "auto",
-        "text": {
-          "titleSize": 12,
-          "valueSize": 24
-        }
+        "sizing": "auto"
       },
       "pluginVersion": "11.6.1",
       "targets": [
         {
-          "datasource": "Prometheus",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(\n  (node_filesystem_size_bytes{mountpoint=\"/\", fstype!=\"rootfs\"}\n   - node_filesystem_avail_bytes{mountpoint=\"/\", fstype!=\"rootfs\"})\n  / node_filesystem_size_bytes{mountpoint=\"/\", fstype!=\"rootfs\"}\n) * 100",
+          "expr": "(\n  (node_filesystem_size_bytes{instance=\"$node\", job=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"}\n   - node_filesystem_avail_bytes{instance=\"$node\", job=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"})\n  / node_filesystem_size_bytes{instance=\"$node\", job=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"}\n) * 100\n",
           "format": "time_series",
           "instant": true,
           "range": false,
-          "refId": "A"
+          "refId": "A",
+          "step": 240
         }
       ],
       "title": "Root FS Used",
@@ -523,11 +518,11 @@
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
-                "value": 70
+                "value": 80
               },
               {
                 "color": "rgba(245, 54, 54, 0.9)",
-                "value": 85
+                "value": 90
               }
             ]
           },
@@ -536,9 +531,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 20,
+        "h": 4,
+        "w": 3,
+        "x": 15,
         "y": 1
       },
       "id": 3,
@@ -555,16 +550,11 @@
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
-        "sizing": "auto",
-        "text": {
-          "titleSize": 12,
-          "valueSize": 24
-        }
+        "sizing": "auto"
       },
       "pluginVersion": "11.6.1",
       "targets": [
         {
-          "datasource": "Prometheus",
           "editorMode": "code",
           "exemplar": false,
           "expr": "sum(zfs_pool_allocated_bytes) / sum(zfs_pool_size_bytes) * 100",
@@ -578,24 +568,14 @@
     },
     {
       "datasource": "Prometheus",
-      "description": "System uptime",
+      "description": "Total ZFS pool capacity",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 1,
-          "mappings": [
-            {
-              "options": {
-                "match": "null",
-                "result": {
-                  "text": "N/A"
-                }
-              },
-              "type": "special"
-            }
-          ],
+          "decimals": 0,
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -604,22 +584,22 @@
               }
             ]
           },
-          "unit": "dtdurations"
+          "unit": "bytes"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
-        "w": 24,
-        "x": 0,
-        "y": 8
+        "h": 2,
+        "w": 2,
+        "x": 18,
+        "y": 1
       },
-      "id": 4,
+      "id": 201,
       "options": {
         "colorMode": "none",
         "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "horizontal",
+        "justifyMode": "auto",
+        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -628,8 +608,188 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "value_and_name",
-        "wideLayout": false
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.1",
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum(zfs_pool_size_bytes)",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "ZFS Total",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Total RAM capacity",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 2,
+        "x": 20,
+        "y": 1
+      },
+      "id": 203,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.1",
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "node_memory_MemTotal_bytes",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "RAM Total",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Total root filesystem capacity",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 2,
+        "x": 22,
+        "y": 1
+      },
+      "id": 204,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.1",
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "node_filesystem_size_bytes{mountpoint=\"/\", fstype!=\"rootfs\"}",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "RootFS Total",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "System uptime",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
       "pluginVersion": "11.6.1",
       "targets": [
@@ -652,7 +812,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 11
+        "y": 5
       },
       "id": 101,
       "panels": [],
@@ -764,7 +924,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 12
+        "y": 8
       },
       "id": 5,
       "options": {
@@ -851,13 +1011,14 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 12
+        "y": 8
       },
       "id": 6,
       "options": {
         "legend": {
           "calcs": [
-            "lastNotNull"
+            "mean",
+            "max"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -904,7 +1065,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 16
       },
       "id": 102,
       "panels": [],
@@ -981,7 +1142,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 17
       },
       "id": 7,
       "options": {
@@ -1023,7 +1184,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 25
       },
       "id": 103,
       "panels": [],
@@ -1087,12 +1248,13 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 30
+        "y": 26
       },
       "id": 8,
       "options": {
         "legend": {
           "calcs": [
+            "mean",
             "lastNotNull"
           ],
           "displayMode": "table",
@@ -1192,7 +1354,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 30
+        "y": 26
       },
       "id": 9,
       "options": {
@@ -1216,13 +1378,13 @@
           "datasource": "Prometheus",
           "expr": "rate(node_disk_read_bytes_total[5m])",
           "refId": "A",
-          "legendFormat": "↓ {{device}}"
+          "legendFormat": "{{device}} - read"
         },
         {
           "datasource": "Prometheus",
           "expr": "rate(node_disk_written_bytes_total[5m])",
           "refId": "B",
-          "legendFormat": "↑ {{device}}"
+          "legendFormat": "{{device}} - write"
         }
       ],
       "title": "Disk I/O",
@@ -1234,7 +1396,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 34
       },
       "id": 104,
       "panels": [],
@@ -1259,96 +1421,20 @@
             ]
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Pods Running"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "green"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Pods Failed"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "red"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Pods Pending"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "yellow"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Deployments"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "blue"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Namespaces"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "purple"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 24,
+        "h": 6,
+        "w": 6,
         "x": 0,
-        "y": 39
+        "y": 35
       },
       "id": 11,
       "options": {
         "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "horizontal",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
         "reduceOptions": {
           "values": false,
           "calcs": [
@@ -1357,7 +1443,66 @@
           "fields": ""
         },
         "showPercentChange": false,
-        "textMode": "value_and_name",
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "count(count by (pod, namespace) (kube_pod_info))",
+          "refId": "A",
+          "legendFormat": "Total Pods"
+        }
+      ],
+      "title": "Total Pods",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 35
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
         "wideLayout": true
       },
       "pluginVersion": "11.0.0",
@@ -1366,34 +1511,124 @@
           "datasource": "Prometheus",
           "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Running\"} == 1))",
           "refId": "A",
-          "legendFormat": "Pods Running"
+          "legendFormat": "Running Pods"
+        }
+      ],
+      "title": "Running Pods",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 35
+      },
+      "id": 13,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
         {
           "datasource": "Prometheus",
           "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Failed\"} == 1)) or vector(0)",
-          "refId": "B",
-          "legendFormat": "Pods Failed"
+          "refId": "A",
+          "legendFormat": "Failed Pods"
+        }
+      ],
+      "title": "Failed Pods",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
-        {
-          "datasource": "Prometheus",
-          "expr": "count(count by (pod, namespace) (kube_pod_status_phase{phase=\"Pending\"} == 1)) or vector(0)",
-          "refId": "C",
-          "legendFormat": "Pods Pending"
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 35
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
         },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
         {
           "datasource": "Prometheus",
           "expr": "count(kube_deployment_created)",
-          "refId": "D",
-          "legendFormat": "Deployments"
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "count(count by (namespace) (kube_pod_info))",
-          "refId": "E",
-          "legendFormat": "Namespaces"
+          "refId": "A",
+          "legendFormat": "Total Deployments"
         }
       ],
-      "title": "K8s Cluster Overview",
+      "title": "Total Deployments",
       "type": "stat"
     },
     {
@@ -1473,6 +1708,18 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "Pod"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 300
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "Namespace"
             },
             "properties": [
@@ -1481,38 +1728,14 @@
                 "value": 150
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Type"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 120
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Owner"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 200
-              }
-            ]
           }
         ]
       },
       "gridPos": {
-        "h": 10,
-        "w": 16,
+        "h": 8,
+        "w": 12,
         "x": 0,
-        "y": 43
+        "y": 41
       },
       "id": 15,
       "options": {
@@ -1529,7 +1752,7 @@
         "sortBy": [
           {
             "desc": false,
-            "displayName": "Namespace"
+            "displayName": "Phase"
           }
         ]
       },
@@ -1543,7 +1766,7 @@
           "instant": true
         }
       ],
-      "title": "Pods by Namespace",
+      "title": "Pod Status by Phase",
       "transformations": [
         {
           "id": "organize",
@@ -1557,23 +1780,21 @@
               "uid": true,
               "host_ip": true,
               "node": true,
+              "created_by_kind": true,
+              "created_by_name": true,
               "host_network": true,
               "pod_ip": true,
               "priority_class": true
             },
             "indexByName": {
               "namespace": 0,
-              "created_by_kind": 1,
-              "created_by_name": 2,
-              "pod": 3,
-              "phase": 4
+              "pod": 1,
+              "phase": 2
             },
             "renameByName": {
               "pod": "Pod",
               "namespace": "Namespace",
-              "phase": "Phase",
-              "created_by_kind": "Type",
-              "created_by_name": "Owner"
+              "phase": "Phase"
             }
           }
         },
@@ -1613,6 +1834,93 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 41
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(kube_pod_status_phase{phase=\"Running\"}) by (namespace)",
+          "refId": "A",
+          "legendFormat": "{{namespace}}"
+        }
+      ],
+      "title": "Running Pods by Namespace",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "thresholds"
           },
           "custom": {
@@ -1627,13 +1935,47 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
               }
             ]
           }
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Available"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Deployment"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 250
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
@@ -1645,64 +1987,16 @@
                 "value": 150
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Pods"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 80
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "continuous-BlYlRd"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Deployments"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Services"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 90
-              }
-            ]
           }
         ]
       },
       "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 16,
-        "y": 43
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 49
       },
-      "id": 21,
+      "id": 17,
       "options": {
         "cellHeight": "sm",
         "footer": {
@@ -1711,69 +2005,41 @@
           "reducer": [
             "sum"
           ],
-          "show": true,
-          "enablePagination": false
+          "show": false
         },
         "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Pods"
-          }
-        ]
+        "sortBy": []
       },
       "pluginVersion": "11.0.0",
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "count(kube_pod_info) by (namespace)",
+          "expr": "kube_deployment_status_replicas_available",
           "refId": "A",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "count(kube_deployment_created) by (namespace)",
-          "refId": "B",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "count(kube_service_info) by (namespace)",
-          "refId": "C",
           "format": "table",
           "instant": true
         }
       ],
-      "title": "Resources by Namespace",
+      "title": "Deployment Availability",
       "transformations": [
-        {
-          "id": "seriesToColumns",
-          "options": {
-            "byField": "namespace"
-          }
-        },
         {
           "id": "organize",
           "options": {
             "excludeByName": {
               "Time": true,
-              "Time 1": true,
-              "Time 2": true,
-              "Time 3": true
+              "__name__": true,
+              "instance": true,
+              "job": true
             },
             "indexByName": {
               "namespace": 0,
-              "Value #A": 1,
-              "Value #B": 2,
-              "Value #C": 3
+              "deployment": 1,
+              "Value": 2
             },
             "renameByName": {
+              "deployment": "Deployment",
               "namespace": "Namespace",
-              "Value #A": "Pods",
-              "Value #B": "Deployments",
-              "Value #C": "Services"
+              "Value": "Available"
             }
           }
         }
@@ -1836,8 +2102,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 53
+        "x": 12,
+        "y": 49
       },
       "id": 18,
       "options": {
@@ -1923,8 +2189,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 53
+        "x": 0,
+        "y": 57
       },
       "id": 19,
       "options": {
@@ -2022,9 +2288,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 61
+        "w": 12,
+        "x": 12,
+        "y": 57
       },
       "id": 20,
       "options": {
@@ -2066,7 +2332,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 69
+        "y": 65
       },
       "id": 105,
       "panels": [],
@@ -2093,27 +2359,22 @@
                 "active": {
                   "color": "green",
                   "index": 0,
-                  "text": "✓ Active"
+                  "text": "Active"
                 },
                 "inactive": {
                   "color": "red",
                   "index": 1,
-                  "text": "✗ Inactive"
+                  "text": "Inactive"
                 },
                 "activating": {
                   "color": "yellow",
                   "index": 2,
-                  "text": "⟳ Starting"
-                },
-                "deactivating": {
-                  "color": "orange",
-                  "index": 3,
-                  "text": "⟳ Stopping"
+                  "text": "Starting"
                 },
                 "failed": {
-                  "color": "dark-red",
-                  "index": 4,
-                  "text": "✗ Failed"
+                  "color": "red",
+                  "index": 3,
+                  "text": "Failed"
                 }
               },
               "type": "value"
@@ -2144,7 +2405,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 120
+                "value": 100
               }
             ]
           },
@@ -2159,62 +2420,14 @@
                 "value": 300
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Type"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "options": {
-                      "service": {
-                        "color": "blue",
-                        "index": 0,
-                        "text": "Service"
-                      },
-                      "target": {
-                        "color": "purple",
-                        "index": 1,
-                        "text": "Target"
-                      },
-                      "mount": {
-                        "color": "semi-dark-green",
-                        "index": 2,
-                        "text": "Mount"
-                      },
-                      "timer": {
-                        "color": "dark-yellow",
-                        "index": 3,
-                        "text": "Timer"
-                      }
-                    },
-                    "type": "value"
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              }
-            ]
           }
         ]
       },
       "gridPos": {
-        "h": 6,
+        "h": 8,
         "w": 24,
         "x": 0,
-        "y": 70
+        "y": 66
       },
       "id": 10,
       "options": {
@@ -2225,28 +2438,22 @@
           "reducer": [
             "sum"
           ],
-          "show": true,
-          "enablePagination": false
+          "show": false
         },
         "showHeader": true,
-        "sortBy": [
-          {
-            "desc": false,
-            "displayName": "Service"
-          }
-        ]
+        "sortBy": []
       },
       "pluginVersion": "11.0.0",
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "node_systemd_unit_state{name=~\".*(traefik|grafana|prometheus|zfs|k3s|tailscale|ssh|docker|containerd|immich|jellyfin|plex|actual|firefly|paperless|ombi|homepage|scrutiny|sanoid|crowdsec|cockpit|prometheus-node-exporter).*\"}",
+          "expr": "node_systemd_unit_state{name=~\".*(traefik|grafana|prometheus|zfs).*\",state=\"active\"}",
           "refId": "A",
           "format": "table",
           "instant": true
         }
       ],
-      "title": "System Services Status",
+      "title": "Key Services Status",
       "transformations": [
         {
           "id": "organize",
@@ -2259,33 +2466,13 @@
               "Value": true
             },
             "indexByName": {
-              "type": 0,
-              "name": 1,
-              "state": 2
+              "name": 0,
+              "state": 1
             },
             "renameByName": {
               "name": "Service",
-              "state": "State",
-              "type": "Type"
+              "state": "State"
             }
-          }
-        },
-        {
-          "id": "filterByValue",
-          "options": {
-            "filters": [
-              {
-                "config": {
-                  "id": "notEqual",
-                  "options": {
-                    "value": "inactive"
-                  }
-                },
-                "fieldName": "State"
-              }
-            ],
-            "match": "all",
-            "type": "include"
           }
         }
       ],
@@ -2308,8 +2495,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Server Overview",
-  "uid": "server-overview",
+  "title": "Server Overview (dev)",
+  "uid": "server-overview-dev",
   "version": 1,
   "weekStart": ""
 }
