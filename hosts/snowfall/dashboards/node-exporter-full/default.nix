@@ -6,8 +6,22 @@ let
   # Import panel modules
   quickOverview = import ./quick-overview.nix { inherit lib grafana; };
   basicPanels = import ./basic-panels.nix { inherit lib grafana; };
+  combinedDetailedPanels = import ./combined-detailed-panels.nix { inherit lib grafana; };
   cpuPanels = import ./cpu-panels.nix { inherit lib grafana; };
   memoryPanels = import ./memory-panels.nix { inherit lib grafana; };
+  memoryMeminfoPanels = import ./memory-meminfo-panels.nix { inherit lib grafana; };
+  memoryVmstatPanels = import ./memory-vmstat-panels.nix { inherit lib grafana; };
+  systemTimesyncPanels = import ./system-timesync-panels.nix { inherit lib grafana; };
+  systemProcessesPanels = import ./system-processes-panels.nix { inherit lib grafana; };
+  systemMiscPanels = import ./system-misc-panels.nix { inherit lib grafana; };
+  hardwareMiscPanels = import ./hardware-misc-panels.nix { inherit lib grafana; };
+  systemdPanels = import ./systemd-panels.nix { inherit lib grafana; };
+  storageDiskPanels = import ./storage-disk-panels.nix { inherit lib grafana; };
+  storageFilesystemPanels = import ./storage-filesystem-panels.nix { inherit lib grafana; };
+  networkTrafficPanels = import ./network-traffic-panels.nix { inherit lib grafana; };
+  networkSockstatPanels = import ./network-sockstat-panels.nix { inherit lib grafana; };
+  networkNetstatPanels = import ./network-netstat-panels.nix { inherit lib grafana; };
+  nodeExporterPanels = import ./node-exporter-panels.nix { inherit lib grafana; };
 
   # Dashboard variables for datasource and node selection
   variables = [
@@ -108,8 +122,22 @@ let
   allPanels = lib.flatten [
     quickOverview.panels
     basicPanels.panels
+    combinedDetailedPanels.panels
     cpuPanels.panels
     memoryPanels.panels
+    memoryMeminfoPanels.panels
+    memoryVmstatPanels.panels
+    systemTimesyncPanels.panels
+    systemProcessesPanels.panels
+    systemMiscPanels.panels
+    hardwareMiscPanels.panels
+    systemdPanels.panels
+    storageDiskPanels.panels
+    storageFilesystemPanels.panels
+    networkTrafficPanels.panels
+    networkSockstatPanels.panels
+    networkNetstatPanels.panels
+    nodeExporterPanels.panels
   ];
 
 in
