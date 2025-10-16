@@ -32,6 +32,7 @@ in
     pkgs.tuxguitar # Guitar tablature editor and player
     pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
     pkgs.vorta # Borg backup GUI
+    pkgs.hugo # static website engine
   ];
 
   # Enable file management for SSH configuration
