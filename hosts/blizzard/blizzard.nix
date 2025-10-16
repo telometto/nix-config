@@ -28,22 +28,6 @@
     # Firewall policy via owner module (role enables it); host adds extra ports/ranges
     networking = {
       firewall = {
-        # Ports accessible on LAN (local network only)
-        lan = {
-          allowedTCPPorts = [
-            32400 # Plex Media Server
-            32469 # Plex Companion (for mobile apps and Chromecast)
-          ];
-          allowedUDPPorts = [
-            1900 # SSDP for device discovery
-            5353 # mDNS for device discovery
-            32410 # Plex GDM network discovery
-            32412 # Plex GDM network discovery
-            32413 # Plex GDM network discovery
-            32414 # Plex GDM network discovery
-          ];
-        };
-
         # Ports ONLY accessible via Tailscale (PRIVATE VPN)
         # These are safe from both internet AND LAN (unless you're on Tailscale)
         tailscale = {
@@ -483,7 +467,7 @@
 
       plex = {
         enable = lib.mkDefault true;
-        openFirewall = false; # Managed explicitly in LAN firewall rules above
+        openFirewall = true;
       };
 
       tautulli = {
@@ -491,7 +475,10 @@
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
       };
 
-      jellyfin.enable = lib.mkDefault true; # disabled until libdm is fixed
+      jellyfin = {
+        enable = lib.mkDefault true;
+        openFirewall = true;
+      };
 
       # Homepage dashboard
       homepage = {

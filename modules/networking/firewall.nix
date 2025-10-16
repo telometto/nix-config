@@ -98,32 +98,28 @@ in
     networking.firewall = {
       enable = lib.mkDefault true;
 
-      # Global rules (ALL interfaces)
-      allowedTCPPorts = cfg.extraTCPPorts;
-      allowedUDPPorts = cfg.extraUDPPorts;
-      allowedTCPPortRanges = cfg.extraTCPPortRanges;
-      allowedUDPPortRanges = cfg.extraUDPPortRanges;
+      # Global rules (ALL interfaces) - APPEND to existing rules from other modules
+      allowedTCPPorts = lib.mkAfter cfg.extraTCPPorts;
+      allowedUDPPorts = lib.mkAfter cfg.extraUDPPorts;
+      allowedTCPPortRanges = lib.mkAfter cfg.extraTCPPortRanges;
+      allowedUDPPortRanges = lib.mkAfter cfg.extraUDPPortRanges;
 
-      # Interface-specific rules
+      # Interface-specific rules - APPEND to existing rules from other modules
       interfaces = {
         # Tailscale interface
         "tailscale0" = {
-          inherit (cfg.tailscale)
-            allowedTCPPorts
-            allowedUDPPorts
-            allowedTCPPortRanges
-            allowedUDPPortRanges
-            ;
+          allowedTCPPorts = lib.mkAfter cfg.tailscale.allowedTCPPorts;
+          allowedUDPPorts = lib.mkAfter cfg.tailscale.allowedUDPPorts;
+          allowedTCPPortRanges = lib.mkAfter cfg.tailscale.allowedTCPPortRanges;
+          allowedUDPPortRanges = lib.mkAfter cfg.tailscale.allowedUDPPortRanges;
         };
 
         # LAN interface (typically eth0, enp8s0, etc.)
         "${cfg.lan.interface}" = {
-          inherit (cfg.lan)
-            allowedTCPPorts
-            allowedUDPPorts
-            allowedTCPPortRanges
-            allowedUDPPortRanges
-            ;
+          allowedTCPPorts = lib.mkAfter cfg.lan.allowedTCPPorts;
+          allowedUDPPorts = lib.mkAfter cfg.lan.allowedUDPPorts;
+          allowedTCPPortRanges = lib.mkAfter cfg.lan.allowedTCPPortRanges;
+          allowedUDPPortRanges = lib.mkAfter cfg.lan.allowedUDPPortRanges;
         };
       };
     };
