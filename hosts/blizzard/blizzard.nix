@@ -32,16 +32,16 @@
         lan = {
           allowedTCPPorts = [
             32400 # Plex Media Server
-            # 32469 # Plex Companion (for mobile apps and Chromecast)
+            32469 # Plex Companion (for mobile apps and Chromecast)
           ];
-          # allowedUDPPorts = [
-          #   1900 # SSDP for device discovery
-          #   5353 # mDNS for device discovery
-          #   32410 # Plex GDM network discovery
-          #   32412 # Plex GDM network discovery
-          #   32413 # Plex GDM network discovery
-          #   32414 # Plex GDM network discovery
-          # ];
+          allowedUDPPorts = [
+            1900 # SSDP for device discovery
+            5353 # mDNS for device discovery
+            32410 # Plex GDM network discovery
+            32412 # Plex GDM network discovery
+            32413 # Plex GDM network discovery
+            32414 # Plex GDM network discovery
+          ];
         };
 
         # Ports ONLY accessible via Tailscale (PRIVATE VPN)
@@ -237,6 +237,56 @@
             backendUrl = "http://localhost:8096/";
             pathPrefix = "/jellyfin";
             stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          ombi = {
+            backendUrl = "http://localhost:5000/";
+            pathPrefix = "/ombi";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          tautulli = {
+            backendUrl = "http://localhost:8181/";
+            pathPrefix = "/tautulli";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          scrutiny = {
+            backendUrl = "http://localhost:8072/";
+            pathPrefix = "/scrutiny";
+            stripPrefix = false;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          cockpit = {
+            backendUrl = "http://localhost:9090/";
+            pathPrefix = "/cockpit";
+            stripPrefix = true;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            };
+          };
+
+          homepage = {
+            backendUrl = "http://localhost:8082/";
+            pathPrefix = "/homepage";
+            stripPrefix = true;
             customHeaders = {
               X-Forwarded-Proto = "https";
               X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
