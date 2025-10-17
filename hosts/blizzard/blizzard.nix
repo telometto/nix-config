@@ -325,10 +325,18 @@
           "--kubelet-arg=read-only-port=10255" # Enable read-only port for metrics
         ];
       };
+      # };
 
-      # Maintenance bundle provided by role; host can override if needed
+      # # K3s application stacks
+      # k3s = {
+      #   # Servarr stack (Radarr, Sonarr, Lidarr, Readarr, Prowlarr, Bazarr, Flaresolverr)
+      #   stacks.servarr.enable = lib.mkDefault true;
 
-      # Apps and media
+      #   # Download management stack (qBittorrent, SABnzbd, Firefox with WireGuard VPN)
+      #   download-management.enable = lib.mkDefault true;
+      # };
+
+      # services = {
       paperless = {
         enable = lib.mkDefault false;
         consumptionDirIsPublic = lib.mkDefault true;
