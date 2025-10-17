@@ -37,7 +37,7 @@
           size = "1Gi";
           mountPath = "/config";
         };
-        useSharedStorage = true;  # Mount the shared downloads volume
+        useSharedStorage = true; # Mount the shared downloads volume
       };
 
       sonarr = {
@@ -84,7 +84,7 @@
 
       readarr = {
         enable = true;
-        image = "linuxserver/readarr:develop";  # readarr uses develop tag
+        image = "linuxserver/readarr:develop"; # readarr uses develop tag
         port = 8787;
 
         env = {
@@ -120,7 +120,7 @@
           mountPath = "/config";
         };
 
-        useSharedStorage = false;  # Prowlarr doesn't need downloads
+        useSharedStorage = false; # Prowlarr doesn't need downloads
       };
 
       bazarr = {
@@ -148,7 +148,7 @@
         enable = true;
         image = "ghcr.io/flaresolverr/flaresolverr:latest";
         port = 8191;
-        
+
         env = {
           LOG_LEVEL = "info";
           TZ = "Europe/Oslo";
@@ -157,72 +157,74 @@
         # Flaresolverr doesn't need persistent storage
         storage = null;
         useSharedStorage = false;
-        service.type = "ClusterIP";  # Internal only
+        service.type = "ClusterIP"; # Internal only
       };
     };
   };
 
   # Traefik reverse proxy configuration for Servarr apps
   # This integrates with the host's Traefik service
-  telometto.services.traefik.services = lib.mkIf (config.telometto.services."k3s-servarr".enable or false) {
-    radarr = {
-      backendUrl = "http://192.168.2.100:7878/";
-      pathPrefix = "/radarr";
-      stripPrefix = false;
-      customHeaders = {
-        X-Forwarded-Proto = "https";
-        X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-      };
-    };
+  telometto.services.traefik.services =
+    lib.mkIf (config.telometto.services."k3s-servarr".enable or false)
+      {
+        radarr = {
+          backendUrl = "http://192.168.2.100:7878/";
+          pathPrefix = "/radarr";
+          stripPrefix = false;
+          customHeaders = {
+            X-Forwarded-Proto = "https";
+            X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+          };
+        };
 
-    sonarr = {
-      backendUrl = "http://192.168.2.100:8989/";
-      pathPrefix = "/sonarr";
-      stripPrefix = false;
-      customHeaders = {
-        X-Forwarded-Proto = "https";
-        X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-      };
-    };
+        sonarr = {
+          backendUrl = "http://192.168.2.100:8989/";
+          pathPrefix = "/sonarr";
+          stripPrefix = false;
+          customHeaders = {
+            X-Forwarded-Proto = "https";
+            X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+          };
+        };
 
-    lidarr = {
-      backendUrl = "http://192.168.2.100:8686/";
-      pathPrefix = "/lidarr";
-      stripPrefix = false;
-      customHeaders = {
-        X-Forwarded-Proto = "https";
-        X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-      };
-    };
+        lidarr = {
+          backendUrl = "http://192.168.2.100:8686/";
+          pathPrefix = "/lidarr";
+          stripPrefix = false;
+          customHeaders = {
+            X-Forwarded-Proto = "https";
+            X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+          };
+        };
 
-    readarr = {
-      backendUrl = "http://192.168.2.100:8787/";
-      pathPrefix = "/readarr";
-      stripPrefix = false;
-      customHeaders = {
-        X-Forwarded-Proto = "https";
-        X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-      };
-    };
+        readarr = {
+          backendUrl = "http://192.168.2.100:8787/";
+          pathPrefix = "/readarr";
+          stripPrefix = false;
+          customHeaders = {
+            X-Forwarded-Proto = "https";
+            X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+          };
+        };
 
-    prowlarr = {
-      backendUrl = "http://192.168.2.100:9696/";
-      pathPrefix = "/prowlarr";
-      stripPrefix = false;
-      customHeaders = {
-        X-Forwarded-Proto = "https";
-        X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-      };
-    };
+        prowlarr = {
+          backendUrl = "http://192.168.2.100:9696/";
+          pathPrefix = "/prowlarr";
+          stripPrefix = false;
+          customHeaders = {
+            X-Forwarded-Proto = "https";
+            X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+          };
+        };
 
-    bazarr = {
-      backendUrl = "http://192.168.2.100:6767/";
-      pathPrefix = "/bazarr";
-      stripPrefix = false;
-      customHeaders = {
-        X-Forwarded-Proto = "https";
-        X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+        bazarr = {
+          backendUrl = "http://192.168.2.100:6767/";
+          pathPrefix = "/bazarr";
+          stripPrefix = false;
+          customHeaders = {
+            X-Forwarded-Proto = "https";
+            X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+          };
+        };
       };
-    };
-  };
 }

@@ -297,39 +297,65 @@ in
               {
                 name = "wireguard";
                 image = "linuxserver/wireguard:latest";
-                envFrom = [{ configMapRef.name = "wg-configmap"; }];
+                envFrom = [ { configMapRef.name = "wg-configmap"; } ];
                 volumeMounts = [
-                  { name = "wg-config"; mountPath = "/config"; }
-                  { name = "lib-modules"; mountPath = "/lib/modules"; readOnly = true; }
+                  {
+                    name = "wg-config";
+                    mountPath = "/config";
+                  }
+                  {
+                    name = "lib-modules";
+                    mountPath = "/lib/modules";
+                    readOnly = true;
+                  }
                 ];
                 readinessProbe = {
-                  exec.command = [ "/bin/sh" "-c" "wg show" ];
+                  exec.command = [
+                    "/bin/sh"
+                    "-c"
+                    "wg show"
+                  ];
                   initialDelaySeconds = 15;
                   periodSeconds = 15;
                 };
                 livenessProbe = {
-                  exec.command = [ "/bin/sh" "-c" "wg show" ];
+                  exec.command = [
+                    "/bin/sh"
+                    "-c"
+                    "wg show"
+                  ];
                   initialDelaySeconds = 20;
                   periodSeconds = 25;
                 };
                 securityContext = {
                   privileged = true;
-                  capabilities.add = [ "NET_ADMIN" "SYS_MODULE" ];
+                  capabilities.add = [
+                    "NET_ADMIN"
+                    "SYS_MODULE"
+                  ];
                 };
               }
               # SABnzbd container
               {
                 name = "sabnzbd";
                 image = "linuxserver/sabnzbd:latest";
-                envFrom = [{ configMapRef.name = "sabnzbd-configmap"; }];
-                ports = [{
-                  name = "sabnzbd-webui";
-                  containerPort = 8080;
-                  protocol = "TCP";
-                }];
+                envFrom = [ { configMapRef.name = "sabnzbd-configmap"; } ];
+                ports = [
+                  {
+                    name = "sabnzbd-webui";
+                    containerPort = 8080;
+                    protocol = "TCP";
+                  }
+                ];
                 volumeMounts = [
-                  { name = "sabnzbd-config"; mountPath = "/config"; }
-                  { name = "sabnzbd-downloads"; mountPath = "/data/usenet"; }
+                  {
+                    name = "sabnzbd-config";
+                    mountPath = "/config";
+                  }
+                  {
+                    name = "sabnzbd-downloads";
+                    mountPath = "/data/usenet";
+                  }
                 ];
                 securityContext = {
                   runAsNonRoot = false;
@@ -341,15 +367,33 @@ in
               {
                 name = "qbittorrent";
                 image = "linuxserver/qbittorrent:latest";
-                envFrom = [{ configMapRef.name = "qb-configmap"; }];
+                envFrom = [ { configMapRef.name = "qb-configmap"; } ];
                 ports = [
-                  { name = "qb-webui"; containerPort = 8090; protocol = "TCP"; }
-                  { name = "qb-tcp"; containerPort = 50820; protocol = "TCP"; }
-                  { name = "qb-udp"; containerPort = 50820; protocol = "UDP"; }
+                  {
+                    name = "qb-webui";
+                    containerPort = 8090;
+                    protocol = "TCP";
+                  }
+                  {
+                    name = "qb-tcp";
+                    containerPort = 50820;
+                    protocol = "TCP";
+                  }
+                  {
+                    name = "qb-udp";
+                    containerPort = 50820;
+                    protocol = "UDP";
+                  }
                 ];
                 volumeMounts = [
-                  { name = "qb-config"; mountPath = "/config"; }
-                  { name = "qb-downloads"; mountPath = "/data/torrents"; }
+                  {
+                    name = "qb-config";
+                    mountPath = "/config";
+                  }
+                  {
+                    name = "qb-downloads";
+                    mountPath = "/data/torrents";
+                  }
                 ];
                 securityContext = {
                   runAsNonRoot = false;
@@ -361,29 +405,77 @@ in
               {
                 name = "firefox";
                 image = "linuxserver/firefox:latest";
-                envFrom = [{ configMapRef.name = "ff-configmap"; }];
-                ports = [{
-                  name = "ff-https-webui";
-                  containerPort = 3000;
-                }];
+                envFrom = [ { configMapRef.name = "ff-configmap"; } ];
+                ports = [
+                  {
+                    name = "ff-https-webui";
+                    containerPort = 3000;
+                  }
+                ];
                 volumeMounts = [
-                  { name = "ff-config"; mountPath = "/config"; }
-                  { name = "dshm"; mountPath = "/dev/shm"; }
-                  { name = "devices"; mountPath = "/dev/dri"; readOnly = true; }
+                  {
+                    name = "ff-config";
+                    mountPath = "/config";
+                  }
+                  {
+                    name = "dshm";
+                    mountPath = "/dev/shm";
+                  }
+                  {
+                    name = "devices";
+                    mountPath = "/dev/dri";
+                    readOnly = true;
+                  }
                 ];
                 securityContext.privileged = true;
               }
             ];
             volumes = [
-              { name = "wg-config"; persistentVolumeClaim.claimName = "wg-pvc-config"; }
-              { name = "lib-modules"; hostPath = { path = "/run/current-system/kernel-modules/lib/modules"; type = "Directory"; }; }
-              { name = "sabnzbd-config"; persistentVolumeClaim.claimName = "sabnzbd-pvc-config"; }
-              { name = "sabnzbd-downloads"; persistentVolumeClaim.claimName = "sabnzbd-pvc-downloads"; }
-              { name = "qb-config"; persistentVolumeClaim.claimName = "qb-pvc-config"; }
-              { name = "qb-downloads"; persistentVolumeClaim.claimName = "qb-pvc-downloads"; }
-              { name = "ff-config"; persistentVolumeClaim.claimName = "ff-pvc-config"; }
-              { name = "dshm"; emptyDir = { medium = "Memory"; sizeLimit = "2Gi"; }; }
-              { name = "devices"; hostPath = { path = "/dev/dri"; type = "Directory"; }; }
+              {
+                name = "wg-config";
+                persistentVolumeClaim.claimName = "wg-pvc-config";
+              }
+              {
+                name = "lib-modules";
+                hostPath = {
+                  path = "/run/current-system/kernel-modules/lib/modules";
+                  type = "Directory";
+                };
+              }
+              {
+                name = "sabnzbd-config";
+                persistentVolumeClaim.claimName = "sabnzbd-pvc-config";
+              }
+              {
+                name = "sabnzbd-downloads";
+                persistentVolumeClaim.claimName = "sabnzbd-pvc-downloads";
+              }
+              {
+                name = "qb-config";
+                persistentVolumeClaim.claimName = "qb-pvc-config";
+              }
+              {
+                name = "qb-downloads";
+                persistentVolumeClaim.claimName = "qb-pvc-downloads";
+              }
+              {
+                name = "ff-config";
+                persistentVolumeClaim.claimName = "ff-pvc-config";
+              }
+              {
+                name = "dshm";
+                emptyDir = {
+                  medium = "Memory";
+                  sizeLimit = "2Gi";
+                };
+              }
+              {
+                name = "devices";
+                hostPath = {
+                  path = "/dev/dri";
+                  type = "Directory";
+                };
+              }
             ];
           };
         };
@@ -402,9 +494,24 @@ in
         selector.app = "download-management";
         ipFamilyPolicy = "SingleStack";
         ports = [
-          { name = "qb-webui"; port = 8090; targetPort = 8090; protocol = "TCP"; }
-          { name = "qb-tcp"; port = 50820; targetPort = 50820; protocol = "TCP"; }
-          { name = "qb-udp"; port = 50820; targetPort = 50820; protocol = "UDP"; }
+          {
+            name = "qb-webui";
+            port = 8090;
+            targetPort = 8090;
+            protocol = "TCP";
+          }
+          {
+            name = "qb-tcp";
+            port = 50820;
+            targetPort = 50820;
+            protocol = "TCP";
+          }
+          {
+            name = "qb-udp";
+            port = 50820;
+            targetPort = 50820;
+            protocol = "UDP";
+          }
         ];
         type = "LoadBalancer";
         # loadBalancerIP = "192.168.7.31";  # Uncomment for static IP
@@ -421,12 +528,14 @@ in
       spec = {
         selector.app = "download-management";
         ipFamilyPolicy = "SingleStack";
-        ports = [{
-          name = "sabnzbd-webui";
-          port = 8080;
-          targetPort = 8080;
-          protocol = "TCP";
-        }];
+        ports = [
+          {
+            name = "sabnzbd-webui";
+            port = 8080;
+            targetPort = 8080;
+            protocol = "TCP";
+          }
+        ];
         type = "LoadBalancer";
         # loadBalancerIP = "192.168.7.32";  # Uncomment for static IP
       };
@@ -442,12 +551,14 @@ in
       spec = {
         selector.app = "download-management";
         ipFamilyPolicy = "SingleStack";
-        ports = [{
-          name = "ff-https-webui";
-          port = 5859;
-          targetPort = 3000;
-          protocol = "TCP";
-        }];
+        ports = [
+          {
+            name = "ff-https-webui";
+            port = 5859;
+            targetPort = 3000;
+            protocol = "TCP";
+          }
+        ];
         type = "LoadBalancer";
         # loadBalancerIP = "192.168.7.33";  # Uncomment for static IP
       };
@@ -456,38 +567,40 @@ in
 
   # Traefik reverse proxy configuration for Firefox
   # This integrates with the host's Traefik service
-  telometto.services.traefik.services = lib.mkIf (config.telometto.services."k3s-download-mgmt".enable or false) {
-    firefox = {
-      backendUrl = "http://192.168.2.100:3001/";
-      pathPrefix = "/firefox";
-      stripPrefix = true;
-      customHeaders = {
-        X-Forwarded-Proto = "https";
-        X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-      };
-    };
+  telometto.services.traefik.services =
+    lib.mkIf (config.telometto.services."k3s-download-mgmt".enable or false)
+      {
+        firefox = {
+          backendUrl = "http://192.168.2.100:3001/";
+          pathPrefix = "/firefox";
+          stripPrefix = true;
+          customHeaders = {
+            X-Forwarded-Proto = "https";
+            X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+          };
+        };
 
-    qbit = {
-      backendUrl = "http://192.168.2.100:8090/";
-      pathPrefix = "/qbit";
-      stripPrefix = true;
-      customHeaders = {
-        X-Forwarded-Proto = "https";
-        X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-        X-Forwarded-Prefix = "/qbit";
-      };
-    };
+        qbit = {
+          backendUrl = "http://192.168.2.100:8090/";
+          pathPrefix = "/qbit";
+          stripPrefix = true;
+          customHeaders = {
+            X-Forwarded-Proto = "https";
+            X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+            X-Forwarded-Prefix = "/qbit";
+          };
+        };
 
-    sabnzbd = {
-      backendUrl = "http://192.168.2.100:8080/";
-      pathPrefix = "/sabnzbd";
-      stripPrefix = false;
-      customHeaders = {
-        X-Forwarded-Proto = "https";
-        X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+        sabnzbd = {
+          backendUrl = "http://192.168.2.100:8080/";
+          pathPrefix = "/sabnzbd";
+          stripPrefix = false;
+          customHeaders = {
+            X-Forwarded-Proto = "https";
+            X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
+          };
+        };
       };
-    };
-  };
 
   # Enable option
   options.telometto.services."k3s-download-mgmt" = {
