@@ -75,5 +75,22 @@
         Grafana Cloud Prometheus remote write endpoint URL. Resolved from SOPS in core/sops.nix.
       '';
     };
+
+    # Kubernetes Firefox credentials (resolved from SOPS centrally)
+    firefoxUser = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Firefox username for Kubernetes deployment. Resolved from SOPS in core/sops.nix.
+      '';
+    };
+
+    firefoxPassword = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Firefox password for Kubernetes deployment. Resolved from SOPS in core/sops.nix.
+      '';
+    };
   };
 }

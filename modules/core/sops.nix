@@ -16,6 +16,7 @@ let
   hasPaperless = config.services.paperless.enable or false;
   hasSearx = config.services.searx.enable or false;
   hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
+  hasK3sDownloadMgmt = config.telometto.services."k3s-download-mgmt".enable or false;
 in
 
 {
@@ -69,6 +70,14 @@ in
         "grafana_cloud/remote_write_url" = {
           mode = "0400";
         };
+      }
+      // whenEnabled hasK3sDownloadMgmt {
+        "kubernetes/ff-user" = {
+          mode = "0400";
+        };
+        "kubernetes/ff-pw" = {
+          mode = "0400";
+        };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -109,6 +118,10 @@ in
       grafanaCloudApiKeyFile = toString config.sops.secrets."grafana_cloud/api_key".path;
       grafanaCloudUsername = toString config.sops.secrets."grafana_cloud/username".path;
       grafanaCloudRemoteWriteUrl = toString config.sops.secrets."grafana_cloud/remote_write_url".path;
+    }
+    // whenEnabled hasK3sDownloadMgmt {
+      firefoxUser = config.sops.placeholder."kubernetes/ff-user";
+      firefoxPassword = config.sops.placeholder."kubernetes/ff-pw";
     };
 
   environment.systemPackages = [

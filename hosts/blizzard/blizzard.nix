@@ -116,86 +116,8 @@
           };
 
           # K8s services (running in k3s cluster)
-          qbit = {
-            backendUrl = "http://192.168.2.100:8090/";
-            pathPrefix = "/qbit";
-            stripPrefix = true;
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-              X-Forwarded-Prefix = "/qbit";
-            };
-          };
-
-          sabnzbd = {
-            backendUrl = "http://192.168.2.100:8080/";
-            pathPrefix = "/sabnzbd";
-            stripPrefix = false;
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-            };
-          };
-
-          prowlarr = {
-            backendUrl = "http://192.168.2.100:9696/";
-            pathPrefix = "/prowlarr";
-            stripPrefix = false;
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-            };
-          };
-
-          firefox = {
-            backendUrl = "http://192.168.2.100:3001/";
-            pathPrefix = "/firefox";
-            stripPrefix = true;
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-            };
-          };
-
-          radarr = {
-            backendUrl = "http://192.168.2.100:7878/";
-            pathPrefix = "/radarr";
-            stripPrefix = false;
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-            };
-          };
-
-          sonarr = {
-            backendUrl = "http://192.168.2.100:8989/";
-            pathPrefix = "/sonarr";
-            stripPrefix = false;
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-            };
-          };
-
-          readarr = {
-            backendUrl = "http://192.168.2.100:8787/";
-            pathPrefix = "/readarr";
-            stripPrefix = false;
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-            };
-          };
-
-          bazarr = {
-            backendUrl = "http://192.168.2.100:6767/";
-            pathPrefix = "/bazarr";
-            stripPrefix = false;
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-            };
-          };
+          # Note: Download management apps (qbit, sabnzbd, firefox) are managed by k3s-download-management-stack.nix
+          # Note: Servarr apps (radarr, sonarr, lidarr, readarr, prowlarr, bazarr) are managed by k3s-servarr-stack.nix
 
           jellyfin = {
             backendUrl = "http://localhost:8096/";
