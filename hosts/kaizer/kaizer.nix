@@ -114,7 +114,25 @@ in
       enable = true;
       powerOnBoot = true;
     };
+
+    # Enable OpenGL for Minecraft
+    graphics = {
+      enable = lib.mkDefault true;
+      enable32Bit = lib.mkDefault true;
+    };
   };
+
+  # Minecraft/Titan Launcher support
+  # Install Java runtimes needed for different Minecraft versions
+  environment.systemPackages = with pkgs; [
+    # Java runtimes for different Minecraft versions
+    temurin-jre-bin-21 # For Minecraft >= 1.20.5 (latest)
+    temurin-jre-bin-17 # For Minecraft >= 1.18
+    temurin-jre-bin-8 # For Minecraft < 1.17
+    
+    # Alternative: prismlauncher if Titan doesn't work well
+    # prismlauncher
+  ];
 
   system.stateVersion = "24.11";
 }
