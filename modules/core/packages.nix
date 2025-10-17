@@ -32,6 +32,8 @@ let
     pkgs.rng-tools
     pkgs.smartmontools
     pkgs.rsync
+    pkgs.vulkan-tools
+    pkgs.pciutils
   ];
 
   development = [
