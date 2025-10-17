@@ -17,7 +17,10 @@ in
 
       # Core services for server systems
       services = {
-        openssh.enable = lib.mkDefault true;
+        openssh = {
+          enable = lib.mkDefault true;
+          openFirewall = lib.mkDefault true;
+        };
         timesyncd.enable = lib.mkDefault true;
         resolved.enable = lib.mkDefault true;
         maintenance.enable = lib.mkDefault true;
