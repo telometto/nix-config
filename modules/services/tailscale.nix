@@ -26,7 +26,7 @@ in
       description = "Network interface name for networkd-dispatcher rule (e.g., eth0, enp5s0).";
     };
 
-    openFirewall = {
+    openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
       description = "Open Tailscale in the firewall.";
