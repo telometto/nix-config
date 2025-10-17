@@ -10,6 +10,7 @@ in
 {
   options.telometto.services.tailscale = {
     enable = lib.mkEnableOption "Tailscale VPN";
+
     extraUpFlags = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
@@ -18,17 +19,26 @@ in
       ];
       description = "Extra flags appended to tailscale up (owner extension point).";
     };
+
     interface = lib.mkOption {
       type = lib.types.str;
       default = "eth0";
       description = "Network interface name for networkd-dispatcher rule (e.g., eth0, enp5s0).";
     };
+
+    openFirewall = {
+      type = lib.types.bool;
+      default = false;
+      description = "Open Tailscale in the firewall.";
+    };
+
     settings = lib.mkOption {
       type = lib.types.attrsOf lib.types.anything;
       default = { };
       description = "Extra attributes merged into services.tailscale (owner extension point).";
     };
   };
+
   config = lib.mkIf cfg.enable {
     services = {
       tailscale = lib.mkMerge [

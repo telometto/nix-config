@@ -26,7 +26,6 @@ in
       networking = {
         base.enable = lib.mkDefault true;
         networkmanager.enable = lib.mkDefault true;
-        firewall.enable = lib.mkDefault true;
       };
 
       programs = {
@@ -54,5 +53,8 @@ in
 
     # Enable home-manager for desktop users
     telometto.home.enable = lib.mkDefault true;
+
+    # Enable firewall with restrictive defaults (deny all by default)
+    networking.firewall.enable = lib.mkDefault true;
   };
 }

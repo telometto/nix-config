@@ -13,7 +13,6 @@ in
       networking = {
         base.enable = lib.mkDefault true;
         networkd.enable = lib.mkDefault true;
-        firewall.enable = lib.mkDefault true;
       };
 
       # Core services for server systems
@@ -33,5 +32,8 @@ in
 
     # Enable home-manager with minimal configuration for server users
     telometto.home.enable = lib.mkDefault true;
+
+    # Enable firewall with restrictive defaults (deny all by default)
+    networking.firewall.enable = lib.mkDefault true;
   };
 }

@@ -14,6 +14,16 @@
   networking = {
     hostName = lib.mkForce "avalanche";
     hostId = lib.mkForce "31a76aff";
+
+    firewall = rec {
+      enable = true;
+
+      allowedTCPPorts = [ ];
+      allowedUDPPorts = allowedTCPPorts;
+
+      allowedTCPPortRanges = [ ];
+      allowedUDPPortRanges = allowedTCPPortRanges;
+    };
   };
 
   telometto = {
@@ -34,7 +44,10 @@
     # };
 
     services = {
-      tailscale.interface = "changeme";
+      tailscale = {
+        interface = "wlp4s0";
+        openFirewall = true;
+      };
 
       # nfs = {
       #   enable = true;

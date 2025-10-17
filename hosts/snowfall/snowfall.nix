@@ -14,6 +14,16 @@
   networking = {
     hostName = lib.mkForce "snowfall";
     hostId = lib.mkForce "131b6b39";
+
+    firewall = rec {
+      enable = true;
+
+      allowedTCPPorts = [ ];
+      allowedUDPPorts = allowedTCPPorts;
+
+      allowedTCPPortRanges = [ ];
+      allowedUDPPortRanges = allowedTCPPortRanges;
+    };
   };
 
   telometto = {
@@ -42,7 +52,10 @@
     # ];
 
     services = {
-      tailscale.interface = "enp5s0";
+      tailscale = {
+        interface = "enp5s0";
+        openFirewall = true;
+      };
 
       # Traefik reverse proxy configuration
       traefik = {

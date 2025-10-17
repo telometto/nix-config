@@ -14,6 +14,16 @@
   networking = {
     hostName = lib.mkForce "blizzard";
     hostId = lib.mkForce "86bc16e3";
+
+    firewall = rec {
+      enable = true;
+
+      allowedTCPPorts = [ ];
+      allowedUDPPorts = allowedTCPPorts;
+
+      allowedTCPPortRanges = [ ];
+      allowedUDPPortRanges = allowedTCPPortRanges;
+    };
   };
 
   telometto = {
@@ -25,48 +35,18 @@
     #   # nixpkgs-stable = [ "thunderbird" ];
     # };
 
-    # Firewall policy via owner module (role enables it); host adds extra ports/ranges
-    networking = {
-      firewall = {
-        # Ports ONLY accessible via Tailscale (PRIVATE VPN)
-        # These are safe from both internet AND LAN (unless you're on Tailscale)
-        tailscale = {
-          allowedTCPPorts = [
-            80 # HTTP (Traefik)
-            443 # HTTPS (Traefik)
-            6443 # k3s API
-            111 # NFS rpcbind
-            2049 # NFS
-            20048 # NFS mountd
-            3838 # Actual
-            7777 # Searx
-            8072 # Scrutiny
-            9090 # Cockpit
-          ];
-          allowedUDPPorts = [
-            111 # NFS rpcbind
-            2049 # NFS
-            20048 # NFS mountd
-          ];
-          allowedTCPPortRanges = [
-            {
-              from = 4000;
-              to = 4002;
-            }
-          ];
-          allowedUDPPortRanges = [
-            {
-              from = 4000;
-              to = 4002;
-            }
-          ];
-        };
-      };
-    };
-
     services = {
       # Private networking (enabled in legacy)
-      tailscale.interface = "enp8s0";
+      tailscale = {
+        interface = "enp8s0";
+        openFirewall = true;
+
+        extraUpFlags = [
+          "--reset"
+          "--ssh"
+          "--advertise-routes=192.168.2.0/24,192.168.3.0/24,"
+        ];
+      };
 
       # Traefik reverse proxy configuration
       traefik = {

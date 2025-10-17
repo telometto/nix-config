@@ -18,6 +18,16 @@ in
   networking = {
     hostName = lib.mkForce "kaizer";
     hostId = lib.mkForce "632f97e1";
+
+    firewall = rec {
+      enable = true;
+
+      allowedTCPPorts = [ ];
+      allowedUDPPorts = allowedTCPPorts;
+
+      allowedTCPPortRanges = [ ];
+      allowedUDPPortRanges = allowedTCPPortRanges;
+    };
   };
 
   telometto = {
@@ -68,7 +78,10 @@ in
     # ];
 
     services = {
-      tailscale.interface = "enp42s0"; # Update based on actual interface from hardware-configuration
+      tailscale = {
+        interface = "enp42s0"; # Update based on actual interface from hardware-configuration
+        openFirewall = true;
+      };
 
       # Disable printing as in nix-conf
       printing.enable = lib.mkForce false;
@@ -96,6 +109,7 @@ in
 
   hardware = {
     cpu.amd.updateMicrocode = lib.mkDefault true;
+
     bluetooth = {
       enable = true;
       powerOnBoot = true;
