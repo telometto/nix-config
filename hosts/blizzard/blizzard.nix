@@ -122,7 +122,7 @@
           jellyfin = {
             backendUrl = "http://localhost:8096/";
             pathPrefix = "/jellyfin";
-            stripPrefix = true; # Strip /jellyfin prefix before forwarding to backend
+            stripPrefix = false;
             customHeaders = {
               X-Forwarded-Proto = "https";
               X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
