@@ -129,6 +129,7 @@ in
     temurin-jre-bin-21 # For Minecraft >= 1.20.5 (latest)
     temurin-jre-bin-17 # For Minecraft >= 1.18
     temurin-jre-bin-8 # For Minecraft < 1.17
+    glfw
 
     # Alternative: prismlauncher if Titan doesn't work well
     # prismlauncher
