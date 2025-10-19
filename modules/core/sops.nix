@@ -17,6 +17,7 @@ let
   hasSearx = config.services.searx.enable or false;
   hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
   hasK3sDownloadMgmt = config.telometto.services."k3s-download-mgmt".enable or false;
+  hasCloudflared = config.telometto.services.cloudflared.enable or false;
 in
 
 {
@@ -78,6 +79,13 @@ in
         "kubernetes/ff-pw" = {
           mode = "0400";
         };
+      }
+      // whenEnabled hasCloudflared {
+        "cloudflare/server_tunnel" = {
+          owner = "cloudflared";
+          group = "cloudflared";
+          mode = "0400";
+        };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -122,6 +130,9 @@ in
     // whenEnabled hasK3sDownloadMgmt {
       firefoxUser = config.sops.placeholder."kubernetes/ff-user";
       firefoxPassword = config.sops.placeholder."kubernetes/ff-pw";
+    }
+    // whenEnabled hasCloudflared {
+      cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/server_tunnel".path;
     };
 
   environment.systemPackages = [
