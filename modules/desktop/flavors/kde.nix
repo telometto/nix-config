@@ -12,6 +12,7 @@ in
 {
   config = lib.mkIf (is "kde") {
     # Plasma + SDDM
+    services.xserver.enable = lib.mkDefault false;
     services.desktopManager.plasma6.enable = true;
     services.displayManager.sddm = {
       enable = true;
