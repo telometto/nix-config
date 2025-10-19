@@ -390,6 +390,33 @@
         openFirewall = true;
       };
 
+      # Cloudflare Tunnel - Expose services to the internet
+      # Note: Requires tunnel setup in Cloudflare Zero Trust dashboard
+      cloudflared = {
+        enable = lib.mkDefault false; # Set to true after tunnel setup
+        tunnelId = "a1820b85-c1ca-4217-b31b-ca6ca5fce7d9";
+        credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile or "";
+        
+        ingress = {
+          # Monitoring
+          # "grafana.yourdomain.com" = "http://localhost:3000";
+          
+          # Search engine
+          # "searx.yourdomain.com" = "http://localhost:7777";
+          
+          # Media management (excluding Plex/Jellyfin)
+          # "ombi.yourdomain.com" = "http://localhost:5000";
+          "tautulli.${VARS.domains.public}" = "http://localhost:8181";
+          
+          # System monitoring
+          # "scrutiny.yourdomain.com" = "http://localhost:8072";
+          # "cockpit.yourdomain.com" = "http://localhost:9090";
+          
+          # Dashboard
+          # "homepage.yourdomain.com" = "http://localhost:8082";
+        };
+      };
+
       # Homepage dashboard
       homepage = {
         enable = lib.mkDefault true;
