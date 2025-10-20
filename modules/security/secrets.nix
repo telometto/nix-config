@@ -92,5 +92,14 @@
         Firefox password for Kubernetes deployment. Resolved from SOPS in core/sops.nix.
       '';
     };
+
+    # Cloudflare Tunnel credentials (resolved from SOPS centrally)
+    cloudflaredCredentialsFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to the Cloudflare Tunnel credentials file. Mapped from SOPS in core/sops.nix.
+      '';
+    };
   };
 }

@@ -236,18 +236,7 @@
           "--kubelet-arg=read-only-port=10255" # Enable read-only port for metrics
         ];
       };
-      # };
 
-      # # K3s application stacks
-      # k3s = {
-      #   # Servarr stack (Radarr, Sonarr, Lidarr, Readarr, Prowlarr, Bazarr, Flaresolverr)
-      #   stacks.servarr.enable = lib.mkDefault true;
-
-      #   # Download management stack (qBittorrent, SABnzbd, Firefox with WireGuard VPN)
-      #   download-management.enable = lib.mkDefault true;
-      # };
-
-      # services = {
       paperless = {
         enable = lib.mkDefault false;
         consumptionDirIsPublic = lib.mkDefault true;
@@ -296,6 +285,13 @@
         enable = lib.mkDefault true;
         openFirewall = true;
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
+
+        # Configure for both Tailscale (path-based) and Cloudflare (domain-based) access
+        reverseProxy = {
+          enable = true;
+          domain = "tautulli.${VARS.domains.public}"; # Cloudflare subdomain routing
+          pathPrefix = "/tautulli"; # Tailscale path-based routing
+        };
       };
 
       jellyfin = {
@@ -304,30 +300,40 @@
       };
 
       # Cloudflare Tunnel - Expose services to the internet
-      # Note: Requires tunnel setup in Cloudflare Zero Trust dashboard
+      # Architecture: Internet → Cloudflare → Tunnel → Traefik → Service
+      #
+      # Cloudflare Tunnel Configuration (Zero Trust Dashboard):
+      #   Service Type: HTTPS
+      #   URL: https://localhost:443
+      #   TLS Verification: Enabled (Traefik uses Tailscale certs)
+      #   No-TLS-Verify: false (keep TLS verification on)
+      #
+      # Traefik handles routing based on Host header from Cloudflare
+      # All traffic routes through Traefik for centralized auth, logging, and TLS
       cloudflared = {
-        enable = lib.mkDefault false; # Set to true after tunnel setup
+        enable = lib.mkDefault true;
         tunnelId = "a1820b85-c1ca-4217-b31b-ca6ca5fce7d9";
-        credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile or "";
+        credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile;
 
         ingress = {
+          # Route everything through Traefik - it will handle service routing by hostname
+          # Each service configured here needs corresponding DNS record in Cloudflare
+          "tautulli.${VARS.domains.public}" = "https://localhost:443";
+
           # Monitoring
-          # "grafana.yourdomain.com" = "http://localhost:3000";
+          # "grafana.yourdomain.com" = "https://localhost:443";
 
           # Search engine
-          # "searx.yourdomain.com" = "http://localhost:7777";
+          # "searx.yourdomain.com" = "https://localhost:443";
 
-          # Media management (excluding Plex/Jellyfin)
-          # "ombi.yourdomain.com" = "http://localhost:5000";
-          "tautulli.${VARS.domains.public}" = "http://localhost:8181";
+          # Media management (excluding Plex/Jellyfin per Cloudflare ToS)
+          # "ombi.yourdomain.com" = "https://localhost:443";
 
           # System monitoring
-          # "scrutiny.yourdomain.com" = "http://localhost:8072";
-          # "cockpit.yourdomain.com" = "http://localhost:9090";
+          # "scrutiny.yourdomain.com" = "https://localhost:443";
+          # "cockpit.yourdomain.com" = "https://localhost:443";
         };
-      };
-
-      # Backups: Borg (daily)
+      }; # Backups: Borg (daily)
       borgbackup = {
         enable = lib.mkDefault true;
         jobs.homeserver = {
@@ -357,67 +363,6 @@
       ssh.enable = lib.mkDefault false;
       mtr.enable = lib.mkDefault true;
       gnupg.enable = lib.mkDefault false;
-    };
-  };
-
-  # Direct CrowdSec configuration (bypassing wrapper module)
-  services.crowdsec = {
-    enable = true;
-
-    # Hub collections and scenarios
-    hub = {
-      collections = [
-        "crowdsecurity/linux"
-        "crowdsecurity/traefik"
-      ];
-      scenarios = [
-        "crowdsecurity/ssh-bf"
-        "crowdsecurity/ssh-slow-bf"
-      ];
-      postOverflows = [
-        "crowdsecurity/auditd-nix-wrappers-whitelist-process"
-      ];
-    };
-
-    # Data sources
-    localConfig = {
-      acquisitions = [
-        {
-          source = "journalctl";
-          journalctl_filter = [ "_SYSTEMD_UNIT=sshd.service" ];
-          labels = {
-            type = "syslog";
-          };
-        }
-      ];
-
-      # Default profile for IP bans
-      profiles = [
-        {
-          name = "default_ip_remediation";
-          filters = [ "Alert.Remediation == true && Alert.GetScope() == 'Ip'" ];
-          decisions = [
-            {
-              type = "ban";
-              duration = "4h";
-            }
-          ];
-          on_success = "break";
-        }
-      ];
-    };
-
-    # Settings - let upstream handle credential files
-    settings = {
-      ## TESTING
-      # Don't set api.client.credentials_path - let it use the default
-      # Don't set lapi.credentialsFile - let it use the default
-      # Don't set capi.credentialsFile - we don't have CAPI credentials
-      # Don't set console.tokenFile - we're not using console
-
-      simulation = {
-        simulation = false;
-      };
     };
   };
 

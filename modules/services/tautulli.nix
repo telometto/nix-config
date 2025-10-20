@@ -29,6 +29,17 @@ in
         description = "Enable Traefik reverse proxy configuration for Tautulli.";
       };
 
+      domain = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = ''
+          Optional domain for hostname-based routing (e.g., "tautulli.example.com").
+          If set, creates a separate router for this domain with pathPrefix = "/".
+          This is useful for Cloudflare Tunnel with dedicated subdomains.
+        '';
+        example = "tautulli.example.com";
+      };
+
       pathPrefix = lib.mkOption {
         type = lib.types.str;
         default = "/tautulli";
@@ -66,18 +77,29 @@ in
     };
 
     # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    telometto.services.traefik.services =
+    telometto.services.traefik =
       lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
         {
-          tautulli = {
+          # Main path-based service (for Tailscale: blizzard.ts.net/tautulli)
+          services.tautulli = {
             backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
-
             inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
-
             customHeaders = {
               X-Forwarded-Proto = "https";
               X-Forwarded-Host =
                 config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+            };
+          };
+
+          # Additional hostname-based router if domain is set (for Cloudflare: tautulli.example.com)
+          dynamicConfigOptions = lib.mkIf (cfg.reverseProxy.domain != null) {
+            http = {
+              routers.tautulli-domain = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "tautulli";
+                entrypoints = [ "websecure" ];
+                tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
+              };
             };
           };
         };
