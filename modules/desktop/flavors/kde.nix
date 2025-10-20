@@ -56,7 +56,7 @@ in
         pkgs.xwayland
         pkgs.kdePackages.xwaylandvideobridge
         (pkgs.sddm-astronaut.override {
-          embeddedTheme = "post-apocalyptic_hacker";
+          embeddedTheme = "pixel_sakura";
         })
       ];
 
