@@ -49,42 +49,42 @@ in
       }
       // whenEnabled hasPaperless {
         "general/paperlessKeyFilePath" = {
-          mode = "0400";
+          # mode = "0400";
         };
       }
       // whenEnabled hasSearx {
         "general/searxSecretKey" = {
-          owner = "searx";
-          group = "searx";
-          mode = "0400";
+          # owner = "searx";
+          # group = "searx";
+          # mode = "0400";
         };
       }
       // whenEnabled hasGrafanaCloud {
         "grafana_cloud/api_key" = {
-          owner = "prometheus";
-          group = "prometheus";
-          mode = "0400";
+          # owner = "prometheus";
+          # group = "prometheus";
+          # mode = "0400";
         };
         "grafana_cloud/username" = {
-          mode = "0400";
+          # mode = "0400";
         };
         "grafana_cloud/remote_write_url" = {
-          mode = "0400";
+          # mode = "0400";
         };
       }
       // whenEnabled hasK3sDownloadMgmt {
         "kubernetes/ff-user" = {
-          mode = "0400";
+          # mode = "0400";
         };
         "kubernetes/ff-pw" = {
-          mode = "0400";
+          # mode = "0400";
         };
       }
       // whenEnabled hasCloudflared {
         "cloudflare/server_tunnel" = {
-          owner = "cloudflared";
-          group = "cloudflared";
-          mode = "0400";
+          # Don't set owner/group to avoid chicken-egg problem
+          # The cloudflared service will access via systemd LoadCredential
+          # mode = "0400";
         };
       };
 
