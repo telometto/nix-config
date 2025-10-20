@@ -36,7 +36,7 @@ in
     desktop.flavor = "kde";
 
     users = {
-      luke.enable = true;
+      gianluca.enable = true;
       frankie.enable = true;
     };
 
