@@ -20,8 +20,7 @@ let
   # Filter to only normal users that are enabled on this host
   systemUsers = lib.filterAttrs (
     username: userData:
-      (userData.isNormalUser or false)
-      && (config.telometto.users.${username}.enable or true)
+    (userData.isNormalUser or false) && (config.telometto.users.${username}.enable or true)
   ) varsUsersByUsername;
 
   # Auto-enable desktop flavor based on system config
