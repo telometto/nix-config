@@ -44,7 +44,6 @@ in
       tailscale = lib.mkMerge [
         {
           enable = lib.mkDefault true;
-          openFirewall = lib.mkDefault true;
           # Use the project-owned secrets bridge; avoid referencing SOPS directly here
           # to prevent top-level evaluation errors when the feature is disabled.
           authKeyFile = config.telometto.secrets.tsKeyFile;
@@ -52,7 +51,7 @@ in
             preauthorized = lib.mkDefault true;
             ephemeral = lib.mkDefault false;
           };
-          inherit (cfg) extraUpFlags;
+          inherit (cfg) extraUpFlags openFirewall;
         }
         cfg.settings
       ];

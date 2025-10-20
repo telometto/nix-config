@@ -6,7 +6,7 @@ in
   options.telometto.services.plex.enable = lib.mkEnableOption "Plex Media Server";
   options.telometto.services.plex.openFirewall = lib.mkOption {
     type = lib.types.bool;
-    default = true;
+    default = false;
   };
 
   config = lib.mkIf cfg.enable {

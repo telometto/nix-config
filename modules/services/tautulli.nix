@@ -19,15 +19,14 @@ in
 
     openFirewall = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
     };
   };
 
   config = lib.mkIf cfg.enable {
     services.tautulli = {
       enable = lib.mkDefault true;
-      inherit (cfg) dataDir configFile;
-      openFirewall = lib.mkDefault cfg.openFirewall;
+      inherit (cfg) dataDir configFile openFirewall;
     };
   };
 }

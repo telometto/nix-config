@@ -44,7 +44,7 @@
         extraUpFlags = [
           "--reset"
           "--ssh"
-          "--advertise-routes=192.168.2.0/24,192.168.3.0/24,"
+          "--advertise-routes=192.168.2.0/24,192.168.3.0/24"
         ];
       };
 
@@ -231,8 +231,15 @@
       };
 
       # Monitoring and admin UIs
-      scrutiny.enable = lib.mkDefault true; # port 8072
-      cockpit.enable = lib.mkDefault false; # port 9090
+      scrutiny = {
+        enable = lib.mkDefault true; # port 8072
+        openFirewall = true;
+      };
+
+      cockpit = {
+        enable = lib.mkDefault false; # port 9090
+        openFirewall = true;
+      };
 
       # Prometheus exporters
       prometheusExporters = {
@@ -361,7 +368,7 @@
         enable = lib.mkDefault false;
         host = lib.mkDefault "0.0.0.0";
         port = lib.mkDefault 2283;
-        openFirewall = lib.mkDefault false;
+        openFirewall = true;
         mediaLocation = lib.mkDefault "/flash/enc/personal/immich-library";
         secretsFile = lib.mkDefault "/opt/sec/immich-file";
         environment = {
@@ -372,6 +379,7 @@
 
       ombi = {
         enable = lib.mkDefault true;
+        openFirewall = true;
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/ombi";
       };
 
@@ -382,6 +390,7 @@
 
       tautulli = {
         enable = lib.mkDefault true;
+        openFirewall = true;
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
       };
 
@@ -421,6 +430,7 @@
       homepage = {
         enable = lib.mkDefault true;
         port = lib.mkDefault 8082;
+        openFirewall = true;
 
         settings = {
           title = "Blizzard Home Server";
