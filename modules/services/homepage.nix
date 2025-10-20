@@ -51,8 +51,8 @@ in
   config = lib.mkIf cfg.enable {
     services.homepage-dashboard = {
       enable = true;
-      listenPort = cfg.port;
-      openFirewall = cfg.openFirewall;
+
+      inherit (cfg) port openFirewall;
 
       settings = lib.mkDefault (
         cfg.settings

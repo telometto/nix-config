@@ -12,18 +12,21 @@ in
 {
   config = lib.mkIf (is "kde") {
     # Plasma + SDDM
-    services.xserver.enable = lib.mkDefault false;
-    services.desktopManager.plasma6.enable = true;
-    services.displayManager.sddm = {
-      enable = true;
-      wayland.enable = lib.mkDefault true;
-      autoNumlock = lib.mkDefault true;
-      theme = lib.mkForce "sddm-astronaut-theme";
-      extraPackages = with pkgs; [
-        kdePackages.qtsvg
-        kdePackages.qtmultimedia
-        kdePackages.qtvirtualkeyboard
-      ];
+    services = {
+      displayManager.sddm = {
+        xserver.enable = lib.mkDefault false;
+        desktopManager.plasma6.enable = true;
+
+        enable = true;
+        wayland.enable = lib.mkDefault true;
+        autoNumlock = lib.mkDefault true;
+        theme = lib.mkForce "sddm-astronaut-theme";
+        extraPackages = with pkgs; [
+          kdePackages.qtsvg
+          kdePackages.qtmultimedia
+          kdePackages.qtvirtualkeyboard
+        ];
+      };
     };
 
     # Askpass and Wayland bits carried from legacy

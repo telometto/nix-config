@@ -89,13 +89,10 @@ in
         modesetting.enable = cfg.modesetting;
 
         powerManagement = {
-          enable = cfg.powerManagement.enable;
-          finegrained = cfg.powerManagement.finegrained;
+          inherit (cfg.powerManagement) enable finegrained;
         };
 
-        open = cfg.open;
-        nvidiaSettings = cfg.nvidiaSettings;
-        package = cfg.package;
+        inherit (cfg) open nvidiaSettings package;
       };
     };
 

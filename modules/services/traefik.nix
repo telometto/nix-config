@@ -80,8 +80,7 @@ let
       };
       redirectMiddleware = lib.mkIf (serviceCfg.redirectRegex != null) {
         redirectRegex = {
-          regex = serviceCfg.redirectRegex.regex;
-          replacement = serviceCfg.redirectRegex.replacement;
+          inherit (serviceCfg.redirectRegex) regex replacement;
         };
       };
     in
@@ -123,7 +122,7 @@ let
   mkServiceDef = serviceName: serviceCfg: {
     loadBalancer = {
       servers = [ { url = serviceCfg.backendUrl; } ];
-      passHostHeader = serviceCfg.passHostHeader;
+      inherit (serviceCfg) passHostHeader;
     };
   };
 

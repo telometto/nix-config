@@ -15,7 +15,7 @@ in
   config = lib.mkIf cfg.enable {
     programs.gnupg.agent = {
       enable = lib.mkDefault true;
-      enableSSHSupport = cfg.enableSSHSupport;
+      inherit (cfg) enableSSHSupport;
       settings = {
         default-cache-ttl = lib.mkDefault 34560000;
         max-cache-ttl = lib.mkDefault 34560000;
