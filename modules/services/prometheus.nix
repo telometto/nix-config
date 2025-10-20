@@ -61,17 +61,43 @@ in
       '';
       example = "https://example.com/prometheus/";
     };
+
+    reverseProxy = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Enable Traefik reverse proxy configuration for Prometheus.";
+      };
+
+      pathPrefix = lib.mkOption {
+        type = lib.types.str;
+        default = "/prometheus";
+        description = "URL path prefix for Prometheus.";
+      };
+
+      stripPrefix = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Whether to strip the path prefix before forwarding to Prometheus.";
+      };
+
+      extraMiddlewares = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Additional Traefik middlewares to apply.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
     services.prometheus = {
       enable = true;
-      inherit (cfg) port listenAddress;
-      retentionTime = lib.mkDefault cfg.retentionTime;
+      inherit (cfg) port listenAddress retentionTime;
+
       webExternalUrl = lib.mkIf (cfg.webExternalUrl != null) cfg.webExternalUrl;
 
       globalConfig = {
-        scrape_interval = cfg.scrapeInterval;
+        inherit (cfg) scrapeInterval;
       };
 
       # Scrape configurations: auto-configure node exporter if enabled, plus any extras
@@ -93,5 +119,21 @@ in
 
     # Open firewall if requested
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
+
+    # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
+    telometto.services.traefik.services = lib.mkIf (
+      cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false
+    ) {
+      prometheus = {
+        backendUrl = "http://localhost:${toString cfg.port}/";
+
+        inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
+
+        customHeaders = {
+          X-Forwarded-Proto = "https";
+          X-Forwarded-Host = config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+        };
+      };
+    };
   };
 }

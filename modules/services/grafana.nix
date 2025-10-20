@@ -105,6 +105,32 @@ in
         }
       '';
     };
+
+    reverseProxy = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Enable Traefik reverse proxy configuration for Grafana.";
+      };
+
+      pathPrefix = lib.mkOption {
+        type = lib.types.str;
+        default = "/grafana";
+        description = "URL path prefix for Grafana.";
+      };
+
+      stripPrefix = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Whether to strip the path prefix before forwarding to Grafana.";
+      };
+
+      extraMiddlewares = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Additional Traefik middlewares to apply.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -172,5 +198,21 @@ in
 
     # Open firewall if requested
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
+
+    # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
+    telometto.services.traefik.services = lib.mkIf (
+      cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false
+    ) {
+      grafana = {
+        backendUrl = "http://localhost:${toString cfg.port}/";
+
+        inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
+
+        customHeaders = {
+          X-Forwarded-Proto = "https";
+          X-Forwarded-Host = config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+        };
+      };
+    };
   };
 }
