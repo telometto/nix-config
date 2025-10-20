@@ -13,14 +13,27 @@ in
   config = lib.mkIf (is "kde") {
     # Plasma + SDDM
     services = {
-      displayManager.sddm = {
-        xserver.enable = lib.mkDefault false;
-        desktopManager.plasma6.enable = true;
+      xserver.enable = lib.mkDefault false;
+      desktopManager.plasma6.enable = true;
 
+      displayManager.sddm = {
         enable = true;
+
         wayland.enable = lib.mkDefault true;
         autoNumlock = lib.mkDefault true;
-        theme = lib.mkForce "sddm-astronaut-theme";
+        /**
+          Available themes:
+          astronaut
+          black_hole
+          cyberpunk
+          hyprland_kath
+          jake_the_dog
+          japanese_aesthetic
+          pixel_sakura
+          post-apocalyptic_hacker
+          purple_leaves
+         */
+        theme = lib.mkForce "sddm-pixel_sakura-theme";
         extraPackages = with pkgs; [
           kdePackages.qtsvg
           kdePackages.qtmultimedia
