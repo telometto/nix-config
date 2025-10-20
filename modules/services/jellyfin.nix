@@ -106,19 +106,20 @@ in
     };
 
     # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    telometto.services.traefik.services = lib.mkIf (
-      cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false
-    ) {
-      jellyfin = {
-        backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
-        pathPrefix = cfg.reverseProxy.pathPrefix;
-        stripPrefix = cfg.reverseProxy.stripPrefix;
-        extraMiddlewares = cfg.reverseProxy.extraMiddlewares;
-        customHeaders = {
-          X-Forwarded-Proto = "https";
-          X-Forwarded-Host = config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+    telometto.services.traefik.services =
+      lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
+        {
+          jellyfin = {
+            backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
+            pathPrefix = cfg.reverseProxy.pathPrefix;
+            stripPrefix = cfg.reverseProxy.stripPrefix;
+            extraMiddlewares = cfg.reverseProxy.extraMiddlewares;
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host =
+                config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+            };
+          };
         };
-      };
-    };
   };
 }

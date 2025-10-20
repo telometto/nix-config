@@ -200,19 +200,20 @@ in
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 
     # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    telometto.services.traefik.services = lib.mkIf (
-      cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false
-    ) {
-      grafana = {
-        backendUrl = "http://localhost:${toString cfg.port}/";
+    telometto.services.traefik.services =
+      lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
+        {
+          grafana = {
+            backendUrl = "http://localhost:${toString cfg.port}/";
 
-        inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
+            inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
 
-        customHeaders = {
-          X-Forwarded-Proto = "https";
-          X-Forwarded-Host = config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host =
+                config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+            };
+          };
         };
-      };
-    };
   };
 }

@@ -51,7 +51,10 @@ in
         type = lib.types.listOf lib.types.str;
         default = [ ];
         description = "Additional Traefik middlewares to apply.";
-        example = [ "rate-limit" "security-headers" ];
+        example = [
+          "rate-limit"
+          "security-headers"
+        ];
       };
     };
   };
@@ -63,19 +66,20 @@ in
     };
 
     # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    telometto.services.traefik.services = lib.mkIf (
-      cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false
-    ) {
-      tautulli = {
-        backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
+    telometto.services.traefik.services =
+      lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
+        {
+          tautulli = {
+            backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
 
-        inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
+            inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
 
-        customHeaders = {
-          X-Forwarded-Proto = "https";
-          X-Forwarded-Host = config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+            customHeaders = {
+              X-Forwarded-Proto = "https";
+              X-Forwarded-Host =
+                config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+            };
+          };
         };
-      };
-    };
   };
 }
