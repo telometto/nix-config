@@ -32,7 +32,7 @@ in
           pixel_sakura
           post-apocalyptic_hacker
           purple_leaves
-         */
+        */
         theme = lib.mkForce "sddm-pixel_sakura-theme";
         extraPackages = with pkgs; [
           kdePackages.qtsvg
