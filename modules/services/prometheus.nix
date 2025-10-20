@@ -97,7 +97,7 @@ in
       webExternalUrl = lib.mkIf (cfg.webExternalUrl != null) cfg.webExternalUrl;
 
       globalConfig = {
-        inherit (cfg) scrapeInterval;
+        scrape_interval = cfg.scrapeInterval;
       };
 
       # Scrape configurations: auto-configure node exporter if enabled, plus any extras
