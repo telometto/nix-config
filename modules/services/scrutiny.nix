@@ -12,6 +12,12 @@ in
       description = "Port for Scrutiny web interface";
     };
 
+    openFirewall = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Open firewall for Scrutiny";
+    };
+
     collectorSettings = lib.mkOption {
       type = lib.types.attrs;
       default = { };
@@ -35,7 +41,9 @@ in
   config = lib.mkIf cfg.enable {
     services.scrutiny = {
       enable = lib.mkDefault true;
-      openFirewall = lib.mkDefault false;
+
+      inherit (cfg) openFirewall;
+
       settings.web.listen.port = cfg.port;
 
       collector = lib.mkIf (cfg.collectorSettings != { }) {
