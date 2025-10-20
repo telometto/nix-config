@@ -17,8 +17,12 @@ let
   );
 
   # Use VARS as the source of truth for which users to configure
-  # Filter to only normal users
-  systemUsers = lib.filterAttrs (_: userData: userData.isNormalUser or false) varsUsersByUsername;
+  # Filter to only normal users that are enabled on this host
+  systemUsers = lib.filterAttrs (
+    username: userData:
+      (userData.isNormalUser or false)
+      && (config.telometto.users.${username}.enable or true)
+  ) varsUsersByUsername;
 
   # Auto-enable desktop flavor based on system config
   autoDesktopConfig =

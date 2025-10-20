@@ -31,6 +31,8 @@
 
     desktop.flavor = "kde";
 
+    users.zeno.enable = true;
+
     programs = {
       nix-ld.enable = true;
       python-venv.enable = true;

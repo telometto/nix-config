@@ -35,6 +35,11 @@ in
 
     desktop.flavor = "kde";
 
+    users = {
+      luke.enable = true;
+      frankie.enable = true;
+    };
+
     # Disabled secure boot (lanzaboote) for now
     boot.lanzaboote.enable = lib.mkForce false;
 

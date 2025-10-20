@@ -30,6 +30,8 @@
     # Enable server role (provides server defaults)
     role.server.enable = true;
 
+    users.zeno.enable = true;
+
     # overlays.fromInputs = {
     #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
     #   # nixpkgs-stable = [ "thunderbird" ];

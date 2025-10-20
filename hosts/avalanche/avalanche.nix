@@ -31,6 +31,8 @@
 
     desktop.flavor = "gnome";
 
+    users.zeno.enable = true;
+
     # Enable Python venv support
     programs = {
       nix-ld.enable = true;
