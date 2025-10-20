@@ -37,8 +37,11 @@ in
   config = lib.mkIf cfg.enable {
     programs.git = {
       enable = true;
-      inherit (cfg.git) userName userEmail;
-      extraConfig = {
+      settings = {
+        user = {
+          inherit (cfg.git) userName userEmail;
+          signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
+        };
         init.defaultBranch = "master";
         commit.gpgSign = true;
         tag.gpgSign = true;
@@ -52,8 +55,6 @@ in
           #     "${config.home.homeDirectory}/.ssh/allowed_signers";
           # };
         };
-
-        user.signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
       };
 
       includes = [
@@ -62,10 +63,11 @@ in
           contents.user.email = "65364211+telometto@users.noreply.github.com";
         }
       ];
+    };
 
-      diff-so-fancy = {
-        enable = true;
-      };
+    programs.diff-so-fancy = {
+      enable = true;
+      enableGitIntegration = true;
     };
 
     home.packages = lib.mkIf cfg.enable (
