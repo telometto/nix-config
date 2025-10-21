@@ -81,7 +81,7 @@ in
         };
       }
       // whenEnabled hasCloudflared {
-        "cloudflare/server_tunnel" = {
+        "cloudflare/credentials" = {
           # Don't set owner/group to avoid chicken-egg problem
           # The cloudflared service will access via systemd LoadCredential
           # mode = "0400";
