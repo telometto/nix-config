@@ -49,7 +49,8 @@ in
       tunnels.${cfg.tunnelId} = {
         inherit (cfg) credentialsFile ingress;
         default = "http_status:404";
-      } // lib.optionalAttrs (cfg.originRequest != { }) {
+      }
+      // lib.optionalAttrs (cfg.originRequest != { }) {
         inherit (cfg) originRequest;
       };
     };
