@@ -33,7 +33,7 @@ in
           post-apocalyptic_hacker
           purple_leaves
         */
-        theme = lib.mkForce "sddm-pixel_sakura-theme";
+        theme = lib.mkForce "sddm-astronaut-theme";
         extraPackages = with pkgs; [
           kdePackages.qtsvg
           kdePackages.qtmultimedia
