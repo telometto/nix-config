@@ -92,28 +92,33 @@ in
                   config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
               };
             };
-          }
-          // lib.optionalAttrs (cfg.reverseProxy.domain != null) {
-            # Additional domain-based service (for Cloudflare: tautulli.example.com)
-            "tautulli-domain" = {
-              backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
-              pathPrefix = "/";
-              stripPrefix = false;
-              extraMiddlewares = cfg.reverseProxy.extraMiddlewares;
-              customHeaders = {
-                X-Forwarded-Proto = "https";
-                X-Forwarded-Host = cfg.reverseProxy.domain;
-              };
-            };
           };
 
-          # Override the router rule for the domain-based service
+          # Manual configuration for domain-based routing (bypasses auto-generation)
           dynamicConfigOptions = lib.mkIf (cfg.reverseProxy.domain != null) {
-            http.routers."tautulli-domain" = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "tautulli-domain";
-              entrypoints = [ "websecure" ];
-              tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
+            http = {
+              # Middleware for domain-based service
+              middlewares."tautulli-domain-headers" = {
+                headers.customRequestHeaders = {
+                  X-Forwarded-Proto = "https";
+                  X-Forwarded-Host = cfg.reverseProxy.domain;
+                };
+              };
+
+              # Router for domain-based service with correct Host rule
+              routers."tautulli-domain" = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "tautulli-domain";
+                middlewares = [ "tautulli-domain-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
+                entrypoints = [ "websecure" ];
+                tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
+              };
+
+              # Service definition for domain-based routing
+              services."tautulli-domain".loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.reverseProxy.port}/"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };

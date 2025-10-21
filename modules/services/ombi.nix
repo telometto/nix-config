@@ -80,28 +80,33 @@ in
                   config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
               };
             };
-          }
-          // lib.optionalAttrs (cfg.reverseProxy.domain != null) {
-            # Additional domain-based service (for Cloudflare: ombi.example.com)
-            "ombi-domain" = {
-              backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
-              pathPrefix = "/";
-              stripPrefix = false;
-              extraMiddlewares = cfg.reverseProxy.extraMiddlewares;
-              customHeaders = {
-                X-Forwarded-Proto = "https";
-                X-Forwarded-Host = cfg.reverseProxy.domain;
-              };
-            };
           };
 
-          # Override the router rule for the domain-based service
+          # Manual configuration for domain-based routing (bypasses auto-generation)
           dynamicConfigOptions = lib.mkIf (cfg.reverseProxy.domain != null) {
-            http.routers."ombi-domain" = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "ombi-domain";
-              entrypoints = [ "websecure" ];
-              tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
+            http = {
+              # Middleware for domain-based service
+              middlewares."ombi-domain-headers" = {
+                headers.customRequestHeaders = {
+                  X-Forwarded-Proto = "https";
+                  X-Forwarded-Host = cfg.reverseProxy.domain;
+                };
+              };
+
+              # Router for domain-based service with correct Host rule
+              routers."ombi-domain" = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "ombi-domain";
+                middlewares = [ "ombi-domain-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
+                entrypoints = [ "websecure" ];
+                tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
+              };
+
+              # Service definition for domain-based routing
+              services."ombi-domain".loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.reverseProxy.port}/"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };

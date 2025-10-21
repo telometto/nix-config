@@ -226,28 +226,33 @@ in
                   config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
               };
             };
-          }
-          // lib.optionalAttrs (cfg.reverseProxy.domain != null) {
-            # Additional domain-based service (for Cloudflare: grafana.example.com)
-            "grafana-domain" = {
-              backendUrl = "http://localhost:${toString cfg.port}/";
-              pathPrefix = "/";
-              stripPrefix = false;
-              extraMiddlewares = cfg.reverseProxy.extraMiddlewares;
-              customHeaders = {
-                X-Forwarded-Proto = "https";
-                X-Forwarded-Host = cfg.reverseProxy.domain;
-              };
-            };
           };
 
-          # Override the router rule for the domain-based service
+          # Manual configuration for domain-based routing (bypasses auto-generation)
           dynamicConfigOptions = lib.mkIf (cfg.reverseProxy.domain != null) {
-            http.routers."grafana-domain" = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "grafana-domain";
-              entrypoints = [ "websecure" ];
-              tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
+            http = {
+              # Middleware for domain-based service
+              middlewares."grafana-domain-headers" = {
+                headers.customRequestHeaders = {
+                  X-Forwarded-Proto = "https";
+                  X-Forwarded-Host = cfg.reverseProxy.domain;
+                };
+              };
+
+              # Router for domain-based service with correct Host rule
+              routers."grafana-domain" = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "grafana-domain";
+                middlewares = [ "grafana-domain-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
+                entrypoints = [ "websecure" ];
+                tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
+              };
+
+              # Service definition for domain-based routing
+              services."grafana-domain".loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}/"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };
