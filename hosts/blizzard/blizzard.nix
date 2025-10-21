@@ -138,6 +138,12 @@
       scrutiny = {
         enable = lib.mkDefault true; # port 8072
         openFirewall = true;
+
+        # Exposed via Cloudflare only: scrutiny.mydomain.com → scrutiny at root (/)
+        reverseProxy = {
+          enable = true;
+          domain = "scrutiny.${VARS.domains.public}";
+        };
       };
 
       cockpit = {
@@ -216,13 +222,19 @@
         enable = lib.mkDefault true;
         addr = "127.0.0.1"; # Only accessible via Traefik
         openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
-        domain = "${config.networking.hostName}.mole-delta.ts.net";
-        subPath = "/grafana"; # Configure Grafana for subpath routing
+        domain = "grafana.${VARS.domains.public}"; # Use Cloudflare domain
+        # Remove subPath - Grafana will run at root (/)
 
         # Declaratively provision dashboards
         provision.dashboards = {
           "server-overview" = ./dashboards/server-overview.json;
           "zfs-overview" = ./dashboards/zfs-overview.json;
+        };
+
+        # Exposed via Cloudflare only: grafana.mydomain.com → grafana at root (/)
+        reverseProxy = {
+          enable = true;
+          domain = "grafana.${VARS.domains.public}";
         };
       };
 
@@ -254,7 +266,14 @@
       searx = {
         enable = lib.mkDefault true; # port 7777 bind 0.0.0.0
         port = lib.mkDefault 7777;
-        settings.server.base_url = "https://${config.networking.hostName}.mole-delta.ts.net/searx/";
+        # Update base_url for Cloudflare domain (not Tailscale)
+        settings.server.base_url = "https://searx.${VARS.domains.public}/";
+
+        # Exposed via Cloudflare only: searx.mydomain.com → searx at root (/)
+        reverseProxy = {
+          enable = true;
+          domain = "searx.${VARS.domains.public}";
+        };
       };
 
       immich = {
@@ -274,6 +293,12 @@
         enable = lib.mkDefault true;
         openFirewall = true;
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/ombi";
+
+        # Exposed via Cloudflare only: ombi.mydomain.com → ombi at root (/)
+        reverseProxy = {
+          enable = true;
+          domain = "ombi.${VARS.domains.public}";
+        };
       };
 
       plex = {
@@ -286,59 +311,57 @@
         openFirewall = true;
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
 
-        # Configure for both Tailscale (path-based) and Cloudflare (domain-based) access
+        # Exposed via Cloudflare only: tautulli.mydomain.com → tautulli at root (/)
         reverseProxy = {
           enable = true;
-          domain = "tautulli.${VARS.domains.public}"; # Cloudflare subdomain routing
-          pathPrefix = "/tautulli"; # Tailscale path-based routing
+          domain = "tautulli.${VARS.domains.public}";
         };
       };
 
       jellyfin = {
         enable = lib.mkDefault true;
         openFirewall = true;
+
+        # Jellyfin via Tailscale ONLY (Cloudflare ToS forbids video streaming)
+        # Access: https://blizzard.mole-delta.ts.net/jellyfin
+        # Configure Base URL = "/jellyfin" in Jellyfin's Dashboard → Networking
+        reverseProxy = {
+          enable = true;
+          pathPrefix = "/jellyfin"; # Tailscale path-based routing
+          stripPrefix = false; # Jellyfin handles the /jellyfin prefix internally
+        };
       };
 
-      # Cloudflare Tunnel - Expose services to the internet
-      # Architecture: Internet → Cloudflare → Tunnel → Traefik → Service
-      #
-      # Cloudflare Tunnel Configuration (Zero Trust Dashboard):
-      #   Service Type: HTTPS
-      #   URL: https://localhost:443
-      #   TLS Verification: Disabled (Traefik cert doesn't match localhost)
-      #   No-TLS-Verify: true (required due to Tailscale cert hostname mismatch)
-      #
-      # Traefik handles routing based on Host header from Cloudflare
-      # All traffic routes through Traefik for centralized auth, logging, and TLS
       cloudflared = {
         enable = lib.mkDefault true;
-        tunnelId = "a1820b85-c1ca-4217-b31b-ca6ca5fce7d9";
+        tunnelId = "ce54cb73-83b2-4628-8246-26955d280641";
         credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile;
 
-        # Disable TLS verification since Traefik's Tailscale cert doesn't match localhost
-        originRequest = {
-          noTLSVerify = true;
-        };
+        # No TLS verification needed since we're using HTTP
+        originRequest = { };
 
         ingress = {
-          # Route everything through Traefik - it will handle service routing by hostname
-          # Each service configured here needs corresponding DNS record in Cloudflare
-          "tautulli.${VARS.domains.public}" = "https://localhost:443";
+          # All services route through Traefik on port 80
+          # Traefik handles HTTP→HTTPS redirect and routing based on Host header
+
+          # Media management (Tautulli is allowed - it's not video streaming)
+          "tautulli.${VARS.domains.public}" = "http://localhost:80";
+
+          # Media requests
+          "ombi.${VARS.domains.public}" = "http://localhost:80";
 
           # Monitoring
-          # "grafana.yourdomain.com" = "https://localhost:443";
+          "grafana.${VARS.domains.public}" = "http://localhost:80";
 
           # Search engine
-          # "searx.yourdomain.com" = "https://localhost:443";
-
-          # Media management (excluding Plex/Jellyfin per Cloudflare ToS)
-          # "ombi.yourdomain.com" = "https://localhost:443";
+          "searx.${VARS.domains.public}" = "http://localhost:80";
 
           # System monitoring
-          # "scrutiny.yourdomain.com" = "https://localhost:443";
-          # "cockpit.yourdomain.com" = "https://localhost:443";
+          "scrutiny.${VARS.domains.public}" = "http://localhost:80";
         };
-      }; # Backups: Borg (daily)
+      };
+
+      # Backups: Borg (daily)
       borgbackup = {
         enable = lib.mkDefault true;
         jobs.homeserver = {
