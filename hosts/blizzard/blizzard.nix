@@ -305,8 +305,8 @@
       # Cloudflare Tunnel Configuration (Zero Trust Dashboard):
       #   Service Type: HTTPS
       #   URL: https://localhost:443
-      #   TLS Verification: Enabled (Traefik uses Tailscale certs)
-      #   No-TLS-Verify: false (keep TLS verification on)
+      #   TLS Verification: Disabled (Traefik cert doesn't match localhost)
+      #   No-TLS-Verify: true (required due to Tailscale cert hostname mismatch)
       #
       # Traefik handles routing based on Host header from Cloudflare
       # All traffic routes through Traefik for centralized auth, logging, and TLS
@@ -314,6 +314,11 @@
         enable = lib.mkDefault true;
         tunnelId = "a1820b85-c1ca-4217-b31b-ca6ca5fce7d9";
         credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile;
+
+        # Disable TLS verification since Traefik's Tailscale cert doesn't match localhost
+        originRequest = {
+          noTLSVerify = true;
+        };
 
         ingress = {
           # Route everything through Traefik - it will handle service routing by hostname
