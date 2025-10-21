@@ -132,7 +132,7 @@ in
       firefoxPassword = config.sops.placeholder."kubernetes/ff-pw";
     }
     // whenEnabled hasCloudflared {
-      cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/server_tunnel".path;
+      cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/credentials".path;
     };
 
   environment.systemPackages = [
