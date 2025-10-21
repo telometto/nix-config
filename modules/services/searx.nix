@@ -29,6 +29,17 @@ in
         description = "Enable Traefik reverse proxy configuration for Searx.";
       };
 
+      domain = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = ''
+          Optional domain for hostname-based routing (e.g., "searx.example.com").
+          If set, creates a separate router for this domain with pathPrefix = "/".
+          This is useful for Cloudflare Tunnel with dedicated subdomains.
+        '';
+        example = "searx.example.com";
+      };
+
       pathPrefix = lib.mkOption {
         type = lib.types.str;
         default = "/searx";
@@ -74,18 +85,43 @@ in
     };
 
     # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    telometto.services.traefik.services =
+    telometto.services.traefik =
       lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
         {
-          searx = {
-            backendUrl = "http://localhost:${toString cfg.port}/";
+          # Services: path-based for Tailscale and optionally domain-based for Cloudflare
+          services = {
+            # Main path-based service (for Tailscale: blizzard.ts.net/searx)
+            searx = {
+              backendUrl = "http://localhost:${toString cfg.port}/";
+              inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
+              customHeaders = {
+                X-Forwarded-Proto = "https";
+                X-Forwarded-Host =
+                  config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+              };
+            };
+          }
+          // lib.optionalAttrs (cfg.reverseProxy.domain != null) {
+            # Additional domain-based service (for Cloudflare: searx.example.com)
+            "searx-domain" = {
+              backendUrl = "http://localhost:${toString cfg.port}/";
+              pathPrefix = "/";
+              stripPrefix = false;
+              extraMiddlewares = cfg.reverseProxy.extraMiddlewares;
+              customHeaders = {
+                X-Forwarded-Proto = "https";
+                X-Forwarded-Host = cfg.reverseProxy.domain;
+              };
+            };
+          };
 
-            inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
-
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host =
-                config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+          # Override the router rule for the domain-based service
+          dynamicConfigOptions = lib.mkIf (cfg.reverseProxy.domain != null) {
+            http.routers."searx-domain" = {
+              rule = "Host(`${cfg.reverseProxy.domain}`)";
+              service = "searx-domain";
+              entrypoints = [ "websecure" ];
+              tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
             };
           };
         };

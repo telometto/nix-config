@@ -113,6 +113,17 @@ in
         description = "Enable Traefik reverse proxy configuration for Grafana.";
       };
 
+      domain = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = ''
+          Optional domain for hostname-based routing (e.g., "grafana.example.com").
+          If set, creates a separate router for this domain with pathPrefix = "/".
+          This is useful for Cloudflare Tunnel with dedicated subdomains.
+        '';
+        example = "grafana.example.com";
+      };
+
       pathPrefix = lib.mkOption {
         type = lib.types.str;
         default = "/grafana";
@@ -200,18 +211,43 @@ in
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 
     # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    telometto.services.traefik.services =
+    telometto.services.traefik =
       lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
         {
-          grafana = {
-            backendUrl = "http://localhost:${toString cfg.port}/";
+          # Services: path-based for Tailscale and optionally domain-based for Cloudflare
+          services = {
+            # Main path-based service (for Tailscale: blizzard.ts.net/grafana)
+            grafana = {
+              backendUrl = "http://localhost:${toString cfg.port}/";
+              inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
+              customHeaders = {
+                X-Forwarded-Proto = "https";
+                X-Forwarded-Host =
+                  config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+              };
+            };
+          }
+          // lib.optionalAttrs (cfg.reverseProxy.domain != null) {
+            # Additional domain-based service (for Cloudflare: grafana.example.com)
+            "grafana-domain" = {
+              backendUrl = "http://localhost:${toString cfg.port}/";
+              pathPrefix = "/";
+              stripPrefix = false;
+              extraMiddlewares = cfg.reverseProxy.extraMiddlewares;
+              customHeaders = {
+                X-Forwarded-Proto = "https";
+                X-Forwarded-Host = cfg.reverseProxy.domain;
+              };
+            };
+          };
 
-            inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
-
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host =
-                config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+          # Override the router rule for the domain-based service
+          dynamicConfigOptions = lib.mkIf (cfg.reverseProxy.domain != null) {
+            http.routers."grafana-domain" = {
+              rule = "Host(`${cfg.reverseProxy.domain}`)";
+              service = "grafana-domain";
+              entrypoints = [ "websecure" ];
+              tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
             };
           };
         };

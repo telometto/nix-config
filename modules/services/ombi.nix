@@ -21,6 +21,17 @@ in
         description = "Enable Traefik reverse proxy configuration for Ombi.";
       };
 
+      domain = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = ''
+          Optional domain for hostname-based routing (e.g., "ombi.example.com").
+          If set, creates a separate router for this domain with pathPrefix = "/".
+          This is useful for Cloudflare Tunnel with dedicated subdomains.
+        '';
+        example = "ombi.example.com";
+      };
+
       pathPrefix = lib.mkOption {
         type = lib.types.str;
         default = "/ombi";
@@ -54,18 +65,43 @@ in
     };
 
     # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    telometto.services.traefik.services =
+    telometto.services.traefik =
       lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
         {
-          ombi = {
-            backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
+          # Services: path-based for Tailscale and optionally domain-based for Cloudflare
+          services = {
+            # Main path-based service (for Tailscale: blizzard.ts.net/ombi)
+            ombi = {
+              backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
+              inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
+              customHeaders = {
+                X-Forwarded-Proto = "https";
+                X-Forwarded-Host =
+                  config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+              };
+            };
+          }
+          // lib.optionalAttrs (cfg.reverseProxy.domain != null) {
+            # Additional domain-based service (for Cloudflare: ombi.example.com)
+            "ombi-domain" = {
+              backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
+              pathPrefix = "/";
+              stripPrefix = false;
+              extraMiddlewares = cfg.reverseProxy.extraMiddlewares;
+              customHeaders = {
+                X-Forwarded-Proto = "https";
+                X-Forwarded-Host = cfg.reverseProxy.domain;
+              };
+            };
+          };
 
-            inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
-
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host =
-                config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
+          # Override the router rule for the domain-based service
+          dynamicConfigOptions = lib.mkIf (cfg.reverseProxy.domain != null) {
+            http.routers."ombi-domain" = {
+              rule = "Host(`${cfg.reverseProxy.domain}`)";
+              service = "ombi-domain";
+              entrypoints = [ "websecure" ];
+              tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
             };
           };
         };
