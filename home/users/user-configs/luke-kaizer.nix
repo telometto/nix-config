@@ -9,4 +9,16 @@
 {
   # Luke-specific packages on kaizer
   home.packages = with pkgs; [ ];
+
+  hm = {
+    programs = {
+      media = {
+        enable = true;
+
+        mpv.enable = true;
+        yt-dlp.enable = true;
+        jf-mpv.enable = false;
+      };
+    };
+  };
 }
