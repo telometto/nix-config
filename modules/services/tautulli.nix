@@ -61,11 +61,11 @@ in
         {
           http = {
             # Router: matches the domain and forwards to the service
+            # Using 'web' (HTTP) entrypoint since Cloudflare Tunnel handles HTTPS
             routers.tautulli = {
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = "tautulli";
-              entryPoints = [ "websecure" ];
-              tls = { };
+              entryPoints = [ "web" ];
             };
 
             # Service: points to Tautulli backend

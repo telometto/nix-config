@@ -42,13 +42,10 @@
 
       # Entry points
       entryPoints = {
-        web = {
-          address = ":80";
-          http.redirections.entryPoint = {
-            to = "websecure";
-            scheme = "https";
-          };
-        };
+        # HTTP entrypoint - redirects to HTTPS (except for Cloudflare domains)
+        web.address = ":80";
+        
+        # HTTPS entrypoint for Tailscale domains
         websecure.address = ":443";
       };
 
