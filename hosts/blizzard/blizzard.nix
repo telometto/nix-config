@@ -60,7 +60,7 @@
       };
     };
 
-    # Dynamic configuration - Traefik dashboard
+    # Dynamic configuration - Traefik dashboard and Overseerr (k3s)
     dynamicConfigOptions = {
       http = {
         routers = {
@@ -69,6 +69,24 @@
             service = "api@internal";
             entryPoints = [ "websecure" ];
             tls.certResolver = "myresolver";
+          };
+
+          # Overseerr (k3s service) - manually configured since it's not a telometto service
+          overseerr = {
+            rule = "Host(`requests.${VARS.domains.public}`)";
+            service = "overseerr";
+            entryPoints = [ "web" ];
+          };
+        };
+
+        services = {
+          # Overseerr (k3s service)
+          overseerr = {
+            loadBalancer = {
+              servers = [
+                { url = "http://localhost:5055"; }
+              ];
+            };
           };
         };
       };
@@ -146,6 +164,7 @@
         reverseProxy = {
           enable = true;
           domain = "scrutiny.${VARS.domains.public}";
+          cfTunnel.enable = true;
         };
       };
 
@@ -238,6 +257,7 @@
         reverseProxy = {
           enable = true;
           domain = "grafana.${VARS.domains.public}";
+          cfTunnel.enable = true;
         };
       };
 
@@ -276,6 +296,7 @@
         reverseProxy = {
           enable = true;
           domain = "searx.${VARS.domains.public}";
+          cfTunnel.enable = true;
         };
       };
 
@@ -301,6 +322,7 @@
         reverseProxy = {
           enable = true;
           domain = "ombi.${VARS.domains.public}";
+          cfTunnel.enable = true;
         };
       };
 
@@ -318,6 +340,7 @@
         reverseProxy = {
           enable = true;
           domain = "tautulli.${VARS.domains.public}";
+          cfTunnel.enable = true; # Automatically adds to Cloudflare Tunnel ingress
         };
       };
 
@@ -340,48 +363,31 @@
         tunnelId = "ce54cb73-83b2-4628-8246-26955d280641";
         credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile;
 
-        # No TLS verification needed since we're using HTTP
-        originRequest = { };
-
+        # Only manual entries here - services with cfTunnel.enable automatically add themselves
         ingress = {
-          # All services route through Traefik on port 80
-          # Traefik handles HTTP→HTTPS redirect and routing based on Host header
-
-          # Media management (Tautulli is allowed - it's not video streaming)
-          "tautulli.${VARS.domains.public}" = "http://localhost:80";
-
-          # Media requests
-          "ombi.${VARS.domains.public}" = "http://localhost:80";
-
-          # Monitoring
-          "grafana.${VARS.domains.public}" = "http://localhost:80";
-
-          # Search engine
-          "searx.${VARS.domains.public}" = "http://localhost:80";
-
-          # System monitoring
-          "scrutiny.${VARS.domains.public}" = "http://localhost:80";
+          # Overseerr (k3s service) - manually configured
+          "requests.${VARS.domains.public}" = "http://localhost:80";
         };
       };
 
       # Backups: Borg (daily) - Temporarily commented out to test Traefik
-      # borgbackup = {
-      #   enable = lib.mkDefault false; # Temporarily disabled to test Traefik
-      #   jobs.homeserver = {
-      #     paths = [ "/home/${VARS.users.zeno.user}" ];
-      #     environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
-      #     repo = lib.mkDefault (
-      #       config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo"
-      #     );
-      #     compression = "zstd,8";
-      #     startAt = "daily";
+      borgbackup = {
+        enable = lib.mkDefault false; # Temporarily disabled to test Traefik
+        jobs.homeserver = {
+          paths = [ "/home/${VARS.users.zeno.user}" ];
+          environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
+          repo = lib.mkDefault (
+            config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo"
+          );
+          compression = "zstd,8";
+          startAt = "daily";
 
-      #     encryption = {
-      #       mode = "repokey-blake2";
-      #       passCommand = "cat ${config.telometto.secrets.borgKeyFile}";
-      #     };
-      #   };
-      # };
+          encryption = {
+            mode = "repokey-blake2";
+            passCommand = "cat ${config.telometto.secrets.borgKeyFile}";
+          };
+        };
+      };
 
     };
 
