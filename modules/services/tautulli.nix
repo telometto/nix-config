@@ -45,6 +45,27 @@ in
         default = 8181;
         description = "Port where Tautulli listens.";
       };
+
+      cfTunnel = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Enable Cloudflare Tunnel ingress for this service.
+            When enabled, automatically adds this service to the Cloudflare Tunnel ingress configuration.
+            Requires reverseProxy.enable = true and reverseProxy.domain to be set.
+          '';
+        };
+
+        tunnelId = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = ''
+            Cloudflare Tunnel ID to use for this service.
+            If not set, uses services.cloudflared.tunnelId.
+          '';
+        };
+      };
     };
   };
 
@@ -76,11 +97,26 @@ in
           };
         };
 
+    # Configure Cloudflare Tunnel ingress if enabled
+    telometto.services.cloudflared.ingress = lib.mkIf (
+      cfg.reverseProxy.cfTunnel.enable && cfg.reverseProxy.enable && config.telometto.services.cloudflared.enable or false
+    ) {
+      "${cfg.reverseProxy.domain}" = "http://localhost:80";
+    };
+
     # Validate configuration
     assertions = [
       {
         assertion = !cfg.reverseProxy.enable || cfg.reverseProxy.domain != null;
         message = "telometto.services.tautulli.reverseProxy.domain must be set when reverseProxy is enabled";
+      }
+      {
+        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
+        message = "telometto.services.tautulli.reverseProxy.enable must be true when cfTunnel.enable is true";
+      }
+      {
+        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
+        message = "telometto.services.tautulli.reverseProxy.domain must be set when cfTunnel.enable is true";
       }
     ];
   };
