@@ -26,6 +26,9 @@
     };
   };
 
+  # Allow Traefik to use Tailscale certificates
+  # services.tailscale.permitCertUid = "traefik"; # ON HOLD
+
   telometto = {
     role.desktop.enable = true;
 
@@ -57,78 +60,6 @@
       tailscale = {
         interface = "enp5s0";
         openFirewall = true;
-      };
-
-      # Traefik reverse proxy configuration
-      traefik = {
-        enable = lib.mkDefault true;
-        enableTailscaleCerts = true; # Allow Traefik to use Tailscale's TLS certificates
-        domain = "${config.networking.hostName}.mole-delta.ts.net";
-        certResolver = "myresolver";
-
-        # Enable observability
-        accessLog = true; # Log all HTTP requests to journald
-        metrics = true; # Export Prometheus metrics
-
-        # Static configuration for Traefik
-        staticConfigOptions = {
-          log.level = "WARN";
-
-          # Enable API and dashboard
-          api = {
-            dashboard = true;
-            insecure = false; # Don't expose on :8080, use through entrypoint
-          };
-
-          entryPoints = {
-            web = {
-              address = ":80";
-              http.redirections.entryPoint = {
-                to = "websecure";
-                scheme = "https";
-              };
-            };
-            websecure.address = ":443";
-          };
-          certificatesResolvers.myresolver.tailscale = { };
-        };
-
-        # Service definitions - automatically generates routers, services, and middlewares
-        services = {
-          grafana = {
-            backendUrl = "http://localhost:3000/";
-            pathPrefix = "/grafana";
-            stripPrefix = false;
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-            };
-          };
-
-          prometheus = {
-            backendUrl = "http://localhost:9090/";
-            pathPrefix = "/prometheus";
-            stripPrefix = false;
-            customHeaders = {
-              X-Forwarded-Proto = "https";
-              X-Forwarded-Host = "${config.networking.hostName}.mole-delta.ts.net";
-            };
-          };
-        };
-
-        # Additional manual configuration for Traefik dashboard
-        dynamicConfigOptions = {
-          http = {
-            routers = {
-              traefik-dashboard = {
-                rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
-                service = "api@internal";
-                entrypoints = [ "websecure" ];
-                tls.certResolver = "myresolver";
-              };
-            };
-          };
-        };
       };
 
       nfs = {
