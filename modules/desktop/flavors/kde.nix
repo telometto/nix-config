@@ -54,7 +54,7 @@ in
         pkgs.kdePackages.kwallet-pam
         pkgs.kdePackages.qtwayland
         pkgs.xwayland
-        pkgs.kdePackages.xwaylandvideobridge
+        # pkgs.kdePackages.xwaylandvideobridge
         (pkgs.sddm-astronaut.override {
           embeddedTheme = "pixel_sakura";
         })
