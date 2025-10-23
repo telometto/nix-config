@@ -44,7 +44,7 @@
       entryPoints = {
         # HTTP entrypoint - redirects to HTTPS (except for Cloudflare domains)
         web.address = ":80";
-        
+
         # HTTPS entrypoint for Tailscale domains
         websecure.address = ":443";
       };
