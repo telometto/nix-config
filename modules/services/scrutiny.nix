@@ -72,6 +72,18 @@ in
         default = [ ];
         description = "Additional Traefik middlewares to apply.";
       };
+
+      cfTunnel = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Enable Cloudflare Tunnel ingress for this service.
+            When enabled, automatically adds this service to the Cloudflare Tunnel ingress configuration.
+            Requires reverseProxy.enable = true and reverseProxy.domain to be set.
+          '';
+        };
+      };
     };
   };
 
@@ -88,52 +100,48 @@ in
       };
     };
 
-    # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    # COMMENTED OUT - Using standard NixOS Traefik module instead
-    # telometto.services.traefik =
-    #   lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
-    #     {
-    #       # Services: path-based for Tailscale and optionally domain-based for Cloudflare
-    #       services = {
-    #         # Main path-based service (for Tailscale: blizzard.ts.net/scrutiny)
-    #         scrutiny = {
-    #           backendUrl = "http://localhost:${toString cfg.port}/";
-    #           inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
-    #           customHeaders = {
-    #             X-Forwarded-Proto = "https";
-    #             X-Forwarded-Host =
-    #               config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
-    #           };
-    #         };
-    #       };
-    #
-    #       # Manual configuration for domain-based routing (bypasses auto-generation)
-    #       dynamicConfigOptions = lib.mkIf (cfg.reverseProxy.domain != null) {
-    #         http = {
-    #           # Middleware for domain-based service
-    #           middlewares."scrutiny-domain-headers" = {
-    #             headers.customRequestHeaders = {
-    #               X-Forwarded-Proto = "https";
-    #               X-Forwarded-Host = cfg.reverseProxy.domain;
-    #             };
-    #           };
-    #
-    #           # Router for domain-based service with correct Host rule
-    #           routers."scrutiny-domain" = {
-    #             rule = "Host(`${cfg.reverseProxy.domain}`)";
-    #             service = "scrutiny-domain";
-    #             middlewares = [ "scrutiny-domain-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
-    #             entrypoints = [ "websecure" ];
-    #             tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
-    #           };
-    #
-    #           # Service definition for domain-based routing
-    #           services."scrutiny-domain".loadBalancer = {
-    #             servers = [ { url = "http://localhost:${toString cfg.port}/"; } ];
-    #             passHostHeader = true;
-    #           };
-    #         };
-    #       };
-    #     };
+    # Configure Traefik reverse proxy if enabled
+    services.traefik.dynamicConfigOptions =
+      lib.mkIf
+        (
+          cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.services.traefik.enable or false
+        )
+        {
+          http = {
+            routers.scrutiny = {
+              rule = "Host(`${cfg.reverseProxy.domain}`)";
+              service = "scrutiny";
+              entryPoints = [ "web" ];
+            };
+
+            services.scrutiny.loadBalancer = {
+              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+              passHostHeader = true;
+            };
+          };
+        };
+
+    # Configure Cloudflare Tunnel ingress if enabled
+    telometto.services.cloudflared.ingress =
+      lib.mkIf
+        (
+          cfg.reverseProxy.cfTunnel.enable
+          && cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.telometto.services.cloudflared.enable or false
+        )
+        {
+          "${cfg.reverseProxy.domain}" = "http://localhost:80";
+        };
+
+    # Validate configuration
+    assertions = [
+      {
+        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
+        message = "telometto.services.scrutiny.reverseProxy.domain must be set when cfTunnel.enable is true";
+      }
+    ];
   };
 }

@@ -55,6 +55,18 @@ in
         default = [ ];
         description = "Additional Traefik middlewares to apply.";
       };
+
+      cfTunnel = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Enable Cloudflare Tunnel ingress for this service.
+            When enabled, automatically adds this service to the Cloudflare Tunnel ingress configuration.
+            Requires reverseProxy.enable = true and reverseProxy.domain to be set.
+          '';
+        };
+      };
     };
   };
 
@@ -64,52 +76,48 @@ in
       inherit (cfg) dataDir openFirewall;
     };
 
-    # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    # COMMENTED OUT - Using standard NixOS Traefik module instead
-    # telometto.services.traefik =
-    #   lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
-    #     {
-    #       # Services: path-based for Tailscale and optionally domain-based for Cloudflare
-    #       services = {
-    #         # Main path-based service (for Tailscale: blizzard.ts.net/ombi)
-    #         ombi = {
-    #           backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
-    #           inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
-    #           customHeaders = {
-    #             X-Forwarded-Proto = "https";
-    #             X-Forwarded-Host =
-    #               config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
-    #           };
-    #         };
-    #       };
-    #
-    #       # Manual configuration for domain-based routing (bypasses auto-generation)
-    #       dynamicConfigOptions = lib.mkIf (cfg.reverseProxy.domain != null) {
-    #         http = {
-    #           # Middleware for domain-based service
-    #           middlewares."ombi-domain-headers" = {
-    #             headers.customRequestHeaders = {
-    #               X-Forwarded-Proto = "https";
-    #               X-Forwarded-Host = cfg.reverseProxy.domain;
-    #             };
-    #           };
-    #
-    #           # Router for domain-based service with correct Host rule
-    #           routers."ombi-domain" = {
-    #             rule = "Host(`${cfg.reverseProxy.domain}`)";
-    #             service = "ombi-domain";
-    #             middlewares = [ "ombi-domain-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
-    #             entrypoints = [ "websecure" ];
-    #             tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
-    #           };
-    #
-    #           # Service definition for domain-based routing
-    #           services."ombi-domain".loadBalancer = {
-    #             servers = [ { url = "http://localhost:${toString cfg.reverseProxy.port}/"; } ];
-    #             passHostHeader = true;
-    #           };
-    #         };
-    #       };
-    #     };
+    # Configure Traefik reverse proxy if enabled
+    services.traefik.dynamicConfigOptions =
+      lib.mkIf
+        (
+          cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.services.traefik.enable or false
+        )
+        {
+          http = {
+            routers.ombi = {
+              rule = "Host(`${cfg.reverseProxy.domain}`)";
+              service = "ombi";
+              entryPoints = [ "web" ];
+            };
+
+            services.ombi.loadBalancer = {
+              servers = [ { url = "http://localhost:${toString cfg.reverseProxy.port}"; } ];
+              passHostHeader = true;
+            };
+          };
+        };
+
+    # Configure Cloudflare Tunnel ingress if enabled
+    telometto.services.cloudflared.ingress =
+      lib.mkIf
+        (
+          cfg.reverseProxy.cfTunnel.enable
+          && cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.telometto.services.cloudflared.enable or false
+        )
+        {
+          "${cfg.reverseProxy.domain}" = "http://localhost:80";
+        };
+
+    # Validate configuration
+    assertions = [
+      {
+        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
+        message = "telometto.services.ombi.reverseProxy.domain must be set when cfTunnel.enable is true";
+      }
+    ];
   };
 }
