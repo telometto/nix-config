@@ -98,11 +98,16 @@ in
         };
 
     # Configure Cloudflare Tunnel ingress if enabled
-    telometto.services.cloudflared.ingress = lib.mkIf (
-      cfg.reverseProxy.cfTunnel.enable && cfg.reverseProxy.enable && config.telometto.services.cloudflared.enable or false
-    ) {
-      "${cfg.reverseProxy.domain}" = "http://localhost:80";
-    };
+    telometto.services.cloudflared.ingress =
+      lib.mkIf
+        (
+          cfg.reverseProxy.cfTunnel.enable
+          && cfg.reverseProxy.enable
+          && config.telometto.services.cloudflared.enable or false
+        )
+        {
+          "${cfg.reverseProxy.domain}" = "http://localhost:80";
+        };
 
     # Validate configuration
     assertions = [
