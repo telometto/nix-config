@@ -26,6 +26,61 @@
     };
   };
 
+  # Standard NixOS services
+  services.traefik = {
+    enable = true;
+    dataDir = "/var/lib/traefik";
+
+    staticConfigOptions = {
+      log.level = "WARN";
+
+      # Enable API and dashboard
+      api = {
+        dashboard = true;
+        insecure = false;
+      };
+
+      # Entry points
+      entryPoints = {
+        web = {
+          address = ":80";
+          http.redirections.entryPoint = {
+            to = "websecure";
+            scheme = "https";
+          };
+        };
+        websecure.address = ":443";
+      };
+
+      # Use Tailscale for TLS certificates
+      certificatesResolvers.myresolver.tailscale = { };
+
+      # Enable Prometheus metrics
+      metrics.prometheus = {
+        addEntryPointsLabels = true;
+        addRoutersLabels = true;
+        addServicesLabels = true;
+      };
+    };
+
+    # Dynamic configuration - Traefik dashboard
+    dynamicConfigOptions = {
+      http = {
+        routers = {
+          traefik-dashboard = {
+            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
+            service = "api@internal";
+            entryPoints = [ "websecure" ];
+            tls.certResolver = "myresolver";
+          };
+        };
+      };
+    };
+  };
+
+  #Allow Traefik to use Tailscale certificates
+  services.tailscale.permitCertUid = "traefik";
+
   telometto = {
     # Enable server role (provides server defaults)
     role.server.enable = true;
@@ -48,55 +103,6 @@
           "--ssh"
           "--advertise-routes=192.168.2.0/24,192.168.3.0/24"
         ];
-      };
-
-      # Traefik reverse proxy configuration
-      traefik = {
-        enable = lib.mkDefault true;
-        enableTailscaleCerts = true; # Allow Traefik to use Tailscale's TLS certificates
-        domain = "${config.networking.hostName}.mole-delta.ts.net";
-        certResolver = "myresolver";
-
-        # Enable observability
-        accessLog = true; # Log all HTTP requests to journald
-        metrics = true; # Export Prometheus metrics
-
-        # Static configuration for Traefik
-        staticConfigOptions = {
-          log.level = "WARN";
-
-          # Enable API and dashboard
-          api = {
-            dashboard = true;
-            insecure = false; # Don't expose on :8080, use through entrypoint
-          };
-
-          entryPoints = {
-            web = {
-              address = ":80";
-              http.redirections.entryPoint = {
-                to = "websecure";
-                scheme = "https";
-              };
-            };
-            websecure.address = ":443";
-          };
-          certificatesResolvers.myresolver.tailscale = { };
-        };
-
-        # Additional manual configuration for Traefik dashboard
-        dynamicConfigOptions = {
-          http = {
-            routers = {
-              traefik-dashboard = {
-                rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
-                service = "api@internal";
-                entrypoints = [ "websecure" ];
-                tls.certResolver = "myresolver";
-              };
-            };
-          };
-        };
       };
 
       # Enable NFS (owner module) and run as a server
@@ -361,24 +367,24 @@
         };
       };
 
-      # Backups: Borg (daily)
-      borgbackup = {
-        enable = lib.mkDefault true;
-        jobs.homeserver = {
-          paths = [ "/home/${VARS.users.zeno.user}" ];
-          environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
-          repo = lib.mkDefault (
-            config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo"
-          );
-          compression = "zstd,8";
-          startAt = "daily";
+      # Backups: Borg (daily) - Temporarily commented out to test Traefik
+      # borgbackup = {
+      #   enable = lib.mkDefault false; # Temporarily disabled to test Traefik
+      #   jobs.homeserver = {
+      #     paths = [ "/home/${VARS.users.zeno.user}" ];
+      #     environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
+      #     repo = lib.mkDefault (
+      #       config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo"
+      #     );
+      #     compression = "zstd,8";
+      #     startAt = "daily";
 
-          encryption = {
-            mode = "repokey-blake2";
-            passCommand = "cat ${config.telometto.secrets.borgKeyFile}";
-          };
-        };
-      };
+      #     encryption = {
+      #       mode = "repokey-blake2";
+      #       passCommand = "cat ${config.telometto.secrets.borgKeyFile}";
+      #     };
+      #   };
+      # };
 
     };
 

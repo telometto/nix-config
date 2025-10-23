@@ -134,6 +134,26 @@ let
   generatedRouters = lib.mapAttrs mkServiceRouter cfg.services;
   generatedServices = lib.mapAttrs mkServiceDef cfg.services;
 
+  # Generate domain-based routers from domainRoutes
+  domainRouters = lib.mapAttrs (
+    name: routeCfg: {
+      rule = "Host(`${routeCfg.domain}`)";
+      service = name;
+      middlewares = routeCfg.middlewares;
+      entrypoints = [ "websecure" ];
+      tls = { };
+    }
+  ) cfg.domainRoutes;
+
+  domainServices = lib.mapAttrs (
+    name: routeCfg: {
+      loadBalancer = {
+        servers = [ { url = routeCfg.backendUrl; } ];
+        passHostHeader = true;
+      };
+    }
+  ) cfg.domainRoutes;
+
   # Build observability config
   observabilityConfig = {
     accessLog = lib.mkIf cfg.accessLog {
@@ -155,8 +175,8 @@ let
   finalDynamicConfig = {
     http = {
       middlewares = generatedMiddlewares // (cfg.dynamicConfigOptions.http.middlewares or { });
-      routers = generatedRouters // (cfg.dynamicConfigOptions.http.routers or { });
-      services = generatedServices // (cfg.dynamicConfigOptions.http.services or { });
+      routers = generatedRouters // domainRouters // (cfg.dynamicConfigOptions.http.routers or { });
+      services = generatedServices // domainServices // (cfg.dynamicConfigOptions.http.services or { });
     }
     // (builtins.removeAttrs (cfg.dynamicConfigOptions.http or { }) [
       "middlewares"
@@ -275,6 +295,30 @@ in
         Automatically generated configs from 'services' will be merged with these.
         See https://doc.traefik.io/traefik/reference/dynamic-configuration/overview/
       '';
+    };
+
+    domainRoutes = lib.mkOption {
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = {
+            domain = lib.mkOption {
+              type = lib.types.str;
+              description = "Domain name for this route";
+            };
+            backendUrl = lib.mkOption {
+              type = lib.types.str;
+              description = "Backend URL to forward requests to";
+            };
+            middlewares = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [ ];
+              description = "List of middleware names to apply";
+            };
+          };
+        }
+      );
+      default = { };
+      description = "Domain-based routes registered by service modules";
     };
   };
 

@@ -25,7 +25,7 @@ in
     reverseProxy = {
       enable = lib.mkOption {
         type = lib.types.bool;
-        default = true;
+        default = false;
         description = "Enable Traefik reverse proxy configuration for Tautulli.";
       };
 
@@ -33,39 +33,17 @@ in
         type = lib.types.nullOr lib.types.str;
         default = null;
         description = ''
-          Optional domain for hostname-based routing (e.g., "tautulli.example.com").
-          If set, creates a separate router for this domain with pathPrefix = "/".
-          This is useful for Cloudflare Tunnel with dedicated subdomains.
+          Domain for Tautulli (e.g., "tautulli.example.com").
+          This creates a router that matches requests to this domain and forwards to Tautulli.
+          Required when reverseProxy.enable = true.
         '';
         example = "tautulli.example.com";
-      };
-
-      pathPrefix = lib.mkOption {
-        type = lib.types.str;
-        default = "/tautulli";
-        description = "URL path prefix for Tautulli.";
       };
 
       port = lib.mkOption {
         type = lib.types.port;
         default = 8181;
         description = "Port where Tautulli listens.";
-      };
-
-      stripPrefix = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to strip the path prefix before forwarding to Tautulli.";
-      };
-
-      extraMiddlewares = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Additional Traefik middlewares to apply.";
-        example = [
-          "rate-limit"
-          "security-headers"
-        ];
       };
     };
   };
@@ -76,51 +54,34 @@ in
       inherit (cfg) dataDir configFile openFirewall;
     };
 
-    # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    telometto.services.traefik =
-      lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
+    # Configure Traefik reverse proxy if enabled
+    # Using standard NixOS services.traefik.dynamicConfigOptions
+    services.traefik.dynamicConfigOptions =
+      lib.mkIf (cfg.reverseProxy.enable && config.services.traefik.enable or false)
         {
-          # Services: path-based for Tailscale and optionally domain-based for Cloudflare
-          services = {
-            # Main path-based service (for Tailscale: blizzard.ts.net/tautulli)
-            tautulli = {
-              backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
-              inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
-              customHeaders = {
-                X-Forwarded-Proto = "https";
-                X-Forwarded-Host =
-                  config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
-              };
+          http = {
+            # Router: matches the domain and forwards to the service
+            routers.tautulli = {
+              rule = "Host(`${cfg.reverseProxy.domain}`)";
+              service = "tautulli";
+              entryPoints = [ "websecure" ];
+              tls = { };
             };
-          };
 
-          # Manual configuration for domain-based routing (bypasses auto-generation)
-          dynamicConfigOptions = lib.mkIf (cfg.reverseProxy.domain != null) {
-            http = {
-              # Middleware for domain-based service
-              middlewares."tautulli-domain-headers" = {
-                headers.customRequestHeaders = {
-                  X-Forwarded-Proto = "https";
-                  X-Forwarded-Host = cfg.reverseProxy.domain;
-                };
-              };
-
-              # Router for domain-based service with correct Host rule
-              routers."tautulli-domain" = {
-                rule = "Host(`${cfg.reverseProxy.domain}`)";
-                service = "tautulli-domain";
-                middlewares = [ "tautulli-domain-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
-                entrypoints = [ "websecure" ];
-                tls.certResolver = config.telometto.services.traefik.certResolver or "myresolver";
-              };
-
-              # Service definition for domain-based routing
-              services."tautulli-domain".loadBalancer = {
-                servers = [ { url = "http://localhost:${toString cfg.reverseProxy.port}/"; } ];
-                passHostHeader = true;
-              };
+            # Service: points to Tautulli backend
+            services.tautulli.loadBalancer = {
+              servers = [ { url = "http://localhost:${toString cfg.reverseProxy.port}"; } ];
+              passHostHeader = true;
             };
           };
         };
+
+    # Validate configuration
+    assertions = [
+      {
+        assertion = !cfg.reverseProxy.enable || cfg.reverseProxy.domain != null;
+        message = "telometto.services.tautulli.reverseProxy.domain must be set when reverseProxy is enabled";
+      }
+    ];
   };
 }
