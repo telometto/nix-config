@@ -75,10 +75,10 @@
                 Referrer-Policy = "no-referrer";
                 Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
               };
-              
+
               # Content Security Policy (adjust per service if needed)
               contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
-              
+
               # HSTS (HTTP Strict Transport Security) - only for HTTPS services
               # Uncomment if using HTTPS entry points
               # stsSeconds = 31536000;  # 1 year

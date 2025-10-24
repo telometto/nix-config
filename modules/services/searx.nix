@@ -113,7 +113,7 @@ in
     services.searx = {
       enable = true;
       redisCreateLocally = true;
-      
+
       # Rate limiting configuration for bot detection and abuse prevention
       limiterSettings = {
         real_ip = {
@@ -140,20 +140,20 @@ in
           ###################################
           ### SECURITY & PRIVACY SETTINGS ###
           ###################################
-          
+
           # General instance settings
           general = {
             # Disable debug mode in production (prevents information leakage)
             debug = false;
             instance_name = "SearXNG";
-            
+
             # Contact and policy URLs (configurable, required for public instances)
             contact_url = if cfg.publicInstance then cfg.contactUrl else false;
             privacypolicy_url = cfg.privacyPolicyUrl or false;
-            
+
             # Donation URL disabled by default
             donation_url = false;
-            
+
             # Enable metrics for public instances (transparency)
             # Disabled for private instances (prevents information disclosure)
             enable_metrics = cfg.publicInstance;
@@ -180,13 +180,13 @@ in
             # Enable image proxy to prevent direct connections to image hosts
             # This protects user privacy by proxying all image requests through SearXNG
             image_proxy = true;
-            
+
             # HTTP method for search requests (GET is standard)
             method = "GET";
-            
+
             # Public instance flag - enables public instance features when true
             public_instance = cfg.publicInstance;
-            
+
             # Base URL - should be configured per deployment via cfg.settings
             # base_url = "https://search.example.com";
           };
@@ -218,7 +218,7 @@ in
             # Rate limiting for failed requests
             ban_time_on_fail = 5;
             max_ban_time_on_fail = 120;
-            
+
             # Available output formats
             formats = [
               "html"
