@@ -236,6 +236,7 @@ in
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = "grafana";
               entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
             };
 
             services.grafana.loadBalancer = {

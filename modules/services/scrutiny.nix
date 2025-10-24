@@ -114,6 +114,7 @@ in
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = "scrutiny";
               entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
             };
 
             services.scrutiny.loadBalancer = {

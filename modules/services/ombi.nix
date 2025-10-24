@@ -90,6 +90,7 @@ in
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = "ombi";
               entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
             };
 
             services.ombi.loadBalancer = {

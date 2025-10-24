@@ -87,6 +87,7 @@ in
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = "tautulli";
               entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
             };
 
             # Service: points to Tautulli backend
