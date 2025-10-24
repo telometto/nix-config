@@ -149,7 +149,7 @@ in
 
             # Contact and policy URLs (configurable, required for public instances)
             contact_url = if cfg.publicInstance then cfg.contactUrl else false;
-            privacypolicy_url = cfg.privacyPolicyUrl or false;
+            privacypolicy_url = if cfg.privacyPolicyUrl != null then cfg.privacyPolicyUrl else false;
 
             # Donation URL disabled by default
             donation_url = false;
