@@ -104,14 +104,28 @@
             entryPoints = [ "web" ];
             middlewares = [ "security-headers" ];
           };
+
+          qb = {
+            rule = "Host(`qb.${VARS.domains.public}`)";
+            service = "qbittorrent";
+            entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
+          };
         };
 
         services = {
-          # Overseerr (k3s service)
           overseerr = {
             loadBalancer = {
               servers = [
                 { url = "http://localhost:5055"; }
+              ];
+            };
+          };
+
+          qbittorrent = {
+            loadBalancer = {
+              servers = [
+                { url = "http://localhost:8090"; }
               ];
             };
           };
@@ -394,6 +408,7 @@
         ingress = {
           # Overseerr (k3s service) - manually configured
           "requests.${VARS.domains.public}" = "http://localhost:80";
+          "qb.${VARS.domains.public}" = "http://localhost:80";
         };
       };
 
