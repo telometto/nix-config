@@ -328,10 +328,13 @@
       firefly.enable = lib.mkDefault false; # APP_KEY_FILE via defaults
 
       searx = {
-        enable = lib.mkDefault true; # port 7777 bind 0.0.0.0
+        enable = lib.mkDefault true;
         port = lib.mkDefault 7777;
+        bind = "127.0.0.1";  # Bind to localhost only (reverse proxy required)
+        
         # Update base_url for Cloudflare domain (not Tailscale)
-        settings.server.base_url = "https://search.${VARS.domains.public}/";
+        # Note: No trailing slash - SearXNG validation requires this
+        settings.server.base_url = "https://search.${VARS.domains.public}";
 
         # Exposed via Cloudflare only: searx.mydomain.com → searx at root (/)
         reverseProxy = {
