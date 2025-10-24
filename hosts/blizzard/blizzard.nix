@@ -63,12 +63,38 @@
     # Dynamic configuration - Traefik dashboard and Overseerr (k3s)
     dynamicConfigOptions = {
       http = {
+        # Global security headers middleware
+        middlewares = {
+          security-headers = {
+            headers = {
+              # Response headers for security hardening
+              customResponseHeaders = {
+                X-Content-Type-Options = "nosniff";
+                X-Frame-Options = "SAMEORIGIN";
+                X-XSS-Protection = "1; mode=block";
+                Referrer-Policy = "no-referrer";
+                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+              };
+              
+              # Content Security Policy (adjust per service if needed)
+              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
+              
+              # HSTS (HTTP Strict Transport Security) - only for HTTPS services
+              # Uncomment if using HTTPS entry points
+              # stsSeconds = 31536000;  # 1 year
+              # stsIncludeSubdomains = true;
+              # stsPreload = true;
+            };
+          };
+        };
+
         routers = {
           traefik-dashboard = {
             rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
             service = "api@internal";
             entryPoints = [ "websecure" ];
             tls.certResolver = "myresolver";
+            middlewares = [ "security-headers" ];
           };
 
           # Overseerr (k3s service) - manually configured since it's not a telometto service
@@ -76,6 +102,7 @@
             rule = "Host(`requests.${VARS.domains.public}`)";
             service = "overseerr";
             entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
           };
         };
 
@@ -256,7 +283,7 @@
         # Exposed via Cloudflare only: grafana.mydomain.com → grafana at root (/)
         reverseProxy = {
           enable = true;
-          domain = "grafana.${VARS.domains.public}";
+          domain = "metrics.${VARS.domains.public}";
           cfTunnel.enable = true;
         };
       };
@@ -290,12 +317,12 @@
         enable = lib.mkDefault true; # port 7777 bind 0.0.0.0
         port = lib.mkDefault 7777;
         # Update base_url for Cloudflare domain (not Tailscale)
-        settings.server.base_url = "https://searx.${VARS.domains.public}/";
+        settings.server.base_url = "https://search.${VARS.domains.public}/";
 
         # Exposed via Cloudflare only: searx.mydomain.com → searx at root (/)
         reverseProxy = {
           enable = true;
-          domain = "searx.${VARS.domains.public}";
+          domain = "search.${VARS.domains.public}";
           cfTunnel.enable = true;
         };
       };
@@ -321,7 +348,7 @@
         # Exposed via Cloudflare only: ombi.mydomain.com → ombi at root (/)
         reverseProxy = {
           enable = true;
-          domain = "ombi.${VARS.domains.public}";
+          domain = "requests2.${VARS.domains.public}";
           cfTunnel.enable = true;
         };
       };
