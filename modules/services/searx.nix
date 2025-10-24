@@ -6,6 +6,19 @@ in
   options.telometto.services.searx = {
     enable = lib.mkEnableOption "Searx Meta Search";
 
+    publicInstance = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Whether this is a public SearXNG instance.
+        When enabled:
+        - Sets server.public_instance = true
+        - Enables metrics endpoint for transparency
+        - Requires contact information for abuse reports
+        - Enforces bind to localhost (security requirement)
+      '';
+    };
+
     port = lib.mkOption {
       type = lib.types.port;
       default = 7777;
@@ -13,7 +26,31 @@ in
 
     bind = lib.mkOption {
       type = lib.types.str;
-      default = "0.0.0.0";
+      default = "127.0.0.1";
+      description = ''
+        Bind address for the SearXNG service.
+        Default is 127.0.0.1 (localhost only) for security.
+        Should only be accessible via reverse proxy.
+      '';
+    };
+
+    contactUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Contact URL or email for abuse reports (e.g., "mailto:abuse@example.com").
+        Required when publicInstance = true.
+      '';
+      example = "mailto:admin@example.com";
+    };
+
+    privacyPolicyUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        URL to privacy policy. Recommended for public instances.
+      '';
+      example = "https://example.com/privacy";
     };
 
     settings = lib.mkOption {
@@ -76,21 +113,173 @@ in
     services.searx = {
       enable = true;
       redisCreateLocally = true;
+      
+      # Rate limiting configuration for bot detection and abuse prevention
+      limiterSettings = {
+        real_ip = {
+          # Trust the first X-Forwarded-For header entry (behind reverse proxy)
+          x_for = 1;
+          # /32 = exact IP for IPv4 (strictest rate limiting per unique IP)
+          ipv4_prefix = 32;
+          # /56 = reasonable IPv6 subnet size (prevents single user bypass via IPv6 rotation)
+          ipv6_prefix = 56;
+        };
+
+        botdetection = {
+          ip_limit = {
+            # Filter out link-local addresses (169.254.0.0/16, fe80::/10)
+            filter_link_local = true;
+            # Enable link_token for additional bot detection
+            link_token = true;
+          };
+        };
+      };
+
       settings = lib.mkMerge [
         {
+          ###################################
+          ### SECURITY & PRIVACY SETTINGS ###
+          ###################################
+          
+          # General instance settings
+          general = {
+            # Disable debug mode in production (prevents information leakage)
+            debug = false;
+            instance_name = "SearXNG";
+            
+            # Contact and policy URLs (configurable, required for public instances)
+            contact_url = if cfg.publicInstance then cfg.contactUrl else false;
+            privacypolicy_url = cfg.privacyPolicyUrl or false;
+            
+            # Donation URL disabled by default
+            donation_url = false;
+            
+            # Enable metrics for public instances (transparency)
+            # Disabled for private instances (prevents information disclosure)
+            enable_metrics = cfg.publicInstance;
+          };
+
+          # Brand customization (optional, removes default branding)
+          brand = {
+            new_issue_url = false;
+            docs_url = false;
+            public_instances = false;
+            wiki_url = false;
+          };
+
+          # Server configuration
           server = {
             # Use centralized secrets bridge; avoids direct SOPS references here
             secret_key = config.telometto.secrets.searxSecretKeyFile;
             inherit (cfg) port;
             bind_address = cfg.bind;
+
+            # Enable rate limiter (requires redis/valkey)
+            limiter = true;
+
+            # Enable image proxy to prevent direct connections to image hosts
+            # This protects user privacy by proxying all image requests through SearXNG
+            image_proxy = true;
+            
+            # HTTP method for search requests (GET is standard)
+            method = "GET";
+            
+            # Public instance flag - enables public instance features when true
+            public_instance = cfg.publicInstance;
+            
+            # Base URL - should be configured per deployment via cfg.settings
+            # base_url = "https://search.example.com";
           };
-          search.formats = [
-            "html"
-            "json"
-            "rss"
+
+          # User Interface settings
+          ui = {
+            # Use hashed static files for cache busting (security best practice)
+            static_use_hash = true;
+            default_locale = "en";
+            query_in_title = true;
+            infinite_scroll = false;
+            center_alignment = true;
+            default_theme = "simple";
+            theme_args.simple_style = "auto";
+            search_on_category_select = false;
+            hotkeys = "vim";
+          };
+
+          # Search behavior settings
+          search = {
+            # Safe search level: 0=off, 1=moderate, 2=strict
+            # Set to 2 for maximum content filtering
+            safe_search = 2;
+
+            # Autocomplete settings
+            autocomplete_min = 2;
+            autocomplete = "duckduckgo";
+
+            # Rate limiting for failed requests
+            ban_time_on_fail = 5;
+            max_ban_time_on_fail = 120;
+            
+            # Available output formats
+            formats = [
+              "html"
+              "json"
+            ];
+          };
+
+          # Outgoing request settings (security & performance)
+          outgoing = {
+            # Timeout settings prevent hanging requests
+            request_timeout = 5.0;
+            max_request_timeout = 15.0;
+
+            # Connection pooling for performance
+            pool_connections = 100;
+            pool_maxsize = 15;
+
+            # Enable HTTP/2 for better performance and security
+            enable_http2 = true;
+
+            # Uncomment to use a proxy for all outgoing requests (Tor, etc.)
+            # proxies = {
+            #   http = "socks5://127.0.0.1:9050";
+            #   https = "socks5://127.0.0.1:9050";
+            # };
+
+            # Enable to verify SSL certificates (recommended for security)
+            # verify = true;
+          };
+
+          # Security plugins
+          enabled_plugins = [
+            # Essential security & privacy plugins
+            "Hash plugin" # Calculate hashes
+            "Tor check plugin" # Check if using Tor
+            "Tracker URL remover" # Remove tracking parameters from URLs
+            "Hostname replace" # Replace hostnames (privacy frontends)
+
+            # Utility plugins
+            "Basic Calculator" # In-page calculator
+            "Unit converter plugin" # Unit conversions
+            "Open Access DOI rewrite" # Redirect to open access versions
           ];
+
+          # Redis/Valkey configuration for rate limiting and caching
           # Redis has been renamed to Valkey in NixOS settings, but the service path remains redis
           valkey.url = lib.mkIf config.services.searx.redisCreateLocally "unix://${config.services.redis.servers.searx.unixSocket}";
+
+          # Response headers for security
+          # NOTE: Security headers are now configured at the Traefik reverse proxy level
+          # via the 'security-headers' middleware in blizzard.nix (see http.middlewares.security-headers)
+          # This provides consistent security headers across all services.
+          # If you need SearXNG-specific headers, uncomment and customize below:
+          #
+          # server.response_headers = {
+          #   X-Content-Type-Options = "nosniff";
+          #   X-Frame-Options = "SAMEORIGIN";
+          #   X-XSS-Protection = "1; mode=block";
+          #   Referrer-Policy = "no-referrer";
+          #   Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;";
+          # };
         }
         cfg.settings
       ];
@@ -110,6 +299,7 @@ in
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = "searx";
               entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
             };
 
             services.searx.loadBalancer = {
@@ -137,6 +327,18 @@ in
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
         message = "telometto.services.searx.reverseProxy.domain must be set when cfTunnel.enable is true";
+      }
+      {
+        assertion = !cfg.publicInstance || cfg.contactUrl != null;
+        message = "telometto.services.searx.contactUrl must be set when publicInstance = true (required for abuse reports)";
+      }
+      {
+        assertion = !cfg.publicInstance || (cfg.bind == "127.0.0.1" || cfg.bind == "::1");
+        message = "telometto.services.searx.bind must be localhost (127.0.0.1 or ::1) when publicInstance = true (security requirement - only accessible via reverse proxy)";
+      }
+      {
+        assertion = !cfg.publicInstance || cfg.reverseProxy.enable;
+        message = "telometto.services.searx.reverseProxy.enable must be true when publicInstance = true (security requirement)";
       }
     ];
   };
