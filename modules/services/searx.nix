@@ -125,11 +125,13 @@ in
           ipv6_prefix = 56;
         };
 
-        botdetection.ip_limit = {
-          # Filter out link-local addresses (169.254.0.0/16, fe80::/10)
-          filter_link_local = true;
-          # Enable link_token for additional bot detection
-          link_token = true;
+        botdetection = {
+          ip_limit = {
+            # Filter out link-local addresses (169.254.0.0/16, fe80::/10)
+            filter_link_local = true;
+            # Enable link_token for additional bot detection
+            link_token = true;
+          };
         };
       };
 
@@ -177,8 +179,11 @@ in
             # Public instance flag - enables public instance features when true
             public_instance = cfg.publicInstance;
 
-            # Base URL - should be configured per deployment via cfg.settings
-            # base_url = "https://search.example.com";
+            # Base URL - configured via reverseProxy.domain if available
+            base_url = 
+              if cfg.reverseProxy.domain != null 
+              then "https://${cfg.reverseProxy.domain}"
+              else null;
           };
 
           # User Interface settings
@@ -198,8 +203,7 @@ in
           # Search behavior settings
           search = {
             # Safe search level: 0=off, 1=moderate, 2=strict
-            # Set to 2 for maximum content filtering
-            safe_search = 2;
+            safe_search = 0;
 
             # Autocomplete settings
             autocomplete_min = 2;
@@ -246,12 +250,73 @@ in
             "Tor check plugin" # Check if using Tor
             "Tracker URL remover" # Remove tracking parameters from URLs
             "Hostname replace" # Replace hostnames (privacy frontends)
+            "Hostnames plugin" # Privacy-friendly redirects (YouTube→Invidious, Twitter→Nitter, etc.)
 
             # Utility plugins
             "Basic Calculator" # In-page calculator
             "Unit converter plugin" # Unit conversions
             "Open Access DOI rewrite" # Redirect to open access versions
           ];
+
+          # Default search engine configuration
+          # Privacy-optimized engine selection with quality results
+          # Can be overridden via cfg.settings.engines in host config
+          engines = lib.mapAttrsToList (name: value: { inherit name; } // value) {
+            # Disable privacy-invasive engines
+            "duckduckgo".disabled = true;        # Use other privacy-focused alternatives
+            "brave".disabled = true;             # Brave has tracking concerns
+            "brave.images".disabled = true;
+            "brave.videos".disabled = true;
+            "brave.news".disabled = true;
+            
+            # Privacy-first search engines (prioritize these)
+            "startpage".disabled = false;        # Privacy proxy for Google results
+            "startpage".weight = 2.0;            # PRIMARY - best privacy + quality combo
+            "mojeek".disabled = false;           # Privacy-focused, independent index
+            "mojeek".weight = 1.0;
+            "qwant".disabled = false;            # EU-based, privacy-focused
+            "qwant".weight = 1.0;
+            
+            # Traditional engines (fallback only, lower weight)
+            # Your SearXNG proxies these, but use sparingly for best privacy
+            "bing".disabled = false;
+            "bing".weight = 0.5;                 # Lower weight - use as supplement
+            "google".disabled = false;
+            "google".weight = 0.5;               # Lower weight - use as supplement
+            
+            # Alternative search engines
+            "mwmbl".disabled = false;            # Non-profit, ad-free
+            "mwmbl".weight = 0.4;
+            
+            # Knowledge & reference
+            "ddg definitions".disabled = false;
+            "ddg definitions".weight = 2;
+            "wikidata".disabled = false;
+            "wikibooks".disabled = false;
+            "wikipedia".disabled = false;
+            "wikipedia".weight = 1.5;
+            
+            # Images
+            "bing images".disabled = false;
+            "google images".disabled = false;
+            "duckduckgo images".disabled = true;
+            "unsplash".disabled = false;
+            "openverse".disabled = false;
+            "wikicommons.images".disabled = false;
+            
+            # Videos
+            "bing videos".disabled = false;
+            "google videos".disabled = false;
+            "youtube".disabled = false;
+            "peertube".disabled = false;         # Federated video platform
+            "sepiasearch".disabled = false;      # PeerTube search
+            
+            # Disable problematic/unnecessary engines
+            "yacy images".disabled = true;       # Requires yacy instance
+            "ahmia".disabled = true;             # Tor search - not for public instance
+            "torch".disabled = true;             # Tor search - not for public instance
+            "google news".disabled = true;       # Prefer other news sources
+          };
 
           # Redis/Valkey configuration for rate limiting and caching
           # Redis has been renamed to Valkey in NixOS settings, but the service path remains redis

@@ -332,16 +332,18 @@
         port = lib.mkDefault 7777;
         bind = "127.0.0.1"; # Bind to localhost only (reverse proxy required)
 
-        # Update base_url for Cloudflare domain (not Tailscale)
-        # Note: No trailing slash - SearXNG validation requires this
-        settings.server.base_url = "https://search.${VARS.domains.public}";
-
         # Exposed via Cloudflare only: searx.mydomain.com → searx at root (/)
+        # Note: base_url and engine configuration now have sensible defaults in the module
         reverseProxy = {
           enable = true;
           domain = "search.${VARS.domains.public}";
           cfTunnel.enable = true;
         };
+
+        # Optional: Override default settings here if needed
+        # settings = {
+        #   engines = [ ... ];  # Override engine configuration
+        # };
       };
 
       immich = {
