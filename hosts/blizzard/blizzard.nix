@@ -111,6 +111,64 @@
             entryPoints = [ "web" ];
             middlewares = [ "security-headers" ];
           };
+
+          # Download Management Services (k3s)
+          firefox = {
+            rule = "Host(`ff.${VARS.domains.public}`)";
+            service = "firefox";
+            entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
+          };
+
+          sabnzbd = {
+            rule = "Host(`sab.${VARS.domains.public}`)";
+            service = "sabnzbd";
+            entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
+          };
+
+          # Servarr Services (k3s)
+          bazarr = {
+            rule = "Host(`subs.${VARS.domains.public}`)";
+            service = "bazarr";
+            entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
+          };
+
+          lingarr = {
+            rule = "Host(`lingarr.${VARS.domains.public}`)";
+            service = "lingarr";
+            entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
+          };
+
+          prowlarr = {
+            rule = "Host(`prowl.${VARS.domains.public}`)";
+            service = "prowlarr";
+            entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
+          };
+
+          radarr = {
+            rule = "Host(`movies.${VARS.domains.public}`)";
+            service = "radarr";
+            entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
+          };
+
+          readarr = {
+            rule = "Host(`books.${VARS.domains.public}`)";
+            service = "readarr";
+            entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
+          };
+
+          sonarr = {
+            rule = "Host(`series.${VARS.domains.public}`)";
+            service = "sonarr";
+            entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
+          };
         };
 
         services = {
@@ -126,6 +184,72 @@
             loadBalancer = {
               servers = [
                 { url = "http://localhost:8090"; }
+              ];
+            };
+          };
+
+          # Download Management Services (k3s)
+          firefox = {
+            loadBalancer = {
+              servers = [
+                { url = "http://localhost:3001"; }
+              ];
+            };
+          };
+
+          sabnzbd = {
+            loadBalancer = {
+              servers = [
+                { url = "http://localhost:8080"; }
+              ];
+            };
+          };
+
+          # Servarr Services (k3s)
+          bazarr = {
+            loadBalancer = {
+              servers = [
+                { url = "http://localhost:6767"; }
+              ];
+            };
+          };
+
+          lingarr = {
+            loadBalancer = {
+              servers = [
+                { url = "http://localhost:9876"; }
+              ];
+            };
+          };
+
+          prowlarr = {
+            loadBalancer = {
+              servers = [
+                { url = "http://localhost:9696"; }
+              ];
+            };
+          };
+
+          radarr = {
+            loadBalancer = {
+              servers = [
+                { url = "http://localhost:7878"; }
+              ];
+            };
+          };
+
+          readarr = {
+            loadBalancer = {
+              servers = [
+                { url = "http://localhost:8787"; }
+              ];
+            };
+          };
+
+          sonarr = {
+            loadBalancer = {
+              servers = [
+                { url = "http://localhost:8989"; }
               ];
             };
           };
@@ -414,6 +538,18 @@
           # Overseerr (k3s service) - manually configured
           "requests.${VARS.domains.public}" = "http://localhost:80";
           "qb.${VARS.domains.public}" = "http://localhost:80";
+          
+          # Download Management Services (k3s)
+          "ff.${VARS.domains.public}" = "http://localhost:80";
+          "sab.${VARS.domains.public}" = "http://localhost:80";
+          
+          # Servarr Services (k3s)
+          "subs.${VARS.domains.public}" = "http://localhost:80";
+          "lingarr.${VARS.domains.public}" = "http://localhost:80";
+          "prowl.${VARS.domains.public}" = "http://localhost:80";
+          "movies.${VARS.domains.public}" = "http://localhost:80";
+          "books.${VARS.domains.public}" = "http://localhost:80";
+          "series.${VARS.domains.public}" = "http://localhost:80";
         };
       };
 
