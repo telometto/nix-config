@@ -125,13 +125,11 @@ in
           ipv6_prefix = 56;
         };
 
-        botdetection = {
-          ip_limit = {
-            # Filter out link-local addresses (169.254.0.0/16, fe80::/10)
-            filter_link_local = true;
-            # Enable link_token for additional bot detection
-            link_token = true;
-          };
+        botdetection.ip_limit = {
+          # Filter out link-local addresses (169.254.0.0/16, fe80::/10)
+          filter_link_local = true;
+          # Enable link_token for additional bot detection
+          link_token = true;
         };
       };
 
