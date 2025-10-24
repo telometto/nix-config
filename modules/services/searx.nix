@@ -115,23 +115,24 @@ in
       redisCreateLocally = true;
 
       # Rate limiting configuration for bot detection and abuse prevention
-      limiterSettings = {
-        real_ip = {
-          # Trust the first X-Forwarded-For header entry (behind reverse proxy)
-          x_for = 1;
-          # /32 = exact IP for IPv4 (strictest rate limiting per unique IP)
-          ipv4_prefix = 32;
-          # /56 = reasonable IPv6 subnet size (prevents single user bypass via IPv6 rotation)
-          ipv6_prefix = 56;
-        };
-
-        botdetection.ip_limit = {
-          # Filter out link-local addresses (169.254.0.0/16, fe80::/10)
-          filter_link_local = true;
-          # Enable link_token for additional bot detection
-          link_token = true;
-        };
-      };
+      # Temporarily disabled to debug configuration issues
+      # limiterSettings = {
+      #   real_ip = {
+      #     # Trust the first X-Forwarded-For header entry (behind reverse proxy)
+      #     x_for = 1;
+      #     # /32 = exact IP for IPv4 (strictest rate limiting per unique IP)
+      #     ipv4_prefix = 32;
+      #     # /56 = reasonable IPv6 subnet size (prevents single user bypass via IPv6 rotation)
+      #     ipv6_prefix = 56;
+      #   };
+      #
+      #   botdetection.ip_limit = {
+      #     # Filter out link-local addresses (169.254.0.0/16, fe80::/10)
+      #     filter_link_local = true;
+      #     # Enable link_token for additional bot detection
+      #     link_token = true;
+      #   };
+      # };
 
       settings = lib.mkMerge [
         {
@@ -155,14 +156,6 @@ in
             # Enable metrics for public instances (transparency)
             # Disabled for private instances (prevents information disclosure)
             enable_metrics = cfg.publicInstance;
-          };
-
-          # Brand customization (optional, removes default branding)
-          brand = {
-            new_issue_url = false;
-            docs_url = false;
-            public_instances = false;
-            wiki_url = false;
           };
 
           # Server configuration
