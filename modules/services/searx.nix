@@ -180,10 +180,7 @@ in
             public_instance = cfg.publicInstance;
 
             # Base URL - configured via reverseProxy.domain if available
-            base_url = 
-              if cfg.reverseProxy.domain != null 
-              then "https://${cfg.reverseProxy.domain}"
-              else null;
+            base_url = if cfg.reverseProxy.domain != null then "https://${cfg.reverseProxy.domain}" else null;
           };
 
           # User Interface settings
@@ -263,31 +260,31 @@ in
           # Can be overridden via cfg.settings.engines in host config
           engines = lib.mapAttrsToList (name: value: { inherit name; } // value) {
             # Disable privacy-invasive engines
-            "duckduckgo".disabled = true;        # Use other privacy-focused alternatives
-            "brave".disabled = true;             # Brave has tracking concerns
+            "duckduckgo".disabled = true; # Use other privacy-focused alternatives
+            "brave".disabled = true; # Brave has tracking concerns
             "brave.images".disabled = true;
             "brave.videos".disabled = true;
             "brave.news".disabled = true;
-            
+
             # Privacy-first search engines (prioritize these)
-            "startpage".disabled = false;        # Privacy proxy for Google results
-            "startpage".weight = 2.0;            # PRIMARY - best privacy + quality combo
-            "mojeek".disabled = false;           # Privacy-focused, independent index
+            "startpage".disabled = false; # Privacy proxy for Google results
+            "startpage".weight = 2.0; # PRIMARY - best privacy + quality combo
+            "mojeek".disabled = false; # Privacy-focused, independent index
             "mojeek".weight = 1.0;
-            "qwant".disabled = false;            # EU-based, privacy-focused
+            "qwant".disabled = false; # EU-based, privacy-focused
             "qwant".weight = 1.0;
-            
+
             # Traditional engines (fallback only, lower weight)
             # Your SearXNG proxies these, but use sparingly for best privacy
             "bing".disabled = false;
-            "bing".weight = 0.5;                 # Lower weight - use as supplement
+            "bing".weight = 0.5; # Lower weight - use as supplement
             "google".disabled = false;
-            "google".weight = 0.5;               # Lower weight - use as supplement
-            
+            "google".weight = 0.5; # Lower weight - use as supplement
+
             # Alternative search engines
-            "mwmbl".disabled = false;            # Non-profit, ad-free
+            "mwmbl".disabled = false; # Non-profit, ad-free
             "mwmbl".weight = 0.4;
-            
+
             # Knowledge & reference
             "ddg definitions".disabled = false;
             "ddg definitions".weight = 2;
@@ -295,7 +292,7 @@ in
             "wikibooks".disabled = false;
             "wikipedia".disabled = false;
             "wikipedia".weight = 1.5;
-            
+
             # Images
             "bing images".disabled = false;
             "google images".disabled = false;
@@ -303,19 +300,19 @@ in
             "unsplash".disabled = false;
             "openverse".disabled = false;
             "wikicommons.images".disabled = false;
-            
+
             # Videos
             "bing videos".disabled = false;
             "google videos".disabled = false;
             "youtube".disabled = false;
-            "peertube".disabled = false;         # Federated video platform
-            "sepiasearch".disabled = false;      # PeerTube search
-            
+            "peertube".disabled = false; # Federated video platform
+            "sepiasearch".disabled = false; # PeerTube search
+
             # Disable problematic/unnecessary engines
-            "yacy images".disabled = true;       # Requires yacy instance
-            "ahmia".disabled = true;             # Tor search - not for public instance
-            "torch".disabled = true;             # Tor search - not for public instance
-            "google news".disabled = true;       # Prefer other news sources
+            "yacy images".disabled = true; # Requires yacy instance
+            "ahmia".disabled = true; # Tor search - not for public instance
+            "torch".disabled = true; # Tor search - not for public instance
+            "google news".disabled = true; # Prefer other news sources
           };
 
           # Redis/Valkey configuration for rate limiting and caching
