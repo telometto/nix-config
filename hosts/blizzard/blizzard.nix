@@ -538,11 +538,11 @@
           # Overseerr (k3s service) - manually configured
           "requests.${VARS.domains.public}" = "http://localhost:80";
           "qb.${VARS.domains.public}" = "http://localhost:80";
-          
+
           # Download Management Services (k3s)
           "ff.${VARS.domains.public}" = "http://localhost:80";
           "sab.${VARS.domains.public}" = "http://localhost:80";
-          
+
           # Servarr Services (k3s)
           "subs.${VARS.domains.public}" = "http://localhost:80";
           "lingarr.${VARS.domains.public}" = "http://localhost:80";
