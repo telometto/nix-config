@@ -105,13 +105,6 @@
             middlewares = [ "security-headers" ];
           };
 
-          qb = {
-            rule = "Host(`qb.${VARS.domains.public}`)";
-            service = "qbittorrent";
-            entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
-          };
-
           # Download Management Services (k3s)
           firefox = {
             rule = "Host(`ff.${VARS.domains.public}`)";
@@ -172,87 +165,15 @@
         };
 
         services = {
-          overseerr = {
-            loadBalancer = {
-              servers = [
-                { url = "http://localhost:5055"; }
-              ];
-            };
-          };
-
-          qbittorrent = {
-            loadBalancer = {
-              servers = [
-                { url = "http://localhost:8090"; }
-              ];
-            };
-          };
-
-          # Download Management Services (k3s)
-          firefox = {
-            loadBalancer = {
-              servers = [
-                { url = "http://localhost:3001"; }
-              ];
-            };
-          };
-
-          sabnzbd = {
-            loadBalancer = {
-              servers = [
-                { url = "http://localhost:8080"; }
-              ];
-            };
-          };
-
-          # Servarr Services (k3s)
-          bazarr = {
-            loadBalancer = {
-              servers = [
-                { url = "http://localhost:6767"; }
-              ];
-            };
-          };
-
-          lingarr = {
-            loadBalancer = {
-              servers = [
-                { url = "http://localhost:9876"; }
-              ];
-            };
-          };
-
-          prowlarr = {
-            loadBalancer = {
-              servers = [
-                { url = "http://localhost:9696"; }
-              ];
-            };
-          };
-
-          radarr = {
-            loadBalancer = {
-              servers = [
-                { url = "http://localhost:7878"; }
-              ];
-            };
-          };
-
-          readarr = {
-            loadBalancer = {
-              servers = [
-                { url = "http://localhost:8787"; }
-              ];
-            };
-          };
-
-          sonarr = {
-            loadBalancer = {
-              servers = [
-                { url = "http://localhost:8989"; }
-              ];
-            };
-          };
+          overseerr.loadBalancer.servers = [{ url = "http://localhost:10001"; }];
+          prowlarr.loadBalancer.servers = [{ url = "http://localhost:10010"; }];
+          sonarr.loadBalancer.servers = [{ url = "http://localhost:10020"; }];
+          radarr.loadBalancer.servers = [{ url = "http://localhost:10021"; }];
+          readarr.loadBalancer.servers = [{ url = "http://localhost:10022"; }];
+          bazarr.loadBalancer.servers = [{ url = "http://localhost:10030"; }];
+          lingarr.loadBalancer.servers = [{ url = "http://localhost:10031"; }];
+          sabnzbd.loadBalancer.servers = [{ url = "http://localhost:10050"; }];
+          firefox.loadBalancer.servers = [{ url = "http://localhost:10060"; }];
         };
       };
     };
