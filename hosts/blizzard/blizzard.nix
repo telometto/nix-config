@@ -61,6 +61,43 @@
         };
       };
 
+      # CrowdSec ingestion and enrichment for Traefik/SearX traffic
+      crowdsec = {
+        enable = true;
+
+        localConfig = {
+          acquisitions = [
+            {
+              source = "journalctl";
+              journalctl_filter = [
+                "_SYSTEMD_UNIT=traefik.service"
+              ];
+              labels = {
+                type = "traefik";
+                service = "traefik";
+                environment = "production";
+              };
+            }
+          ];
+
+          # Capture useful HTTP metadata in alerts so we can trace abusive SearXNG requests quickly.
+          contexts = [
+            {
+              context = {
+                target_host = [ "evt.Meta.http_host" ];
+                target_uri = [ "evt.Meta.http_path" ];
+                http_method = [ "evt.Meta.http_verb" ];
+                http_status = [ "evt.Meta.http_status" ];
+                user_agent = [ "evt.Meta.http_user_agent" ];
+              };
+            }
+          ];
+        };
+
+        # Disable LAPI until credentials are provisioned; avoids setup script expecting a secret path
+        settings.lapi.enable = false;
+      };
+
       # ZFS helpers and snapshot management
       zfs.enable = true;
 
@@ -403,6 +440,11 @@
       dataDir = "/var/lib/traefik";
 
       staticConfigOptions = {
+        # Emit JSON access logs for CrowdSec ingestion while keeping service logs quiet by default
+        accessLog = {
+          format = "json";
+        };
+
         log.level = "WARN";
 
         # Enable API and dashboard
@@ -414,10 +456,32 @@
         # Entry points
         entryPoints = {
           # HTTP entrypoint - redirects to HTTPS (except for Cloudflare domains)
-          web.address = ":80";
+          web = {
+            address = ":80";
+            forwardedHeaders = {
+              trustedIPs = [
+                "127.0.0.1/32" # cloudflared tunnel
+                "10.0.0.0/8"
+                "172.16.0.0/12"
+                "192.168.0.0/16"
+                "100.64.0.0/10" # tailscale subnet
+              ];
+            };
+          };
 
           # HTTPS entrypoint for Tailscale domains
-          websecure.address = ":443";
+          websecure = {
+            address = ":443";
+            forwardedHeaders = {
+              trustedIPs = [
+                "127.0.0.1/32"
+                "10.0.0.0/8"
+                "172.16.0.0/12"
+                "192.168.0.0/16"
+                "100.64.0.0/10"
+              ];
+            };
+          };
         };
 
         # Use Tailscale for TLS certificates

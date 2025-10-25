@@ -13,7 +13,7 @@
       systemd = {
         enable = lib.mkDefault true;
 
-        emergencyAccess = lib.mkDefault config.users.users.${VARS.users.zeno.user}.hashedPassword;
+        emergencyAccess = lib.mkDefault config.sops.secrets."system/hashedPw".path;
       };
     };
 

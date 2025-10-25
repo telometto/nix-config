@@ -34,6 +34,7 @@ in
     secrets =
       # Base secrets (always available for nix commands, git auth, etc.)
       {
+        "system/hashedPw" = { };
         "tokens/gh-ns-test" = { };
         "tokens/github-ns" = { };
         "tokens/gitlab-fa" = { };
@@ -48,44 +49,18 @@ in
         "general/borgRepo" = { };
       }
       // whenEnabled hasPaperless {
-        "general/paperlessKeyFilePath" = {
-          # mode = "0400";
-        };
+        "general/paperlessKeyFilePath" = { };
       }
       // whenEnabled hasSearx {
-        "general/searxSecretKey" = {
-          # owner = "searx";
-          # group = "searx";
-          # mode = "0400";
-        };
+        "general/searxSecretKey" = { };
       }
       // whenEnabled hasGrafanaCloud {
-        "grafana_cloud/api_key" = {
-          # owner = "prometheus";
-          # group = "prometheus";
-          # mode = "0400";
-        };
-        "grafana_cloud/username" = {
-          # mode = "0400";
-        };
-        "grafana_cloud/remote_write_url" = {
-          # mode = "0400";
-        };
-      }
-      // whenEnabled hasK3sDownloadMgmt {
-        "kubernetes/ff-user" = {
-          # mode = "0400";
-        };
-        "kubernetes/ff-pw" = {
-          # mode = "0400";
-        };
+        "grafana/cloud/api_key" = { };
+        "grafana/cloud/username" = { };
+        "grafana/cloud/remote_write_url" = { };
       }
       // whenEnabled hasCloudflared {
-        "cloudflare/credentials" = {
-          # Don't set owner/group to avoid chicken-egg problem
-          # The cloudflared service will access via systemd LoadCredential
-          # mode = "0400";
-        };
+        "cloudflare/credentials" = { };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -100,8 +75,8 @@ in
     }
     // whenEnabled hasGrafanaCloud {
       "grafana-cloud-config".content = ''
-        GRAFANA_CLOUD_USERNAME=${config.sops.placeholder."grafana_cloud/username"}
-        GRAFANA_CLOUD_REMOTE_WRITE_URL=${config.sops.placeholder."grafana_cloud/remote_write_url"}
+        GRAFANA_CLOUD_USERNAME=${config.sops.placeholder."grafana/cloud/username"}
+        GRAFANA_CLOUD_REMOTE_WRITE_URL=${config.sops.placeholder."grafana/cloud/remote_write_url"}
       '';
     };
   };
@@ -123,13 +98,9 @@ in
       borgRepo = toString config.sops.secrets."general/borgRepo".path;
     }
     // whenEnabled hasGrafanaCloud {
-      grafanaCloudApiKeyFile = toString config.sops.secrets."grafana_cloud/api_key".path;
-      grafanaCloudUsername = toString config.sops.secrets."grafana_cloud/username".path;
-      grafanaCloudRemoteWriteUrl = toString config.sops.secrets."grafana_cloud/remote_write_url".path;
-    }
-    // whenEnabled hasK3sDownloadMgmt {
-      firefoxUser = config.sops.placeholder."kubernetes/ff-user";
-      firefoxPassword = config.sops.placeholder."kubernetes/ff-pw";
+      grafanaCloudApiKeyFile = toString config.sops.secrets."grafana/cloud/api_key".path;
+      grafanaCloudUsername = toString config.sops.secrets."grafana/cloud/username".path;
+      grafanaCloudRemoteWriteUrl = toString config.sops.secrets."grafana/cloud/remote_write_url".path;
     }
     // whenEnabled hasCloudflared {
       cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/credentials".path;
