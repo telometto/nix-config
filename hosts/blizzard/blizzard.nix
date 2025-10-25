@@ -26,162 +26,7 @@
     };
   };
 
-  # Standard NixOS services
-  services.traefik = {
-    enable = true;
-    dataDir = "/var/lib/traefik";
-
-    staticConfigOptions = {
-      log.level = "WARN";
-
-      # Enable API and dashboard
-      api = {
-        dashboard = true;
-        insecure = false;
-      };
-
-      # Entry points
-      entryPoints = {
-        # HTTP entrypoint - redirects to HTTPS (except for Cloudflare domains)
-        web.address = ":80";
-
-        # HTTPS entrypoint for Tailscale domains
-        websecure.address = ":443";
-      };
-
-      # Use Tailscale for TLS certificates
-      certificatesResolvers.myresolver.tailscale = { };
-
-      # Enable Prometheus metrics
-      metrics.prometheus = {
-        addEntryPointsLabels = true;
-        addRoutersLabels = true;
-        addServicesLabels = true;
-      };
-    };
-
-    # Dynamic configuration - Traefik dashboard and Overseerr (k3s)
-    dynamicConfigOptions = {
-      http = {
-        # Global security headers middleware
-        middlewares = {
-          security-headers = {
-            headers = {
-              # Response headers for security hardening
-              customResponseHeaders = {
-                X-Content-Type-Options = "nosniff";
-                X-Frame-Options = "SAMEORIGIN";
-                X-XSS-Protection = "1; mode=block";
-                Referrer-Policy = "no-referrer";
-                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-              };
-
-              # Content Security Policy (adjust per service if needed)
-              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
-
-              # HSTS (HTTP Strict Transport Security) - only for HTTPS services
-              # Uncomment if using HTTPS entry points
-              # stsSeconds = 31536000;  # 1 year
-              # stsIncludeSubdomains = true;
-              # stsPreload = true;
-            };
-          };
-        };
-
-        routers = {
-          traefik-dashboard = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
-            service = "api@internal";
-            entryPoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-            middlewares = [ "security-headers" ];
-          };
-
-          # Overseerr (k3s service) - manually configured since it's not a telometto service
-          overseerr = {
-            rule = "Host(`requests.${VARS.domains.public}`)";
-            service = "overseerr";
-            entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
-          };
-
-          # Download Management Services (k3s)
-          firefox = {
-            rule = "Host(`ff.${VARS.domains.public}`)";
-            service = "firefox";
-            entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
-          };
-
-          sabnzbd = {
-            rule = "Host(`sab.${VARS.domains.public}`)";
-            service = "sabnzbd";
-            entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
-          };
-
-          # Servarr Services (k3s)
-          bazarr = {
-            rule = "Host(`subs.${VARS.domains.public}`)";
-            service = "bazarr";
-            entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
-          };
-
-          lingarr = {
-            rule = "Host(`lingarr.${VARS.domains.public}`)";
-            service = "lingarr";
-            entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
-          };
-
-          prowlarr = {
-            rule = "Host(`prowl.${VARS.domains.public}`)";
-            service = "prowlarr";
-            entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
-          };
-
-          radarr = {
-            rule = "Host(`movies.${VARS.domains.public}`)";
-            service = "radarr";
-            entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
-          };
-
-          readarr = {
-            rule = "Host(`books.${VARS.domains.public}`)";
-            service = "readarr";
-            entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
-          };
-
-          sonarr = {
-            rule = "Host(`series.${VARS.domains.public}`)";
-            service = "sonarr";
-            entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
-          };
-        };
-
-        services = {
-          overseerr.loadBalancer.servers = [ { url = "http://localhost:10001"; } ];
-          prowlarr.loadBalancer.servers = [ { url = "http://localhost:10010"; } ];
-          sonarr.loadBalancer.servers = [ { url = "http://localhost:10020"; } ];
-          radarr.loadBalancer.servers = [ { url = "http://localhost:10021"; } ];
-          readarr.loadBalancer.servers = [ { url = "http://localhost:10022"; } ];
-          bazarr.loadBalancer.servers = [ { url = "http://localhost:10030"; } ];
-          lingarr.loadBalancer.servers = [ { url = "http://localhost:10031"; } ];
-          sabnzbd.loadBalancer.servers = [ { url = "http://localhost:10050"; } ];
-          firefox.loadBalancer.servers = [ { url = "http://localhost:10060"; } ];
-        };
-      };
-    };
-  };
-
-  #Allow Traefik to use Tailscale certificates
-  services.tailscale.permitCertUid = "traefik";
-
+  ## Nemsepaced modules
   telometto = {
     # Enable server role (provides server defaults)
     role.server.enable = true;
@@ -194,7 +39,6 @@
     # };
 
     services = {
-      # Private networking (enabled in legacy)
       tailscale = {
         interface = "enp8s0";
         openFirewall = true;
@@ -275,7 +119,7 @@
         enable = lib.mkDefault true;
         listenAddress = "127.0.0.1"; # Only accessible via Traefik
         openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
-        scrapeInterval = "15s";
+        scrapeInterval = "5s";
 
         # Scrape Traefik, ZFS, and K3s metrics
         extraScrapeConfigs = [
@@ -526,6 +370,8 @@
     };
     kernel.sysctl = {
       "net.ipv4.conf.all.src_valid_mark" = 1;
+      "net.ipv4.ip_forward" = 1;
+      "net.ipv6.conf.all.forwarding" = 1;
       "net.core.wmem_max" = 7500000;
       "net.core.rmem_max" = 7500000;
     };
@@ -542,6 +388,163 @@
         IPv6PrivacyExtensions = "kernel";
       };
       linkConfig.RequiredForOnline = "routable";
+    };
+  };
+
+  # Standard NixOS services
+  services = {
+    tailscale.permitCertUid = lib.mkIf config.services.traefik.enable "traefik";
+
+    traefik = {
+      enable = true;
+      dataDir = "/var/lib/traefik";
+
+      staticConfigOptions = {
+        log.level = "WARN";
+
+        # Enable API and dashboard
+        api = {
+          dashboard = true;
+          insecure = false;
+        };
+
+        # Entry points
+        entryPoints = {
+          # HTTP entrypoint - redirects to HTTPS (except for Cloudflare domains)
+          web.address = ":80";
+
+          # HTTPS entrypoint for Tailscale domains
+          websecure.address = ":443";
+        };
+
+        # Use Tailscale for TLS certificates
+        certificatesResolvers.myresolver.tailscale = { };
+
+        # Enable Prometheus metrics
+        metrics.prometheus = {
+          addEntryPointsLabels = true;
+          addRoutersLabels = true;
+          addServicesLabels = true;
+        };
+      };
+
+      # Dynamic configuration - Traefik dashboard and Overseerr (k3s)
+      dynamicConfigOptions = {
+        http = {
+          # Global security headers middleware
+          middlewares = {
+            security-headers = {
+              headers = {
+                # Response headers for security hardening
+                customResponseHeaders = {
+                  X-Content-Type-Options = "nosniff";
+                  X-Frame-Options = "SAMEORIGIN";
+                  X-XSS-Protection = "1; mode=block";
+                  Referrer-Policy = "no-referrer";
+                  Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+                };
+
+                # Content Security Policy (adjust per service if needed)
+                contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
+
+                # HSTS (HTTP Strict Transport Security) - only for HTTPS services
+                # Uncomment if using HTTPS entry points
+                # stsSeconds = 31536000;  # 1 year
+                # stsIncludeSubdomains = true;
+                # stsPreload = true;
+              };
+            };
+          };
+
+          routers = {
+            traefik-dashboard = {
+              rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
+              service = "api@internal";
+              entryPoints = [ "websecure" ];
+              tls.certResolver = "myresolver";
+              middlewares = [ "security-headers" ];
+            };
+
+            # Overseerr (k3s service) - manually configured since it's not a telometto service
+            overseerr = {
+              rule = "Host(`requests.${VARS.domains.public}`)";
+              service = "overseerr";
+              entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
+            };
+
+            # Download Management Services (k3s)
+            firefox = {
+              rule = "Host(`ff.${VARS.domains.public}`)";
+              service = "firefox";
+              entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
+            };
+
+            sabnzbd = {
+              rule = "Host(`sab.${VARS.domains.public}`)";
+              service = "sabnzbd";
+              entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
+            };
+
+            # Servarr Services (k3s)
+            bazarr = {
+              rule = "Host(`subs.${VARS.domains.public}`)";
+              service = "bazarr";
+              entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
+            };
+
+            lingarr = {
+              rule = "Host(`lingarr.${VARS.domains.public}`)";
+              service = "lingarr";
+              entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
+            };
+
+            prowlarr = {
+              rule = "Host(`prowl.${VARS.domains.public}`)";
+              service = "prowlarr";
+              entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
+            };
+
+            radarr = {
+              rule = "Host(`movies.${VARS.domains.public}`)";
+              service = "radarr";
+              entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
+            };
+
+            readarr = {
+              rule = "Host(`books.${VARS.domains.public}`)";
+              service = "readarr";
+              entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
+            };
+
+            sonarr = {
+              rule = "Host(`series.${VARS.domains.public}`)";
+              service = "sonarr";
+              entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
+            };
+          };
+
+          services = {
+            overseerr.loadBalancer.servers = [ { url = "http://localhost:10001"; } ];
+            prowlarr.loadBalancer.servers = [ { url = "http://localhost:10010"; } ];
+            sonarr.loadBalancer.servers = [ { url = "http://localhost:10020"; } ];
+            radarr.loadBalancer.servers = [ { url = "http://localhost:10021"; } ];
+            readarr.loadBalancer.servers = [ { url = "http://localhost:10022"; } ];
+            bazarr.loadBalancer.servers = [ { url = "http://localhost:10030"; } ];
+            lingarr.loadBalancer.servers = [ { url = "http://localhost:10031"; } ];
+            sabnzbd.loadBalancer.servers = [ { url = "http://localhost:10050"; } ];
+            firefox.loadBalancer.servers = [ { url = "http://localhost:10060"; } ];
+          };
+        };
+      };
     };
   };
 
