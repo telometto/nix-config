@@ -165,15 +165,15 @@
         };
 
         services = {
-          overseerr.loadBalancer.servers = [{ url = "http://localhost:10001"; }];
-          prowlarr.loadBalancer.servers = [{ url = "http://localhost:10010"; }];
-          sonarr.loadBalancer.servers = [{ url = "http://localhost:10020"; }];
-          radarr.loadBalancer.servers = [{ url = "http://localhost:10021"; }];
-          readarr.loadBalancer.servers = [{ url = "http://localhost:10022"; }];
-          bazarr.loadBalancer.servers = [{ url = "http://localhost:10030"; }];
-          lingarr.loadBalancer.servers = [{ url = "http://localhost:10031"; }];
-          sabnzbd.loadBalancer.servers = [{ url = "http://localhost:10050"; }];
-          firefox.loadBalancer.servers = [{ url = "http://localhost:10060"; }];
+          overseerr.loadBalancer.servers = [ { url = "http://localhost:10001"; } ];
+          prowlarr.loadBalancer.servers = [ { url = "http://localhost:10010"; } ];
+          sonarr.loadBalancer.servers = [ { url = "http://localhost:10020"; } ];
+          radarr.loadBalancer.servers = [ { url = "http://localhost:10021"; } ];
+          readarr.loadBalancer.servers = [ { url = "http://localhost:10022"; } ];
+          bazarr.loadBalancer.servers = [ { url = "http://localhost:10030"; } ];
+          lingarr.loadBalancer.servers = [ { url = "http://localhost:10031"; } ];
+          sabnzbd.loadBalancer.servers = [ { url = "http://localhost:10050"; } ];
+          firefox.loadBalancer.servers = [ { url = "http://localhost:10060"; } ];
         };
       };
     };
