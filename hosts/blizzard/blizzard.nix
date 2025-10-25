@@ -52,7 +52,7 @@
 
       # Enable NFS (owner module) and run as a server
       nfs = {
-        enable = lib.mkDefault false; # matches legacy default (server block kept for quick flip)
+        enable = false; # matches legacy default (server block kept for quick flip)
         server = {
           enable = true;
           exports = ''
@@ -62,7 +62,7 @@
       };
 
       # ZFS helpers and snapshot management
-      zfs.enable = lib.mkDefault true;
+      zfs.enable = true;
 
       # Sanoid: rely on module default template "production" (autoprune=false) and just declare datasets
       sanoid = {
@@ -87,7 +87,7 @@
 
       # Monitoring and admin UIs
       scrutiny = {
-        enable = lib.mkDefault true;
+        enable = true;
         port = 11001;
         openFirewall = true;
 
@@ -100,7 +100,7 @@
       };
 
       cockpit = {
-        enable = lib.mkDefault false;
+        enable = false;
         port = 11006;
         openFirewall = true;
       };
@@ -108,7 +108,7 @@
       # Prometheus exporters
       prometheusExporters = {
         zfs = {
-          enable = lib.mkDefault true;
+          enable = true;
           pools = [
             "rpool"
             "tank"
@@ -118,9 +118,9 @@
 
       # Prometheus and Grafana monitoring stack
       prometheus = {
-        enable = lib.mkDefault true;
+        enable = true;
         listenAddress = "127.0.0.1"; # Only accessible via Traefik
-        openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
+        openFirewall = false; # No need to open firewall, using Traefik
         scrapeInterval = "5s";
 
         # Scrape Traefik, ZFS, and K3s metrics
@@ -173,10 +173,11 @@
       };
 
       grafana = {
-        enable = lib.mkDefault true;
+        enable = true;
+
         addr = "127.0.0.1"; # Only accessible via Traefik
-        openFirewall = lib.mkDefault false; # No need to open firewall, using Traefik
-        domain = "grafana.${VARS.domains.public}"; # Use Cloudflare domain
+        openFirewall = false; # No need to open firewall, using Traefik
+        domain = "metrics.${VARS.domains.public}"; # Use Cloudflare domain
         # Remove subPath - Grafana will run at root (/)
 
         # Declaratively provision dashboards
@@ -195,8 +196,8 @@
 
       # Kubernetes (k3s) server
       k3s = {
-        enable = lib.mkDefault true;
-        # Disable k3s built-in Traefik since we're using NixOS Traefik as the main ingress
+        enable = true;
+
         extraFlags = [
           "--snapshotter native"
           "--disable traefik" # using traefik from the repo packages
@@ -205,21 +206,21 @@
       };
 
       paperless = {
-        enable = lib.mkDefault false;
-        consumptionDirIsPublic = lib.mkDefault true;
-        consumptionDir = lib.mkDefault "/rpool/enc/personal/documents";
-        mediaDir = lib.mkDefault "/rpool/enc/personal/paperless-media";
+        enable = false;
+        consumptionDirIsPublic = true;
+        consumptionDir = "/rpool/enc/personal/documents";
+        mediaDir = "/rpool/enc/personal/paperless-media";
       };
 
       actual = {
-        enable = lib.mkDefault false;
+        enable = false;
         port = 11005;
       };
 
-      firefly.enable = lib.mkDefault false; # APP_KEY_FILE via defaults
+      firefly.enable = false; # APP_KEY_FILE via defaults
 
       searx = {
-        enable = lib.mkDefault true;
+        enable = true;
         port = 11002;
         bind = "127.0.0.1"; # Bind to localhost only (reverse proxy required)
 
@@ -238,12 +239,12 @@
       };
 
       immich = {
-        enable = lib.mkDefault false;
-        host = lib.mkDefault "0.0.0.0";
+        enable = false;
+        host = "0.0.0.0";
         port = 11007;
         openFirewall = true;
-        mediaLocation = lib.mkDefault "/flash/enc/personal/immich-library";
-        secretsFile = lib.mkDefault "/opt/sec/immich-file";
+        mediaLocation = "/flash/enc/personal/immich-library";
+        secretsFile = "/opt/sec/immich-file";
         environment = {
           IMMICH_LOG_LEVEL = "verbose";
           IMMICH_TELEMETRY_INCLUDE = "all";
@@ -251,10 +252,10 @@
       };
 
       ombi = {
-        enable = lib.mkDefault true;
+        enable = true;
         port = 11003;
         openFirewall = true;
-        dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/ombi";
+        dataDir = "/rpool/unenc/apps/nixos/ombi";
 
         # Exposed via Cloudflare only: ombi.mydomain.com → ombi at root (/)
         reverseProxy = {
@@ -265,15 +266,15 @@
       };
 
       plex = {
-        enable = lib.mkDefault true;
+        enable = true;
         openFirewall = true;
       };
 
       tautulli = {
-        enable = lib.mkDefault true;
+        enable = true;
         port = 11004;
         openFirewall = true;
-        dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
+        dataDir = "/rpool/unenc/apps/nixos/tautulli";
 
         # Exposed via Cloudflare only: tautulli.mydomain.com → tautulli at root (/)
         reverseProxy = {
@@ -284,7 +285,7 @@
       };
 
       jellyfin = {
-        enable = lib.mkDefault true;
+        enable = true;
         openFirewall = true;
 
         # Jellyfin via Tailscale ONLY (Cloudflare ToS forbids video streaming)
@@ -298,7 +299,7 @@
       };
 
       cloudflared = {
-        enable = lib.mkDefault true;
+        enable = true;
         tunnelId = "ce54cb73-83b2-4628-8246-26955d280641";
         credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile;
 
@@ -324,11 +325,11 @@
 
       # Backups: Borg (daily) - Temporarily commented out to test Traefik
       borgbackup = {
-        enable = lib.mkDefault false; # Temporarily disabled to test Traefik
+        enable = false; # Temporarily disabled to test Traefik
         jobs.homeserver = {
           paths = [ "/home/${VARS.users.zeno.user}" ];
           environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
-          repo = lib.mkDefault (
+          repo = (
             config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo"
           );
           compression = "zstd,8";
@@ -344,18 +345,18 @@
     };
 
     # Virtualisation stack (podman, containers, libvirt)
-    virtualisation.enable = lib.mkDefault true;
+    virtualisation.enable = true;
 
     # Client program defaults
     programs = {
       # SSH and GPG managed per-user via home-manager
-      ssh.enable = lib.mkDefault false;
-      mtr.enable = lib.mkDefault true;
-      gnupg.enable = lib.mkDefault false;
+      ssh.enable = false;
+      mtr.enable = true;
+      gnupg.enable = false;
     };
   };
 
-  hardware.cpu.intel.updateMicrocode = lib.mkDefault true;
+  hardware.cpu.intel.updateMicrocode = true;
 
   # ZFS boot support (host-specific)
   boot = {
