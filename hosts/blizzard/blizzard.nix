@@ -329,9 +329,7 @@
         jobs.homeserver = {
           paths = [ "/home/${VARS.users.zeno.user}" ];
           environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
-          repo = (
-            config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo"
-          );
+          repo = (config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo");
           compression = "zstd,8";
           startAt = "daily";
 
