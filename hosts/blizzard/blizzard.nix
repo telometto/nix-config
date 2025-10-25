@@ -93,9 +93,6 @@
             }
           ];
         };
-
-        # Disable LAPI until credentials are provisioned; avoids setup script expecting a secret path
-        settings.lapi.enable = false;
       };
 
       # ZFS helpers and snapshot management

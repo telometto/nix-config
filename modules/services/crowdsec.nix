@@ -204,51 +204,6 @@ in
         description = "Simulation mode configuration.";
       };
 
-      lapi = {
-        enable = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-          description = "Whether to enable the Local API (LAPI) server.";
-        };
-
-        credentialsFile = lib.mkOption {
-          type = lib.types.nullOr lib.types.path;
-          default = null;
-          description = "Path to LAPI credentials file.";
-          example = "/run/secrets/crowdsec-lapi";
-        };
-
-        listenUri = lib.mkOption {
-          type = lib.types.str;
-          default = "127.0.0.1:8085";
-          description = "LAPI listen URI.";
-        };
-      };
-
-      capi = {
-        credentialsFile = lib.mkOption {
-          type = lib.types.nullOr lib.types.path;
-          default = null;
-          description = "Path to CAPI credentials file for sharing signals with CrowdSec central API.";
-          example = "/run/secrets/crowdsec-capi";
-        };
-      };
-
-      console = {
-        enable = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = "Whether to enable CrowdSec console enrollment.";
-        };
-
-        tokenFile = lib.mkOption {
-          type = lib.types.nullOr lib.types.path;
-          default = null;
-          description = "Path to file containing console enrollment token.";
-          example = "/run/secrets/crowdsec-console-token";
-        };
-      };
-
       prometheus = {
         enable = lib.mkOption {
           type = lib.types.bool;
@@ -311,10 +266,6 @@ in
           {
             general = lib.mkMerge [
               {
-                api.server = {
-                  enable = cfg.settings.lapi.enable;
-                  listen_uri = cfg.settings.lapi.listenUri;
-                };
                 prometheus = {
                   enabled = cfg.settings.prometheus.enable;
                   listen_port = cfg.settings.prometheus.port;
@@ -324,20 +275,7 @@ in
             ];
 
             simulation = cfg.settings.simulation;
-
-            # Only set credential files if explicitly provided
-            # Let upstream module handle defaults to avoid machine registration conflicts
           }
-          # Conditionally add credential file settings only if provided
-          (lib.optionalAttrs (cfg.settings.lapi.credentialsFile != null) {
-            lapi.credentialsFile = cfg.settings.lapi.credentialsFile;
-          })
-          (lib.optionalAttrs (cfg.settings.capi.credentialsFile != null) {
-            capi.credentialsFile = cfg.settings.capi.credentialsFile;
-          })
-          (lib.optionalAttrs (cfg.settings.console.enable && cfg.settings.console.tokenFile != null) {
-            console.tokenFile = cfg.settings.console.tokenFile;
-          })
           cfg.extraSettings
         ];
       }
