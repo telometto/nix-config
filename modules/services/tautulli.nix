@@ -6,6 +6,12 @@ in
   options.telometto.services.tautulli = {
     enable = lib.mkEnableOption "Tautulli";
 
+    port = lib.mkOption {
+      type = lib.types.port;
+      default = 8181; # Upstream default - override per-host if needed
+      description = "Port where Tautulli listens.";
+    };
+
     dataDir = lib.mkOption {
       type = lib.types.str;
       default = "/rpool/unenc/apps/nixos/tautulli";
@@ -40,12 +46,6 @@ in
         example = "tautulli.example.com";
       };
 
-      port = lib.mkOption {
-        type = lib.types.port;
-        default = 8181;
-        description = "Port where Tautulli listens.";
-      };
-
       cfTunnel = {
         enable = lib.mkOption {
           type = lib.types.bool;
@@ -72,7 +72,12 @@ in
   config = lib.mkIf cfg.enable {
     services.tautulli = {
       enable = lib.mkDefault true;
-      inherit (cfg) dataDir configFile openFirewall;
+      inherit (cfg)
+        dataDir
+        configFile
+        openFirewall
+        port
+        ;
     };
 
     # Configure Traefik reverse proxy if enabled
@@ -92,7 +97,7 @@ in
 
             # Service: points to Tautulli backend
             services.tautulli.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.reverseProxy.port}"; } ];
+              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
               passHostHeader = true;
             };
           };
