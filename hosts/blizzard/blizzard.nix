@@ -87,7 +87,8 @@
 
       # Monitoring and admin UIs
       scrutiny = {
-        enable = lib.mkDefault true; # port 8072
+        enable = lib.mkDefault true;
+        port = 11001;
         openFirewall = true;
 
         # Exposed via Cloudflare only: scrutiny.mydomain.com → scrutiny at root (/)
@@ -99,7 +100,8 @@
       };
 
       cockpit = {
-        enable = lib.mkDefault false; # port 9090
+        enable = lib.mkDefault false;
+        port = 11006;
         openFirewall = true;
       };
 
@@ -163,7 +165,7 @@
             scheme = "http";
             static_configs = [
               {
-                targets = [ "127.0.0.1:30080" ]; # NodePort for kube-state-metrics
+                targets = [ "127.0.0.1:32080" ]; # NodePort for kube-state-metrics
               }
             ];
           }
@@ -210,15 +212,15 @@
       };
 
       actual = {
-        enable = lib.mkDefault false; # port 3838
-        port = lib.mkDefault 3838;
+        enable = lib.mkDefault false;
+        port = 11005;
       };
 
       firefly.enable = lib.mkDefault false; # APP_KEY_FILE via defaults
 
       searx = {
         enable = lib.mkDefault true;
-        port = lib.mkDefault 7777;
+        port = 11002;
         bind = "127.0.0.1"; # Bind to localhost only (reverse proxy required)
 
         # Exposed via Cloudflare only: searx.mydomain.com → searx at root (/)
@@ -238,7 +240,7 @@
       immich = {
         enable = lib.mkDefault false;
         host = lib.mkDefault "0.0.0.0";
-        port = lib.mkDefault 2283;
+        port = 11007;
         openFirewall = true;
         mediaLocation = lib.mkDefault "/flash/enc/personal/immich-library";
         secretsFile = lib.mkDefault "/opt/sec/immich-file";
@@ -250,13 +252,14 @@
 
       ombi = {
         enable = lib.mkDefault true;
+        port = 11003;
         openFirewall = true;
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/ombi";
 
         # Exposed via Cloudflare only: ombi.mydomain.com → ombi at root (/)
         reverseProxy = {
           enable = true;
-          domain = "requests2.${VARS.domains.public}";
+          domain = "ombi.${VARS.domains.public}";
           cfTunnel.enable = true;
         };
       };
@@ -268,6 +271,7 @@
 
       tautulli = {
         enable = lib.mkDefault true;
+        port = 11004;
         openFirewall = true;
         dataDir = lib.mkDefault "/rpool/unenc/apps/nixos/tautulli";
 
@@ -311,7 +315,7 @@
           # Servarr Services (k3s)
           "subs.${VARS.domains.public}" = "http://localhost:80";
           "lingarr.${VARS.domains.public}" = "http://localhost:80";
-          "prowl.${VARS.domains.public}" = "http://localhost:80";
+          "indexer.${VARS.domains.public}" = "http://localhost:80";
           "movies.${VARS.domains.public}" = "http://localhost:80";
           "books.${VARS.domains.public}" = "http://localhost:80";
           "series.${VARS.domains.public}" = "http://localhost:80";
@@ -504,7 +508,7 @@
             };
 
             prowlarr = {
-              rule = "Host(`prowl.${VARS.domains.public}`)";
+              rule = "Host(`indexer.${VARS.domains.public}`)";
               service = "prowlarr";
               entryPoints = [ "web" ];
               middlewares = [ "security-headers" ];
