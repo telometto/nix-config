@@ -6,7 +6,7 @@ let
   makeUserOption = username: _userData: {
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
       description = "Enable ${username} user account on this host";
     };
   };
