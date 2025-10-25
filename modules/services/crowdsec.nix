@@ -1,3 +1,5 @@
+{ ... }: {}
+/*
 {
   lib,
   config,
@@ -228,58 +230,54 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    services.crowdsec = lib.mkMerge [
-      {
-        enable = true;
-        inherit (cfg) package openFirewall autoUpdateService;
+    services.crowdsec = {
+      enable = true;
+      inherit (cfg) package openFirewall autoUpdateService;
 
-        # Hub configuration
-        hub = {
-          inherit (cfg.hub)
-            collections
-            scenarios
-            parsers
-            postOverflows
-            appSecConfigs
-            appSecRules
-            ;
-        };
+      # Hub configuration
+      hub = {
+        inherit (cfg.hub)
+          collections
+          scenarios
+          parsers
+          postOverflows
+          appSecConfigs
+          appSecRules
+          ;
+      };
 
-        # Local configuration
-        localConfig = lib.mkMerge [
-          {
-            inherit (cfg.localConfig)
-              acquisitions
-              scenarios
-              parsers
-              postOverflows
-              contexts
-              notifications
-              profiles
-              patterns
-              ;
-          }
-        ];
+      # Local configuration
+      localConfig = {
+        inherit (cfg.localConfig)
+          acquisitions
+          scenarios
+          parsers
+          postOverflows
+          contexts
+          notifications
+          profiles
+          patterns
+          ;
+      };
 
-        # Settings
-        settings = lib.mkMerge [
-          {
-            general = lib.mkMerge [
-              {
-                prometheus = {
-                  enabled = cfg.settings.prometheus.enable;
-                  listen_port = cfg.settings.prometheus.port;
-                };
-              }
-              cfg.settings.general
-            ];
+      # Settings - only override what we explicitly configure
+      settings = lib.mkMerge [
+        {
+          general = lib.mkMerge [
+            {
+              prometheus = {
+                enabled = cfg.settings.prometheus.enable;
+                listen_port = cfg.settings.prometheus.port;
+              };
+            }
+            cfg.settings.general
+          ];
 
-            simulation = cfg.settings.simulation;
-          }
-          cfg.extraSettings
-        ];
-      }
-      cfg.extraSettings
-    ];
+          simulation = cfg.settings.simulation;
+        }
+        cfg.extraSettings
+      ];
+    };
   };
 }
+*/

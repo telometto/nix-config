@@ -61,39 +61,8 @@
         };
       };
 
-      # CrowdSec ingestion and enrichment for Traefik/SearX traffic
-      crowdsec = {
-        enable = true;
-
-        localConfig = {
-          acquisitions = [
-            {
-              source = "journalctl";
-              journalctl_filter = [
-                "_SYSTEMD_UNIT=traefik.service"
-              ];
-              labels = {
-                type = "traefik";
-                service = "traefik";
-                environment = "production";
-              };
-            }
-          ];
-
-          # Capture useful HTTP metadata in alerts so we can trace abusive SearXNG requests quickly.
-          contexts = [
-            {
-              context = {
-                target_host = [ "evt.Meta.http_host" ];
-                target_uri = [ "evt.Meta.http_path" ];
-                http_method = [ "evt.Meta.http_verb" ];
-                http_status = [ "evt.Meta.http_status" ];
-                user_agent = [ "evt.Meta.http_user_agent" ];
-              };
-            }
-          ];
-        };
-      };
+      # CrowdSec disabled in telometto namespace - configured directly below
+      # crowdsec.enable = false;
 
       # ZFS helpers and snapshot management
       zfs.enable = true;
@@ -431,6 +400,71 @@
   # Standard NixOS services
   services = {
     tailscale.permitCertUid = lib.mkIf config.services.traefik.enable "traefik";
+
+    # CrowdSec - configured directly with upstream module
+    crowdsec = {
+      enable = true;
+
+      # Hub collections and scenarios
+      hub = {
+        collections = [
+          "crowdsecurity/linux"
+          "crowdsecurity/traefik"
+        ];
+        scenarios = [
+          "crowdsecurity/ssh-bf"
+          "crowdsecurity/ssh-slow-bf"
+        ];
+        postOverflows = [
+          "crowdsecurity/auditd-nix-wrappers-whitelist-process"
+        ];
+      };
+
+      # Local configuration
+      localConfig = {
+        acquisitions = [
+          {
+            source = "journalctl";
+            journalctl_filter = [
+              "_SYSTEMD_UNIT=traefik.service"
+            ];
+            labels = {
+              type = "traefik";
+              service = "traefik";
+              environment = "production";
+            };
+          }
+        ];
+
+        # Capture useful HTTP metadata in alerts
+        contexts = [
+          {
+            context = {
+              target_host = [ "evt.Meta.http_host" ];
+              target_uri = [ "evt.Meta.http_path" ];
+              http_method = [ "evt.Meta.http_verb" ];
+              http_status = [ "evt.Meta.http_status" ];
+              user_agent = [ "evt.Meta.http_user_agent" ];
+            };
+          }
+        ];
+
+        # Default profiles for IP remediation
+        profiles = [
+          {
+            name = "default_ip_remediation";
+            filters = [ "Alert.Remediation == true && Alert.GetScope() == 'Ip'" ];
+            decisions = [
+              {
+                type = "ban";
+                duration = "4h";
+              }
+            ];
+            on_success = "break";
+          }
+        ];
+      };
+    };
 
     traefik = {
       enable = true;
