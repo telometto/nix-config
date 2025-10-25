@@ -16,8 +16,8 @@ let
   hasPaperless = config.services.paperless.enable or false;
   hasSearx = config.services.searx.enable or false;
   hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
-  hasK3sDownloadMgmt = config.telometto.services."k3s-download-mgmt".enable or false;
   hasCloudflared = config.telometto.services.cloudflared.enable or false;
+  hasCrowdsecCTI = config.telometto.services.crowdsec.enableCTI or false;
 in
 
 {
@@ -53,6 +53,9 @@ in
       }
       // whenEnabled hasSearx {
         "general/searxSecretKey" = { };
+      }
+      // whenEnabled hasCrowdsecCTI {
+        "general/crowdsecApiKey" = { };
       }
       // whenEnabled hasGrafanaCloud {
         "grafana/cloud/api_key" = { };
@@ -92,6 +95,9 @@ in
     }
     // whenEnabled hasSearx {
       searxSecretKeyFile = toString config.sops.secrets."general/searxSecretKey".path;
+    }
+    // whenEnabled hasCrowdsecCTI {
+      crowdsecApiKeyFile = toString config.sops.secrets."general/crowdsecApiKey".path;
     }
     // whenEnabled hasBorg {
       borgKeyFile = toString config.sops.secrets."general/borgKeyFilePath".path;
