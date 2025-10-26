@@ -101,5 +101,25 @@
         Path to the Cloudflare Tunnel credentials file. Mapped from SOPS in core/sops.nix.
       '';
     };
+
+    # CrowdSec LAPI bouncer token (resolved from SOPS centrally)
+    crowdsecLapiTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the CrowdSec LAPI bouncer token. Used by Traefik bouncer plugin.
+        Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    # CrowdSec Console enrollment token (resolved from SOPS centrally)
+    crowdsecConsoleTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the CrowdSec Console enrollment token. Used for web dashboard.
+        Mapped from SOPS in core/sops.nix.
+      '';
+    };
   };
 }

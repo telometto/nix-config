@@ -17,6 +17,7 @@ let
   hasSearx = config.services.searx.enable or false;
   hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
   hasCloudflared = config.telometto.services.cloudflared.enable or false;
+  hasCrowdsec = config.services.crowdsec.enable or false;
 in
 
 {
@@ -60,6 +61,10 @@ in
       }
       // whenEnabled hasCloudflared {
         "cloudflare/credentials" = { };
+      }
+      // whenEnabled hasCrowdsec {
+        "crowdsec/lapi_token" = { };
+        "crowdsec/console_token" = { };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -103,6 +108,10 @@ in
     }
     // whenEnabled hasCloudflared {
       cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/credentials".path;
+    }
+    // whenEnabled hasCrowdsec {
+      crowdsecLapiTokenFile = toString config.sops.secrets."crowdsec/lapi_token".path;
+      crowdsecConsoleTokenFile = toString config.sops.secrets."crowdsec/console_token".path;
     };
 
   environment.systemPackages = [
