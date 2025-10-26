@@ -351,7 +351,7 @@ in
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = "searx";
               entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ];
+              middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
             };
 
             services.searx.loadBalancer = {
