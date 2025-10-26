@@ -37,11 +37,14 @@ in
   config = lib.mkIf cfg.enable {
     programs.git = {
       enable = true;
+
       settings = {
         user = {
-          inherit (cfg.git) userName userEmail;
+          name = cfg.git.userName;
+          email = cfg.git.userEmail;
           signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
         };
+
         init.defaultBranch = "master";
         commit.gpgSign = true;
         tag.gpgSign = true;
