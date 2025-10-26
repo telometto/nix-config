@@ -405,6 +405,18 @@
     crowdsec = {
       enable = true;
 
+      # LAPI configuration - credentials auto-generated in state directory
+      settings.lapi.credentialsFile = "/var/lib/crowdsec/state/local_api_credentials.yaml";
+
+      # CAPI (Central API) - auto-registers for community blocklists
+      settings.capi.credentialsFile = "/var/lib/crowdsec/state/online_api_credentials.yaml";
+
+      # Enable LAPI server on alternate port (8080 used by Traefik)
+      settings.general.api.server = {
+        enable = true;
+        listen_uri = "127.0.0.1:8085";
+      };
+
       # Hub collections and scenarios
       hub = {
         collections = [
