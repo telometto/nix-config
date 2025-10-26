@@ -233,6 +233,7 @@
           enable = true;
           domain = "search.${VARS.domains.public}";
           cfTunnel.enable = true;
+          extraMiddlewares = [ "crowdsec" ]; # Enable CrowdSec bouncer protection
         };
 
         # Optional: Override default settings here if needed
@@ -405,16 +406,16 @@
     crowdsec = {
       enable = true;
 
-      # LAPI configuration - credentials auto-generated in state directory
-      settings.lapi.credentialsFile = "/var/lib/crowdsec/state/local_api_credentials.yaml";
-
-      # CAPI (Central API) - auto-registers for community blocklists
-      settings.capi.credentialsFile = "/var/lib/crowdsec/state/online_api_credentials.yaml";
-
       # Enable LAPI server on alternate port (8080 used by Traefik)
-      settings.general.api.server = {
-        enable = true;
-        listen_uri = "127.0.0.1:8085";
+      settings = {
+        lapi.credentialsFile = "/var/lib/crowdsec/state/local_api_credentials.yaml";
+        capi.credentialsFile = "/var/lib/crowdsec/state/online_api_credentials.yaml";
+        console.tokenFile = config.telometto.secrets.crowdsecConsoleTokenFile;
+
+        general.api.server = {
+          enable = true;
+          listen_uri = "127.0.0.1:8085";
+        };
       };
 
       # Hub collections and scenarios
@@ -422,13 +423,20 @@
         collections = [
           "crowdsecurity/linux"
           "crowdsecurity/traefik"
+          "crowdsecurity/http-cve" # Protect against known CVEs
+          "crowdsecurity/whitelist-good-actors" # Don't block legit bots (Google, etc)
         ];
         scenarios = [
           "crowdsecurity/ssh-bf"
           "crowdsecurity/ssh-slow-bf"
+          "crowdsecurity/http-crawl-non_statics" # Aggressive crawlers
+          "crowdsecurity/http-probing" # Vulnerability scanners
+          "crowdsecurity/http-sensitive-files" # Attempts to access .env, .git, etc
+          "crowdsecurity/http-bad-user-agent" # Known malicious user agents
         ];
         postOverflows = [
           "crowdsecurity/auditd-nix-wrappers-whitelist-process"
+          "crowdsecurity/cdn-whitelist" # Don't ban Cloudflare IPs
         ];
       };
 
@@ -477,18 +485,67 @@
         ];
       };
     };
+  };
+/*
+  # CrowdSec Firewall Bouncer - kernel-level IP blocking
+  environment.etc."crowdsec/bouncers/crowdsec-firewall-bouncer.yaml".text = lib.generators.toYAML { } {
+    mode = "iptables";
+    update_frequency = "10s";
 
+    log_mode = "stdout";
+    log_level = "info";
+
+    api_url = "http://127.0.0.1:8085";
+    api_key = ""; # Populated from SOPS secret at runtime via ExecStartPre
+
+    deny_action = "DROP";
+    deny_log = false;
+
+    disable_ipv4 = false;
+    disable_ipv6 = false;
+
+    iptables_chains = [
+      "INPUT"
+      "FORWARD"
+    ];
+  };
+
+  systemd.services.crowdsec-firewall-bouncer = {
+    description = "CrowdSec Firewall Bouncer";
+    after = [
+      "network.target"
+      "crowdsec.service"
+    ];
+    wants = [ "crowdsec.service" ];
+    wantedBy = [ "multi-user.target" ];
+
+    serviceConfig = {
+      Type = "simple";
+      # Inject the API key from SOPS into the config file before starting
+      ExecStartPre = "${pkgs.bash}/bin/bash -c '${pkgs.gnused}/bin/sed -i \"s|api_key: \\\"\\\"|api_key: \\\"$(cat ${config.telometto.secrets.crowdsecFirewallBouncerTokenFile})\\\"|\" /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml'";
+      ExecStart = "${pkgs.crowdsec-firewall-bouncer}/bin/crowdsec-firewall-bouncer -c /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml";
+      Restart = "on-failure";
+      RestartSec = "5s";
+    };
+  };
+*/
+  services = {
     traefik = {
       enable = true;
       dataDir = "/var/lib/traefik";
 
       staticConfigOptions = {
-        # Emit JSON access logs for CrowdSec ingestion while keeping service logs quiet by default
         accessLog = {
           format = "json";
         };
 
         log.level = "WARN";
+
+        # Enable CrowdSec Bouncer Plugin
+        experimental.plugins.bouncer = {
+          moduleName = "github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin";
+          version = "v1.4.5";
+        };
 
         # Enable API and dashboard
         api = {
@@ -543,6 +600,37 @@
         http = {
           # Global security headers middleware
           middlewares = {
+            # CrowdSec Bouncer - application-level protection
+            crowdsec = {
+              plugin.bouncer = {
+                enabled = true;
+                crowdsecMode = "stream";
+                crowdsecLapiScheme = "http";
+                crowdsecLapiHost = "127.0.0.1:8085";
+                crowdsecLapiKeyFile = "${config.telometto.secrets.crowdsecTraefikBouncerTokenFile}";
+
+                # Trust Cloudflare and local IPs for X-Forwarded-For header
+                forwardedHeadersTrustedIPs = [
+                  "127.0.0.1/32"
+                  "173.245.48.0/20" # Cloudflare IP ranges
+                  "103.21.244.0/22"
+                  "103.22.200.0/22"
+                  "103.31.4.0/22"
+                  "141.101.64.0/18"
+                  "108.162.192.0/18"
+                  "190.93.240.0/20"
+                  "188.114.96.0/20"
+                  "197.234.240.0/22"
+                  "198.41.128.0/17"
+                  "162.158.0.0/15"
+                  "104.16.0.0/13"
+                  "104.24.0.0/14"
+                  "172.64.0.0/13"
+                  "131.0.72.0/22"
+                ];
+              };
+            };
+
             security-headers = {
               headers = {
                 # Response headers for security hardening
