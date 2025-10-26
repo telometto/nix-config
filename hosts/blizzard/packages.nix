@@ -17,6 +17,8 @@ let
     })
   ];
 
+  security = [ pkgs.crowdsec-firewall-bouncer ];
+
   storage = [
     pkgs.btrfs-progs
     pkgs.zfs
@@ -25,7 +27,7 @@ let
   ];
 in
 {
-  environment.systemPackages = media ++ kubernetes ++ storage;
+  environment.systemPackages = media ++ kubernetes ++ security ++ storage;
 
   fonts.packages = [
     pkgs.google-fonts
