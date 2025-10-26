@@ -102,12 +102,22 @@
       '';
     };
 
-    # CrowdSec LAPI bouncer token (resolved from SOPS centrally)
-    crowdsecLapiTokenFile = lib.mkOption {
+    # CrowdSec Traefik bouncer token (resolved from SOPS centrally)
+    crowdsecTraefikBouncerTokenFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
       description = ''
-        Path to a file containing the CrowdSec LAPI bouncer token. Used by Traefik bouncer plugin.
+        Path to a file containing the CrowdSec Traefik bouncer token. Used by Traefik bouncer plugin.
+        Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    # CrowdSec Firewall bouncer token (resolved from SOPS centrally)
+    crowdsecFirewallBouncerTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the CrowdSec Firewall bouncer token. Used by firewall bouncer.
         Mapped from SOPS in core/sops.nix.
       '';
     };

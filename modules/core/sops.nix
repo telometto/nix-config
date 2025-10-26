@@ -63,7 +63,8 @@ in
         "cloudflare/credentials" = { };
       }
       // whenEnabled hasCrowdsec {
-        "crowdsec/lapi_token" = { };
+        "crowdsec/traefik_bouncer" = { };
+        "crowdsec/firewall_bouncer" = { };
         "crowdsec/console_token" = { };
       };
 
@@ -110,7 +111,8 @@ in
       cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/credentials".path;
     }
     // whenEnabled hasCrowdsec {
-      crowdsecLapiTokenFile = toString config.sops.secrets."crowdsec/lapi_token".path;
+      crowdsecTraefikBouncerTokenFile = toString config.sops.secrets."crowdsec/traefik_bouncer".path;
+      crowdsecFirewallBouncerTokenFile = toString config.sops.secrets."crowdsec/firewall_bouncer".path;
       crowdsecConsoleTokenFile = toString config.sops.secrets."crowdsec/console_token".path;
     };
 
