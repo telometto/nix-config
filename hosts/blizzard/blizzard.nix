@@ -486,49 +486,49 @@
       };
     };
   };
-/*
-  # CrowdSec Firewall Bouncer - kernel-level IP blocking
-  environment.etc."crowdsec/bouncers/crowdsec-firewall-bouncer.yaml".text = lib.generators.toYAML { } {
-    mode = "iptables";
-    update_frequency = "10s";
+  /*
+    # CrowdSec Firewall Bouncer - kernel-level IP blocking
+    environment.etc."crowdsec/bouncers/crowdsec-firewall-bouncer.yaml".text = lib.generators.toYAML { } {
+      mode = "iptables";
+      update_frequency = "10s";
 
-    log_mode = "stdout";
-    log_level = "info";
+      log_mode = "stdout";
+      log_level = "info";
 
-    api_url = "http://127.0.0.1:8085";
-    api_key = ""; # Populated from SOPS secret at runtime via ExecStartPre
+      api_url = "http://127.0.0.1:8085";
+      api_key = ""; # Populated from SOPS secret at runtime via ExecStartPre
 
-    deny_action = "DROP";
-    deny_log = false;
+      deny_action = "DROP";
+      deny_log = false;
 
-    disable_ipv4 = false;
-    disable_ipv6 = false;
+      disable_ipv4 = false;
+      disable_ipv6 = false;
 
-    iptables_chains = [
-      "INPUT"
-      "FORWARD"
-    ];
-  };
-
-  systemd.services.crowdsec-firewall-bouncer = {
-    description = "CrowdSec Firewall Bouncer";
-    after = [
-      "network.target"
-      "crowdsec.service"
-    ];
-    wants = [ "crowdsec.service" ];
-    wantedBy = [ "multi-user.target" ];
-
-    serviceConfig = {
-      Type = "simple";
-      # Inject the API key from SOPS into the config file before starting
-      ExecStartPre = "${pkgs.bash}/bin/bash -c '${pkgs.gnused}/bin/sed -i \"s|api_key: \\\"\\\"|api_key: \\\"$(cat ${config.telometto.secrets.crowdsecFirewallBouncerTokenFile})\\\"|\" /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml'";
-      ExecStart = "${pkgs.crowdsec-firewall-bouncer}/bin/crowdsec-firewall-bouncer -c /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml";
-      Restart = "on-failure";
-      RestartSec = "5s";
+      iptables_chains = [
+        "INPUT"
+        "FORWARD"
+      ];
     };
-  };
-*/
+
+    systemd.services.crowdsec-firewall-bouncer = {
+      description = "CrowdSec Firewall Bouncer";
+      after = [
+        "network.target"
+        "crowdsec.service"
+      ];
+      wants = [ "crowdsec.service" ];
+      wantedBy = [ "multi-user.target" ];
+
+      serviceConfig = {
+        Type = "simple";
+        # Inject the API key from SOPS into the config file before starting
+        ExecStartPre = "${pkgs.bash}/bin/bash -c '${pkgs.gnused}/bin/sed -i \"s|api_key: \\\"\\\"|api_key: \\\"$(cat ${config.telometto.secrets.crowdsecFirewallBouncerTokenFile})\\\"|\" /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml'";
+        ExecStart = "${pkgs.crowdsec-firewall-bouncer}/bin/crowdsec-firewall-bouncer -c /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml";
+        Restart = "on-failure";
+        RestartSec = "5s";
+      };
+    };
+  */
   services = {
     traefik = {
       enable = true;
