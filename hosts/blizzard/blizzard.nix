@@ -410,20 +410,21 @@
       settings = {
         lapi.credentialsFile = "/var/lib/crowdsec/state/local_api_credentials.yaml";
         capi.credentialsFile = "/var/lib/crowdsec/state/online_api_credentials.yaml";
-        console.tokenFile = config.telometto.secrets.crowdsecConsoleTokenFile;
+
+        console = {
+          tokenFile = config.telometto.secrets.crowdsecConsoleTokenFile;
+          configuration = {
+            share_manual_decisions = true;
+            share_custom = true;
+            share_tainted = true;
+            share_context = true;
+          };
+        };
 
         general.api.server = {
           enable = true;
           listen_uri = "127.0.0.1:8085";
         };
-      };
-
-      console = {
-        share_manual_decisions = true;
-        share_tainted = true;
-        share_custom = true;
-        share_context = true;
-        console_management = true;
       };
 
       # Hub collections and scenarios
