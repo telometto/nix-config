@@ -412,6 +412,14 @@
         capi.credentialsFile = "/var/lib/crowdsec/state/online_api_credentials.yaml";
         console.tokenFile = config.telometto.secrets.crowdsecConsoleTokenFile;
 
+        console = {
+          share_manual_decisions = true;
+          share_tainted = true;
+          share_custom = true;
+          share_context = true;
+          console_management = true;
+        };
+
         general.api.server = {
           enable = true;
           listen_uri = "127.0.0.1:8085";
