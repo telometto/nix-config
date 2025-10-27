@@ -618,8 +618,8 @@
                 crowdsecMode = "stream";
                 crowdsecLapiScheme = "http";
                 crowdsecLapiHost = "127.0.0.1:8085";
-                # Use systemd LoadCredential path - %d is replaced by systemd with $CREDENTIALS_DIRECTORY
-                crowdsecLapiKeyFile = "%d/crowdsec-bouncer-key";
+                # Use BindReadOnlyPaths to access the secret file
+                crowdsecLapiKeyFile = "${config.telometto.secrets.crowdsecTraefikBouncerTokenFile}";
 
                 # Trust Cloudflare and local IPs for X-Forwarded-For header
                 forwardedHeadersTrustedIPs = [
@@ -758,10 +758,11 @@
     };
   };
 
-  # Configure systemd service for Traefik to load CrowdSec bouncer credentials
+  # Configure systemd service for Traefik to access CrowdSec bouncer credentials
+  # Use BindReadOnlyPaths to make the secret accessible despite ProtectSystem=full
   systemd.services.traefik.serviceConfig = {
-    LoadCredential = [
-      "crowdsec-bouncer-key:${config.telometto.secrets.crowdsecTraefikBouncerTokenFile}"
+    BindReadOnlyPaths = [
+      config.telometto.secrets.crowdsecTraefikBouncerTokenFile
     ];
   };
 
