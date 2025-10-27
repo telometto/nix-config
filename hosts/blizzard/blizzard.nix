@@ -413,11 +413,13 @@
 
         console = {
           tokenFile = config.telometto.secrets.crowdsecConsoleTokenFile;
+
           configuration = {
             share_manual_decisions = true;
             share_custom = true;
             share_tainted = true;
             share_context = true;
+            console_management = true;
           };
         };
 
