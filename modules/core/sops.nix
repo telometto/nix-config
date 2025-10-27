@@ -63,7 +63,9 @@ in
         "cloudflare/credentials" = { };
       }
       // whenEnabled hasCrowdsec {
-        "crowdsec/traefik_bouncer" = { };
+        "crowdsec/traefik_bouncer" = {
+          mode = "0775";
+        };
         "crowdsec/firewall_bouncer" = { };
         "crowdsec/console_token" = { };
       };
