@@ -20,9 +20,10 @@ in
       "gnome"
       "kde"
       "hyprland"
+      "cosmic"
     ];
     default = "none";
-    description = "Select Desktop Environment: none (headless), gnome, kde (Plasma), or hyprland.";
+    description = "Select Desktop Environment: none (headless), gnome, kde (Plasma), hyprland, or cosmic.";
   };
 
   # The concrete GNOME/KDE/Hyprland settings live under modules/desktop/flavors/*.nix
