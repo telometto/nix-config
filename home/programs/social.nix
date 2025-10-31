@@ -19,8 +19,11 @@ in
 
         # settings = {};
 
+        # FIXME: useSystem causes patch failure in Vesktop 1.6.0
+        # Re-enable when nixpkgs patches are updated
+        # See: https://github.com/NixOS/nixpkgs/issues/vesktop-use-system-vencord
         vencord = {
-          useSystem = true;
+          # useSystem = true;
 
           themes = {
             clearvision = ../files/vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;
