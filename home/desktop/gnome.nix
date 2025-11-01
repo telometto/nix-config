@@ -25,7 +25,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # dconf settings for GNOME configuration
     dconf.settings = lib.mkMerge [
       {
         # "org.blueman.plugins.powermanager" = { auto-power-on = false; };
@@ -107,19 +106,19 @@ in
 
     # GTK theme configuration
     gtk = {
-      enable = true;
+      enable = lib.mkDefault true;
 
-      iconTheme = {
+      iconTheme = lib.mkDefault {
         name = "Yaru-dark";
         package = pkgs.yaru-theme;
       };
 
-      theme = {
+      theme = lib.mkDefault {
         name = "palenight";
         package = pkgs.palenight-theme;
       };
 
-      cursorTheme = {
+      cursorTheme = lib.mkDefault {
         name = "Numix-Cursor";
         package = pkgs.numix-cursor-theme;
       };
@@ -132,7 +131,7 @@ in
         gtk-application-prefer-dark-theme = 1;
       };
 
-      # OR
+      # OR THIS
       # gtk3.extraConfig = {
       #   Settings = ''
       #     gtk-application-prefer-dark-theme=1

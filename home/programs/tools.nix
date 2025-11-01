@@ -15,14 +15,14 @@ in
 
   config = lib.mkIf cfg.enable {
     services = {
-      flameshot = lib.mkIf cfg.flameshot.enable { enable = true; };
-      podman = lib.mkIf cfg.podman.enable { enable = true; };
+      flameshot = lib.mkIf cfg.flameshot.enable { enable = lib.mkDefault true; };
+      podman = lib.mkIf cfg.podman.enable { enable = lib.mkDefault true; };
     };
 
     programs = {
-      texlive = lib.mkIf cfg.texlive.enable { enable = true; };
-      onlyoffice = lib.mkIf cfg.onlyoffice.enable { enable = true; };
-      jq = lib.mkIf cfg.jq.enable { enable = true; };
+      texlive = lib.mkIf cfg.texlive.enable { enable = lib.mkDefault true; };
+      onlyoffice = lib.mkIf cfg.onlyoffice.enable { enable = lib.mkDefault true; };
+      jq = lib.mkIf cfg.jq.enable { enable = lib.mkDefault true; };
     };
 
     home.packages = [ ];

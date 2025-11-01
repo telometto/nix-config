@@ -6,7 +6,6 @@ in
   options.telometto.services.borgbackup = {
     enable = lib.mkEnableOption "BorgBackup jobs";
 
-    # Thin pass-through for jobs; shape mirrors services.borgbackup.jobs
     jobs = lib.mkOption {
       type = lib.types.attrsOf lib.types.attrs;
       default = { };

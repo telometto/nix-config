@@ -27,7 +27,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Ensure nix-ld is enabled for library support
     assertions = [
       {
         assertion = config.programs.nix-ld.enable || config.telometto.programs.nix-ld.enable;
@@ -38,13 +37,12 @@ in
       }
     ];
 
-    # Install Python with a wrapper that sets LD_LIBRARY_PATH from NIX_LD_LIBRARY_PATH
-    # This allows pip-installed packages with compiled binaries to work correctly
     environment.systemPackages = [
       (pkgs.writeShellScriptBin "python" ''
         export LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH
         exec ${cfg.pythonPackage}/bin/python "$@"
       '')
+
       (pkgs.writeShellScriptBin "python3" ''
         export LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH
         exec ${cfg.pythonPackage}/bin/python3 "$@"

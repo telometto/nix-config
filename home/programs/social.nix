@@ -12,10 +12,10 @@ in
 
   config = lib.mkIf cfg.enable {
     programs = {
-      element-desktop.enable = cfg.element-desktop.enable;
+      element-desktop.enable = lib.mkDefault cfg.element-desktop.enable;
 
       vesktop = lib.mkIf cfg.vesktop.enable {
-        enable = true;
+        enable = lib.mkDefault true;
 
         # settings = {};
 
@@ -23,7 +23,7 @@ in
         # Re-enable when nixpkgs patches are updated
         # See: https://github.com/NixOS/nixpkgs/issues/vesktop-use-system-vencord
         vencord = {
-          # useSystem = true;
+          useSystem = lib.mkDefault true;
 
           themes = {
             clearvision = ../files/vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;

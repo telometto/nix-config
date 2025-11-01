@@ -27,9 +27,8 @@ in
 
   config = lib.mkIf cfg.enable {
     wayland.windowManager.hyprland = {
-      enable = true;
-      # set the flake package
-      package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
+      enable = lib.mkDefault true;
+      package = lib.mkDefault inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
 
       settings = lib.mkMerge [
         {
@@ -61,7 +60,6 @@ in
     };
 
     home.packages = [
-      # Hyprland-specific tools
       pkgs.grimblast
       pkgs.waybar
       pkgs.hyprpaper
@@ -71,10 +69,9 @@ in
       pkgs.wofi
     ];
 
-    # XDG MIME associations from old config
     xdg.mimeApps = {
-      enable = true;
-      defaultApplications = {
+      enable = lib.mkDefault true;
+      defaultApplications = lib.mkDefault {
         "image/*" = [ "org.nomacs.ImageLounge.desktop" ];
       };
     };

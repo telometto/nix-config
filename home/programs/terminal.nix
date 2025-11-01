@@ -23,36 +23,36 @@ in
 
     programs = {
       atuin = {
-        enable = true;
-        enableBashIntegration = true;
-        enableZshIntegration = true;
+        enable = lib.mkDefault true;
+        enableBashIntegration = lib.mkDefault true;
+        enableZshIntegration = lib.mkDefault true;
       };
 
       bash = {
-        enable = true;
-        enableCompletion = true;
-        enableVteIntegration = true;
-        historyControl = [ "erasedups" ];
+        enable = lib.mkDefault true;
+        enableCompletion = lib.mkDefault true;
+        enableVteIntegration = lib.mkDefault true;
+        historyControl = lib.mkDefault [ "erasedups" ];
       };
 
-      bat.enable = true;
+      bat.enable = lib.mkDefault true;
 
-      btop.enable = true;
+      btop.enable = lib.mkDefault true;
 
       direnv = {
-        enable = true;
-        enableBashIntegration = true;
-        enableZshIntegration = true;
-        nix-direnv.enable = true;
+        enable = lib.mkDefault true;
+        enableBashIntegration = lib.mkDefault true;
+        enableZshIntegration = lib.mkDefault true;
+        nix-direnv.enable = lib.mkDefault true;
       };
 
       eza = {
-        enable = true;
-        enableBashIntegration = true;
-        enableZshIntegration = true;
-        git = true;
-        icons = "always";
-        extraOptions = [
+        enable = lib.mkDefault true;
+        enableBashIntegration = lib.mkDefault true;
+        enableZshIntegration = lib.mkDefault true;
+        git = lib.mkDefault true;
+        icons = lib.mkDefault "always";
+        extraOptions = lib.mkDefault [
           "--color=always"
           "--group"
           "--group-directories-first"
@@ -62,13 +62,13 @@ in
       };
 
       fzf = {
-        enable = true;
-        tmux.enableShellIntegration = true;
+        enable = lib.mkDefault true;
+        tmux.enableShellIntegration = lib.mkDefault true;
       };
 
       micro = {
-        enable = true;
-        settings = {
+        enable = lib.mkDefault true;
+        settings = lib.mkDefault {
           autosu = true;
           mkparents = true;
           colorscheme = "gruvbox-tc";
@@ -79,8 +79,8 @@ in
       };
 
       ssh = {
-        enable = true;
-        enableDefaultConfig = false;
+        enable = lib.mkDefault true;
+        enableDefaultConfig = lib.mkDefault false;
         matchBlocks = {
           "*" = {
             addKeysToAgent = "yes";
@@ -109,15 +109,15 @@ in
       };
 
       tmux = {
-        enable = true;
-        clock24 = true;
-        mouse = false;
+        enable = lib.mkDefault true;
+        clock24 = lib.mkDefault true;
+        mouse = lib.mkDefault false;
       };
 
       zellij = {
-        enable = true;
-        enableBashIntegration = true;
-        enableZshIntegration = true;
+        enable = lib.mkDefault true;
+        enableBashIntegration = lib.mkDefault true;
+        enableZshIntegration = lib.mkDefault true;
 
         # TODO: Declaratively configure Zellij
         # settings = {
@@ -126,18 +126,18 @@ in
       };
 
       zoxide = {
-        enable = true;
-        enableBashIntegration = true;
-        enableZshIntegration = true;
+        enable = lib.mkDefault true;
+        enableBashIntegration = lib.mkDefault true;
+        enableZshIntegration = lib.mkDefault true;
       };
 
       zsh = {
-        enable = true;
-        enableCompletion = true;
-        autosuggestion.enable = true;
-        syntaxHighlighting.enable = true;
-        autocd = true;
-        enableVteIntegration = true;
+        enable = lib.mkDefault true;
+        enableCompletion = lib.mkDefault true;
+        autosuggestion.enable = lib.mkDefault true;
+        syntaxHighlighting.enable = lib.mkDefault true;
+        autocd = lib.mkDefault true;
+        enableVteIntegration = lib.mkDefault true;
 
         history = {
           expireDuplicatesFirst = true;
@@ -152,15 +152,14 @@ in
         ];
 
         oh-my-zsh = {
-          enable = true;
+          enable = lib.mkDefault true;
 
-          plugins = [
+          plugins = lib.mkDefault [
             #"autoenv"
             "colored-man-pages"
             "colorize"
             "command-not-found"
             "common-aliases"
-            # "copybuffer"
             "direnv"
             "git"
             "emoji"

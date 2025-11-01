@@ -33,7 +33,7 @@ in
   config = lib.mkIf cfg.enable {
     sops = {
       defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-      defaultSopsFormat = "yaml"; # Default format for sops files
+      defaultSopsFormat = "yaml";
       inherit (cfg) defaultSymlinkPath;
       defaultSecretsMountPoint = "/run/user/1000/secrets.d";
       inherit (cfg) secrets;

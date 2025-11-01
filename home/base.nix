@@ -13,15 +13,11 @@ in
   config = {
     # Base home-manager configuration with sensible defaults
     # Import this in your user configurations for automatic defaults
-    programs.home-manager.enable = lib.mkDefault true;
+    programs.home-manager.enable = true;
 
-    # Set sensible defaults for home-manager modules
-    # These can be overridden per-user as needed
     hm = {
       desktop = {
         xdg.enable = lib.mkDefault true;
-        # Desktop environments are auto-detected based on telometto.desktop.flavor
-        # Individual DEs can be explicitly enabled/disabled per-user if needed
       };
 
       programs = {
@@ -77,7 +73,6 @@ in
       enableDebugInfo = lib.mkDefault true;
       preferXdgDirectories = lib.mkDefault true;
 
-      # Simple language defaults - can be overridden per user
       language = {
         address = lib.mkDefault locale;
         base = lib.mkDefault locale;
@@ -93,10 +88,7 @@ in
         time = lib.mkDefault locale;
       };
 
-      # Default keyboard layout - can be overridden per user
-      keyboard = {
-        layout = lib.mkDefault "no";
-      };
+      keyboard.layout = lib.mkDefault "no";
     };
   };
 }

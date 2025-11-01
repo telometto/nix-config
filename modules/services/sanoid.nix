@@ -31,9 +31,10 @@ in
 
   config = lib.mkIf cfg.enable {
     services.sanoid = {
-      enable = true;
+      enable = lib.mkDefault true;
+
       inherit (cfg) templates datasets;
-      settings = { };
+      settings = lib.mkDefault { };
     };
   };
 }

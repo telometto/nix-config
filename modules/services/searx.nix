@@ -111,8 +111,8 @@ in
 
   config = lib.mkIf cfg.enable {
     services.searx = {
-      enable = true;
-      redisCreateLocally = true;
+      enable = lib.mkDefault true;
+      redisCreateLocally = lib.mkDefault true;
 
       # Rate limiting configuration for bot detection and abuse prevention
       limiterSettings = {
@@ -137,10 +137,6 @@ in
 
       settings = lib.mkMerge [
         {
-          ###################################
-          ### SECURITY & PRIVACY SETTINGS ###
-          ###################################
-
           # General instance settings
           general = {
             # Disable debug mode in production (prevents information leakage)
@@ -204,7 +200,7 @@ in
 
             # Autocomplete settings
             autocomplete_min = 2;
-            autocomplete = "duckduckgo";
+            autocomplete = "startpage";
 
             # Rate limiting for failed requests
             ban_time_on_fail = 5;

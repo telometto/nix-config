@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.hm.desktop.xdg;
+  userHome = config.home.homeDirectory;
 in
 {
   options.hm.desktop.xdg = {
@@ -20,20 +21,20 @@ in
 
   config = lib.mkIf cfg.enable {
     xdg = {
-      enable = true;
+      enable = lib.mkDefault true;
 
-      cacheHome = "${config.home.homeDirectory}/.cache";
-      configHome = "${config.home.homeDirectory}/.config";
-      dataHome = "${config.home.homeDirectory}/.local/share";
-      stateHome = "${config.home.homeDirectory}/.local/state";
+      cacheHome = lib.mkDefault "${userHome}/.cache";
+      configHome = lib.mkDefault "${userHome}/.config";
+      dataHome = lib.mkDefault "${userHome}/.local/share";
+      stateHome = lib.mkDefault "${userHome}/.local/state";
 
       userDirs = {
-        enable = true;
+        enable = lib.mkDefault true;
         inherit (cfg) createDirectories;
       };
 
       autostart = {
-        enable = true;
+        enable = lib.mkDefault true;
       };
 
       # mimeApps.enable = true;

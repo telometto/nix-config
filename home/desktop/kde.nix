@@ -25,34 +25,20 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [
-      # Core KDE applications
-      pkgs.kdePackages.kate
-      pkgs.kdePackages.kdeconnect-kde
-      pkgs.kdePackages.kcalc
-      pkgs.kdePackages.kolourpaint
-    ]
-    ++ cfg.extraPackages;
+    home.packages = lib.mkDefault (
+      [
+        pkgs.kdePackages.kate
+        pkgs.kdePackages.kdeconnect-kde
+        pkgs.kdePackages.kcalc
+        pkgs.kdePackages.kolourpaint
+      ]
+      ++ cfg.extraPackages
+    );
 
-    # Qt configuration - can be extended via qtConfig option
-    # qt = lib.mkMerge [
-    #   {
-    #     enable = true;
-    #     platformTheme.name = "kde";
-    #     style.name = "breeze";
-    #   }
-    #   cfg.qtConfig
-    # ];
-
-    # XDG MIME associations from old config
     xdg = {
-      # configFile = {
-      #  "Kvantum/ArcDark".source = "${pkgs.arc-kde-theme}/share/Kvantum/ArcDark";
-      #  "Kvantum/kvantum.kvconfig".text = "[General]\ntheme=ArcDark";
-      #};
       mimeApps = {
-        enable = true;
-        defaultApplications = {
+        enable = lib.mkDefault true;
+        defaultApplications = lib.mkDefault {
           "image/*" = [ "org.nomacs.ImageLounge.desktop" ];
         };
       };

@@ -9,6 +9,7 @@ in
       type = lib.types.bool;
       default = false;
     };
+
     settings = lib.mkOption {
       type = lib.types.attrs;
       default = {

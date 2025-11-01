@@ -34,6 +34,7 @@ in
           };
         }
       );
+
       default = { };
       description = "BTRFS filesystem mounts";
     };
@@ -54,7 +55,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Configure fileSystems
     fileSystems = lib.mapAttrs' (
       _: mount:
       lib.nameValuePair "/run/media/${cfg.baseUser}/${mount.mountPoint}" {
@@ -64,15 +64,13 @@ in
       }
     ) cfg.mounts;
 
-    # Enable BTRFS support
     boot = {
       supportedFilesystems = lib.mkDefault [ "btrfs" ];
       initrd.supportedFilesystems.btrfs = lib.mkDefault true;
     };
 
-    # Auto-scrub
     services.btrfs.autoScrub = lib.mkIf cfg.autoScrub.enable {
-      enable = true;
+      enable = lib.mkDefault true;
       inherit (cfg.autoScrub) interval;
     };
   };

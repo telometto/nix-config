@@ -70,17 +70,15 @@ in
   };
 
   config = lib.mkMerge [
-    # Auto-enable node exporter if Prometheus is enabled
     {
       telometto.services.prometheusExporters.node.enable = lib.mkDefault (
         config.telometto.services.prometheus.enable or false
       );
     }
 
-    # Configure node exporter
     (lib.mkIf cfg.node.enable {
       services.prometheus.exporters.node = {
-        enable = true;
+        enable = lib.mkDefault true;
         inherit (cfg.node)
           port
           openFirewall
@@ -90,10 +88,9 @@ in
       };
     })
 
-    # Configure ZFS exporter
     (lib.mkIf cfg.zfs.enable {
       services.prometheus.exporters.zfs = {
-        enable = true;
+        enable = lib.mkDefault true;
         inherit (cfg.zfs) port openFirewall pools;
       };
     })
