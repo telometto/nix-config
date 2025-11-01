@@ -21,7 +21,7 @@ in
 
         # FIXME: useSystem causes patch failure in Vesktop 1.6.0
         # Re-enable when nixpkgs patches are updated
-        # See: https://github.com/NixOS/nixpkgs/issues/vesktop-use-system-vencord
+        # See: https://github.com/NixOS/nixpkgs/issues/282264
         vencord = {
           # useSystem = true;
 

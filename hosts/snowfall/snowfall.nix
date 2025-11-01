@@ -32,7 +32,7 @@
   telometto = {
     role.desktop.enable = true;
 
-    desktop.flavor = "cosmic"; # just testing
+    desktop.flavor = "cosmic";
 
     users.zeno.enable = true;
 
