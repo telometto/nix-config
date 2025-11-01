@@ -26,7 +26,7 @@ in
     description = "Select Desktop Environment: none (headless), gnome, kde (Plasma), hyprland, or cosmic.";
   };
 
-  # The concrete GNOME/KDE/Hyprland settings live under modules/desktop/flavors/*.nix
+  # The concrete GNOME/KDE/Hyprland/COSMIC settings live under modules/desktop/flavors/*.nix
   # Each flavor module wraps config in lib.mkIf (flavor == "...") to keep things
   # exclusive and avoid bloat.
 
