@@ -18,7 +18,7 @@ let
   hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
   hasCloudflared = config.telometto.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
-  
+
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
 in
