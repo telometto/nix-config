@@ -10,6 +10,15 @@
       '';
     };
 
+    kaizerTsKey = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to the kaizer-specific Tailscale auth key file. This is resolved from SOPS in core/sops.nix
+        and is only available on the kaizer host.
+      '';
+    };
+
     paperlessKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
