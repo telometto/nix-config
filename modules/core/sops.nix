@@ -18,6 +18,9 @@ let
   hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
   hasCloudflared = config.telometto.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
+  
+  # Host-specific checks
+  isKaizer = config.networking.hostName == "kaizer";
 in
 
 {
@@ -43,6 +46,9 @@ in
       # Service-specific secrets
       // whenEnabled hasTailscale {
         "general/tsKeyFilePath" = { };
+      }
+      // whenEnabled (hasTailscale && isKaizer) {
+        "kaizer/tsKeyFilePath" = { };
       }
       // whenEnabled hasBorg {
         "general/borgKeyFilePath" = { };
@@ -93,6 +99,9 @@ in
   telometto.secrets =
     whenEnabled hasTailscale {
       tsKeyFile = toString config.sops.secrets."general/tsKeyFilePath".path;
+    }
+    // whenEnabled (hasTailscale && isKaizer) {
+      kaizerTsKey = toString config.sops.secrets."kaizer/tsKeyFilePath".path;
     }
     // whenEnabled hasPaperless {
       paperlessKeyFile = toString config.sops.secrets."general/paperlessKeyFilePath".path;
