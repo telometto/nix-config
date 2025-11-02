@@ -64,7 +64,7 @@ in
 
   config = lib.mkIf cfg.enable {
     programs.beets = {
-      enable = true;
+      enable = lib.mkDefault true;
 
       settings = lib.mkMerge [
         {
@@ -135,7 +135,6 @@ in
           };
 
           import = {
-            # Common options
             write = true;
             copy = false;
             move = true;
@@ -143,13 +142,11 @@ in
             quiet = true;
             log = "${config.home.homeDirectory}/.config/beets/beets.log";
 
-            # Other options
             default_action = "apply";
             languages = "en";
             quiet_fallback = "skip";
             none_rec_action = "ask";
 
-            # Rare options
             resume = false;
             incremental = false;
             incremental_skip_later = false;

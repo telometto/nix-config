@@ -7,13 +7,11 @@
   ...
 }:
 {
-  # User-specific packages for admin on blizzard
   home.packages = with pkgs; [
     sqlite
     zsh-powerlevel10k
   ];
 
-  # Enable file management for SSH configuration
   hm = {
     programs = {
       fastfetch = {
@@ -60,7 +58,6 @@
       sshConfig = {
         enable = true;
 
-        # SSH host configurations
         hosts = {
           "*" = {
             ForwardAgent = "yes";
@@ -78,7 +75,6 @@
       };
     };
 
-    # GPG and SSH agent configuration
     services = {
       gpgAgent = {
         enable = true;
@@ -88,7 +84,6 @@
     };
   };
 
-  # GNOME Keyring service
   services.gnome-keyring = {
     enable = true;
     # components = [ "secrets" "ssh" ];

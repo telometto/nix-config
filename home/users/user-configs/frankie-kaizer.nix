@@ -7,6 +7,5 @@
   ...
 }:
 {
-  # Frankie-specific packages on kaizer
   home.packages = with pkgs; [ ];
 }

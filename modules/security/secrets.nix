@@ -1,9 +1,6 @@
-# telometto.secrets.*: central secrets options
-# Define stable, project-owned options to reference secrets throughout modules.
 { lib, ... }:
 {
   options.telometto.secrets = {
-    # Tailscale auth key file path (resolved from SOPS centrally)
     tsKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string (do not coerce into store)
       default = null;
@@ -13,7 +10,6 @@
       '';
     };
 
-    # Paperless admin password file path (resolved from SOPS centrally)
     paperlessKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
@@ -22,8 +18,6 @@
       '';
     };
 
-    # Searx server secret key file path (resolved from SOPS centrally)
-    # Note: Keep this as a runtime path string to avoid leaking secrets to the Nix store.
     searxSecretKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
@@ -32,7 +26,6 @@
       '';
     };
 
-    # BorgBackup password file path (resolved from SOPS centrally)
     borgKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
@@ -41,7 +34,6 @@
       '';
     };
 
-    # Optional: Borg repository URL (if prefer not to hard-code in host config)
     borgRepo = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -51,7 +43,6 @@
       '';
     };
 
-    # Grafana Cloud credentials (resolved from SOPS centrally)
     grafanaCloudApiKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
@@ -76,7 +67,6 @@
       '';
     };
 
-    # Kubernetes Firefox credentials (resolved from SOPS centrally)
     firefoxUser = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -93,7 +83,6 @@
       '';
     };
 
-    # Cloudflare Tunnel credentials (resolved from SOPS centrally)
     cloudflaredCredentialsFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
@@ -102,7 +91,6 @@
       '';
     };
 
-    # CrowdSec Traefik bouncer token (resolved from SOPS centrally)
     crowdsecTraefikBouncerTokenFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
@@ -112,7 +100,6 @@
       '';
     };
 
-    # CrowdSec Firewall bouncer token (resolved from SOPS centrally)
     crowdsecFirewallBouncerTokenFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
@@ -122,7 +109,6 @@
       '';
     };
 
-    # CrowdSec Console enrollment token (resolved from SOPS centrally)
     crowdsecConsoleTokenFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;

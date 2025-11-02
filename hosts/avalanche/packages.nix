@@ -34,7 +34,6 @@ let
   ];
 in
 {
-  # Compose from local categories; add/remove lists as needed
   environment.systemPackages = storage ++ desktop ++ wine ++ extras;
 
   fonts.packages = [

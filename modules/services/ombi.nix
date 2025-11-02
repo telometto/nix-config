@@ -8,7 +8,7 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 5000; # Upstream default - override per-host if needed
+      default = 5000;
       description = "Port where Ombi listens.";
     };
 
@@ -78,7 +78,6 @@ in
       inherit (cfg) dataDir openFirewall port;
     };
 
-    # Configure Traefik reverse proxy if enabled
     services.traefik.dynamicConfigOptions =
       lib.mkIf
         (
@@ -102,7 +101,6 @@ in
           };
         };
 
-    # Configure Cloudflare Tunnel ingress if enabled
     telometto.services.cloudflared.ingress =
       lib.mkIf
         (
@@ -115,7 +113,6 @@ in
           "${cfg.reverseProxy.domain}" = "http://localhost:80";
         };
 
-    # Validate configuration
     assertions = [
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;

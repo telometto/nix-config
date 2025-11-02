@@ -1,6 +1,7 @@
 { lib, config, ... }:
 let
   cfg = config.telometto.services.openssh;
+
   defaultSettings = {
     X11Forwarding = lib.mkDefault false;
     PermitRootLogin = lib.mkDefault "no";

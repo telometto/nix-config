@@ -8,7 +8,7 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 8181; # Upstream default - override per-host if needed
+      default = 8181;
       description = "Port where Tautulli listens.";
     };
 
@@ -80,14 +80,10 @@ in
         ;
     };
 
-    # Configure Traefik reverse proxy if enabled
-    # Using standard NixOS services.traefik.dynamicConfigOptions
     services.traefik.dynamicConfigOptions =
       lib.mkIf (cfg.reverseProxy.enable && config.services.traefik.enable or false)
         {
           http = {
-            # Router: matches the domain and forwards to the service
-            # Using 'web' (HTTP) entrypoint since Cloudflare Tunnel handles HTTPS
             routers.tautulli = {
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = "tautulli";
@@ -95,7 +91,6 @@ in
               middlewares = [ "security-headers" ];
             };
 
-            # Service: points to Tautulli backend
             services.tautulli.loadBalancer = {
               servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
               passHostHeader = true;
@@ -103,7 +98,6 @@ in
           };
         };
 
-    # Configure Cloudflare Tunnel ingress if enabled
     telometto.services.cloudflared.ingress =
       lib.mkIf
         (
@@ -115,7 +109,6 @@ in
           "${cfg.reverseProxy.domain}" = "http://localhost:80";
         };
 
-    # Validate configuration
     assertions = [
       {
         assertion = !cfg.reverseProxy.enable || cfg.reverseProxy.domain != null;
