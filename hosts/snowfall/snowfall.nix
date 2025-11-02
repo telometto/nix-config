@@ -29,7 +29,7 @@
   telometto = {
     role.desktop.enable = true;
 
-    desktop.flavor = "kde";
+    desktop.flavor = "cosmic";
 
     users.zeno.enable = true;
 
