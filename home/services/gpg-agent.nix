@@ -27,22 +27,22 @@ in
 
   config = lib.mkIf cfg.enable {
     services.gpg-agent = {
-      enable = true;
+      enable = lib.mkDefault true;
 
-      enableSshSupport = cfg.enableSsh;
-      enableExtraSocket = true;
-      enableBashIntegration = true;
-      enableZshIntegration = true;
-      enableScDaemon = false; # Smartcard
+      enableSshSupport = lib.mkDefault cfg.enableSsh;
+      enableExtraSocket = lib.mkDefault true;
+      enableBashIntegration = lib.mkDefault true;
+      enableZshIntegration = lib.mkDefault true;
+      enableScDaemon = lib.mkDefault false; # Smartcard
 
-      defaultCacheTtl = cfg.defaultCacheTimes; # 400 days
-      defaultCacheTtlSsh = cfg.defaultCacheTimes; # 400 days
-      maxCacheTtl = cfg.defaultCacheTimes; # 400 days
-      maxCacheTtlSsh = cfg.defaultCacheTimes; # 400 days
+      defaultCacheTtl = lib.mkDefault cfg.defaultCacheTimes;
+      defaultCacheTtlSsh = lib.mkDefault cfg.defaultCacheTimes;
+      maxCacheTtl = lib.mkDefault cfg.defaultCacheTimes;
+      maxCacheTtlSsh = lib.mkDefault cfg.defaultCacheTimes;
 
       inherit (cfg) sshKeys;
 
-      extraConfig = ''
+      extraConfig = lib.mkDefault ''
         allow-preset-passphrase
       '';
     };

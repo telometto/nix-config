@@ -12,18 +12,18 @@ in
 
   config = lib.mkIf cfg.enable {
     programs = {
-      element-desktop.enable = cfg.element-desktop.enable;
+      element-desktop.enable = lib.mkDefault cfg.element-desktop.enable;
 
       vesktop = lib.mkIf cfg.vesktop.enable {
-        enable = true;
+        enable = lib.mkDefault true;
 
         # settings = {};
 
         # FIXME: useSystem causes patch failure in Vesktop 1.6.0
         # Re-enable when nixpkgs patches are updated
-        # See: https://github.com/NixOS/nixpkgs/issues/282264
+        # See: https://github.com/NixOS/nixpkgs/issues/282123  # TODO: Replace with actual issue number if different
         vencord = {
-          # useSystem = true;
+          useSystem = lib.mkDefault true;
 
           themes = {
             clearvision = ../files/vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;

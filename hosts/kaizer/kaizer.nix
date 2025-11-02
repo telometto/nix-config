@@ -40,15 +40,11 @@ in
       frankie.enable = true;
     };
 
-    # Disabled secure boot (lanzaboote) for now
     boot.lanzaboote.enable = lib.mkForce false;
 
-    # Enable Nvidia hardware support (RTX 3070 - Ampere architecture)
     hardware.nvidia = {
       enable = true;
 
-      # RTX 3070 (Ampere) supports open-source kernel modules
-      # Recommended by NVIDIA for better performance and stability
       open = true;
 
       # Enable if suspend/resume issues occur (experimental)
@@ -59,15 +55,14 @@ in
       # powerManagement.finegrained = false;
     };
 
-    # Enable Python venv support
-    programs = {
-      nix-ld.enable = true;
-      python-venv.enable = false;
-      gnupg.enable = true; # Enable GPG with SSH support
-      mtr.enable = true; # Enable mtr as in nix-conf
-    };
+    # programs = {
+    #   nix-ld.enable = true;
+    #   python-venv.enable = false;
+    #   gnupg.enable = true;
+    #   mtr.enable = true;
+    # };
 
-    # Pull specific packages from different nixpkgs inputs
+    # # Pull specific packages from different nixpkgs inputs
     # overlays.fromInputs = {
     #   nixpkgs-unstable = [ "firefox" "discord" ];
     #   nixpkgs-stable = [ "thunderbird" ];
@@ -84,20 +79,16 @@ in
 
     services = {
       tailscale = {
-        interface = "enp42s0"; # Update based on actual interface from hardware-configuration
+        interface = "enp42s0";
         openFirewall = true;
       };
 
-      # Disable printing as in nix-conf
       printing.enable = lib.mkForce false;
     };
   };
 
-  # Override Tailscale to preserve Luke's existing authentication
-  # Don't set authKeyFile - this allows the existing connection to persist
   services.tailscale.authKeyFile = lib.mkForce null;
 
-  # Locale overrides for Italian with Oslo timezone and Norwegian keyboard
   i18n.extraLocaleSettings = lib.mkForce (
     lib.genAttrs [
       "LC_ADDRESS"
@@ -120,20 +111,16 @@ in
       powerOnBoot = true;
     };
 
-    # Enable OpenGL for Minecraft
     graphics = {
       enable = lib.mkDefault true;
       enable32Bit = lib.mkDefault true;
     };
   };
 
-  # Minecraft/Titan Launcher support
-  # Install Java runtimes needed for different Minecraft versions
   environment.systemPackages = with pkgs; [
-    # Java runtimes for different Minecraft versions
-    temurin-jre-bin-21 # For Minecraft >= 1.20.5 (latest)
-    temurin-jre-bin-17 # For Minecraft >= 1.18
-    temurin-jre-bin-8 # For Minecraft < 1.17
+    temurin-jre-bin-21
+    temurin-jre-bin-17
+    temurin-jre-bin-8
     glfw
 
     # Alternative: prismlauncher if Titan doesn't work well

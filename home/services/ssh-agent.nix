@@ -9,7 +9,7 @@ in
 
   config = lib.mkIf cfg.enable {
     services.ssh-agent = {
-      enable = true;
+      enable = lib.mkDefault true;
     };
   };
 }

@@ -1,4 +1,3 @@
-# Automatically imported
 { lib, pkgs, ... }:
 let
   LANGUAGE = "nb_NO.UTF-8";

@@ -80,7 +80,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Enable Jellyfin service with configured options
     services.jellyfin = {
       enable = true;
       inherit (cfg)
@@ -92,35 +91,14 @@ in
         ;
     };
 
-    # Install required Jellyfin packages as per NixOS wiki
     environment.systemPackages = with pkgs; [
       jellyfin
       jellyfin-web
       jellyfin-ffmpeg
     ];
 
-    # Set LIBVA_DRIVER_NAME for hardware acceleration
-    # This will be overridden by jellyfin-gpu.nix if enabled
     environment.sessionVariables = {
       LIBVA_DRIVER_NAME = lib.mkDefault "iHD";
     };
-
-    # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    # COMMENTED OUT - Using standard NixOS Traefik module instead
-    # telometto.services.traefik.services =
-    #   lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
-    #     {
-    #       jellyfin = {
-    #         backendUrl = "http://localhost:${toString cfg.reverseProxy.port}/";
-    #         pathPrefix = cfg.reverseProxy.pathPrefix;
-    #         stripPrefix = cfg.reverseProxy.stripPrefix;
-    #         extraMiddlewares = cfg.reverseProxy.extraMiddlewares;
-    #         customHeaders = {
-    #           X-Forwarded-Proto = "https";
-    #           X-Forwarded-Host =
-    #             config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
-    #         };
-    #       };
-    #     };
   };
 }

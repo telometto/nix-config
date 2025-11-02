@@ -30,7 +30,6 @@
       sshConfig = {
         enable = true;
 
-        # SSH host configurations
         hosts = {
           "*" = {
             ForwardAgent = "yes";
@@ -58,7 +57,6 @@
           };
         };
 
-        # SSH allowed signers for commit verification
         allowedSigners = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com"
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMdEoq7fpm5wfF6GKpOaebHJUccxcPimffler4ohmRsH 226052356+amonomega@users.noreply.github.com"

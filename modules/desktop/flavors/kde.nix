@@ -4,20 +4,18 @@
   pkgs,
   ...
 }:
-# Single-owner KDE (Plasma 6) flavor module replicated under rewrite/, gated by telometto.desktop.flavor
 let
   flavor = config.telometto.desktop.flavor or "none";
   is = v: flavor == v;
 in
 {
   config = lib.mkIf (is "kde") {
-    # Plasma + SDDM
     services = {
       xserver.enable = lib.mkDefault false;
-      desktopManager.plasma6.enable = true;
+      desktopManager.plasma6.enable = lib.mkDefault true;
 
       displayManager.sddm = {
-        enable = true;
+        enable = lib.mkDefault true;
 
         wayland.enable = lib.mkDefault true;
         autoNumlock = lib.mkDefault true;
@@ -42,11 +40,9 @@ in
       };
     };
 
-    # Askpass and Wayland bits carried from legacy
     environment = {
       variables.SSH_ASKPASS_REQUIRE = lib.mkDefault "prefer";
 
-      # Useful KDE packages
       systemPackages = [
         pkgs.kdePackages.ksshaskpass
         pkgs.kdePackages.kwallet
@@ -54,7 +50,6 @@ in
         pkgs.kdePackages.kwallet-pam
         pkgs.kdePackages.qtwayland
         pkgs.xwayland
-        # pkgs.kdePackages.xwaylandvideobridge
         (pkgs.sddm-astronaut.override {
           embeddedTheme = "pixel_sakura";
         })

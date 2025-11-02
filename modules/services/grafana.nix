@@ -174,18 +174,15 @@ in
           serve_from_sub_path = true;
         };
 
-        # Prevent Grafana from phoning home
         analytics.reporting_enabled = !cfg.disableTelemetry;
       } cfg.extraSettings;
 
       provision = lib.mkIf cfg.provision.enable {
         enable = true;
 
-        # Provision datasources
         datasources.settings = {
           apiVersion = 1;
           datasources =
-            # Auto-provision Prometheus if it's enabled
             lib.optionals (config.telometto.services.prometheus.enable or false) [
               {
                 name = "Prometheus";
@@ -198,7 +195,6 @@ in
             ++ cfg.provision.datasources;
         };
 
-        # Provision dashboards if any are specified
         dashboards.settings = lib.mkIf (cfg.provision.dashboards != { }) {
           apiVersion = 1;
           providers = [
@@ -213,16 +209,13 @@ in
       };
     };
 
-    # Install dashboard files if provisioned
     environment.etc = lib.mapAttrs' (name: path: {
       name = "grafana-dashboards/${name}.json";
       value.source = path;
     }) cfg.provision.dashboards;
 
-    # Open firewall if requested
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 
-    # Configure Traefik reverse proxy if enabled
     services.traefik.dynamicConfigOptions =
       lib.mkIf
         (
@@ -246,7 +239,6 @@ in
           };
         };
 
-    # Configure Cloudflare Tunnel ingress if enabled
     telometto.services.cloudflared.ingress =
       lib.mkIf
         (
@@ -259,7 +251,6 @@ in
           "${cfg.reverseProxy.domain}" = "http://localhost:80";
         };
 
-    # Validate configuration
     assertions = [
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;

@@ -4,8 +4,6 @@
   # Blizzard-specific user configuration
   # These settings will be applied to all users on this host
 
-  # Server-specific overrides:
-  # Disable GUI/desktop applications on server
   hm = {
     # desktop = {
     #   xdg.enable = lib.mkForce false;
@@ -23,7 +21,6 @@
 
       gaming = {
         enable = lib.mkForce false;
-        mangohud.enable = lib.mkForce false;
       };
 
       # gpg.enable = lib.mkForce false;

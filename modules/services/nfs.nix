@@ -25,11 +25,11 @@ let
   mountsList = lib.mapAttrsToList mkMount cfg.mounts;
   automountsList = lib.mapAttrsToList mkAutomount cfg.mounts;
 
-  # NFSv4 service port and rpcbind (111) when rpcbind is enabled
   nfsPorts = [
     2049
     111
   ];
+
   serverPorts = [
     cfg.server.statdPort
     cfg.server.lockdPort
@@ -41,7 +41,6 @@ in
   options.telometto.services.nfs = {
     enable = lib.mkEnableOption "NFS client/server configuration";
 
-    # Simple, single source of truth for client mounts
     mounts = lib.mkOption {
       type = types.attrsOf (
         types.submodule (
@@ -52,15 +51,17 @@ in
                 type = types.str;
                 description = "NFS server hostname or IP";
               };
+
               export = lib.mkOption {
                 type = types.str;
                 description = "Remote export path (e.g. /pool/share)";
               };
-              # Use string for runtime mountpoint paths; avoid Nix path coercion
+
               target = lib.mkOption {
                 type = types.str;
                 description = "Local mountpoint";
               };
+
               options = lib.mkOption {
                 type = types.listOf types.str;
                 default = [
@@ -70,11 +71,13 @@ in
                 ];
                 description = "Mount options (comma-joined)";
               };
+
               idleTimeout = lib.mkOption {
                 type = types.int;
                 default = 600;
                 description = "Idle timeout in seconds (systemd TimeoutIdleSec)";
               };
+
               wantedBy = lib.mkOption {
                 type = types.listOf types.str;
                 default = [ "multi-user.target" ];
@@ -95,10 +98,12 @@ in
         type = types.port;
         default = 4001;
       };
+
       mountdPort = lib.mkOption {
         type = types.port;
         default = 4002;
       };
+
       statdPort = lib.mkOption {
         type = types.port;
         default = 4000;
@@ -120,7 +125,6 @@ in
 
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
-      # Client pieces (lists merge fine when empty)
       {
         boot = {
           supportedFilesystems = lib.mkDefault [ "nfs" ];
@@ -134,7 +138,6 @@ in
         systemd.automounts = automountsList;
       }
 
-      # Server pieces
       (lib.mkIf cfg.server.enable {
         services.rpcbind.enable = lib.mkDefault true;
         services.nfs.server = {
@@ -146,6 +149,7 @@ in
             exports
             ;
         };
+
         networking.firewall = lib.mkIf cfg.server.openFirewall {
           allowedTCPPorts = nfsPorts ++ serverPorts;
           allowedUDPPorts = nfsPorts ++ serverPorts;

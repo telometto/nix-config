@@ -73,10 +73,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Kernel parameters
     boot.kernelParams = lib.mkIf cfg.fbdev [ "nvidia-drm.fbdev=1" ];
 
-    # Hardware configuration
     hardware = {
       nvidia-container-toolkit.enable = lib.mkIf cfg.containerToolkit true;
 
@@ -96,10 +94,8 @@ in
       };
     };
 
-    # nixpkgs CUDA support
     nixpkgs.config.cudaSupport = cfg.cudaSupport;
 
-    # Load nvidia driver for Xorg and Wayland
     services.xserver.videoDrivers = [ "nvidia" ];
   };
 }

@@ -100,7 +100,6 @@ in
       };
     };
 
-    # Configure Traefik reverse proxy if enabled
     services.traefik.dynamicConfigOptions =
       lib.mkIf
         (
@@ -124,7 +123,6 @@ in
           };
         };
 
-    # Configure Cloudflare Tunnel ingress if enabled
     telometto.services.cloudflared.ingress =
       lib.mkIf
         (
@@ -137,7 +135,6 @@ in
           "${cfg.reverseProxy.domain}" = "http://localhost:80";
         };
 
-    # Validate configuration
     assertions = [
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;

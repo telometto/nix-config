@@ -9,14 +9,16 @@ in
       type = lib.types.str;
       default = "server";
     };
+
     gracefulNodeShutdown = lib.mkOption {
       type = lib.types.attrs;
       default = {
-        enable = false;
-        shutdownGracePeriod = "1m30s";
-        shutdownGracePeriodCriticalPods = "1m";
+        enable = lib.mkDefault false;
+        shutdownGracePeriod = lib.mkDefault "1m30s";
+        shutdownGracePeriodCriticalPods = lib.mkDefault "1m";
       };
     };
+
     extraFlags = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ "--snapshotter native" ];
@@ -24,7 +26,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    services.rpcbind.enable = lib.mkDefault true; # legacy requirement for some NFS-on-k3s setups
+    services.rpcbind.enable = lib.mkDefault true;
+
     services.k3s = {
       enable = lib.mkDefault true;
       inherit (cfg) role gracefulNodeShutdown extraFlags;

@@ -52,7 +52,6 @@ in
     };
   };
 
-  # Legacy compatibility toggle - mirrors telometto.home.enable
   options.home.enable = lib.mkOption {
     type = lib.types.bool;
     default = false;

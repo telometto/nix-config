@@ -44,8 +44,7 @@ in
       tailscale = lib.mkMerge [
         {
           enable = lib.mkDefault true;
-          # Use the project-owned secrets bridge; avoid referencing SOPS directly here
-          # to prevent top-level evaluation errors when the feature is disabled.
+
           authKeyFile = config.telometto.secrets.tsKeyFile;
           authKeyParameters = {
             preauthorized = lib.mkDefault true;
@@ -55,8 +54,10 @@ in
         }
         cfg.settings
       ];
+
       networkd-dispatcher = {
         enable = lib.mkDefault true;
+
         rules."50-tailscale" = {
           onState = [ "routable" ];
           script = "${lib.getExe pkgs.ethtool} -K ${cfg.interface} rx-udp-gro-forwarding on rx-gro-list off";

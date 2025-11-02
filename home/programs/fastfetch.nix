@@ -21,7 +21,7 @@ in
 
   config = lib.mkIf cfg.enable {
     programs.fastfetch = {
-      enable = true;
+      enable = lib.mkDefault true;
       settings = lib.mkMerge [
         {
           modules = [

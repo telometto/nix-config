@@ -1,6 +1,5 @@
 # OK
 { lib, config, ... }:
-# Aggregates simple one-line maintenance services
 let
   cfg = config.telometto.services.maintenance;
 in

@@ -7,7 +7,6 @@ in
     lib.mkEnableOption "Inject Skip Intro button into Jellyfin Web";
 
   config = lib.mkMerge [
-    # Follow Jellyfin service by default
     {
       telometto.programs.jellyfinWebSkipIntro.enable = lib.mkDefault (
         config.telometto.services.jellyfin.enable or false

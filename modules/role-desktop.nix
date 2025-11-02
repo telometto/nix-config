@@ -11,9 +11,9 @@ in
   config = lib.mkIf cfg.enable {
     telometto = {
       boot = {
-        lanzaboote.enable = lib.mkDefault true;
+        lanzaboote.enable = true;
         plymouth = {
-          enable = lib.mkDefault true;
+          enable = true;
           theme = "lone";
           themePackages = [
             (pkgs.adi1090x-plymouth-themes.override {
@@ -24,40 +24,38 @@ in
       };
 
       networking = {
-        base.enable = lib.mkDefault true;
-        networkmanager.enable = lib.mkDefault true;
+        base.enable = true;
+        networkmanager.enable = true;
       };
 
       programs = {
-        gaming.enable = lib.mkDefault true;
-        java.enable = lib.mkDefault true;
-        # SSH and GPG managed per-user via home-manager by default
-        ssh.enable = lib.mkDefault false;
-        gnupg.enable = lib.mkDefault false;
+        gaming.enable = true;
+        java.enable = true;
+        ssh.enable = false;
+        gnupg.enable = false;
       };
 
       services = {
         openssh = {
-          enable = lib.mkDefault true;
-          openFirewall = lib.mkDefault true;
+          enable = true;
+          openFirewall = true;
         };
-        timesyncd.enable = lib.mkDefault true;
-        resolved.enable = lib.mkDefault true;
-        maintenance.enable = lib.mkDefault true;
-        autoUpgrade.enable = lib.mkDefault false;
-        pipewire.enable = lib.mkDefault true;
-        printing.enable = lib.mkDefault true;
-        flatpak.enable = lib.mkDefault true;
-        tailscale.enable = lib.mkDefault true;
+
+        timesyncd.enable = true;
+        resolved.enable = true;
+        maintenance.enable = true;
+        autoUpgrade.enable = false;
+        pipewire.enable = true;
+        printing.enable = true;
+        flatpak.enable = true;
+        tailscale.enable = true;
       };
 
-      virtualisation.enable = lib.mkDefault true;
+      virtualisation.enable = true;
     };
 
-    # Enable home-manager for desktop users
-    telometto.home.enable = lib.mkDefault true;
+    telometto.home.enable = true;
 
-    # Enable firewall with restrictive defaults (deny all by default)
-    networking.firewall.enable = lib.mkDefault true;
+    networking.firewall.enable = true;
   };
 }

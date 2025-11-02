@@ -25,7 +25,7 @@ in
   config = lib.mkIf cfg.enable {
     programs = {
       firefox = lib.mkIf cfg.firefox.enable {
-        enable = true;
+        enable = lib.mkDefault true;
 
         languagePacks = LANGUAGES;
 
@@ -51,15 +51,13 @@ in
       };
 
       floorp = lib.mkIf cfg.floorp.enable {
-        enable = true;
+        enable = lib.mkDefault true;
 
         policies = {
           DisableTelemetry = true;
           DisableFirefoxStudies = true;
           DisablePocket = true;
           DisableFirefoxAccounts = false;
-          # OverrideFirstRunPage = "";
-          # OverridePostUpdatePage = "";
           DontCheckDefaultBrowser = true;
           DisplayBookmarksToolbar = "always";
           DisplayMenuBar = "default-off";
@@ -74,11 +72,10 @@ in
         };
       };
 
-      chromium = lib.mkIf cfg.chromium.enable { enable = true; };
+      chromium = lib.mkIf cfg.chromium.enable { enable = lib.mkDefault true; };
     };
 
     home.packages = [
-      # Default browsers
       pkgs.brave
     ];
   };

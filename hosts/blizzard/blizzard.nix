@@ -26,9 +26,7 @@
     };
   };
 
-  ## Nemsepaced modules
   telometto = {
-    # Enable server role (provides server defaults)
     role.server.enable = true;
 
     users.zeno.enable = true;
@@ -50,9 +48,8 @@
         ];
       };
 
-      # Enable NFS (owner module) and run as a server
       nfs = {
-        enable = false; # matches legacy default (server block kept for quick flip)
+        enable = false;
         server = {
           enable = true;
           exports = ''
@@ -61,15 +58,11 @@
         };
       };
 
-      # CrowdSec disabled in telometto namespace - configured directly below
-      # crowdsec.enable = false;
-
-      # ZFS helpers and snapshot management
       zfs.enable = true;
 
-      # Sanoid: rely on module default template "production" (autoprune=false) and just declare datasets
       sanoid = {
         enable = false;
+
         datasets = {
           flash = {
             useTemplate = [ "production" ];
@@ -88,13 +81,11 @@
         };
       };
 
-      # Monitoring and admin UIs
       scrutiny = {
         enable = true;
         port = 11001;
         openFirewall = true;
 
-        # Exposed via Cloudflare only: scrutiny.mydomain.com → scrutiny at root (/)
         reverseProxy = {
           enable = true;
           domain = "scrutiny.${VARS.domains.public}";
@@ -108,31 +99,29 @@
         openFirewall = true;
       };
 
-      # Prometheus exporters
       prometheusExporters = {
         zfs = {
           enable = true;
           pools = [
             "rpool"
             "tank"
-          ]; # Monitor these ZFS pools
+          ];
         };
       };
 
-      # Prometheus and Grafana monitoring stack
       prometheus = {
         enable = true;
-        listenAddress = "127.0.0.1"; # Only accessible via Traefik
-        openFirewall = false; # No need to open firewall, using Traefik
+
+        listenAddress = "127.0.0.1";
+        openFirewall = false;
         scrapeInterval = "5s";
 
-        # Scrape Traefik, ZFS, and K3s metrics
         extraScrapeConfigs = [
           {
             job_name = "traefik";
             static_configs = [
               {
-                targets = [ "localhost:8080" ]; # Traefik internal metrics port
+                targets = [ "localhost:8080" ];
               }
             ];
           }
@@ -140,7 +129,7 @@
             job_name = "zfs";
             static_configs = [
               {
-                targets = [ "localhost:9134" ]; # ZFS exporter port
+                targets = [ "localhost:9134" ];
               }
             ];
           }
@@ -149,7 +138,7 @@
             scheme = "http";
             static_configs = [
               {
-                targets = [ "127.0.0.1:10255" ]; # K3s kubelet read-only port
+                targets = [ "127.0.0.1:10255" ];
               }
             ];
           }
@@ -159,7 +148,7 @@
             metrics_path = "/metrics/cadvisor";
             static_configs = [
               {
-                targets = [ "127.0.0.1:10255" ]; # K3s kubelet read-only port for cAdvisor container metrics
+                targets = [ "127.0.0.1:10255" ];
               }
             ];
           }
@@ -168,7 +157,7 @@
             scheme = "http";
             static_configs = [
               {
-                targets = [ "127.0.0.1:32080" ]; # NodePort for kube-state-metrics
+                targets = [ "127.0.0.1:32080" ];
               }
             ];
           }
@@ -178,18 +167,15 @@
       grafana = {
         enable = true;
 
-        addr = "127.0.0.1"; # Only accessible via Traefik
-        openFirewall = false; # No need to open firewall, using Traefik
-        domain = "metrics.${VARS.domains.public}"; # Use Cloudflare domain
-        # Remove subPath - Grafana will run at root (/)
+        addr = "127.0.0.1";
+        openFirewall = false;
+        domain = "metrics.${VARS.domains.public}";
 
-        # Declaratively provision dashboards
         provision.dashboards = {
           "server-overview" = ./dashboards/server-overview.json;
           "zfs-overview" = ./dashboards/zfs-overview.json;
         };
 
-        # Exposed via Cloudflare only: grafana.mydomain.com → grafana at root (/)
         reverseProxy = {
           enable = true;
           domain = "metrics.${VARS.domains.public}";
@@ -197,19 +183,19 @@
         };
       };
 
-      # Kubernetes (k3s) server
       k3s = {
         enable = true;
 
         extraFlags = [
           "--snapshotter native"
           "--disable traefik" # using traefik from the repo packages
-          "--kubelet-arg=read-only-port=10255" # Enable read-only port for metrics
+          "--kubelet-arg=read-only-port=10255"
         ];
       };
 
       paperless = {
         enable = false;
+
         consumptionDirIsPublic = true;
         consumptionDir = "/rpool/enc/personal/documents";
         mediaDir = "/rpool/enc/personal/paperless-media";
@@ -220,20 +206,19 @@
         port = 11005;
       };
 
-      firefly.enable = false; # APP_KEY_FILE via defaults
+      firefly.enable = false;
 
       searx = {
         enable = true;
-        port = 11002;
-        bind = "127.0.0.1"; # Bind to localhost only (reverse proxy required)
 
-        # Exposed via Cloudflare only: searx.mydomain.com → searx at root (/)
-        # Note: base_url and engine configuration now have sensible defaults in the module
+        port = 11002;
+        bind = "127.0.0.1";
+
         reverseProxy = {
           enable = true;
           domain = "search.${VARS.domains.public}";
           cfTunnel.enable = true;
-          extraMiddlewares = [ "crowdsec" ]; # Enable CrowdSec bouncer protection
+          extraMiddlewares = [ "crowdsec" ];
         };
 
         # Optional: Override default settings here if needed
@@ -244,6 +229,7 @@
 
       immich = {
         enable = false;
+
         host = "0.0.0.0";
         port = 11007;
         openFirewall = true;
@@ -257,11 +243,11 @@
 
       ombi = {
         enable = true;
+
         port = 11003;
         openFirewall = true;
         dataDir = "/rpool/unenc/apps/nixos/ombi";
 
-        # Exposed via Cloudflare only: ombi.mydomain.com → ombi at root (/)
         reverseProxy = {
           enable = true;
           domain = "ombi.${VARS.domains.public}";
@@ -276,48 +262,43 @@
 
       tautulli = {
         enable = true;
+
         port = 11004;
         openFirewall = true;
         dataDir = "/rpool/unenc/apps/nixos/tautulli";
 
-        # Exposed via Cloudflare only: tautulli.mydomain.com → tautulli at root (/)
         reverseProxy = {
           enable = true;
           domain = "tautulli.${VARS.domains.public}";
-          cfTunnel.enable = true; # Automatically adds to Cloudflare Tunnel ingress
+          cfTunnel.enable = true;
         };
       };
 
       jellyfin = {
         enable = true;
+
         openFirewall = true;
 
-        # Jellyfin via Tailscale ONLY (Cloudflare ToS forbids video streaming)
-        # Access: https://blizzard.mole-delta.ts.net/jellyfin
-        # Configure Base URL = "/jellyfin" in Jellyfin's Dashboard → Networking
         reverseProxy = {
           enable = true;
-          pathPrefix = "/jellyfin"; # Tailscale path-based routing
-          stripPrefix = false; # Jellyfin handles the /jellyfin prefix internally
+
+          pathPrefix = "/jellyfin";
+          stripPrefix = false;
         };
       };
 
       cloudflared = {
         enable = true;
+
         tunnelId = "ce54cb73-83b2-4628-8246-26955d280641";
         credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile;
 
-        # Only manual entries here - services with cfTunnel.enable automatically add themselves
         ingress = {
-          # Overseerr (k3s service) - manually configured
           "requests.${VARS.domains.public}" = "http://localhost:80";
-          "qb.${VARS.domains.public}" = "http://localhost:80";
 
-          # Download Management Services (k3s)
           "ff.${VARS.domains.public}" = "http://localhost:80";
           "sab.${VARS.domains.public}" = "http://localhost:80";
 
-          # Servarr Services (k3s)
           "subs.${VARS.domains.public}" = "http://localhost:80";
           "lingarr.${VARS.domains.public}" = "http://localhost:80";
           "indexer.${VARS.domains.public}" = "http://localhost:80";
@@ -327,13 +308,13 @@
         };
       };
 
-      # Backups: Borg (daily) - Temporarily commented out to test Traefik
       borgbackup = {
-        enable = false; # Temporarily disabled to test Traefik
+        enable = false;
+
         jobs.homeserver = {
           paths = [ "/home/${VARS.users.zeno.user}" ];
           environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
-          repo = (config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo");
+          repo = config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo";
           compression = "zstd,8";
           startAt = "daily";
 
@@ -346,12 +327,9 @@
 
     };
 
-    # Virtualisation stack (podman, containers, libvirt)
     virtualisation.enable = true;
 
-    # Client program defaults
     programs = {
-      # SSH and GPG managed per-user via home-manager
       ssh.enable = false;
       mtr.enable = true;
       gnupg.enable = false;
@@ -360,10 +338,10 @@
 
   hardware.cpu.intel.updateMicrocode = true;
 
-  # ZFS boot support (host-specific)
   boot = {
     supportedFilesystems = [ "zfs" ];
     initrd.supportedFilesystems.zfs = true;
+
     zfs = {
       forceImportAll = true;
       requestEncryptionCredentials = true;
@@ -375,6 +353,7 @@
         "rpool"
       ];
     };
+
     kernel.sysctl = {
       "net.ipv4.conf.all.src_valid_mark" = 1;
       "net.ipv4.ip_forward" = 1;
@@ -386,7 +365,9 @@
 
   systemd.network = {
     enable = lib.mkForce true;
+
     wait-online.enable = lib.mkForce true;
+
     networks."40-enp8s0" = {
       matchConfig.Name = "enp8s0";
       networkConfig = {
@@ -394,19 +375,17 @@
         IPv6AcceptRA = true;
         IPv6PrivacyExtensions = "kernel";
       };
+
       linkConfig.RequiredForOnline = "routable";
     };
   };
 
-  # Standard NixOS services
   services = {
     tailscale.permitCertUid = lib.mkIf config.services.traefik.enable "traefik";
 
-    # CrowdSec - configured directly with upstream module
     crowdsec = {
       enable = true;
 
-      # Enable LAPI server on alternate port (8080 used by Traefik)
       settings = {
         lapi.credentialsFile = "/var/lib/crowdsec/state/local_api_credentials.yaml";
         capi.credentialsFile = "/var/lib/crowdsec/state/online_api_credentials.yaml";
@@ -429,29 +408,29 @@
         };
       };
 
-      # Hub collections and scenarios
       hub = {
         collections = [
           "crowdsecurity/linux"
           "crowdsecurity/traefik"
-          "crowdsecurity/http-cve" # Protect against known CVEs
-          "crowdsecurity/whitelist-good-actors" # Don't block legit bots (Google, etc)
+          "crowdsecurity/http-cve"
+          "crowdsecurity/whitelist-good-actors"
         ];
+
         scenarios = [
           "crowdsecurity/ssh-bf"
           "crowdsecurity/ssh-slow-bf"
-          "crowdsecurity/http-crawl-non_statics" # Aggressive crawlers
-          "crowdsecurity/http-probing" # Vulnerability scanners
-          "crowdsecurity/http-sensitive-files" # Attempts to access .env, .git, etc
-          "crowdsecurity/http-bad-user-agent" # Known malicious user agents
+          "crowdsecurity/http-crawl-non_statics"
+          "crowdsecurity/http-probing"
+          "crowdsecurity/http-sensitive-files"
+          "crowdsecurity/http-bad-user-agent"
         ];
+
         postOverflows = [
           "crowdsecurity/auditd-nix-wrappers-whitelist-process"
-          "crowdsecurity/cdn-whitelist" # Don't ban Cloudflare IPs
+          "crowdsecurity/cdn-whitelist"
         ];
       };
 
-      # Local configuration
       localConfig = {
         acquisitions = [
           {
@@ -459,6 +438,7 @@
             journalctl_filter = [
               "_SYSTEMD_UNIT=traefik.service"
             ];
+
             labels = {
               type = "traefik";
               service = "traefik";
@@ -467,7 +447,6 @@
           }
         ];
 
-        # Capture useful HTTP metadata in alerts
         contexts = [
           {
             context = {
@@ -480,11 +459,11 @@
           }
         ];
 
-        # Default profiles for IP remediation
         profiles = [
           {
             name = "default_ip_remediation";
             filters = [ "Alert.Remediation == true && Alert.GetScope() == 'Ip'" ];
+
             decisions = [
               {
                 type = "ban";
@@ -543,6 +522,7 @@
   services = {
     traefik = {
       enable = true;
+
       dataDir = "/var/lib/traefik";
 
       staticConfigOptions = {
@@ -552,35 +532,30 @@
 
         log.level = "WARN";
 
-        # Enable CrowdSec Bouncer Plugin
         experimental.plugins.bouncer = {
           moduleName = "github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin";
           version = "v1.4.5";
         };
 
-        # Enable API and dashboard
         api = {
           dashboard = true;
           insecure = false;
         };
 
-        # Entry points
         entryPoints = {
-          # HTTP entrypoint - redirects to HTTPS (except for Cloudflare domains)
           web = {
             address = ":80";
             forwardedHeaders = {
               trustedIPs = [
-                "127.0.0.1/32" # cloudflared tunnel
+                "127.0.0.1/32"
                 "10.0.0.0/8"
                 "172.16.0.0/12"
                 "192.168.0.0/16"
-                "100.64.0.0/10" # tailscale subnet
+                "100.64.0.0/10"
               ];
             };
           };
 
-          # HTTPS entrypoint for Tailscale domains
           websecure = {
             address = ":443";
             forwardedHeaders = {
@@ -595,10 +570,8 @@
           };
         };
 
-        # Use Tailscale for TLS certificates
         certificatesResolvers.myresolver.tailscale = { };
 
-        # Enable Prometheus metrics
         metrics.prometheus = {
           addEntryPointsLabels = true;
           addRoutersLabels = true;
@@ -606,25 +579,20 @@
         };
       };
 
-      # Dynamic configuration - Traefik dashboard and Overseerr (k3s)
       dynamicConfigOptions = {
         http = {
-          # Global security headers middleware
           middlewares = {
-            # CrowdSec Bouncer - application-level protection
             crowdsec = {
               plugin.bouncer = {
                 enabled = true;
                 crowdsecMode = "stream";
                 crowdsecLapiScheme = "http";
                 crowdsecLapiHost = "127.0.0.1:8085";
-                # Use BindReadOnlyPaths to access the secret file
                 crowdsecLapiKeyFile = "${config.telometto.secrets.crowdsecTraefikBouncerTokenFile}";
 
-                # Trust Cloudflare and local IPs for X-Forwarded-For header
                 forwardedHeadersTrustedIPs = [
                   "127.0.0.1/32"
-                  "173.245.48.0/20" # Cloudflare IP ranges
+                  "173.245.48.0/20"
                   "103.21.244.0/22"
                   "103.22.200.0/22"
                   "103.31.4.0/22"
@@ -645,7 +613,6 @@
 
             security-headers = {
               headers = {
-                # Response headers for security hardening
                 customResponseHeaders = {
                   X-Content-Type-Options = "nosniff";
                   X-Frame-Options = "SAMEORIGIN";
@@ -654,7 +621,6 @@
                   Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
                 };
 
-                # Content Security Policy (adjust per service if needed)
                 contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
 
                 # HSTS (HTTP Strict Transport Security) - only for HTTPS services
@@ -675,7 +641,6 @@
               middlewares = [ "security-headers" ];
             };
 
-            # Overseerr (k3s service) - manually configured since it's not a telometto service
             overseerr = {
               rule = "Host(`requests.${VARS.domains.public}`)";
               service = "overseerr";
@@ -683,7 +648,6 @@
               middlewares = [ "security-headers" ];
             };
 
-            # Download Management Services (k3s)
             firefox = {
               rule = "Host(`ff.${VARS.domains.public}`)";
               service = "firefox";
@@ -698,7 +662,6 @@
               middlewares = [ "security-headers" ];
             };
 
-            # Servarr Services (k3s)
             bazarr = {
               rule = "Host(`subs.${VARS.domains.public}`)";
               service = "bazarr";
@@ -758,15 +721,12 @@
     };
   };
 
-  # Configure systemd service for Traefik to access CrowdSec bouncer credentials
-  # Use BindReadOnlyPaths to make the secret accessible despite ProtectSystem=full
   systemd.services.traefik.serviceConfig = {
     BindReadOnlyPaths = [
       config.telometto.secrets.crowdsecTraefikBouncerTokenFile
     ];
   };
 
-  # Export kubeconfig for the admin user (used by server tooling)
   environment.variables.KUBECONFIG = "/home/${VARS.users.zeno.user}/.kube/config";
 
   system.stateVersion = "24.11";

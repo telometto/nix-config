@@ -12,14 +12,14 @@ in
   config = lib.mkIf cfg.enable {
     virtualisation = {
       podman = {
-        enable = true;
-        dockerCompat = true;
-        dockerSocket.enable = true;
-        autoPrune.enable = true;
-        defaultNetwork.settings.dns_enabled = true;
+        enable = lib.mkDefault true;
+        dockerCompat = lib.mkDefault true;
+        dockerSocket.enable = lib.mkDefault true;
+        autoPrune.enable = lib.mkDefault true;
+        defaultNetwork.settings.dns_enabled = lib.mkDefault true;
       };
-      containers.enable = true;
-      oci-containers.backend = "podman";
+      containers.enable = lib.mkDefault true;
+      oci-containers.backend = lib.mkDefault "podman";
 
       ## Error: The 'virtualisation.libvirtd.qemu.ovmf' submodule has been removed. All OVMF images distributed with QEMU are now available by default.
       # libvirtd = {

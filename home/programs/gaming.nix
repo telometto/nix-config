@@ -25,12 +25,11 @@ in
   config = lib.mkIf cfg.enable {
     programs = {
       mangohud = lib.mkIf cfg.mangohud.enable {
-        enable = true;
+        enable = lib.mkDefault true;
 
         settings = {
           time = true;
           time_no_label = true;
-          # time_format = "%T";
 
           gpu_stats = true;
           gpu_temp = true;

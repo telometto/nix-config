@@ -18,27 +18,23 @@ in
 
   config = lib.mkIf cfg.enable {
     programs.mpv = lib.mkIf cfg.mpv.enable {
-      enable = true;
+      enable = lib.mkDefault true;
       # TODO: Declaratively configure mpv
     };
 
     programs.yt-dlp = lib.mkIf cfg.yt-dlp.enable {
-      enable = true;
+      enable = lib.mkDefault true;
       # TODO: Declaratively configure yt-dlp
     };
 
     services.jellyfin-mpv-shim = lib.mkIf cfg.jf-mpv.enable {
-      enable = true;
+      enable = lib.mkDefault true;
       # TODO: Declaratively configure
     };
 
     home.packages = [
-      # Media utilities
       pkgs.jamesdsp
       pkgs.spotify
-      # pkgs.discord # no hm options; replaced by vesktop
-      # pkgs.element-desktop # has hm options; should be replaced
-      # pkgs.thunderbird # has hm options; should be replaced
       pkgs.protonmail-desktop
       pkgs.plex-desktop
     ];

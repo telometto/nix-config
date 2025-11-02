@@ -36,7 +36,7 @@ in
 
   config = lib.mkIf cfg.enable {
     programs.git = {
-      enable = true;
+      enable = lib.mkDefault true;
 
       settings = {
         user = {
@@ -69,13 +69,12 @@ in
     };
 
     programs.diff-so-fancy = {
-      enable = true;
-      enableGitIntegration = true;
+      enable = lib.mkDefault true;
+      enableGitIntegration = lib.mkDefault true;
     };
 
     home.packages = lib.mkIf cfg.enable (
       [
-        # Standard development tools
         pkgs.nixd
         pkgs.ansible
       ]

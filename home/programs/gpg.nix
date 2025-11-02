@@ -33,7 +33,7 @@ in
 
   config = lib.mkIf cfg.enable {
     programs.gpg = {
-      enable = true;
+      enable = lib.mkDefault true;
 
       inherit (cfg) homedir mutableTrust mutableKeys;
 
@@ -50,11 +50,9 @@ in
           with-fingerprint = true;
           with-keygrip = true;
 
-          # List and verify options
           list-options = "show-uid-validity";
           verify-options = "show-uid-validity show-keyserver-urls";
 
-          # Cipher and digest preferences
           personal-cipher-preferences = "AES256";
           personal-digest-preferences = "SHA512";
           default-preference-list = "SHA512 SHA384 SHA256 RIPEMD160 AES256 TWOFISH BLOWFISH ZLIB BZIP2 ZIP Uncompressed";
@@ -63,11 +61,9 @@ in
           cert-digest-algo = "SHA512";
           compress-algo = "ZLIB";
 
-          # Disable weak algorithms
           disable-cipher-algo = "3DES";
           weak-digest = "SHA1";
 
-          # String-to-key (S2K) settings
           s2k-cipher-algo = "AES256";
           s2k-digest-algo = "SHA512";
           s2k-mode = "3";

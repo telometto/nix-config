@@ -91,7 +91,7 @@ in
 
   config = lib.mkIf cfg.enable {
     services.prometheus = {
-      enable = true;
+      enable = lib.mkDefault true;
       inherit (cfg) port listenAddress retentionTime;
 
       webExternalUrl = lib.mkIf (cfg.webExternalUrl != null) cfg.webExternalUrl;
@@ -100,7 +100,6 @@ in
         scrape_interval = cfg.scrapeInterval;
       };
 
-      # Scrape configurations: auto-configure node exporter if enabled, plus any extras
       scrapeConfigs =
         lib.optionals (config.telometto.services.prometheusExporters.node.enable or false) [
           {
@@ -117,25 +116,6 @@ in
         ++ cfg.extraScrapeConfigs;
     };
 
-    # Open firewall if requested
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
-
-    # Contribute to Traefik configuration if reverse proxy is enabled and Traefik is available
-    # COMMENTED OUT - Using standard NixOS Traefik module instead
-    # telometto.services.traefik.services =
-    #   lib.mkIf (cfg.reverseProxy.enable && config.telometto.services.traefik.enable or false)
-    #     {
-    #       prometheus = {
-    #         backendUrl = "http://localhost:${toString cfg.port}/";
-    #
-    #         inherit (cfg.reverseProxy) pathPrefix stripPrefix extraMiddlewares;
-    #
-    #         customHeaders = {
-    #           X-Forwarded-Proto = "https";
-    #           X-Forwarded-Host =
-    #             config.telometto.services.traefik.domain or "${config.networking.hostName}.local";
-    #         };
-    #       };
-    #     };
   };
 }

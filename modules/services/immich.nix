@@ -5,38 +5,47 @@ in
 {
   options.telometto.services.immich = {
     enable = lib.mkEnableOption "Immich media server";
+
     host = lib.mkOption {
       type = lib.types.str;
       default = "0.0.0.0";
     };
+
     port = lib.mkOption {
       type = lib.types.port;
       default = 2283;
     };
+
     user = lib.mkOption {
       type = lib.types.str;
       default = "immich";
     };
+
     group = lib.mkOption {
       type = lib.types.str;
       default = "immich";
     };
+
     secretsFile = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
     };
+
     mediaLocation = lib.mkOption {
       type = lib.types.str;
       default = "/var/lib/immich";
     };
+
     accelerationDevices = lib.mkOption {
       type = lib.types.nullOr (lib.types.listOf lib.types.str);
       default = null;
     };
+
     openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
     };
+
     environment = lib.mkOption {
       type = lib.types.attrs;
       default = {
@@ -44,14 +53,17 @@ in
         IMMICH_TELEMETRY_INCLUDE = "all";
       };
     };
+
     newVersionCheck = lib.mkOption {
       type = lib.types.bool;
       default = true;
     };
+
     settings = lib.mkOption {
       type = lib.types.attrs;
       default = { };
     };
+
     database = lib.mkOption {
       type = lib.types.attrs;
       default = {
@@ -59,12 +71,14 @@ in
         createDB = true;
       };
     };
+
     redis = lib.mkOption {
       type = lib.types.attrs;
       default = {
         enable = true;
       };
     };
+
     ml = lib.mkOption {
       type = lib.types.attrs;
       default = {
@@ -74,6 +88,7 @@ in
         };
       };
     };
+
     addVideoGroups = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -85,7 +100,7 @@ in
     lib.mkMerge [
       {
         services.immich = {
-          enable = true;
+          enable = lib.mkDefault true;
           inherit (cfg)
             host
             port
@@ -99,9 +114,10 @@ in
             database
             redis
             ;
+
           settings = lib.recursiveUpdate {
             newVersionCheck = {
-              enabled = cfg.newVersionCheck;
+              enabled = lib.mkDefault cfg.newVersionCheck;
             };
           } cfg.settings;
           machine-learning = cfg.ml;

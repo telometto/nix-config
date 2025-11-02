@@ -33,7 +33,6 @@
 
     users.zeno.enable = true;
 
-    # Enable Python venv support
     programs = {
       nix-ld.enable = true;
       python-venv.enable = true;
@@ -109,6 +108,7 @@
 
   hardware = {
     cpu.intel.updateMicrocode = lib.mkDefault true;
+
     bluetooth = {
       enable = true;
 
@@ -125,9 +125,7 @@
     };
   };
 
-  # Additional services
   programs.virt-manager.enable = true;
 
-  # System version
   system.stateVersion = "24.05";
 }

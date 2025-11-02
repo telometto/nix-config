@@ -6,37 +6,37 @@ in
   config = lib.mkIf cfg.enable {
     telometto = {
       boot = {
-        lanzaboote.enable = lib.mkDefault true;
-        plymouth.enable = lib.mkDefault false;
+        lanzaboote.enable = true;
+        plymouth.enable = false;
       };
 
       networking = {
-        base.enable = lib.mkDefault true;
-        networkd.enable = lib.mkDefault true;
+        base.enable = true;
+        networkd.enable = true;
       };
 
-      # Core services for server systems
       services = {
         openssh = {
-          enable = lib.mkDefault true;
-          openFirewall = lib.mkDefault true;
+          enable = true;
+          openFirewall = true;
         };
-        timesyncd.enable = lib.mkDefault true;
-        resolved.enable = lib.mkDefault true;
-        maintenance.enable = lib.mkDefault true;
+
+        timesyncd.enable = true;
+        resolved.enable = true;
+        maintenance.enable = true;
+
         autoUpgrade = {
-          enable = lib.mkDefault true;
-          dates = lib.mkDefault "monthly";
+          enable = true;
+          dates = "monthly";
         };
-        nfs.server.openFirewall = lib.mkDefault false;
-        tailscale.enable = lib.mkDefault true;
+
+        nfs.server.openFirewall = false;
+        tailscale.enable = true;
       };
     };
 
-    # Enable home-manager with minimal configuration for server users
-    telometto.home.enable = lib.mkDefault true;
+    telometto.home.enable = true;
 
-    # Enable firewall with restrictive defaults (deny all by default)
-    networking.firewall.enable = lib.mkDefault true;
+    networking.firewall.enable = true;
   };
 }

@@ -50,7 +50,6 @@ in
   };
 
   config = lib.mkMerge [
-    # Follow Jellyfin service by default (host can still override explicitly)
     {
       telometto.programs.jellyfinGpu.enable = lib.mkDefault (
         config.telometto.services.jellyfin.enable or false
@@ -58,47 +57,38 @@ in
     }
 
     (lib.mkIf cfg.enable {
-      # 1. Enable graphics stack and VAAPI userspace with comprehensive Intel support
       hardware.graphics = {
-        enable = true;
+        enable = lib.mkDefault true;
         extraPackages =
           with pkgs;
           [
-            intel-ocl # Generic OpenCL support for all processors
+            intel-ocl
 
-            # VAAPI drivers based on processor generation
-            intel-media-driver # For newer processors (Broadwell+) with iHD
-            (intel-vaapi-driver.override { enableHybridCodec = true; }) # For older processors with i965
-            libva-vdpau-driver # aka vaapiVdpau
+            intel-media-driver
+            (intel-vaapi-driver.override { enableHybridCodec = true; })
+            libva-vdpau-driver
 
-            # Compute runtime based on generation
           ]
           ++ lib.optionals (cfg.intelGeneration == "newer") [
-            intel-compute-runtime # For 13th gen and higher
-            vpl-gpu-rt # For 11th gen or newer
+            intel-compute-runtime
+            vpl-gpu-rt
           ]
           ++ lib.optionals (cfg.intelGeneration == "older") [
-            intel-compute-runtime-legacy1 # For older processors
+            intel-compute-runtime-legacy1
           ];
       };
 
-      # 2. Set LIBVA_DRIVER_NAME environment variable for the system and Jellyfin service
       environment.sessionVariables = {
         LIBVA_DRIVER_NAME = lib.mkForce cfg.driver;
       };
 
-      # 3. Set LIBVA_DRIVER_NAME for the Jellyfin systemd service
       systemd.services.jellyfin.environment = {
         LIBVA_DRIVER_NAME = cfg.driver;
       };
 
-      # 4. Enable all firmware if requested (needed for GuC firmware on some Intel CPUs)
-      hardware.enableAllFirmware = lib.mkIf cfg.enableAllFirmware true;
+      hardware.enableAllFirmware = lib.mkIf cfg.enableAllFirmware (lib.mkDefault true);
     })
 
-    # 5. Ensure Jellyfin service account can access GPU devices when the service is enabled
-    # Avoid creating the user when the service is disabled
-    # (the upstream service module defines the user; we just add extra groups)
     (lib.mkIf (cfg.enable && jellyfinEnabled) {
       users.users.${config.telometto.services.jellyfin.user or "jellyfin"}.extraGroups = [
         "video"

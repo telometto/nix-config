@@ -1,4 +1,3 @@
-# What is this/where is this imported/what does it do?
 { lib, ... }:
 {
   options.telometto.role = {

@@ -27,10 +27,9 @@ in
 
   config = lib.mkIf cfg.enable {
     programs.nix-ld = {
-      enable = true;
+      enable = lib.mkDefault true;
       libraries =
         with pkgs;
-        # Base libraries (always included)
         [
           zlib
           zstd
@@ -47,7 +46,6 @@ in
           xz
           systemd
         ]
-        # Comprehensive library set (optional)
         ++ lib.optionals cfg.includeDefaultLibraries [
           # X11 libraries
           xorg.libXcomposite
@@ -166,7 +164,6 @@ in
           freeglut
           glew110
         ]
-        # User-provided additional libraries
         ++ cfg.extraLibraries;
     };
   };

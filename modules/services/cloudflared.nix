@@ -45,10 +45,11 @@ in
 
   config = lib.mkIf cfg.enable {
     services.cloudflared = {
-      enable = true;
+      enable = lib.mkDefault true;
+
       tunnels.${cfg.tunnelId} = {
         inherit (cfg) credentialsFile ingress;
-        default = "http_status:404";
+        default = lib.mkDefault "http_status:404";
       }
       // lib.optionalAttrs (cfg.originRequest != { }) {
         inherit (cfg) originRequest;

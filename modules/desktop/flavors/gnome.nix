@@ -4,7 +4,6 @@
   pkgs,
   ...
 }:
-# Single-owner GNOME flavor module replicated under rewrite/, gated by telometto.desktop.flavor
 let
   flavor = config.telometto.desktop.flavor or "none";
   is = v: flavor == v;
@@ -12,10 +11,10 @@ in
 {
   config = lib.mkIf (is "gnome") {
     programs = {
-      gnome-disks.enable = true;
-      gnome-terminal.enable = false;
-      light.brightnessKeys.enable = true;
-      seahorse.enable = true;
+      gnome-disks.enable = lib.mkDefault true;
+      gnome-terminal.enable = lib.mkDefault false;
+      light.brightnessKeys.enable = lib.mkDefault true;
+      seahorse.enable = lib.mkDefault true;
     };
 
     services = {
@@ -23,24 +22,24 @@ in
         enable = lib.mkDefault false;
         desktopManager.xterm.enable = lib.mkForce false;
       };
-      desktopManager.gnome.enable = true;
+      desktopManager.gnome.enable = lib.mkDefault true;
       displayManager.gdm = {
-        enable = true;
+        enable = lib.mkDefault true;
         autoSuspend = lib.mkDefault false;
       };
 
       gnome = {
-        core-developer-tools.enable = true;
-        core-os-services.enable = true;
-        core-shell.enable = true;
-        glib-networking.enable = true;
-        gnome-keyring.enable = true;
-        gnome-online-accounts.enable = true;
-        gnome-settings-daemon.enable = true;
-        sushi.enable = true;
+        core-developer-tools.enable = lib.mkDefault true;
+        core-os-services.enable = lib.mkDefault true;
+        core-shell.enable = lib.mkDefault true;
+        glib-networking.enable = lib.mkDefault true;
+        gnome-keyring.enable = lib.mkDefault true;
+        gnome-online-accounts.enable = lib.mkDefault true;
+        gnome-settings-daemon.enable = lib.mkDefault true;
+        sushi.enable = lib.mkDefault true;
       };
 
-      hardware.bolt.enable = true;
+      hardware.bolt.enable = lib.mkDefault true;
     };
 
     # Prefer GNOME portal to avoid conflicts
@@ -51,7 +50,6 @@ in
     #   config.common.default = lib.mkDefault "*";
     # };
 
-    # PAM hardening + keyring integration similar to legacy
     security.pam.services = {
       gdm = {
         enableAppArmor = true;
@@ -65,12 +63,8 @@ in
       };
     };
 
-    environment.systemPackages = [
-      # pkgs.gnome.gnome-tweaks
-      # pkgs.gnomeExtensions.appindicator
-    ];
+    environment.systemPackages = [ ];
 
-    # Trim default GNOME apps as in legacy
     environment.gnome.excludePackages = [
       pkgs.gnome-tour
       pkgs.gnome-builder

@@ -32,7 +32,6 @@ in
         inherit (cfg) theme themePackages;
       };
 
-      # Silent boot parameters
       consoleLogLevel = lib.mkDefault 3;
       initrd.verbose = lib.mkDefault false;
       kernelParams = lib.mkDefault [
@@ -44,7 +43,7 @@ in
         # "udev.log_priority=3"
       ];
 
-      loader.timeout = lib.mkDefault 0; # Hide bootloader menu unless a key is pressed
+      loader.timeout = lib.mkDefault 0;
     };
   };
 }
