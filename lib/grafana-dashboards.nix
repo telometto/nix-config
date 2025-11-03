@@ -20,13 +20,13 @@ rec {
     node-exporter-full = fetchGrafanaDashboard {
       gnetId = 1860;
       revision = 42;
-      hash = "sha256-0phjy96kq4kymzggm0r51y8i2s2z2x3p69bd5nx4n10r33mjgn54";
+      hash = "0phjy96kq4kymzggm0r51y8i2s2z2x3p69bd5nx4n10r33mjgn54";
     };
 
     kubernetes-cluster = fetchGrafanaDashboard {
       gnetId = 315;
       revision = 3;
-      hash = "sha256-1yqqcr4ca1hglxr8kq6vrgkbv3jwargax24ciskhm5d9d1pdsipf";
+      hash = "1yqqcr4ca1hglxr8kq6vrgkbv3jwargax24ciskhm5d9d1pdsipf";
     };
   };
 
