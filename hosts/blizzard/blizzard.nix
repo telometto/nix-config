@@ -5,6 +5,9 @@
   pkgs,
   ...
 }:
+let
+  grafanaDashboards = import ../../lib/grafana-dashboards.nix { inherit lib pkgs; };
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -172,8 +175,12 @@
         domain = "metrics.${VARS.domains.public}";
 
         provision.dashboards = {
-          "server-overview" = ./dashboards/server-overview.json;
-          "zfs-overview" = ./dashboards/zfs-overview.json;
+          # Community dashboards (automatically fetched from grafana.com)
+          "kubernetes-cluster" = grafanaDashboards.community.kubernetes-cluster;
+
+          # Custom dashboards (locally maintained)
+          "server-overview" = grafanaDashboards.custom.server-overview;
+          "zfs-overview" = grafanaDashboards.custom.zfs-overview;
         };
 
         reverseProxy = {

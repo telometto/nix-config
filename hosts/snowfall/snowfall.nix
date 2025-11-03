@@ -5,6 +5,9 @@
   pkgs,
   ...
 }:
+let
+  grafanaDashboards = import ../../lib/grafana-dashboards.nix { inherit lib pkgs; };
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -98,9 +101,8 @@
         subPath = "/grafana";
 
         provision.dashboards = {
-          "node-exporter-full" = pkgs.writeText "node-exporter-full.json" (
-            builtins.toJSON (import ./dashboards/node-exporter-full { inherit lib pkgs; })
-          );
+          # Community dashboards (automatically fetched from grafana.com)
+          "node-exporter-full" = grafanaDashboards.community.node-exporter-full;
         };
       };
 
