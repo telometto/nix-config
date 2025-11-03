@@ -59,13 +59,13 @@ jobs:
                       UPDATE_INFO="${UPDATE_INFO}- **gnetId**: ${gnetId}\n"
                       UPDATE_INFO="${UPDATE_INFO}- **Old revision**: ${current_revision}\n"
                       UPDATE_INFO="${UPDATE_INFO}- **New revision**: ${latest_revision}\n"
-                      UPDATE_INFO="${UPDATE_INFO}- **New hash**: sha256-${hash}\n"
+                      UPDATE_INFO="${UPDATE_INFO}- **New hash**: ${hash}\n"
                       UPDATE_INFO="${UPDATE_INFO}- **Dashboard URL**: https://grafana.com/grafana/dashboards/${gnetId}\n\n"
                       
-                      # Update the file
+                      # Update the file (hash without sha256- prefix)
                       sed -i "s|gnetId = ${gnetId};|gnetId = ${gnetId};|" lib/grafana-dashboards.nix
                       sed -i "/gnetId = ${gnetId};/,/hash = / s|revision = [0-9]*;|revision = ${latest_revision};|" lib/grafana-dashboards.nix
-                      sed -i "/gnetId = ${gnetId};/,/hash = / s|hash = \"sha256-[^\"]*\";|hash = \"sha256-${hash}\";|" lib/grafana-dashboards.nix
+                      sed -i "/gnetId = ${gnetId};/,/hash = / s|hash = \"[^\"]*\";|hash = \"${hash}\";|" lib/grafana-dashboards.nix
                     else
                       echo "$name is up to date (revision $current_revision)"
                     fi
