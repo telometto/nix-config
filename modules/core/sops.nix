@@ -48,7 +48,7 @@ in
         "general/tsKeyFilePath" = { };
       }
       // whenEnabled (hasTailscale && isKaizer) {
-        "kaizer/tsKeyFilePath" = { };
+        "external/kaizer_tsKey" = { };
       }
       // whenEnabled hasBorg {
         "general/borgKeyFilePath" = { };
@@ -101,7 +101,7 @@ in
       tsKeyFile = toString config.sops.secrets."general/tsKeyFilePath".path;
     }
     // whenEnabled (hasTailscale && isKaizer) {
-      kaizerTsKey = toString config.sops.secrets."kaizer/tsKeyFilePath".path;
+      kaizerTsKey = toString config.sops.secrets."external/kaizer_tsKey".path;
     }
     // whenEnabled hasPaperless {
       paperlessKeyFile = toString config.sops.secrets."general/paperlessKeyFilePath".path;

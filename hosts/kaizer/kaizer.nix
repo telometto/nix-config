@@ -87,7 +87,7 @@ in
     };
   };
 
-  services.tailscale.authKeyFile = config.telometto.secrets.kaizerTsKey;
+  services.tailscale.authKeyFile = lib.mkForce config.telometto.secrets.kaizerTsKey;
 
   i18n.extraLocaleSettings = lib.mkForce (
     lib.genAttrs [
