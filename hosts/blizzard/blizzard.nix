@@ -172,7 +172,7 @@ in
 
         addr = "127.0.0.1";
         openFirewall = false;
-        domain = "metrics.${VARS.domains.public}";
+        domain = "blizzard.${VARS.domains.public}";
 
         provision.dashboards = {
           # Community dashboards (automatically fetched from grafana.com)
@@ -185,7 +185,7 @@ in
 
         reverseProxy = {
           enable = true;
-          domain = "metrics.${VARS.domains.public}";
+          domain = "blizzard.${VARS.domains.public}";
           cfTunnel.enable = true;
         };
       };
