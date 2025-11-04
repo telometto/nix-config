@@ -71,7 +71,11 @@ in
     kwalletName = lib.mkOption {
       type = lib.types.str;
       default = "kdewallet";
-      description = "Name of the KWallet to use for SSH key storage";
+      description = ''
+        Name of the KWallet to use for SSH key storage.
+        Typical values are "kdewallet" (the default wallet), "default", or a custom wallet name.
+        Example: "kdewallet"
+      '';
     };
   };
 
