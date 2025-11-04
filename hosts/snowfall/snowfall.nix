@@ -115,7 +115,7 @@ in
         enable = true;
         tunnelId = "8e2c0187-8e1c-4700-958f-a8276707e641";
         credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile;
-        
+
         ingress = {
           # Grafana is automatically added via cfTunnel.enable
           # Additional services here if needed
