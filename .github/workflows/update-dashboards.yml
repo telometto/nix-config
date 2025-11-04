@@ -42,7 +42,7 @@ jobs:
                     # Get latest revision from Grafana API
                     latest_revision=$(curl -fsSL "https://grafana.com/api/dashboards/$gnetId" | jq -r '.revision')
                     
-                    if [ "$latest_revision" != "null" ] && [ "$current_revision" -lt "$latest_revision" ]; then
+                    if [[ "$latest_revision" =~ ^[0-9]+$ ]] && [[ "$current_revision" =~ ^[0-9]+$ ]] && [ "$latest_revision" != "null" ] && [ "$current_revision" -lt "$latest_revision" ]; then
                       echo "Update available: $name rev$current_revision → rev$latest_revision"
                       UPDATES_FOUND=true
                       
@@ -63,7 +63,6 @@ jobs:
                       UPDATE_INFO="${UPDATE_INFO}- **Dashboard URL**: https://grafana.com/grafana/dashboards/${gnetId}\n\n"
                       
                       # Update the file (hash without sha256- prefix)
-                      sed -i "s|gnetId = ${gnetId};|gnetId = ${gnetId};|" lib/grafana-dashboards.nix
                       sed -i "/gnetId = ${gnetId};/,/hash = / s|revision = [0-9]*;|revision = ${latest_revision};|" lib/grafana-dashboards.nix
                       sed -i "/gnetId = ${gnetId};/,/hash = / s|hash = \"[^\"]*\";|hash = \"${hash}\";|" lib/grafana-dashboards.nix
                     else
