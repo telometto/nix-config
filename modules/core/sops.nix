@@ -123,12 +123,18 @@ in
       grafanaCloudUsername = toString config.sops.secrets."grafana/cloud/username".path;
       grafanaCloudRemoteWriteUrl = toString config.sops.secrets."grafana/cloud/remote_write_url".path;
     }
-    // whenEnabled (hasCloudflared && isBlizzard) {
-      cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/blizzard_creds".path;
-    }
-    // whenEnabled (hasCloudflared && isSnowfall) {
-      cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/snowfall_creds".path;
-    }
+    // whenEnabled hasCloudflared (
+      if isBlizzard then
+        {
+          cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/blizzard_creds".path;
+        }
+      else if isSnowfall then
+        {
+          cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/snowfall_creds".path;
+        }
+      else
+        { }
+    )
     // whenEnabled hasCrowdsec {
       crowdsecTraefikBouncerTokenFile = toString config.sops.secrets."crowdsec/traefik_bouncer".path;
       crowdsecFirewallBouncerTokenFile = toString config.sops.secrets."crowdsec/firewall_bouncer".path;
