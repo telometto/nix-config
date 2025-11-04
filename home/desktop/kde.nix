@@ -6,6 +6,45 @@
 }:
 let
   cfg = config.hm.desktop.kde;
+
+  sshAddKeysScript = pkgs.writeShellScript "ssh-add-keys" ''
+    set -eu
+
+    export SSH_ASKPASS="${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass"
+    export SSH_ASKPASS_REQUIRE="prefer"
+
+    # Wait for kwallet to be available
+    timeout=30
+    while ! ${pkgs.kdePackages.kwallet}/bin/kwallet-query -l kdewallet > /dev/null 2>&1; do
+      if [ $timeout -le 0 ]; then
+        echo "KWallet did not become available in time"
+        exit 1
+      fi
+      sleep 1
+      timeout=$((timeout - 1))
+    done
+
+    # Find and add all SSH private keys recursively
+    # Exclude .pub files, known_hosts, and other non-key files
+    find "${config.home.homeDirectory}/.ssh" -type f \
+      ! -name "*.pub" \
+      ! -name "known_hosts*" \
+      ! -name "config" \
+      ! -name "authorized_keys*" \
+      ! -name "*.old" \
+      ! -name "*.bak" \
+      -exec grep -l "PRIVATE KEY" {} \; 2>/dev/null | while read -r key; do
+      if [ -f "$key" ]; then
+        # Validate the key using ssh-keygen
+        if ${pkgs.openssh}/bin/ssh-keygen -l -f "$key" > /dev/null 2>&1; then
+          echo "Adding key: $key"
+          ${pkgs.openssh}/bin/ssh-add "$key" </dev/null || true
+        else
+          echo "Skipping invalid key: $key"
+        fi
+      fi
+    done
+  '';
 in
 {
   options.hm.desktop.kde = {
@@ -21,6 +60,12 @@ in
       type = lib.types.attrs;
       default = { };
       description = "Additional KDE configuration";
+    };
+
+    autoImportSshKeys = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Automatically import SSH keys from ~/.ssh using KWallet on login";
     };
   };
 
@@ -41,6 +86,47 @@ in
         defaultApplications = lib.mkDefault {
           "image/*" = [ "org.nomacs.ImageLounge.desktop" ];
         };
+      };
+    };
+
+    # Automatic SSH key import using KWallet
+    systemd.user.services."ssh-add-keys" = lib.mkIf cfg.autoImportSshKeys {
+      Unit = {
+        Description = "Load SSH keys into the agent using KWallet";
+
+        After = [
+          "graphical-session.target"
+          "kwallet.service"
+          "ssh-agent.service"
+        ];
+
+        Wants = [
+          "graphical-session.target"
+          "kwallet.service"
+          "ssh-agent.service"
+        ];
+      };
+
+      Service = {
+        Type = "oneshot";
+
+        Environment = [
+          "SSH_ASKPASS=${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass"
+          "SSH_ASKPASS_REQUIRE=prefer"
+        ];
+
+        PassEnvironment = [
+          "DISPLAY"
+          "WAYLAND_DISPLAY"
+          "DBUS_SESSION_BUS_ADDRESS"
+          "XAUTHORITY"
+        ];
+
+        ExecStart = sshAddKeysScript;
+      };
+
+      Install = {
+        WantedBy = [ "graphical-session.target" ];
       };
     };
   };

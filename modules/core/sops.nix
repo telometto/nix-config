@@ -21,6 +21,8 @@ let
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
+  isBlizzard = config.networking.hostName == "blizzard";
+  isSnowfall = config.networking.hostName == "snowfall";
 in
 
 {
@@ -65,8 +67,11 @@ in
         "grafana/cloud/username" = { };
         "grafana/cloud/remote_write_url" = { };
       }
-      // whenEnabled hasCloudflared {
-        "cloudflare/credentials" = { };
+      // whenEnabled (hasCloudflared && isBlizzard) {
+        "cloudflare/blizzard_creds" = { };
+      }
+      // whenEnabled (hasCloudflared && isSnowfall) {
+        "cloudflare/snowfall_creds" = { };
       }
       // whenEnabled hasCrowdsec {
         "crowdsec/traefik_bouncer" = {
@@ -118,9 +123,18 @@ in
       grafanaCloudUsername = toString config.sops.secrets."grafana/cloud/username".path;
       grafanaCloudRemoteWriteUrl = toString config.sops.secrets."grafana/cloud/remote_write_url".path;
     }
-    // whenEnabled hasCloudflared {
-      cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/credentials".path;
-    }
+    // whenEnabled hasCloudflared (
+      if isBlizzard then
+        {
+          cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/blizzard_creds".path;
+        }
+      else if isSnowfall then
+        {
+          cloudflaredCredentialsFile = toString config.sops.secrets."cloudflare/snowfall_creds".path;
+        }
+      else
+        { }
+    )
     // whenEnabled hasCrowdsec {
       crowdsecTraefikBouncerTokenFile = toString config.sops.secrets."crowdsec/traefik_bouncer".path;
       crowdsecFirewallBouncerTokenFile = toString config.sops.secrets."crowdsec/firewall_bouncer".path;
