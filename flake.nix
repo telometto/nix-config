@@ -33,8 +33,8 @@
     };
 
     # rust-overlay = {
-      # url = "github:oxalica/rust-overlay";
-      # inputs.nixpkgs.follows = "nixpkgs";
+    # url = "github:oxalica/rust-overlay";
+    # inputs.nixpkgs.follows = "nixpkgs";
     # };
 
     sops-nix = {
