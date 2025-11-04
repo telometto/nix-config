@@ -113,7 +113,7 @@ in
 
       cloudflared = {
         enable = true;
-        tunnelId = "ce54cb73-83b2-4628-8246-26955d280641";
+        tunnelId = "8e2c0187-8e1c-4700-958f-a8276707e641";
         credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile;
         
         ingress = {
