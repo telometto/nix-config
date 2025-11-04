@@ -566,9 +566,7 @@
           "nixpkgs"
         ],
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
-        "rust-overlay": [
-          "rust-overlay"
-        ]
+        "rust-overlay": "rust-overlay"
       },
       "locked": {
         "lastModified": 1762179568,
@@ -838,7 +836,6 @@
         "nixpkgs-stable-latest": "nixpkgs-stable-latest",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nur": "nur",
-        "rust-overlay": "rust-overlay",
         "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix",
         "vscode-server": "vscode-server"
@@ -847,6 +844,7 @@
     "rust-overlay": {
       "inputs": {
         "nixpkgs": [
+          "lanzaboote",
           "nixpkgs"
         ]
       },

@@ -97,7 +97,7 @@ in
 
         addr = "127.0.0.1";
         openFirewall = lib.mkDefault false;
-        domain = "snowfall.${VARS.domains.public}";
+        domain = "metrics2.${VARS.domains.public}";
 
         provision.dashboards = {
           # Community dashboards (automatically fetched from grafana.com)
@@ -106,7 +106,7 @@ in
 
         reverseProxy = {
           enable = true;
-          domain = "snowfall.${VARS.domains.public}";
+          domain = "metrics2.${VARS.domains.public}";
           cfTunnel.enable = true;
         };
       };
