@@ -35,8 +35,13 @@ let
       ! -name "*.bak" \
       -exec grep -l "PRIVATE KEY" {} \; 2>/dev/null | while read -r key; do
       if [ -f "$key" ]; then
-        echo "Adding key: $key"
-        ${pkgs.openssh}/bin/ssh-add "$key" </dev/null || true
+        # Validate the key using ssh-keygen
+        if ${pkgs.openssh}/bin/ssh-keygen -l -f "$key" > /dev/null 2>&1; then
+          echo "Adding key: $key"
+          ${pkgs.openssh}/bin/ssh-add "$key" </dev/null || true
+        else
+          echo "Skipping invalid key: $key"
+        fi
       fi
     done
   '';
