@@ -15,7 +15,7 @@ let
 
     # Wait for kwallet to be available
     timeout=30
-    while ! ${pkgs.kdePackages.kwallet}/bin/kwallet-query -l kdewallet > /dev/null 2>&1; do
+    while ! ${pkgs.kdePackages.kwallet}/bin/kwallet-query -l ${cfg.kwalletName} > /dev/null 2>&1; do
       if [ $timeout -le 0 ]; then
         echo "KWallet did not become available in time"
         exit 1
@@ -66,6 +66,12 @@ in
       type = lib.types.bool;
       default = true;
       description = "Automatically import SSH keys from ~/.ssh using KWallet on login";
+    };
+
+    kwalletName = lib.mkOption {
+      type = lib.types.str;
+      default = "kdewallet";
+      description = "Name of the KWallet to use for SSH key storage";
     };
   };
 
