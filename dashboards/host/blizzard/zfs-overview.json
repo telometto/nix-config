@@ -207,11 +207,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 75
+                "value": 60
               },
               {
                 "color": "red",
-                "value": 90
+                "value": 80
               }
             ]
           },
@@ -670,7 +670,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "rate(zfs_dataset_read_bytes{pool=~\"$pool\"}[$__rate_interval])",
+          "expr": "irate(zfs_dataset_read_bytes{pool=~\"$pool\"}[5m])",
           "format": "time_series",
           "interval": "",
           "legendFormat": "{{name}} - Read",
@@ -682,7 +682,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "rate(zfs_dataset_written_bytes{pool=~\"$pool\"}[$__rate_interval])",
+          "expr": "irate(zfs_dataset_written_bytes{pool=~\"$pool\"}[5m])",
           "format": "time_series",
           "interval": "",
           "legendFormat": "{{name}} - Write",
