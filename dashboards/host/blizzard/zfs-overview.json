@@ -5,47 +5,75 @@
       "label": "Prometheus",
       "description": "",
       "type": "datasource",
-      "pluginId": "prometheus"
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
     }
   ],
+  "__elements": [],
   "__requires": [
     {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "1.0.0"
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
     },
     {
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "8.0.0"
+      "version": "8.3.2"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
     }
   ],
   "annotations": {
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
+        "datasource": "-- Grafana --",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
   },
+  "description": "Dashboard showing ZFS pool and dataset statistics",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": null,
   "links": [],
+  "liveNow": false,
   "panels": [
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -115,8 +143,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 12,
+        "h": 3,
+        "w": 6,
         "x": 0,
         "y": 0
       },
@@ -125,7 +153,7 @@
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "auto",
+        "orientation": "vertical",
         "reduceOptions": {
           "values": false,
           "calcs": [
@@ -137,20 +165,31 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "8.3.2",
+      "repeatDirection": "v",
       "targets": [
         {
-          "datasource": "Prometheus",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
           "expr": "zfs_pool_health{pool=~\"$pool\"}",
-          "refId": "A",
-          "legendFormat": "{{pool}}"
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "{{pool}}",
+          "refId": "A"
         }
       ],
       "title": "Pool Health Status",
       "type": "stat"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -160,19 +199,19 @@
           "max": 1,
           "min": 0,
           "thresholds": {
-            "mode": "absolute",
+            "mode": "percentage",
             "steps": [
               {
                 "color": "green",
                 "value": null
               },
               {
-                "color": "yellow",
-                "value": 0.7
+                "color": "#EAB839",
+                "value": 75
               },
               {
                 "color": "red",
-                "value": 0.9
+                "value": 90
               }
             ]
           },
@@ -181,9 +220,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 12,
+        "h": 6,
+        "w": 18,
+        "x": 6,
         "y": 0
       },
       "id": 2,
@@ -202,76 +241,30 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "8.3.2",
       "targets": [
         {
-          "datasource": "Prometheus",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
           "expr": "zfs_pool_allocated_bytes{pool=~\"$pool\"} / zfs_pool_size_bytes{pool=~\"$pool\"}",
-          "refId": "A",
-          "legendFormat": "{{pool}}"
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "{{pool}}",
+          "refId": "A"
         }
       ],
       "title": "Pool Capacity",
       "type": "gauge"
     },
     {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "bytes"
-        },
-        "overrides": []
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
-      "gridPos": {
-        "h": 4,
-        "w": 8,
-        "x": 0,
-        "y": 4
-      },
-      "id": 7,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "datasource": "Prometheus",
-          "expr": "sum(zfs_pool_size_bytes{pool=~\"$pool\"})",
-          "refId": "A",
-          "legendFormat": "Total Capacity"
-        }
-      ],
-      "title": "Total Capacity (All Pools)",
-      "type": "stat"
-    },
-    {
-      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -302,10 +295,10 @@
       "gridPos": {
         "h": 4,
         "w": 8,
-        "x": 8,
-        "y": 4
+        "x": 0,
+        "y": 6
       },
-      "id": 8,
+      "id": 4,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -322,20 +315,30 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "8.3.2",
       "targets": [
         {
-          "datasource": "Prometheus",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
           "expr": "sum(zfs_pool_allocated_bytes{pool=~\"$pool\"})",
-          "refId": "A",
-          "legendFormat": "Used Space"
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Used Space",
+          "refId": "A"
         }
       ],
-      "title": "Total Used (All Pools)",
+      "title": "Total Used ($pool)",
       "type": "stat"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -366,10 +369,10 @@
       "gridPos": {
         "h": 4,
         "w": 8,
-        "x": 16,
-        "y": 4
+        "x": 8,
+        "y": 6
       },
-      "id": 9,
+      "id": 5,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -386,20 +389,96 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "8.3.2",
       "targets": [
         {
-          "datasource": "Prometheus",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
           "expr": "sum(zfs_pool_free_bytes{pool=~\"$pool\"})",
-          "refId": "A",
-          "legendFormat": "Free Space"
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Free Space",
+          "refId": "A"
         }
       ],
-      "title": "Total Free (All Pools)",
+      "title": "Total Free ($pool)",
       "type": "stat"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 6
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "8.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
+          "expr": "sum(zfs_pool_size_bytes{pool=~\"$pool\"})",
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Total Capacity",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Capacity ($pool)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -455,14 +534,15 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 10
       },
-      "id": 3,
+      "id": 6,
       "options": {
         "legend": {
           "calcs": [
             "lastNotNull",
-            "max"
+            "max",
+            "mean"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -473,303 +553,41 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "8.3.2",
       "targets": [
         {
-          "datasource": "Prometheus",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
           "expr": "zfs_pool_allocated_bytes{pool=~\"$pool\"}",
-          "refId": "A",
-          "legendFormat": "{{pool}} - Allocated"
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "{{pool}} - Allocated",
+          "refId": "A"
         },
         {
-          "datasource": "Prometheus",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
           "expr": "zfs_pool_free_bytes{pool=~\"$pool\"}",
-          "refId": "B",
-          "legendFormat": "{{pool}} - Free"
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "{{pool}} - Free",
+          "refId": "B"
         }
       ],
       "title": "Pool Space Usage Over Time",
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "bytes"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Pool"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Fragmentation"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percentunit"
-              },
-              {
-                "id": "custom.width",
-                "value": 120
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 0.3
-                    },
-                    {
-                      "color": "red",
-                      "value": 0.5
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Usage %"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percentunit"
-              },
-              {
-                "id": "custom.width",
-                "value": 120
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 0.7
-                    },
-                    {
-                      "color": "red",
-                      "value": 0.9
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          }
-        ]
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
-      "gridPos": {
-        "h": 6,
-        "w": 24,
-        "x": 0,
-        "y": 16
-      },
-      "id": 4,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "datasource": "Prometheus",
-          "expr": "zfs_pool_size_bytes{pool=~\"$pool\"}",
-          "refId": "A",
-          "legendFormat": "{{pool}}",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "zfs_pool_allocated_bytes{pool=~\"$pool\"}",
-          "refId": "B",
-          "legendFormat": "{{pool}}",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "zfs_pool_free_bytes{pool=~\"$pool\"}",
-          "refId": "C",
-          "legendFormat": "{{pool}}",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "zfs_pool_fragmentation_ratio{pool=~\"$pool\"}",
-          "refId": "D",
-          "legendFormat": "{{pool}}",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "zfs_pool_allocated_bytes{pool=~\"$pool\"} / zfs_pool_size_bytes{pool=~\"$pool\"}",
-          "refId": "E",
-          "legendFormat": "{{pool}}",
-          "format": "table",
-          "instant": true
-        }
-      ],
-      "title": "Pool Statistics",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {}
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "instance": true,
-              "job": true
-            },
-            "renameByName": {
-              "Value #A": "Total Size",
-              "Value #B": "Allocated",
-              "Value #C": "Free",
-              "Value #D": "Fragmentation",
-              "Value #E": "Usage %",
-              "pool": "Pool"
-            }
-          }
-        },
-        {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "Allocated": {
-                "aggregations": [
-                  "lastNotNull"
-                ],
-                "operation": "aggregate"
-              },
-              "Fragmentation": {
-                "aggregations": [
-                  "lastNotNull"
-                ],
-                "operation": "aggregate"
-              },
-              "Free": {
-                "aggregations": [
-                  "lastNotNull"
-                ],
-                "operation": "aggregate"
-              },
-              "Pool": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "Total Size": {
-                "aggregations": [
-                  "lastNotNull"
-                ],
-                "operation": "aggregate"
-              },
-              "Usage %": {
-                "aggregations": [
-                  "lastNotNull"
-                ],
-                "operation": "aggregate"
-              }
-            }
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {
-              "Pool": 0,
-              "Total Size (lastNotNull)": 1,
-              "Allocated (lastNotNull)": 2,
-              "Free (lastNotNull)": 3,
-              "Usage % (lastNotNull)": 4,
-              "Fragmentation (lastNotNull)": 5
-            },
-            "renameByName": {
-              "Allocated (lastNotNull)": "Allocated",
-              "Fragmentation (lastNotNull)": "Fragmentation",
-              "Free (lastNotNull)": "Free",
-              "Total Size (lastNotNull)": "Total Size",
-              "Usage % (lastNotNull)": "Usage %"
-            }
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
-      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -825,14 +643,15 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 18
       },
-      "id": 5,
+      "id": 7,
       "options": {
         "legend": {
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -840,206 +659,43 @@
         },
         "tooltip": {
           "mode": "multi",
-          "sort": "none"
+          "sort": "desc"
         }
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "8.3.2",
       "targets": [
         {
-          "datasource": "Prometheus",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
+          "expr": "rate(zfs_dataset_read_bytes{pool=~\"$pool\"}[$__rate_interval])",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "{{name}} - Read",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
           "expr": "rate(zfs_dataset_written_bytes{pool=~\"$pool\"}[$__rate_interval])",
-          "refId": "A",
-          "legendFormat": "{{name}} - Write"
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "{{name}} - Write",
+          "refId": "B"
         }
       ],
-      "title": "Dataset Write Rate",
+      "title": "Dataset Read/Write Rate",
       "type": "timeseries"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "bytes"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Dataset"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 300
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Pool"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Usage %"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percentunit"
-              },
-              {
-                "id": "custom.width",
-                "value": 120
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 0.5
-                    },
-                    {
-                      "color": "red",
-                      "value": 0.8
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 30
-      },
-      "id": 6,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Used"
-          }
-        ]
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "datasource": "Prometheus",
-          "expr": "zfs_dataset_used_bytes{pool=~\"$pool\",type=\"filesystem\"}",
-          "refId": "A",
-          "legendFormat": "{{name}}",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "zfs_dataset_available_bytes{pool=~\"$pool\",type=\"filesystem\"}",
-          "refId": "B",
-          "legendFormat": "{{name}}",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "datasource": "Prometheus",
-          "expr": "zfs_dataset_used_bytes{pool=~\"$pool\",type=\"filesystem\"} / (zfs_dataset_used_bytes{pool=~\"$pool\",type=\"filesystem\"} + zfs_dataset_available_bytes{pool=~\"$pool\",type=\"filesystem\"})",
-          "refId": "C",
-          "legendFormat": "{{name}}",
-          "format": "table",
-          "instant": true
-        }
-      ],
-      "title": "Top Datasets by Usage",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {}
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "instance": true,
-              "job": true,
-              "type": true
-            },
-            "indexByName": {
-              "name": 0,
-              "pool": 1,
-              "Value #A": 2,
-              "Value #B": 3,
-              "Value #C": 4
-            },
-            "renameByName": {
-              "Value #A": "Used",
-              "Value #B": "Available",
-              "Value #C": "Usage %",
-              "name": "Dataset",
-              "pool": "Pool"
-            }
-          }
-        }
-      ],
-      "type": "table"
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 39,
+  "schemaVersion": 33,
+  "style": "dark",
   "tags": [
     "zfs",
     "storage"
@@ -1056,7 +712,10 @@
             "$__all"
           ]
         },
-        "datasource": "Prometheus",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
         "definition": "label_values(zfs_pool_health, pool)",
         "hide": 0,
         "includeAll": true,
@@ -1065,7 +724,6 @@
         "name": "pool",
         "options": [],
         "query": {
-          "qryType": 1,
           "query": "label_values(zfs_pool_health, pool)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
@@ -1083,8 +741,9 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "ZFS Overview",
-  "uid": "zfs-overview",
+  "title": "ZFS Overview-testing",
+  "uid": "zfs-overview-v2",
   "version": 1,
-  "weekStart": ""
+  "weekStart": "",
+  "gnetId": null
 }
