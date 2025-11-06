@@ -239,7 +239,10 @@
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
-        "sizing": "auto"
+        "sizing": "auto",
+        "text": {
+          "valueSize": 24
+        }
       },
       "pluginVersion": "8.3.2",
       "targets": [
