@@ -30,8 +30,6 @@ jobs:
         run: |
           # Make git rewrite HTTPS URLs to the SSH form so all git network ops use SSH
           git config --global url."git@github.com:".insteadOf "https://github.com/"
-          # Ensure origin remote is SSH (useful if actions/checkout created an HTTPS origin)
-          git remote set-url origin git@github.com:${{ github.repository }}
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
