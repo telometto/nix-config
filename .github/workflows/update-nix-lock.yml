@@ -1,16 +1,3 @@
-# GitHub Actions workflow to automate updating the Nix flake.lock file
-# Triggered manually or every hour via cron schedule
-# Steps:
-# 1. **Checkout Repository**: Checks out the repository using `actions/checkout`
-# 2. **Install Nix**: Installs Nix with `DeterminateSystems/nix-installer-action`
-# 3. **Format Check**: Uses `nix fmt` (treefmt-nix) to format all files according to the treefmt.nix configuration
-# 4. **Update flake.lock**: Updates the `flake.lock` file using `DeterminateSystems/update-flake-lock`, creating or updating a pull request with specified commit message, PR body, title, and labels
-# 5. **Create Compare URLs**: If a pull request is created or updated, runs a script using `actions/github-script` to add a comment with compare URLs
-# Notes:
-# - Uses `secrets.BOT_PAT` for accessing private repositories via `nix-options`
-# - Uses `secrets.GITHUB_TOKEN` for PR operations and repository access
-# - Uses treefmt-nix for unified formatting of multiple file types (Nix, YAML, Markdown, Shell, etc.)
-
 name: Update Lockfile
 on:
   workflow_dispatch:
@@ -18,7 +5,6 @@ on:
     - cron: "0 * * * *" # Every hour
   pull_request:
     types: [opened, synchronize]
-    # types: [ assigned, unassigned, labeled, unlabeled, opened, edited, closed, reopened, synchronize, converted_to_draft, locked, unlocked, ready_for_review, review_requested, review_request_removed, auto_merge_enabled, auto_merge_disabled ]
     branches: [main, testing]
 
 permissions:
@@ -27,12 +13,25 @@ permissions:
 
 jobs:
   lockfile:
-    runs-on: ubuntu-latest # The operating system to run the job on
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout main repository
-        uses: actions/checkout@main # The action to checkout the repository
+      - name: Access private repository
+        uses: webfactory/ssh-agent@master
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ssh-private-key: ${{ secrets.GH_ACTIONS }}
+
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false # do not write http.https://github.com/.extraheader
+          fetch-depth: 0 # full history if needed
+
+      - name: Configure git to prefer SSH (avoid HTTPS Authorization headers)
+        run: |
+          # Make git rewrite HTTPS URLs to the SSH form so all git network ops use SSH
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+          # Ensure origin remote is SSH (useful if actions/checkout created an HTTPS origin)
+          git remote set-url origin git@github.com:${{ github.repository }}
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
@@ -65,7 +64,7 @@ jobs:
         run: echo "TREEFMT_MESSAGE=Changes were automatically formatted by treefmt." >> "$GITHUB_ENV"
 
       - name: Update flake.lock
-        uses: DeterminateSystems/update-flake-lock@main # The action to update the flake.lock file
+        uses: DeterminateSystems/update-flake-lock@main
         id: update-flake-lock
         with:
           commit-msg: "🧹 chore(flake.lock): update"
@@ -76,13 +75,14 @@ jobs:
           pr-title: "🧹 chore(flake.lock): update"
           pr-labels: auto-merge
           nix-options: "--access-tokens github.com=${{ secrets.BOT_PAT }}"
-          token: ${{ secrets.GITHUB_TOKEN }} # Use GITHUB_TOKEN for PR operations
+          token: ${{ secrets.GITHUB_TOKEN }} # This action will now operate in an environment where git uses SSH for remotes
 
       - name: Get commit message for compare URLs
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
         id: get-commit-message
         run: |
-          # Get the latest commit message from the PR branch
+          # If needed, fetch the updated PR branch via SSH (url.insteadOf rewrites HTTPS => SSH)
+          # Fetching via SSH uses the ssh-agent key and avoids HTTP Authorization headers.
           git fetch origin
           COMMIT_MSG=$(git log --format=%B -n 1 HEAD)
           {
@@ -92,7 +92,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create compare URLs
-        uses: actions/github-script@main # The action to run a script using the GitHub API
+        uses: actions/github-script@main
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
         env:
           GIT_COMMIT_MESSAGE: ${{ steps.get-commit-message.outputs.commit-message }}
