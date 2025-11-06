@@ -1,15 +1,14 @@
 # GitHub Actions workflow to automate updating the Nix flake.lock file
 # Triggered manually or every hour via cron schedule
 # Steps:
-# 1. **SSH Agent Setup**: Uses `webfactory/ssh-agent` to set up SSH access with deploy keys (ensure the deploy key is added to the repository settings)
-# 2. **Checkout Repository**: Checks out the repository using `actions/checkout`
-# 3. **Install Nix**: Installs Nix with `DeterminateSystems/nix-installer-action`
-# 4. **Format Check**: Uses `nix fmt` (treefmt-nix) to format all files according to the treefmt.nix configuration
-# 5. **Update flake.lock**: Updates the `flake.lock` file using `DeterminateSystems/update-flake-lock`, creating or updating a pull request with specified commit message, PR body, title, and labels
-# 6. **Create Compare URLs**: If a pull request is created or updated, runs a script using `actions/github-script` to add a comment with compare URLs
+# 1. **Checkout Repository**: Checks out the repository using `actions/checkout`
+# 2. **Install Nix**: Installs Nix with `DeterminateSystems/nix-installer-action`
+# 3. **Format Check**: Uses `nix fmt` (treefmt-nix) to format all files according to the treefmt.nix configuration
+# 4. **Update flake.lock**: Updates the `flake.lock` file using `DeterminateSystems/update-flake-lock`, creating or updating a pull request with specified commit message, PR body, title, and labels
+# 5. **Create Compare URLs**: If a pull request is created or updated, runs a script using `actions/github-script` to add a comment with compare URLs
 # Notes:
-# - Secrets (`secrets.GH_ACTIONS` and `secrets.BOT_PAT`) are used for authentication
-# - `nix-options` includes the GitHub token for accessing private repositories
+# - Uses `secrets.BOT_PAT` for accessing private repositories via `nix-options`
+# - Uses `secrets.GITHUB_TOKEN` for PR operations and repository access
 # - Uses treefmt-nix for unified formatting of multiple file types (Nix, YAML, Markdown, Shell, etc.)
 
 name: Update Lockfile
@@ -30,11 +29,6 @@ jobs:
   lockfile:
     runs-on: ubuntu-latest # The operating system to run the job on
     steps:
-      - name: Access private repository
-        uses: webfactory/ssh-agent@master
-        with:
-          ssh-private-key: ${{ secrets.GH_ACTIONS }}
-
       - name: Checkout main repository
         uses: actions/checkout@main # The action to checkout the repository
         with:
