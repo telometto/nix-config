@@ -1187,7 +1187,6 @@
           },
           "exemplar": false,
           "expr": "(node_zfs_arc_demand_data_hits / (node_zfs_arc_demand_data_hits + node_zfs_arc_demand_data_misses)) * 100",
-          "format": "time_series",
           "instant": true,
           "interval": "",
           "legendFormat": "Data Hit Rate",
@@ -1200,7 +1199,6 @@
           },
           "exemplar": false,
           "expr": "(node_zfs_arc_demand_metadata_hits / (node_zfs_arc_demand_metadata_hits + node_zfs_arc_demand_metadata_misses)) * 100",
-          "format": "time_series",
           "instant": true,
           "interval": "",
           "legendFormat": "Metadata Hit Rate",
@@ -1213,7 +1211,6 @@
           },
           "exemplar": false,
           "expr": "(node_zfs_arc_prefetch_data_hits / (node_zfs_arc_prefetch_data_hits + node_zfs_arc_prefetch_data_misses)) * 100",
-          "format": "time_series",
           "instant": true,
           "interval": "",
           "legendFormat": "Prefetch Hit Rate",
@@ -1562,6 +1559,191 @@
       ],
       "title": "ARC Size: Target vs Actual",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Hits"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Misses"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 58
+      },
+      "id": 15,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "8.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
+          "expr": "node_zfs_arc_hits",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Total Hits",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
+          "expr": "node_zfs_arc_misses",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Total Misses",
+          "refId": "B"
+        }
+      ],
+      "title": "ARC Cache Operations (Total)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 58
+      },
+      "id": 16,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "8.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
+          "expr": "node_zfs_arc_hash_elements",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Hash Elements",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": false,
+          "expr": "node_zfs_arc_hash_collisions",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Hash Collisions",
+          "refId": "B"
+        }
+      ],
+      "title": "ARC Hash Table Stats",
+      "type": "stat"
     },
     {
       "collapsed": false,
