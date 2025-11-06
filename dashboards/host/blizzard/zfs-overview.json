@@ -1072,7 +1072,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 34
+        "y": 42
       },
       "id": 11,
       "options": {
@@ -1153,7 +1153,40 @@
           },
           "unit": "percent"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Prefetch Hit Rate"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 10
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "green",
+                      "value": 70
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -1289,10 +1322,10 @@
         ]
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 42
+        "h": 6,
+        "w": 4,
+        "x": 0,
+        "y": 50
       },
       "id": 13,
       "options": {
@@ -1300,8 +1333,8 @@
           "percent"
         ],
         "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
+          "displayMode": "table",
+          "placement": "right",
           "showLegend": true,
           "values": [
             "value"
@@ -1361,6 +1394,136 @@
       ],
       "title": "ARC Memory Distribution",
       "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 90
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 20,
+        "x": 4,
+        "y": 50
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "last",
+            "min"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": true,
+          "expr": "(rate(node_zfs_arc_hits[5m]) / (rate(node_zfs_arc_hits[5m]) + rate(node_zfs_arc_misses[5m]))) * 100",
+          "interval": "",
+          "legendFormat": "Overall Hit Rate",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": true,
+          "expr": "(rate(node_zfs_arc_demand_data_hits[5m]) / (rate(node_zfs_arc_demand_data_hits[5m]) + rate(node_zfs_arc_demand_data_misses[5m]))) * 100",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Data Hit Rate",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "exemplar": true,
+          "expr": "(rate(node_zfs_arc_demand_metadata_hits[5m]) / (rate(node_zfs_arc_demand_metadata_hits[5m]) + rate(node_zfs_arc_demand_metadata_misses[5m]))) * 100",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Metadata Hit Rate",
+          "refId": "C"
+        }
+      ],
+      "title": "Overall ARC Efficiency",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -1491,7 +1654,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 50
+        "y": 56
       },
       "id": 14,
       "options": {
@@ -1618,8 +1781,8 @@
       "gridPos": {
         "h": 4,
         "w": 4,
-        "x": 0,
-        "y": 50
+        "x": 12,
+        "y": 34
       },
       "id": 15,
       "options": {
@@ -1695,8 +1858,8 @@
       "gridPos": {
         "h": 4,
         "w": 4,
-        "x": 4,
-        "y": 50
+        "x": 16,
+        "y": 34
       },
       "id": 16,
       "options": {
@@ -1755,7 +1918,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 54
+        "y": 64
       },
       "id": 104,
       "panels": [],
@@ -1834,7 +1997,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 55
+        "y": 65
       },
       "id": 12,
       "options": {
@@ -1931,7 +2094,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 55
+        "y": 65
       },
       "id": 13,
       "options": {
