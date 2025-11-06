@@ -179,7 +179,6 @@ in
           "kubernetes-cluster" = grafanaDashboards.community.kubernetes-cluster;
 
           # Custom dashboards (locally maintained)
-          "server-overview" = grafanaDashboards.custom.server-overview;
           "zfs-overview" = grafanaDashboards.custom.zfs-overview;
         };
 

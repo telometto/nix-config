@@ -31,7 +31,6 @@ rec {
   };
 
   custom = {
-    server-overview = ../dashboards/host/blizzard/server-overview.json;
     zfs-overview = ../dashboards/host/blizzard/zfs-overview.json;
   };
 
