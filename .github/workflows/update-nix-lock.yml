@@ -15,21 +15,11 @@ jobs:
   lockfile:
     runs-on: ubuntu-latest
     steps:
-      - name: Access private repository
-        uses: webfactory/ssh-agent@master
-        with:
-          ssh-private-key: ${{ secrets.GH_ACTIONS }}
-
       - name: Checkout main repository
         uses: actions/checkout@v4
         with:
-          persist-credentials: false # do not write http.https://github.com/.extraheader
+          token: ${{ secrets.GH_ACTIONS }} # PAT with write access for pushing changes
           fetch-depth: 0 # full history if needed
-
-      - name: Configure git to prefer SSH (avoid HTTPS Authorization headers)
-        run: |
-          # Make git rewrite HTTPS URLs to the SSH form so all git network ops use SSH
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
@@ -72,8 +62,8 @@ jobs:
             ```
           pr-title: "🧹 chore(flake.lock): update"
           pr-labels: auto-merge
-          nix-options: "--access-tokens github.com=${{ secrets.BOT_PAT }}"
-          token: ${{ secrets.GITHUB_TOKEN }} # This action will now operate in an environment where git uses SSH for remotes
+          nix-options: "--access-tokens github.com=${{ secrets.GH_ACTIONS }}"
+          token: ${{ secrets.GH_ACTIONS }} # Use the same PAT for API operations
 
       - name: Get commit message for compare URLs
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
