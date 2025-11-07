@@ -15,10 +15,19 @@ jobs:
   lockfile:
     runs-on: ubuntu-latest
     steps:
+      # SSH is needed for accessing private flake inputs (like nix-secrets) during nix flake update
+      - name: Setup SSH for private repositories
+        uses: webfactory/ssh-agent@master
+        with:
+          ssh-private-key: ${{ secrets.GH_ACTIONS }}
+
+      # Checkout using a PAT for write access (to push changes later)
+      # Note: GH_ACTIONS should be a PAT, not an SSH key
+      # If you have a separate SSH key for nix-secrets, use a different secret name
       - name: Checkout main repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_ACTIONS }} # PAT with write access for pushing changes
+          token: ${{ secrets.GITHUB_TOKEN }} # Using built-in token for push access
           fetch-depth: 0 # full history if needed
 
       - name: Install Nix
@@ -62,8 +71,8 @@ jobs:
             ```
           pr-title: "🧹 chore(flake.lock): update"
           pr-labels: auto-merge
-          nix-options: "--access-tokens github.com=${{ secrets.GH_ACTIONS }}"
-          token: ${{ secrets.GH_ACTIONS }} # Use the same PAT for API operations
+          nix-options: "--access-tokens github.com=${{ secrets.BOT_PAT }}"
+          token: ${{ secrets.GITHUB_TOKEN }} # Use built-in token for GitHub API operations
 
       - name: Get commit message for compare URLs
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
