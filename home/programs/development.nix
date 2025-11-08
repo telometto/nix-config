@@ -26,6 +26,62 @@ in
       };
     };
 
+    gh = {
+      enable = lib.mkEnableOption "GitHub CLI (gh)";
+
+      gitProtocol = lib.mkOption {
+        type = lib.types.enum [
+          "ssh"
+          "https"
+        ];
+        default = "ssh";
+        description = "The protocol to use when performing Git operations";
+      };
+
+      aliases = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = {
+          co = "pr checkout";
+          pv = "pr view";
+          il = "issue list";
+          iv = "issue view";
+          ic = "issue create";
+          rc = "repo clone";
+          rv = "repo view";
+        };
+        description = "Aliases that allow you to create nicknames for gh commands";
+      };
+
+      gitCredentialHelper = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Enable the gh git credential helper";
+        };
+
+        hosts = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [
+            "https://github.com"
+            "https://gist.github.com"
+          ];
+          description = "GitHub hosts to enable the gh git credential helper for";
+        };
+      };
+
+      extensions = lib.mkOption {
+        type = lib.types.listOf lib.types.package;
+        default = [ ];
+        description = "gh extensions to install";
+      };
+
+      extraSettings = lib.mkOption {
+        type = lib.types.attrs;
+        default = { };
+        description = "Additional settings to add to the gh config.yml";
+      };
+    };
+
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
@@ -35,6 +91,27 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    programs.gh = lib.mkIf cfg.gh.enable {
+      enable = lib.mkDefault true;
+
+      settings = lib.mkMerge [
+        {
+          version = "1";
+          git_protocol = cfg.gh.gitProtocol;
+          prompt = "enabled";
+          aliases = cfg.gh.aliases;
+        }
+        cfg.gh.extraSettings
+      ];
+
+      gitCredentialHelper = {
+        enable = cfg.gh.gitCredentialHelper.enable;
+        hosts = cfg.gh.gitCredentialHelper.hosts;
+      };
+
+      extensions = cfg.gh.extensions;
+    };
+
     programs.git = {
       enable = lib.mkDefault true;
 
