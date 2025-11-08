@@ -10,8 +10,16 @@ let
   sshAddKeysScript = pkgs.writeShellScript "ssh-add-keys" ''
     set -eu
 
-    export SSH_ASKPASS="${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass"
-    export SSH_ASKPASS_REQUIRE="prefer"
+    # Wait for ssh-agent socket to be available
+    timeout=30
+    while [ ! -S "$SSH_AUTH_SOCK" ]; do
+      if [ $timeout -le 0 ]; then
+        echo "SSH agent socket did not become available in time"
+        exit 1
+      fi
+      sleep 1
+      timeout=$((timeout - 1))
+    done
 
     # Wait for kwallet to be available
     timeout=30
@@ -99,6 +107,12 @@ in
       };
     };
 
+    # Set environment variables for SSH agent and KWallet integration
+    home.sessionVariables = {
+      SSH_ASKPASS = "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
+      SSH_ASKPASS_REQUIRE = "prefer";
+    };
+
     # Automatic SSH key import using KWallet
     systemd.user.services."ssh-add-keys" = lib.mkIf cfg.autoImportSshKeys {
       Unit = {
@@ -106,19 +120,21 @@ in
 
         After = [
           "graphical-session.target"
-          "kwallet.service"
           "ssh-agent.service"
         ];
 
         Wants = [
           "graphical-session.target"
-          "kwallet.service"
           "ssh-agent.service"
         ];
+
+        # Don't start if SSH_AUTH_SOCK is not set
+        ConditionEnvironment = "SSH_AUTH_SOCK";
       };
 
       Service = {
         Type = "oneshot";
+        RemainAfterExit = true;
 
         Environment = [
           "SSH_ASKPASS=${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass"
@@ -130,6 +146,7 @@ in
           "WAYLAND_DISPLAY"
           "DBUS_SESSION_BUS_ADDRESS"
           "XAUTHORITY"
+          "SSH_AUTH_SOCK"
         ];
 
         ExecStart = sshAddKeysScript;

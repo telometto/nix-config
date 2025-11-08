@@ -60,9 +60,11 @@ in
 
     programs.xwayland.enable = lib.mkDefault true;
 
+    # Configure SSH agent to work with KDE/KWallet
     programs.ssh = {
-      startAgent = lib.mkDefault false;
-      enableAskPassword = lib.mkDefault false;
+      startAgent = lib.mkDefault true;
+      enableAskPassword = lib.mkDefault true;
+      askPassword = lib.mkDefault "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
     };
 
     # Prefer KDE portal
