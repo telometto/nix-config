@@ -80,18 +80,26 @@ in
     security
   ];
 
-  fonts.packages = [
-    pkgs.google-fonts
-    pkgs.ibm-plex
-    pkgs.meslo-lgs-nf
-    pkgs.nerd-fonts.ubuntu
-    pkgs.nerd-fonts.inconsolata
-    pkgs.nerd-fonts.mononoki
-    pkgs.nerd-fonts.fira-code
-    pkgs.nerd-fonts.tinos
-    pkgs.noto-fonts
-    pkgs.noto-fonts-color-emoji
-  ];
+  fonts = {
+    enableDefaultPackages = true;
+
+    packages = [
+      pkgs.google-fonts
+      pkgs.ibm-plex
+      pkgs.meslo-lgs-nf
+      pkgs.nerd-fonts.ubuntu
+      pkgs.nerd-fonts.inconsolata
+      pkgs.nerd-fonts.mononoki
+      pkgs.nerd-fonts.fira-code
+      pkgs.nerd-fonts.tinos
+
+      pkgs.noto-fonts
+      pkgs.noto-fonts-color-emoji
+
+      pkgs.noto-fonts-cjk-sans
+      pkgs.noto-fonts-cjk-serif
+    ];
+  };
 
   nixpkgs.config.allowUnfree = lib.mkDefault true;
 }
