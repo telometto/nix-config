@@ -27,7 +27,10 @@ in
           chromium.enable = lib.mkDefault true;
         };
 
-        development.enable = lib.mkDefault true;
+        development = {
+          enable = lib.mkDefault true;
+          gh.enable = lib.mkDefault true;
+        };
 
         gaming = {
           enable = lib.mkDefault true;
