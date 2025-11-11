@@ -82,6 +82,7 @@ in
 
   fonts = {
     enableDefaultPackages = true;
+    fontDir.enable = true;
 
     packages = [
       pkgs.google-fonts
