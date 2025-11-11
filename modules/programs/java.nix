@@ -12,7 +12,7 @@ in
   config = lib.mkIf cfg.enable {
     programs.java = {
       enable = lib.mkDefault true;
-      package = lib.mkDefault (pkgs.jdk23.override { enableJavaFX = true; });
+      package = lib.mkDefault (pkgs.jdk21.override { enableJavaFX = true; });
     };
   };
 }
