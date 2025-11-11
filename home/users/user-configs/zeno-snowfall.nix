@@ -23,6 +23,8 @@
         pkgs.vscode
         pkgs.jetbrains.idea-community-bin
       ];
+
+      media.jf-mpv.enable = false;
     };
 
     files = {
