@@ -62,6 +62,7 @@ in
         openFirewall = true;
       };
 
+      /*
       nfs = {
         enable = true;
 
@@ -73,6 +74,7 @@ in
           openFirewall = false;
         };
       };
+      */
 
       prometheus = {
         enable = lib.mkDefault true;
