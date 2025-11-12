@@ -144,11 +144,14 @@ in
             instance_name = "SearXNG";
 
             # Contact and policy URLs (configurable, required for public instances)
-          } // lib.optionalAttrs cfg.publicInstance {
+          }
+          // lib.optionalAttrs cfg.publicInstance {
             contact_url = cfg.contactUrl;
-          } // lib.optionalAttrs (cfg.privacyPolicyUrl != null) {
+          }
+          // lib.optionalAttrs (cfg.privacyPolicyUrl != null) {
             privacypolicy_url = cfg.privacyPolicyUrl;
-          } // {
+          }
+          // {
             # Donation URL disabled by default
             donation_url = false;
 
