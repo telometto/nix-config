@@ -144,11 +144,11 @@ in
             instance_name = "SearXNG";
 
             # Contact and policy URLs (configurable, required for public instances)
-            contact_url = if cfg.publicInstance then cfg.contactUrl else false;
-            privacypolicy_url = if cfg.privacyPolicyUrl != null then cfg.privacyPolicyUrl else false;
+            contact_url = if cfg.publicInstance then cfg.contactUrl else null;
+            privacypolicy_url = if cfg.privacyPolicyUrl != null then cfg.privacyPolicyUrl else null;
 
             # Donation URL disabled by default
-            donation_url = false;
+            donation_url = null;
 
             # Enable metrics for public instances (transparency)
             # Disabled for private instances (prevents information disclosure)
