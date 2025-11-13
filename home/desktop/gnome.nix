@@ -93,6 +93,7 @@ in
       pkgs.gnomeExtensions.appindicator
       pkgs.gnomeExtensions.awesome-tiles
       pkgs.gnomeExtensions.burn-my-windows
+      pkgs.gnomeExtensions.coverflow-alt-tab
       pkgs.gnomeExtensions.clipboard-indicator
       pkgs.gnomeExtensions.gsconnect
       pkgs.gnomeExtensions.openweather-refined
