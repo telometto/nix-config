@@ -11,10 +11,11 @@
   home.packages = [
     pkgs.variety # Wallpaper changer
     pkgs.polychromatic # Razer configuration tool
-    pkgs.tuxguitar # Guitar tablature editor and player
-    pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
+    # pkgs.tuxguitar # Guitar tablature editor and player
+    # pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
     pkgs.vorta # Borg backup GUI
     pkgs.hugo # static website engine
+    pkgs.signal-desktop
   ];
 
   hm = {
