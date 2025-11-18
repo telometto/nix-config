@@ -125,7 +125,7 @@ in
         init.defaultBranch = "master";
         commit.gpgSign = true;
         tag.gpgSign = true;
-        pull.rebase = true;
+        pull.rebase = false;
 
         gpg = {
           format = "ssh";
