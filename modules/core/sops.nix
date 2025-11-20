@@ -40,7 +40,6 @@ in
       # Base secrets (always available for nix commands, git auth, etc.)
       {
         "system/hashedPw" = { };
-        "tokens/gh-ns-test" = { };
         "tokens/github-ns" = { };
         "tokens/gitlab-fa" = { };
         "tokens/gitlab-ns" = { };
@@ -86,7 +85,7 @@ in
       "access-tokens".content = ''
         access-tokens = "github.com=${config.sops.placeholder."tokens/github-ns"}"
 
-        extra-access-tokens = "github.com=${config.sops.placeholder."tokens/gh-ns-test"}" "gitlab.com=${
+        extra-access-tokens = "gitlab.com=${
           config.sops.placeholder."tokens/gitlab-ns"
         }" "gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}"
       '';
