@@ -55,7 +55,7 @@ in
         enable = true;
         server = {
           enable = true;
-          openFirewall = true;
+          openFirewall = lib. mkForce true;
           exports = ''
             /rpool/enc/transfers 192.168.2.0/24(rw,sync,nohide,no_subtree_check)
           '';
@@ -282,7 +282,7 @@ in
       };
 
       jellyfin = {
-        enable = true;
+        enable = false;
 
         openFirewall = true;
 
