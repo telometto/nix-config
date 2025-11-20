@@ -85,9 +85,9 @@ in
       "access-tokens".content = ''
         access-tokens = "github.com=${config.sops.placeholder."tokens/github-ns"}"
 
-        extra-access-tokens = "gitlab.com=${
-          config.sops.placeholder."tokens/gitlab-ns"
-        }" "gitlab.com=${config.sops.placeholder."tokens/gitlab-fa"}"
+        extra-access-tokens = "gitlab.com=${config.sops.placeholder."tokens/gitlab-ns"}" "gitlab.com=${
+          config.sops.placeholder."tokens/gitlab-fa"
+        }"
       '';
     }
     // whenEnabled hasGrafanaCloud {
