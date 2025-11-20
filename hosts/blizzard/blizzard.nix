@@ -52,7 +52,7 @@ in
       };
 
       nfs = {
-        enable = false;
+        enable = true;
         server = {
           enable = true;
           exports = ''
