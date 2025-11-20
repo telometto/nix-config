@@ -252,6 +252,8 @@ in
         };
       };
     };
+
+    rpcbind.enable = lib.mkDefault true;
   };
 
   hardware = {
