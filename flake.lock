@@ -576,11 +576,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1763912710,
-        "narHash": "sha256-+vmtm6g0cckgx+99usUY64xWNH1yF0cTvJ2hTZliLfg=",
+        "lastModified": 1763915949,
+        "narHash": "sha256-YNpC4LU9yzClkGua09AUDAJkuVHLpeupBTDHvUafHhw=",
         "owner": "nix-community",
         "repo": "lanzaboote",
-        "rev": "3f2120fcb00ff36d7e956ce769b8f93bb6373c71",
+        "rev": "0dc06f7c67f5787a4dedfb49399d3106cf73c095",
         "type": "github"
       },
       "original": {
@@ -765,11 +765,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1763911120,
-        "narHash": "sha256-0LpFKlTerXJBaksba3JM+Jhg+hHm+bVZsxn+7vWSHAI=",
+        "lastModified": 1763915934,
+        "narHash": "sha256-V3yyMfB+PSzGwSakANJfkaTVABAG3qiY3e15VV4S2WQ=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "983b7f4deda2dfc8884bca8d7dfde265e123c687",
+        "rev": "c951dc2271bf5d62ba6aa5c19d85cf5baf83a83f",
         "type": "github"
       },
       "original": {
