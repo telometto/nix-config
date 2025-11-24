@@ -94,28 +94,28 @@ in
           };
 
           match = {
-            strong_rec_thresh = 0.04;
-            medium_rec_thresh = 0.25;
+            strong_rec_thresh = 0.10; # Accept matches with ≥90% similarity automatically
+            medium_rec_thresh = 0.40; # Show matches with ≥60% similarity as options
             rec_gap_thresh = 0.25;
             distance_weights = {
               source = 2.0;
               artist = 3.0;
-              album = 3.0;
-              media = 1.0;
-              mediums = 1.0;
-              year = 1.0;
-              country = 0.5;
-              label = 0.5;
-              catalognum = 0.5;
+              album = 2.0; # Reduced - less strict on album name
+              media = 0.5; # Reduced - don't care much about media type
+              mediums = 0.5; # Reduced
+              year = 0.5; # Reduced - year mismatches less important
+              country = 0.0; # Ignore country differences
+              label = 0.0; # Ignore label differences
+              catalognum = 0.0; # Ignore catalog number
               albumdisambig = 0.5;
               album_id = 5.0;
-              tracks = 2.0;
-              missing_tracks = 0.9;
-              unmatched_tracks = 0.6;
+              tracks = 1.0; # Reduced
+              missing_tracks = 0.2; # Much lower - don't penalize single track imports
+              unmatched_tracks = 0.2; # Much lower
               track_title = 3.0;
               track_artist = 2.0;
-              track_index = 1.0;
-              track_length = 2.0;
+              track_index = 0.5; # Reduced - track number less important
+              track_length = 1.0; # Reduced
               track_id = 5.0;
             };
 
@@ -147,8 +147,8 @@ in
 
             default_action = "apply";
             languages = "en";
-            quiet_fallback = "skip";
-            none_rec_action = "ask";
+            quiet_fallback = "asis"; # Import with existing tags when no good match (instead of skip)
+            none_rec_action = "asis"; # Same for no recommendations - just use existing tags
 
             resume = false;
             incremental = false;
