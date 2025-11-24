@@ -77,6 +77,7 @@ in
             lib.concatStringsSep " " allPlugins;
 
           directory = if cfg.musicDirectory != null then cfg.musicDirectory else config.xdg.userDirs.music;
+          library = "${config.home.homeDirectory}/.config/beets/library.db";
           statefile = "${config.home.homeDirectory}/.config/beets/state.pickle";
 
           art_filename = "albumart";
@@ -125,7 +126,9 @@ in
             };
           };
 
-          item_fields.disk_folder = ''return f"Disk-{disc}" if disctotal > 1 else ""'';
+          item_fields = {
+            disk_folder = ''return f"Disk-{disc}" if disctotal > 1 else ""'';
+          };
 
           paths = {
             default = "Albums/$albumartist/$year/$album%aunique{}/$disk_folder/$track - $title";
