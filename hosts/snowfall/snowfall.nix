@@ -34,7 +34,10 @@ in
 
     desktop.flavor = "kde";
 
-    users.zeno.enable = true;
+    users = {
+      zeno.enable = true;
+      frankie.enable = false;
+    };
 
     programs = {
       nix-ld.enable = true;
