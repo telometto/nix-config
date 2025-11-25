@@ -28,6 +28,7 @@ in
         "lastgenre"
         "chroma"
         "inline"
+        "fromfilename" # Extract artist/title from filename when tags are missing
       ];
       description = ''
         List of Beets plugins to enable.
@@ -147,8 +148,8 @@ in
 
             default_action = "apply";
             languages = "en";
-            quiet_fallback = "asis"; # Import with existing tags when no good match (instead of skip)
-            none_rec_action = "asis"; # Same for no recommendations - just use existing tags
+            quiet_fallback = "skip"; # Skip when no good match found
+            none_rec_action = "skip"; # Skip when no recommendations
 
             resume = false;
             incremental = false;
