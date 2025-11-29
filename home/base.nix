@@ -14,7 +14,6 @@ in
     # Base home-manager configuration with sensible defaults
     # Import this in your user configurations for automatic defaults
     programs.home-manager.enable = true;
-    programs.vesktop.vencord.useSystem = lib.mkForce false; # TODO: remove this line when an upstream fix has been implemented
 
     hm = {
       desktop = {
