@@ -65,6 +65,6 @@ in
       };
     };
 
-    home.packages = [ pkgs.overlayed ];
+    home.packages = [ ];
   };
 }
