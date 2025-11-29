@@ -88,15 +88,14 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages =
-      [
-        pkgs.kdePackages.kate
-        pkgs.kdePackages.kdeconnect-kde
-        pkgs.kdePackages.kcalc
-        pkgs.kdePackages.kolourpaint
-        pkgs.nomacs
-      ]
-      ++ cfg.extraPackages;
+    home.packages = [
+      pkgs.kdePackages.kate
+      pkgs.kdePackages.kdeconnect-kde
+      pkgs.kdePackages.kcalc
+      pkgs.kdePackages.kolourpaint
+      pkgs.nomacs
+    ]
+    ++ cfg.extraPackages;
 
     xdg = {
       mimeApps = {
