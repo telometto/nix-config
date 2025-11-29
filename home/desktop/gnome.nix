@@ -110,17 +110,17 @@ in
     gtk = {
       enable = lib.mkDefault true;
 
-      iconTheme = lib.mkDefault {
+      iconTheme = {
         name = "Yaru-dark";
         package = pkgs.yaru-theme;
       };
 
-      theme = lib.mkDefault {
+      theme = {
         name = "palenight";
         package = pkgs.palenight-theme;
       };
 
-      cursorTheme = lib.mkDefault {
+      cursorTheme = {
         name = "Numix-Cursor";
         package = pkgs.numix-cursor-theme;
       };

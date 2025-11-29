@@ -34,7 +34,7 @@ in
 
       consoleLogLevel = lib.mkDefault 3;
       initrd.verbose = lib.mkDefault false;
-      kernelParams = lib.mkDefault [
+      kernelParams = [
         "quiet"
         "splash"
         "boot.shell_on_fail"

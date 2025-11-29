@@ -100,7 +100,7 @@ in
     xdg = {
       mimeApps = {
         enable = lib.mkDefault true;
-        defaultApplications = lib.mkDefault {
+        defaultApplications = {
           "image/*" = [ "org.nomacs.ImageLounge.desktop" ];
         };
       };

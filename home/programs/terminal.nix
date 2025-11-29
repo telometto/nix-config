@@ -32,7 +32,7 @@ in
         enable = lib.mkDefault true;
         enableCompletion = lib.mkDefault true;
         enableVteIntegration = lib.mkDefault true;
-        historyControl = lib.mkDefault [ "erasedups" ];
+        historyControl = [ "erasedups" ];
       };
 
       bat.enable = lib.mkDefault true;
@@ -52,7 +52,7 @@ in
         enableZshIntegration = lib.mkDefault true;
         git = lib.mkDefault true;
         icons = lib.mkDefault "always";
-        extraOptions = lib.mkDefault [
+        extraOptions = [
           "--color=always"
           "--group"
           "--group-directories-first"
@@ -68,7 +68,7 @@ in
 
       micro = {
         enable = lib.mkDefault true;
-        settings = lib.mkDefault {
+        settings = {
           autosu = true;
           mkparents = true;
           colorscheme = "gruvbox-tc";
@@ -154,7 +154,7 @@ in
         oh-my-zsh = {
           enable = lib.mkDefault true;
 
-          plugins = lib.mkDefault [
+          plugins = [
             #"autoenv"
             "colored-man-pages"
             "colorize"
