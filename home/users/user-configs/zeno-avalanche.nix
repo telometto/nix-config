@@ -9,8 +9,8 @@
 {
   home.packages = with pkgs; [
     variety # Wallpaper changer
-    tuxguitar # Guitar tablature editor and player
-    pgadmin4-desktopmode # PostgreSQL administration tool
+    # tuxguitar # Guitar tablature editor and player
+    # pgadmin4-desktopmode # PostgreSQL administration tool
     vorta # Borg backup GUI
     # (pkgs.jellyfin-media-player.override {
     #   qtwebengine = pkgs.kdePackages.qtwebengine; # overridden due to CVEs
@@ -23,6 +23,8 @@
         pkgs.vscode
         # pkgs.jetbrains.idea-community-bin # disabled until lidbm issue has been solved
       ];
+
+      media.jf-mpv.enable = false;
     };
 
     files = {
