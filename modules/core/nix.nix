@@ -2,12 +2,12 @@
 {
   nix = {
     settings = {
-      trusted-users = lib.mkDefault [
+      trusted-users = [
         "root"
         "@wheel"
       ];
 
-      experimental-features = lib.mkDefault [
+      experimental-features = [
         "nix-command"
         "flakes"
       ];
