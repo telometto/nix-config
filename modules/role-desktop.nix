@@ -14,10 +14,10 @@ in
         lanzaboote.enable = true;
         plymouth = {
           enable = true;
-          theme = "lone";
+          theme = "cuts";
           themePackages = [
             (pkgs.adi1090x-plymouth-themes.override {
-              selected_themes = [ "lone" ];
+              selected_themes = [ "cuts" ];
             })
           ];
         };
