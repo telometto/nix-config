@@ -14,6 +14,12 @@ in
     mpv.enable = lib.mkEnableOption "MPV media player";
     yt-dlp.enable = lib.mkEnableOption "yt-dlp downloader";
     jf-mpv.enable = lib.mkEnableOption "Jellyfin player";
+
+    extraPackages = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      default = [ ];
+      description = "Additional media packages to install";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -37,6 +43,7 @@ in
       pkgs.spotify
       pkgs.protonmail-desktop
       pkgs.plex-desktop
-    ];
-  };
+    ]
+    ++ cfg.extraPackages;
+  }
 }
