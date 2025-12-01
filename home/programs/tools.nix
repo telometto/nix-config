@@ -4,13 +4,19 @@ let
 in
 {
   options.hm.programs.tools = {
-    enable = lib.mkEnableOption "Gaming tools and configuration";
+    enable = lib.mkEnableOption "Utility tools and configuration";
 
     flameshot.enable = lib.mkEnableOption "Flameshot screenshot utility";
     texlive.enable = lib.mkEnableOption "LaTeX";
     onlyoffice.enable = lib.mkEnableOption "OnlyOffice (Office 365 alternative)";
     podman.enable = lib.mkEnableOption "Podman";
     jq.enable = lib.mkEnableOption "jq";
+
+    extraPackages = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      default = [ ];
+      description = "Additional utility packages to install";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -25,6 +31,6 @@ in
       jq = lib.mkIf cfg.jq.enable { enable = lib.mkDefault true; };
     };
 
-    home.packages = [ ];
+    home.packages = cfg.extraPackages;
   };
 }
