@@ -65,13 +65,13 @@ in
       zfs.enable = true;
 
       sanoid = {
-        enable = false;
+        enable = true;
 
         datasets = {
-          flash = {
-            useTemplate = [ "production" ];
-            recursive = "zfs";
-          };
+          # flash = {
+          #   useTemplate = [ "production" ];
+          #   recursive = "zfs";
+          # };
 
           rpool = {
             useTemplate = [ "production" ];
