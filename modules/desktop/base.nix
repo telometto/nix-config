@@ -26,5 +26,5 @@ in
     description = "Select Desktop Environment: none (headless), gnome, kde (Plasma), hyprland, or cosmic.";
   };
 
-  config = lib.mkMerge [ (lib.mkIf (is "none") mkNone) ];
+  config = lib.mkIf (is "none") mkNone;
 }
