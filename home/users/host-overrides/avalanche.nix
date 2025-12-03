@@ -4,7 +4,9 @@
   # Avalanche-specific user configuration
   # These settings will be applied to all users on this host
 
-  programs.ssh.matchBlocks = {
+  programs.ssh = {
+enableDefaultConfig = false;
+  matchBlocks = {
     "*" = {
       addKeysToAgent = "yes";
       compression = false;
@@ -27,6 +29,7 @@
       forwardAgent = true;
       identityFile = "${config.home.homeDirectory}/.ssh/id_ed25519";
       identitiesOnly = true;
+    };
     };
   };
 
