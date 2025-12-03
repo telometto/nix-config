@@ -45,5 +45,5 @@ in
       pkgs.plex-desktop
     ]
     ++ cfg.extraPackages;
-  }
+  };
 }
