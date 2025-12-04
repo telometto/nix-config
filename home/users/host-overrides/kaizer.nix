@@ -1,6 +1,6 @@
 # Host-specific user overrides for kaizer
 # These settings will be applied to all users on kaizer host
-{ lib, pkgs, ... }:
+{ lib, ... }:
 {
-  home.packages = [ pkgs.variety ];
+  programs.ssh.enableDefaultConfig = false;
 }
