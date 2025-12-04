@@ -7,7 +7,7 @@
   ...
 }:
 {
-  home.packages = with pkgs; [ ];
+  home.packages = [ pkgs.variety ];
 
   hm = {
     programs = {
