@@ -383,6 +383,16 @@ in
         IPv6PrivacyExtensions = "kernel";
       };
 
+      dhcpV4Config = {
+        UseDNS = true;
+        UseRoutes = true;
+        RouteMetric = 100;
+      };
+
+      dhcpV6Config = {
+        UseDNS = true;
+      };
+
       linkConfig.RequiredForOnline = "routable";
     };
   };
