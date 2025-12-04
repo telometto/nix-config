@@ -82,7 +82,6 @@
             ./hosts/${hostname}/${hostname}.nix
             # External modules
             inputs.home-manager.nixosModules.home-manager
-            inputs.vscode-server.nixosModules.default
             inputs.sops-nix.nixosModules.sops
             inputs.lanzaboote.nixosModules.lanzaboote
             inputs.microvm.nixosModules.host
