@@ -8,6 +8,7 @@
 }:
 let
   LANGUAGE = "it_IT.UTF-8";
+in
 {
   # User-specific packages for frankie on snowfall
   home.packages = [
