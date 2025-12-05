@@ -56,7 +56,46 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "ZFS Documentation",
+      "tooltip": "OpenZFS documentation and resources",
+      "type": "link",
+      "url": "https://openzfs.github.io/openzfs-docs/"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "node"
+      ],
+      "targetBlank": false,
+      "title": "Node Dashboards",
+      "tooltip": "Related node/host monitoring dashboards",
+      "type": "dashboards"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "storage"
+      ],
+      "targetBlank": false,
+      "title": "Storage Dashboards",
+      "tooltip": "Related storage monitoring dashboards",
+      "type": "dashboards"
+    }
+  ],
   "liveNow": false,
   "panels": [
     {
