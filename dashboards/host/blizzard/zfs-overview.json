@@ -181,7 +181,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "zfs_pool_health{pool=~\"$pool\"}",
+          "expr": "zfs_pool_health{instance=~\"$instance\", pool=~\"$pool\"}",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -259,7 +259,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "zfs_pool_allocated_bytes{pool=~\"$pool\"} / zfs_pool_size_bytes{pool=~\"$pool\"}",
+          "expr": "zfs_pool_allocated_bytes{instance=~\"$instance\", pool=~\"$pool\"} / zfs_pool_size_bytes{instance=~\"$instance\", pool=~\"$pool\"}",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -333,7 +333,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "sum(zfs_pool_allocated_bytes{pool=~\"$pool\"})",
+          "expr": "sum(zfs_pool_allocated_bytes{instance=~\"$instance\", pool=~\"$pool\"})",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -407,7 +407,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "sum(zfs_pool_free_bytes{pool=~\"$pool\"})",
+          "expr": "sum(zfs_pool_free_bytes{instance=~\"$instance\", pool=~\"$pool\"})",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -473,7 +473,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "sum(zfs_pool_size_bytes{pool=~\"$pool\"})",
+          "expr": "sum(zfs_pool_size_bytes{instance=~\"$instance\", pool=~\"$pool\"})",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -588,7 +588,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "zfs_pool_allocated_bytes{pool=~\"$pool\"}",
+          "expr": "zfs_pool_allocated_bytes{instance=~\"$instance\", pool=~\"$pool\"}",
           "format": "time_series",
           "interval": "",
           "legendFormat": "{{pool}} - Allocated",
@@ -600,7 +600,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "zfs_pool_free_bytes{pool=~\"$pool\"}",
+          "expr": "zfs_pool_free_bytes{instance=~\"$instance\", pool=~\"$pool\"}",
           "format": "time_series",
           "interval": "",
           "legendFormat": "{{pool}} - Free",
@@ -714,7 +714,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "irate(zfs_dataset_read_bytes{pool=~\"$pool\"}[5m])",
+          "expr": "irate(zfs_dataset_read_bytes{instance=~\"$instance\", pool=~\"$pool\"}[5m])",
           "format": "time_series",
           "interval": "",
           "legendFormat": "{{name}} - Read",
@@ -726,7 +726,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "irate(zfs_dataset_written_bytes{pool=~\"$pool\"}[5m])",
+          "expr": "irate(zfs_dataset_written_bytes{instance=~\"$instance\", pool=~\"$pool\"}[5m])",
           "format": "time_series",
           "interval": "",
           "legendFormat": "{{name}} - Write",
@@ -823,7 +823,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "irate(node_zfs_zpool_dataset_nread{zpool=~\"$pool\"}[5m])",
+          "expr": "irate(node_zfs_zpool_dataset_nread{instance=~\"$instance\", zpool=~\"$pool\"}[5m])",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -836,7 +836,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "irate(node_zfs_zpool_dataset_nwrite{zpool=~\"$pool\"}[5m])",
+          "expr": "irate(node_zfs_zpool_dataset_nwrite{instance=~\"$instance\", zpool=~\"$pool\"}[5m])",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -2028,7 +2028,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "zfs_dataset_logical_used_bytes{pool=~\"$pool\"} / zfs_dataset_used_bytes{pool=~\"$pool\"}",
+          "expr": "zfs_dataset_logical_used_bytes{instance=~\"$instance\", pool=~\"$pool\"} / zfs_dataset_used_bytes{instance=~\"$instance\", pool=~\"$pool\"}",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2122,7 +2122,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "zfs_pool_fragmentation_ratio{pool=~\"$pool\"} * 100",
+          "expr": "zfs_pool_fragmentation_ratio{instance=~\"$instance\", pool=~\"$pool\"} * 100",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -2171,7 +2171,38 @@
           "type": "prometheus",
           "uid": "${ds_prometheus}"
         },
-        "definition": "label_values(zfs_pool_health, pool)",
+        "definition": "label_values(zfs_pool_health, instance)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Instance",
+        "multi": true,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "query": "label_values(zfs_pool_health, instance)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds_prometheus}"
+        },
+        "definition": "label_values(zfs_pool_health{instance=~\"$instance\"}, pool)",
         "hide": 0,
         "includeAll": true,
         "label": "Pool",
@@ -2179,7 +2210,7 @@
         "name": "pool",
         "options": [],
         "query": {
-          "query": "label_values(zfs_pool_health, pool)",
+          "query": "label_values(zfs_pool_health{instance=~\"$instance\"}, pool)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
