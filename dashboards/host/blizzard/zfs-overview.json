@@ -2434,8 +2434,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "ZFS Overview (test)",
-  "uid": "zfs-overview-test",
+  "title": "ZFS Overview",
+  "uid": "zfs-overview",
   "version": 1,
   "weekStart": "",
   "gnetId": null
