@@ -78,10 +78,10 @@ in
             recursive = "zfs";
           };
 
-          tank = {
-            useTemplate = [ "production" ];
-            recursive = "zfs";
-          };
+          # tank = {
+          #   useTemplate = [ "production" ];
+          #   recursive = "zfs";
+          # };
         };
       };
 
