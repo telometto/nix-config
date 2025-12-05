@@ -2001,7 +2001,7 @@
         "x": 0,
         "y": 65
       },
-      "id": 12,
+      "id": 18,
       "options": {
         "cellHeight": "sm",
         "footer": {
@@ -2098,7 +2098,7 @@
         "x": 12,
         "y": 65
       },
-      "id": 13,
+      "id": 19,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -2227,8 +2227,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "ZFS Overview",
-  "uid": "zfs-overview",
+  "title": "ZFS Overview (test)",
+  "uid": "zfs-overview-test",
   "version": 1,
   "weekStart": "",
   "gnetId": null
