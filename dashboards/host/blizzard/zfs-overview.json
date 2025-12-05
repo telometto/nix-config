@@ -190,6 +190,7 @@
         }
       ],
       "title": "Pool Health Status",
+      "description": "Current health state of ZFS pools. ONLINE = healthy, DEGRADED = redundancy compromised, FAULTED = pool is inaccessible.",
       "type": "stat"
     },
     {
@@ -365,6 +366,7 @@
         }
       ],
       "title": "Pool Capacity",
+      "description": "Percentage of pool space used. ZFS performance degrades significantly above 80% capacity. Keep below 80% for optimal performance.",
       "type": "gauge"
     },
     {
@@ -831,6 +833,7 @@
         }
       ],
       "title": "Dataset Read/Write Rate",
+      "description": "Data throughput per dataset in bytes/second. Use the Dataset filter to focus on specific datasets.",
       "type": "timeseries"
     },
     {
@@ -1043,6 +1046,7 @@
         }
       ],
       "title": "ARC Cache Hit Rate",
+      "description": "Percentage of read requests served from ARC cache. Higher is better. Values above 90% indicate effective caching.",
       "type": "stat"
     },
     {
@@ -1109,6 +1113,7 @@
         }
       ],
       "title": "ARC Cache Size",
+      "description": "Current size of the Adaptive Replacement Cache (ARC) in memory. ZFS dynamically adjusts this based on system memory pressure.",
       "type": "stat"
     },
     {
@@ -1350,6 +1355,7 @@
         }
       ],
       "title": "ARC Hit Rate Breakdown",
+      "description": "Cache hit rates by request type. Data = file content, Metadata = directory/inode info, Prefetch = predictive reads. Low prefetch rates are normal.",
       "type": "bargauge"
     },
     {
@@ -1492,6 +1498,7 @@
         }
       ],
       "title": "ARC Memory Distribution",
+      "description": "MRU = Most Recently Used (new data), MFU = Most Frequently Used (hot data), Anonymous = data being actively modified.",
       "type": "piechart"
     },
     {
@@ -1820,6 +1827,7 @@
         }
       ],
       "title": "ARC Size: Target vs Actual",
+      "description": "ARC dynamically adjusts between min and max limits. Target is the current goal size. If actual frequently hits min, consider increasing ARC limits.",
       "type": "timeseries"
     },
     {
@@ -2228,6 +2236,7 @@
         }
       ],
       "title": "Pool Fragmentation",
+      "description": "Pool fragmentation percentage. High fragmentation (>50%) can impact performance, especially for sequential workloads. Consider pool replacement if consistently high.",
       "type": "gauge"
     }
   ],
