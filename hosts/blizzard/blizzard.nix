@@ -75,7 +75,7 @@ in
 
           rpool = {
             useTemplate = [ "production" ];
-            recursive = "zfs";
+            recursive = true;
           };
 
           # tank = {
