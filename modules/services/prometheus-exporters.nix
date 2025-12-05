@@ -23,7 +23,10 @@ in
 
       enabledCollectors = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        default = [ "systemd" "zfs" ];
+        default = [
+          "systemd"
+          "zfs"
+        ];
         description = "List of enabled collectors";
         example = [
           "systemd"
