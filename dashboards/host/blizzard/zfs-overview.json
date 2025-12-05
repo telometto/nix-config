@@ -714,7 +714,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "irate(zfs_dataset_read_bytes{instance=~\"$instance\", pool=~\"$pool\"}[5m])",
+          "expr": "irate(zfs_dataset_read_bytes{instance=~\"$instance\", pool=~\"$pool\", name=~\"$dataset\"}[5m])",
           "format": "time_series",
           "interval": "",
           "legendFormat": "{{name}} - Read",
@@ -726,7 +726,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "irate(zfs_dataset_written_bytes{instance=~\"$instance\", pool=~\"$pool\"}[5m])",
+          "expr": "irate(zfs_dataset_written_bytes{instance=~\"$instance\", pool=~\"$pool\", name=~\"$dataset\"}[5m])",
           "format": "time_series",
           "interval": "",
           "legendFormat": "{{name}} - Write",
@@ -2028,7 +2028,7 @@
             "uid": "${ds_prometheus}"
           },
           "exemplar": false,
-          "expr": "zfs_dataset_logical_used_bytes{instance=~\"$instance\", pool=~\"$pool\"} / zfs_dataset_used_bytes{instance=~\"$instance\", pool=~\"$pool\"}",
+          "expr": "zfs_dataset_logical_used_bytes{instance=~\"$instance\", pool=~\"$pool\", name=~\"$dataset\"} / zfs_dataset_used_bytes{instance=~\"$instance\", pool=~\"$pool\", name=~\"$dataset\"}",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -2211,6 +2211,37 @@
         "options": [],
         "query": {
           "query": "label_values(zfs_pool_health{instance=~\"$instance\"}, pool)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds_prometheus}"
+        },
+        "definition": "label_values(zfs_dataset_used_bytes{instance=~\"$instance\", pool=~\"$pool\"}, name)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Dataset",
+        "multi": true,
+        "name": "dataset",
+        "options": [],
+        "query": {
+          "query": "label_values(zfs_dataset_used_bytes{instance=~\"$instance\", pool=~\"$pool\"}, name)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
