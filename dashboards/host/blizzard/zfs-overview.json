@@ -825,6 +825,7 @@
           "exemplar": false,
           "expr": "irate(node_zfs_zpool_dataset_nread{zpool=~\"$pool\"}[5m])",
           "format": "time_series",
+          "hide": false,
           "interval": "",
           "legendFormat": "{{dataset}} - Read IOPS",
           "refId": "A"
@@ -837,9 +838,20 @@
           "exemplar": false,
           "expr": "irate(node_zfs_zpool_dataset_nwrite{zpool=~\"$pool\"}[5m])",
           "format": "time_series",
+          "hide": false,
           "interval": "",
           "legendFormat": "{{dataset}} - Write IOPS",
           "refId": "B"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "Time|${iops_type:regex}"
+            }
+          }
         }
       ],
       "title": "Dataset IOPS (Operations per Second)",
@@ -2175,6 +2187,37 @@
         "skipUrlSync": false,
         "sort": 1,
         "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "IOPS Type",
+        "multi": true,
+        "name": "iops_type",
+        "options": [
+          {
+            "selected": false,
+            "text": "Read",
+            "value": ".*Read.*"
+          },
+          {
+            "selected": false,
+            "text": "Write",
+            "value": ".*Write.*"
+          }
+        ],
+        "query": ".*Read.*,.*Write.*",
+        "skipUrlSync": false,
+        "type": "custom"
       }
     ]
   },
