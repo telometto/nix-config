@@ -78,6 +78,10 @@ in
             recursive = true;
           };
 
+          "rpool/unenc/media" = {
+            autosnap = false;
+          };
+
           # tank = {
           #   useTemplate = [ "production" ];
           #   recursive = "zfs";
