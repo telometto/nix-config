@@ -58,6 +58,8 @@ in
       plasma6.excludePackages = with pkgs.kdePackages; [ gwenview ];
     };
 
+    programs.kdeconnect.enable = lib.mkDefault true;
+
     programs.xwayland.enable = lib.mkDefault true;
 
     # Configure SSH agent to work with KDE/KWallet
