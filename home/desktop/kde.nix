@@ -90,7 +90,6 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = [
       pkgs.kdePackages.kate
-      pkgs.kdePackages.kdeconnect-kde
       pkgs.kdePackages.kcalc
       pkgs.kdePackages.kolourpaint
       pkgs.nomacs
@@ -111,6 +110,8 @@ in
       SSH_ASKPASS = "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
       SSH_ASKPASS_REQUIRE = "prefer";
     };
+
+    programs.kdeconnect.enable = true;
 
     # Automatic SSH key import using KWallet
     systemd.user.services."ssh-add-keys" = lib.mkIf cfg.autoImportSshKeys {
