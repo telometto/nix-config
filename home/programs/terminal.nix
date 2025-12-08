@@ -90,11 +90,7 @@ in
         enable = lib.mkDefault true;
         enableBashIntegration = lib.mkDefault true;
         enableZshIntegration = lib.mkDefault true;
-
-        # TODO: Declaratively configure Zellij
-        # settings = {
-        #   theme = "gruvbox-dark";
-        # };
+        attachExistingSession = lib.mkDefault true;
       };
 
       zoxide = {
