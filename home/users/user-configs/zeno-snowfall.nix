@@ -12,7 +12,7 @@
     pkgs.variety # Wallpaper changer
     pkgs.polychromatic # Razer configuration tool
     # pkgs.tuxguitar # Guitar tablature editor and player - TEMPORARILY DISABLED: build failure due to swt 4.34 deprecated gdk-pixbuf APIs (https://github.com/NixOS/nixpkgs/pull/462225)
-    # pkgs.pgadmin4-desktopmode # PostgreSQL administration tool - TEMPORARILY DISABLED: build failure due to swt 4.34 deprecated gdk-pixbuf APIs (https://github.com/NixOS/nixpkgs/pull/462225)
+    pkgs.pgadmin4-desktopmode # PostgreSQL administration tool - TEMPORARILY DISABLED: build failure due to swt 4.34 deprecated gdk-pixbuf APIs (https://github.com/NixOS/nixpkgs/pull/462225)
     pkgs.vorta # Borg backup GUI
     pkgs.hugo # static website engine
     pkgs.signal-desktop
