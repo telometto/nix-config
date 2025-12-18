@@ -47,7 +47,7 @@ in
 
         social = {
           enable = lib.mkDefault true;
-          element-desktop.enable = lib.mkDefault false; # Disabled for now, due to issues with libolm
+          element-desktop.enable = lib.mkDefault true;
           vesktop.enable = lib.mkDefault true;
         };
 
