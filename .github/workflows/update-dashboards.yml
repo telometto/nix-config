@@ -1,120 +1,120 @@
 name: Update Grafana Dashboards
 
 on:
-    schedule:
-        - cron: "0 9 * * 1"
-    workflow_dispatch:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
 
 jobs:
-    check-updates:
-        runs-on: ubuntu-latest
-        permissions:
-            contents: write
-            pull-requests: write
+  check-updates:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Install Nix
-              uses: DeterminateSystems/nix-installer-action@main
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
 
-            - name: Configure Nix cache
-              uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Configure Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
 
-            - name: Check for dashboard updates
-              id: check_updates
-              run: |
-                  # Dashboard definitions: gnetId:currentRevision:name
-                  DASHBOARDS=(
-                    "1860:42:node-exporter-full"
-                    "315:3:kubernetes-cluster"
-                  )
+      - name: Check for dashboard updates
+        id: check_updates
+        run: |
+          # Dashboard definitions: gnetId:currentRevision:name
+          DASHBOARDS=(
+            "1860:42:node-exporter-full"
+            "315:3:kubernetes-cluster"
+          )
 
-                  UPDATES_FOUND=false
-                  UPDATE_INFO=""
+          UPDATES_FOUND=false
+          UPDATE_INFO=""
 
-                  for dashboard in "${DASHBOARDS[@]}"; do
-                    IFS=':' read -r gnetId current_revision name <<< "$dashboard"
-                    
-                    echo "Checking $name (gnetId: $gnetId, current revision: $current_revision)"
-                    
-                    # Get latest revision from Grafana API
-                    latest_revision=$(curl -fsSL "https://grafana.com/api/dashboards/$gnetId" | jq -r '.revision')
-                    
-                    if [[ "$latest_revision" =~ ^[0-9]+$ ]] && [[ "$current_revision" =~ ^[0-9]+$ ]] && [ "$latest_revision" != "null" ] && [ "$current_revision" -lt "$latest_revision" ]; then
-                      echo "Update available: $name rev$current_revision → rev$latest_revision"
-                      UPDATES_FOUND=true
-                      
-                      # Download the new version
-                      url="https://grafana.com/api/dashboards/$gnetId/revisions/$latest_revision/download"
-                      temp_file="/tmp/${gnetId}_rev${latest_revision}.json"
-                      curl -fsSL "$url" -o "$temp_file"
-                      
-                      # Calculate hash using nix
-                      hash=$(nix-hash --type sha256 --flat --base32 "$temp_file")
-                      
-                      # Store update info
-                      UPDATE_INFO="${UPDATE_INFO}\n## ${name}\n"
-                      UPDATE_INFO="${UPDATE_INFO}- **gnetId**: ${gnetId}\n"
-                      UPDATE_INFO="${UPDATE_INFO}- **Old revision**: ${current_revision}\n"
-                      UPDATE_INFO="${UPDATE_INFO}- **New revision**: ${latest_revision}\n"
-                      UPDATE_INFO="${UPDATE_INFO}- **New hash**: ${hash}\n"
-                      UPDATE_INFO="${UPDATE_INFO}- **Dashboard URL**: https://grafana.com/grafana/dashboards/${gnetId}\n\n"
-                      
-                      # Update the file (hash without sha256- prefix)
-                      sed -i "/gnetId = ${gnetId};/,/^ *}/ s|revision = [0-9]*;|revision = ${latest_revision};|" lib/grafana-dashboards.nix
-                      sed -i "/gnetId = ${gnetId};/,/^ *}/ s|hash = \"[^\"]*\";|hash = \"${hash}\";|" lib/grafana-dashboards.nix
-                    else
-                      echo "$name is up to date (revision $current_revision)"
-                    fi
-                  done
+          for dashboard in "${DASHBOARDS[@]}"; do
+            IFS=':' read -r gnetId current_revision name <<< "$dashboard"
+            
+            echo "Checking $name (gnetId: $gnetId, current revision: $current_revision)"
+            
+            # Get latest revision from Grafana API
+            latest_revision=$(curl -fsSL "https://grafana.com/api/dashboards/$gnetId" | jq -r '.revision')
+            
+            if [[ "$latest_revision" =~ ^[0-9]+$ ]] && [[ "$current_revision" =~ ^[0-9]+$ ]] && [ "$latest_revision" != "null" ] && [ "$current_revision" -lt "$latest_revision" ]; then
+              echo "Update available: $name rev$current_revision → rev$latest_revision"
+              UPDATES_FOUND=true
+              
+              # Download the new version
+              url="https://grafana.com/api/dashboards/$gnetId/revisions/$latest_revision/download"
+              temp_file="/tmp/${gnetId}_rev${latest_revision}.json"
+              curl -fsSL "$url" -o "$temp_file"
+              
+              # Calculate hash using nix
+              hash=$(nix-hash --type sha256 --flat --base32 "$temp_file")
+              
+              # Store update info
+              UPDATE_INFO="${UPDATE_INFO}\n## ${name}\n"
+              UPDATE_INFO="${UPDATE_INFO}- **gnetId**: ${gnetId}\n"
+              UPDATE_INFO="${UPDATE_INFO}- **Old revision**: ${current_revision}\n"
+              UPDATE_INFO="${UPDATE_INFO}- **New revision**: ${latest_revision}\n"
+              UPDATE_INFO="${UPDATE_INFO}- **New hash**: ${hash}\n"
+              UPDATE_INFO="${UPDATE_INFO}- **Dashboard URL**: https://grafana.com/grafana/dashboards/${gnetId}\n\n"
+              
+              # Update the file (hash without sha256- prefix)
+              sed -i "/gnetId = ${gnetId};/,/^ *}/ s|revision = [0-9]*;|revision = ${latest_revision};|" lib/grafana-dashboards.nix
+              sed -i "/gnetId = ${gnetId};/,/^ *}/ s|hash = \"[^\"]*\";|hash = \"${hash}\";|" lib/grafana-dashboards.nix
+            else
+              echo "$name is up to date (revision $current_revision)"
+            fi
+          done
 
-                  if [ "$UPDATES_FOUND" = true ]; then
-                    echo "updates_found=true" >> $GITHUB_OUTPUT
-                    echo "update_info<<EOF" >> $GITHUB_OUTPUT
-                    echo -e "$UPDATE_INFO" >> $GITHUB_OUTPUT
-                    echo "EOF" >> $GITHUB_OUTPUT
-                  else
-                    echo "updates_found=false" >> $GITHUB_OUTPUT
-                  fi
+          if [ "$UPDATES_FOUND" = true ]; then
+            echo "updates_found=true" >> $GITHUB_OUTPUT
+            echo "update_info<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$UPDATE_INFO" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "updates_found=false" >> $GITHUB_OUTPUT
+          fi
 
-            - name: Create Pull Request
-              if: steps.check_updates.outputs.updates_found == 'true'
-              uses: peter-evans/create-pull-request@v6
-              with:
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  commit-message: "chore(dashboards): update Grafana dashboards"
-                  title: "🔄 Update Grafana Dashboards"
-                  body: |
-                      ## Automated Dashboard Updates
+      - name: Create Pull Request
+        if: steps.check_updates.outputs.updates_found == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(dashboards): update Grafana dashboards"
+          title: "🔄 Update Grafana Dashboards"
+          body: |
+            ## Automated Dashboard Updates
 
-                      This PR updates Grafana dashboards to their latest versions from grafana.com.
+            This PR updates Grafana dashboards to their latest versions from grafana.com.
 
-                      ${{ steps.check_updates.outputs.update_info }}
+            ${{ steps.check_updates.outputs.update_info }}
 
-                      ### Changes Made
-                      - Updated dashboard revisions and hashes in `lib/grafana-dashboards.nix`
+            ### Changes Made
+            - Updated dashboard revisions and hashes in `lib/grafana-dashboards.nix`
 
-                      ### Testing
-                      Before merging, please:
-                      1. Review the dashboard changes on grafana.com
-                      2. Test the build: `nix flake check`
-                      3. Verify dashboards load correctly after deploying
+            ### Testing
+            Before merging, please:
+            1. Review the dashboard changes on grafana.com
+            2. Test the build: `nix flake check`
+            3. Verify dashboards load correctly after deploying
 
-                      ---
-                      *This PR was automatically generated by the Update Grafana Dashboards workflow*
-                  branch: automated/dashboard-updates
-                  delete-branch: true
-                  labels: |
-                      automated
-                      dashboards
-                      dependencies
+            ---
+            *This PR was automatically generated by the Update Grafana Dashboards workflow*
+          branch: automated/dashboard-updates
+          delete-branch: true
+          labels: |
+            automated
+            dashboards
+            dependencies
 
-            - name: Summary
-              run: |
-                  if [ "${{ steps.check_updates.outputs.updates_found }}" = "true" ]; then
-                    echo "✅ Dashboard updates found and PR created"
-                  else
-                    echo "✅ All dashboards are up to date"
-                  fi
+      - name: Summary
+        run: |
+          if [ "${{ steps.check_updates.outputs.updates_found }}" = "true" ]; then
+            echo "✅ Dashboard updates found and PR created"
+          else
+            echo "✅ All dashboards are up to date"
+          fi
