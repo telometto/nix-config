@@ -297,7 +297,7 @@ in
       };
 
       jellyfin = {
-        enable = false;
+        enable = true;
 
         openFirewall = true;
 
