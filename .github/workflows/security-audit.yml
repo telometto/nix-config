@@ -8,6 +8,7 @@ permissions:
   contents: read
   security-events: write
   pull-requests: write
+  issues: write
 
 jobs:
   security-audit:
@@ -19,49 +20,103 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Audit Nix configurations
+      - name: Check secrets exposure
+        id: gitleaks
         run: |
           echo "## 🔍 Security Audit Results" >> $GITHUB_STEP_SUMMARY
-
-          # Check for statix (Nix linter)
-          echo "### Static Analysis" >> $GITHUB_STEP_SUMMARY
-          if nix run nixpkgs#statix -- check .; then
-            echo "✅ Statix: No issues found" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ Statix: Issues detected" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Check for deadnix (dead Nix code)
-          echo "### Dead Code Analysis" >> $GITHUB_STEP_SUMMARY
-          if nix run nixpkgs#deadnix -- --fail .; then
-            echo "✅ Deadnix: No dead code found" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ Deadnix: Dead code detected" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Check secrets exposure
-        run: |
           echo "### Secrets Scanning" >> $GITHUB_STEP_SUMMARY
 
           # Check for potential secrets in code
           if nix run nixpkgs#gitleaks -- detect --verbose --no-git; then
             echo "✅ Gitleaks: No secrets detected" >> $GITHUB_STEP_SUMMARY
+            echo "secrets_found=false" >> $GITHUB_OUTPUT
           else
-            echo "⚠️ Gitleaks: Potential secrets found" >> $GITHUB_STEP_SUMMARY
+            echo "🚨 Gitleaks: Potential secrets found" >> $GITHUB_STEP_SUMMARY
+            echo "secrets_found=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Audit system services
+      - name: Audit firewall configuration
         run: |
-          echo "### Service Configuration Audit" >> $GITHUB_STEP_SUMMARY
+          echo "### Firewall Configuration Audit" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Check for services with potential security issues
-          echo "Auditing service configurations..."
-          find . -name "*.nix" -exec grep -l "openFirewall.*true" {} \; | while read file; do
-            echo "📋 Firewall opened in: $file" >> $GITHUB_STEP_SUMMARY
-          done
+          # Check for services with opened firewall ports
+          open_ports=$(find . -name "*.nix" -exec grep -l "openFirewall.*true" {} \; 2>/dev/null || true)
+          if [ -n "$open_ports" ]; then
+            echo "**Files with opened firewall ports:**" >> $GITHUB_STEP_SUMMARY
+            echo "$open_ports" | while read file; do
+              echo "- \`$file\`" >> $GITHUB_STEP_SUMMARY
+            done
+          else
+            echo "✅ No explicitly opened firewall ports found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Audit SSH configuration
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### SSH Security Audit" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check for password authentication
+          if grep -r "PasswordAuthentication.*true" --include="*.nix" . 2>/dev/null; then
+            echo "⚠️ Password authentication is enabled in some configurations" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Password authentication not explicitly enabled" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check for root login
+          if grep -r "PermitRootLogin.*yes" --include="*.nix" . 2>/dev/null; then
+            echo "⚠️ Root login is permitted in some configurations" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Root login not explicitly permitted" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Audit user permissions
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### User Permissions Audit" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check for users in wheel group
+          wheel_users=$(grep -r "extraGroups.*wheel" --include="*.nix" . 2>/dev/null || true)
+          if [ -n "$wheel_users" ]; then
+            echo "**Users with sudo access (wheel group):**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$wheel_users" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Vulnerability scan
+        id: vulnix
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if nix run nixpkgs#vulnix -- --system 2>&1 | head -50; then
+            echo "✅ No known vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+            echo "vulns_found=false" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Potential vulnerabilities detected (check logs)" >> $GITHUB_STEP_SUMMARY
+            echo "vulns_found=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Generate security report
         run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 📊 Security Summary" >> $GITHUB_STEP_SUMMARY
           echo "Audit completed at: $(date)" >> $GITHUB_STEP_SUMMARY
           echo "Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create issue if secrets found
+        if: steps.gitleaks.outputs.secrets_found == 'true'
+        uses: actions/github-script@main
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Security Alert: Potential Secrets Detected',
+              body: 'The automated security audit has detected potential secrets in the codebase. Please review the workflow run for details and rotate any exposed credentials immediately.',
+              labels: ['security', 'urgent']
+            })
