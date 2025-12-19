@@ -2,7 +2,7 @@ name: Update Lockfile
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *" # Every hour
+    - cron: "0 */3 * * *" # Every 3 hours
   pull_request:
     types: [opened, synchronize]
     branches: [main, testing]
@@ -79,16 +79,23 @@ jobs:
       - name: Get commit message for compare URLs
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
         id: get-commit-message
+        env:
+          PR_NUMBER: ${{ steps.update-flake-lock.outputs.pull-request-number }}
         run: |
-          # If needed, fetch the updated PR branch via SSH (url.insteadOf rewrites HTTPS => SSH)
-          # Fetching via SSH uses the ssh-agent key and avoids HTTP Authorization headers.
-          git fetch origin
-          COMMIT_MSG=$(git log --format=%B -n 1 HEAD)
+          # Fetch the PR branch to get the actual changes
+          PR_BRANCH="update_flake_lock_action"
+          git fetch origin "${PR_BRANCH}:${PR_BRANCH}" || git fetch origin
+
+          # Get the commit message from the PR branch
+          COMMIT_MSG=$(git log --format=%B -n 1 "${PR_BRANCH}" 2>/dev/null || git log --format=%B -n 1 HEAD)
           {
             echo "commit-message<<EOF"
             echo "$COMMIT_MSG"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
+
+          # Also store the PR branch for diff comparison
+          echo "pr-branch=${PR_BRANCH}" >> "$GITHUB_OUTPUT"
 
       - name: Create compare URLs
         uses: actions/github-script@main
@@ -96,6 +103,7 @@ jobs:
         env:
           GIT_COMMIT_MESSAGE: ${{ steps.get-commit-message.outputs.commit-message }}
           PULL_REQUEST_NUMBER: ${{ steps.update-flake-lock.outputs.pull-request-number }}
+          PR_BRANCH: ${{ steps.get-commit-message.outputs.pr-branch }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
