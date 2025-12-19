@@ -127,7 +127,7 @@ jobs:
           # Check if common/module changes affect all hosts
           if [ -s affected_common.txt ] || [ -s affected_modules.txt ]; then
             echo "**Potentially affected hosts (via common/modules):**" >> impact-report.md
-            for host in snowfall blizzard avalanche; do
+            for host in snowfall blizzard avalanche kaizer; do
               echo "- **$host** (indirect impact)" >> impact-report.md
             done
             echo "" >> impact-report.md
@@ -285,7 +285,7 @@ jobs:
             done < affected_hosts.txt
           else
             echo "**Build test all hosts:**" >> impact-report.md
-            for host in snowfall blizzard avalanche; do
+            for host in snowfall blizzard avalanche kaizer; do
               echo "- \`nix build .#nixosConfigurations.$host.config.system.build.toplevel\`" >> impact-report.md
             done
           fi
