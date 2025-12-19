@@ -654,6 +654,22 @@ in
                 };
 
                 contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
+              };
+            };
+
+            # Relaxed headers for Overseerr/Jellyseerr (requires Plex OAuth)
+            overseerr-headers = {
+              headers = {
+                customResponseHeaders = {
+                  X-Content-Type-Options = "nosniff";
+                  X-Frame-Options = "SAMEORIGIN";
+                  X-XSS-Protection = "1; mode=block";
+                  Referrer-Policy = "no-referrer-when-downgrade";
+                  Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+                };
+
+                # Relaxed CSP to allow Plex OAuth flow
+                contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
 
                 # HSTS (HTTP Strict Transport Security) - only for HTTPS services
                 # Uncomment if using HTTPS entry points
@@ -677,7 +693,7 @@ in
               rule = "Host(`requests.${VARS.domains.public}`)";
               service = "overseerr";
               entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ];
+              middlewares = [ "overseerr-headers" ];
             };
 
             firefox = {
