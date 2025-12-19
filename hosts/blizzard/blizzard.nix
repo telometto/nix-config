@@ -62,6 +62,14 @@ in
         };
       };
 
+      samba = {
+        enable = true;
+        shares.destroyme = {
+          path = "/rpool/unenc/destroyme";
+          forceUser = "zeno";
+        };
+      };
+
       zfs.enable = true;
 
       sanoid = {
