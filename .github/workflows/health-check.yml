@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        host: [snowfall, blizzard, avalanche]
+        host: [snowfall, blizzard, avalanche, kaizer]
     steps:
       - name: Access private repository
         uses: webfactory/ssh-agent@master
@@ -25,23 +25,45 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: DeterminateSystems/magic-nix-cache-action@v3
-
-      - name: Reclaim disk space on runner
+      - name: Maximize disk space
         run: |
           HOST="${{ matrix.host }}"
           echo "## 📦 Disk Usage (${HOST}) - before cleanup" >> $GITHUB_STEP_SUMMARY
           df -h >> $GITHUB_STEP_SUMMARY
 
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache || true
-          sudo docker system prune -af || true
+          # Aggressive cleanup for runner disk space
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /opt/hostedtoolcache || true
           sudo rm -rf /home/linuxbrew || true
+          sudo rm -rf /usr/local/share/boost || true
+          sudo rm -rf /usr/local/graalvm || true
+          sudo rm -rf /usr/local/share/chromium || true
+          sudo rm -rf /usr/local/.ghcup || true
+          sudo rm -rf /usr/share/swift || true
+          sudo rm -rf /usr/local/julia* || true
+          sudo rm -rf /opt/az || true
+          sudo rm -rf /opt/microsoft || true
+          sudo rm -rf /opt/pipx || true
+          sudo rm -rf /opt/google || true
+          sudo rm -rf /usr/lib/google-cloud-sdk || true
+          sudo rm -rf /usr/lib/jvm || true
+          sudo rm -rf /usr/share/miniconda || true
+          sudo rm -rf /usr/share/az_* || true
+          sudo rm -rf /usr/share/gradle-* || true
+          sudo rm -rf /usr/share/sbt || true
+          sudo docker system prune -af || true
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
 
           echo "## ♻️ Disk Usage (${HOST}) - after cleanup" >> $GITHUB_STEP_SUMMARY
           df -h >> $GITHUB_STEP_SUMMARY
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v4
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Expand build sandbox for avalanche
         if: matrix.host == 'avalanche'
@@ -55,7 +77,11 @@ jobs:
         run: |
           HOST="${{ matrix.host }}"
           echo "## 🏗️ Build Results - ${HOST}" >> $GITHUB_STEP_SUMMARY
-          if nix build ".#nixosConfigurations.${HOST}.config.system.build.toplevel" --no-link --print-build-logs; then
+
+          # Run GC before build to ensure max space
+          nix-collect-garbage -d || true
+
+          if nix build ".#nixosConfigurations.${HOST}.config.system.build.toplevel" --no-link --print-build-logs --max-jobs 2; then
             echo "✅ ${HOST}: Build successful" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ ${HOST}: Build failed" >> $GITHUB_STEP_SUMMARY
@@ -83,10 +109,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: DeterminateSystems/magic-nix-cache-action@v3
+      - uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v4
+        uses: DeterminateSystems/nix-installer-action@main
 
       - name: Check for security updates
         if: needs.build-hosts.result == 'success'
