@@ -8,7 +8,8 @@ let
   cfg = config.telometto.services.samba;
   inherit (lib) types;
 
-  mkShareConfig = _: share:
+  mkShareConfig =
+    _: share:
     {
       "path" = share.path;
       "read only" = if share.readOnly then "yes" else "no";
