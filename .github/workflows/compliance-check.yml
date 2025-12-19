@@ -166,7 +166,7 @@ jobs:
           echo "## 🎯 Configuration Completeness" >> compliance-report.md
           echo "" >> compliance-report.md
 
-          for host in snowfall blizzard avalanche; do
+          for host in snowfall blizzard avalanche kaizer; do
             echo "### Host: $host" >> compliance-report.md
             
             # Check required files exist (files are named after the host)
