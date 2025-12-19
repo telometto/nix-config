@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        host: [snowfall, blizzard, avalanche]
+        host: [snowfall, blizzard, avalanche, kaizer]
       fail-fast: false
 
     steps:
