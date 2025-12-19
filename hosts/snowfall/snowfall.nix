@@ -65,7 +65,7 @@ in
         openFirewall = true;
       };
 
-      cloudflare-warp.enable = true;
+      cloudflare-warp.enable = false;
 
       /*
         nfs = {
