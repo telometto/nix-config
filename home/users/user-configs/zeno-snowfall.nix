@@ -77,7 +77,7 @@
     };
   };
 
-    programs = {
+  programs = {
     zsh.shellAliases = {
       localNrb = "nixos-rebuild boot --flake .# --sudo";
       localNrs = "nixos-rebuild switch --flake .# --sudo";
@@ -85,7 +85,7 @@
 
       mountNfs = "sudo mount -t nfs";
       umountNfs = "sudo umount";
-      unRar="NIXPKGS_ALLOW_UNFREE=1 nix run --impure nixpkgs#unrar e";
+      unRar = "NIXPKGS_ALLOW_UNFREE=1 nix run --impure nixpkgs#unrar e";
 
       bSsh = "ssh zeno@192.168.2.100";
       aSsh = "ssh zeno@192.168.2.234";
@@ -93,5 +93,6 @@
       bTsh = "tailscale ssh zeno@blizzard";
       aTsh = "tailscale ssh zeno@avalanche";
       kTsh = "tailscale ssh root@kaizer";
-    };};
+    };
+  };
 }
