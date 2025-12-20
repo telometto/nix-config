@@ -12,7 +12,7 @@
     pkgs.variety # Wallpaper changer
     pkgs.polychromatic # Razer configuration tool
     # pkgs.tuxguitar # Guitar tablature editor and player - TEMPORARILY DISABLED: build failure due to swt 4.34 deprecated gdk-pixbuf APIs (https://github.com/NixOS/nixpkgs/pull/462225)
-    pkgs.pgadmin4-desktopmode # PostgreSQL administration tool - TEMPORARILY DISABLED: build failure due to swt 4.34 deprecated gdk-pixbuf APIs (https://github.com/NixOS/nixpkgs/pull/462225)
+    pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
     pkgs.vorta # Borg backup GUI
     pkgs.hugo # static website engine
     pkgs.signal-desktop
@@ -76,4 +76,22 @@
       };
     };
   };
+
+    programs = {
+    zsh.shellAliases = {
+      localNrb = "nixos-rebuild boot --flake .# --sudo";
+      localNrs = "nixos-rebuild switch --flake .# --sudo";
+      kaizerNrb = "nixos-rebuild boot --flake .#kaizer --build-host root@kaizer.boreal-ruler.ts.net --target-host root@kaizer.boreal-ruler.ts.net --ask-sudo-password";
+
+      mountNfs = "sudo mount -t nfs";
+      umountNfs = "sudo umount";
+      unRar="NIXPKGS_ALLOW_UNFREE=1 nix run --impure nixpkgs#unrar e";
+
+      bSsh = "ssh zeno@192.168.2.100";
+      aSsh = "ssh zeno@192.168.2.234";
+
+      bTsh = "tailscale ssh zeno@blizzard";
+      aTsh = "tailscale ssh zeno@avalanche";
+      kTsh = "tailscale ssh root@kaizer";
+    };};
 }
