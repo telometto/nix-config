@@ -49,6 +49,7 @@ in
         pkgs.kdePackages.kwalletmanager
         pkgs.kdePackages.kwallet-pam
         pkgs.kdePackages.qtwayland
+        pkgs.kdePackages.qtwebengine
         pkgs.xwayland
         (pkgs.sddm-astronaut.override {
           embeddedTheme = "pixel_sakura";
