@@ -21,7 +21,7 @@
     programs = {
       development.extraPackages = [
         pkgs.vscode
-        pkgs.idea-oss
+        pkgs.jetbrains.idea-oss
       ];
 
       media.jf-mpv.enable = false;
