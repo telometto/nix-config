@@ -21,7 +21,7 @@
     programs = {
       development.extraPackages = [
         pkgs.vscode
-        # pkgs.jetbrains.idea-community-bin # disabled until lidbm issue has been solved
+        pkgs.idea-oss
       ];
 
       media.jf-mpv.enable = false;
