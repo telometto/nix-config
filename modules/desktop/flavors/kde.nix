@@ -59,15 +59,17 @@ in
       plasma6.excludePackages = with pkgs.kdePackages; [ gwenview ];
     };
 
-    programs.kdeconnect.enable = lib.mkDefault true;
+    programs = {
+      kdeconnect.enable = lib.mkDefault true;
 
-    programs.xwayland.enable = lib.mkDefault true;
+      xwayland.enable = lib.mkDefault true;
 
-    # Configure SSH agent to work with KDE/KWallet
-    programs.ssh = {
-      startAgent = lib.mkDefault true;
-      enableAskPassword = lib.mkDefault true;
-      askPassword = lib.mkDefault "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
+      # Configure SSH agent to work with KDE/KWallet
+      ssh = {
+        startAgent = lib.mkDefault true;
+        enableAskPassword = lib.mkDefault true;
+        askPassword = lib.mkDefault "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
+      };
     };
 
     # Prefer KDE portal

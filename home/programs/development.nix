@@ -91,63 +91,64 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    programs.gh = lib.mkIf cfg.gh.enable {
-      enable = lib.mkDefault true;
+    programs = {
+      gh = lib.mkIf cfg.gh.enable {
+        enable = lib.mkDefault true;
 
-      settings = lib.mkMerge [
-        {
-          version = "1";
-          git_protocol = cfg.gh.gitProtocol;
-          prompt = "enabled";
-          aliases = cfg.gh.aliases;
-        }
-        cfg.gh.extraSettings
-      ];
+        settings = lib.mkMerge [
+          {
+            version = "1";
+            git_protocol = cfg.gh.gitProtocol;
+            prompt = "enabled";
+            inherit (cfg.gh) aliases;
+          }
+          cfg.gh.extraSettings
+        ];
 
-      gitCredentialHelper = {
-        enable = cfg.gh.gitCredentialHelper.enable;
-        hosts = cfg.gh.gitCredentialHelper.hosts;
-      };
-
-      extensions = cfg.gh.extensions;
-    };
-
-    programs.git = {
-      enable = lib.mkDefault true;
-
-      settings = {
-        user = {
-          name = cfg.git.userName;
-          email = cfg.git.userEmail;
-          signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
+        gitCredentialHelper = {
+          inherit (cfg.gh.gitCredentialHelper) enable hosts;
         };
 
-        init.defaultBranch = "master";
-        commit.gpgSign = true;
-        tag.gpgSign = true;
-        pull.rebase = false;
-
-        gpg = {
-          format = "ssh";
-          # ssh = {
-          #   defaultKeyCommand = "sh -c 'echo key::$(ssh-add -L | tail -n1)'";
-          #   allowedSignersFile =
-          #     "${config.home.homeDirectory}/.ssh/allowed_signers";
-          # };
-        };
+        inherit (cfg.gh) extensions;
       };
 
-      includes = [
-        {
-          condition = "gitdir:~/.versioncontrol/github/";
-          contents.user.email = "65364211+telometto@users.noreply.github.com";
-        }
-      ];
-    };
+      git = {
+        enable = lib.mkDefault true;
 
-    programs.diff-so-fancy = {
-      enable = lib.mkDefault true;
-      enableGitIntegration = lib.mkDefault true;
+        settings = {
+          user = {
+            name = cfg.git.userName;
+            email = cfg.git.userEmail;
+            signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
+          };
+
+          init.defaultBranch = "master";
+          commit.gpgSign = true;
+          tag.gpgSign = true;
+          pull.rebase = false;
+
+          gpg = {
+            format = "ssh";
+            # ssh = {
+            #   defaultKeyCommand = "sh -c 'echo key::$(ssh-add -L | tail -n1)'";
+            #   allowedSignersFile =
+            #     "${config.home.homeDirectory}/.ssh/allowed_signers";
+            # };
+          };
+        };
+
+        includes = [
+          {
+            condition = "gitdir:~/.versioncontrol/github/";
+            contents.user.email = "65364211+telometto@users.noreply.github.com";
+          }
+        ];
+      };
+
+      diff-so-fancy = {
+        enable = lib.mkDefault true;
+        enableGitIntegration = lib.mkDefault true;
+      };
     };
 
     home.packages = lib.mkIf cfg.enable (
