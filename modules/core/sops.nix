@@ -78,6 +78,9 @@ in
         };
         "crowdsec/firewall_bouncer" = { };
         "crowdsec/console_token" = { };
+      }
+      // whenEnabled isSnowfall {
+        "cloudflare/access_api_token" = { };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -138,6 +141,9 @@ in
       crowdsecTraefikBouncerTokenFile = toString config.sops.secrets."crowdsec/traefik_bouncer".path;
       crowdsecFirewallBouncerTokenFile = toString config.sops.secrets."crowdsec/firewall_bouncer".path;
       crowdsecConsoleTokenFile = toString config.sops.secrets."crowdsec/console_token".path;
+    }
+    // whenEnabled isSnowfall {
+      cloudflareAccessApiTokenFile = toString config.sops.secrets."cloudflare/access_api_token".path;
     };
 
   environment.systemPackages = [
