@@ -126,5 +126,14 @@
         Mapped from SOPS in core/sops.nix.
       '';
     };
+
+    cloudflareAccessApiTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the Cloudflare API token for Access policy updates.
+        Used by cloudflare-access-ip-updater service. Mapped from SOPS in core/sops.nix.
+      '';
+    };
   };
 }
