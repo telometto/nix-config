@@ -18,11 +18,13 @@ let
   hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
   hasCloudflared = config.telometto.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
+  hasCloudflareAccessIpUpdater = config.telometto.services.cloudflareAccessIpUpdater.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
   isBlizzard = config.networking.hostName == "blizzard";
   isSnowfall = config.networking.hostName == "snowfall";
+  isAvalanche = config.networking.hostName == "avalanche";
 in
 
 {
@@ -79,7 +81,7 @@ in
         "crowdsec/firewall_bouncer" = { };
         "crowdsec/console_token" = { };
       }
-      // whenEnabled isSnowfall {
+      // whenEnabled hasCloudflareAccessIpUpdater {
         "cloudflare/access_api_token" = { };
       };
 
@@ -142,7 +144,7 @@ in
       crowdsecFirewallBouncerTokenFile = toString config.sops.secrets."crowdsec/firewall_bouncer".path;
       crowdsecConsoleTokenFile = toString config.sops.secrets."crowdsec/console_token".path;
     }
-    // whenEnabled isSnowfall {
+    // whenEnabled hasCloudflareAccessIpUpdater {
       cloudflareAccessApiTokenFile = toString config.sops.secrets."cloudflare/access_api_token".path;
     };
 
