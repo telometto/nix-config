@@ -65,8 +65,6 @@ in
         openFirewall = true;
       };
 
-      cloudflare-warp.enable = false;
-
       cloudflareAccessIpUpdater = {
         enable = true;
         accountId = "1f65156829c5e18a3648609b381dec9c";
