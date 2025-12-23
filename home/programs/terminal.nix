@@ -107,6 +107,29 @@ in
         autocd = lib.mkDefault true;
         enableVteIntegration = lib.mkDefault true;
 
+        sessionVariables = {
+          kaizerAddr = "root@kaizer.boreal-ruler.ts.net";
+        };
+
+        shellAliases = {
+      localNrb = "nixos-rebuild boot --flake .# --sudo";
+      localNrs = "nixos-rebuild switch --flake .# --sudo";
+      targetNrb = "nixos-rebuild boot --flake .#$MACH --build-host $TARGET --target-host $TARGET --ask-sudo-password";
+
+      mountNfs = "sudo mount -t nfs";
+      umountNfs = "sudo umount";
+      unRar = "NIXPKGS_ALLOW_UNFREE=1 nix run --impure nixpkgs#unrar e";
+
+      bSsh = "ssh zeno@192.168.2.100";
+      sSsh = "ssh zeno@192.168.2.101";
+      aSsh = "ssh zeno@192.168.2.234";
+
+      bTsh = "tailscale ssh zeno@blizzard";
+      sTsh = "tailscale ssh zeno@snowfall";
+      aTsh = "tailscale ssh zeno@avalanche";
+      kTsh = "tailscale ssh root@kaizer";
+    };
+
         history = {
           expireDuplicatesFirst = true;
           extended = true;
