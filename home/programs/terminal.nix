@@ -146,27 +146,19 @@ in
           enable = lib.mkDefault true;
 
           plugins = [
-            #"autoenv"
             "colored-man-pages"
             "colorize"
             "command-not-found"
             "common-aliases"
-            "direnv"
             "git"
             "emoji"
-            "eza"
-            "fzf"
             "gpg-agent"
             "podman"
-            # "ssh-agent"
             "sudo"
             "systemd"
             "tailscale"
             "tmux"
             "vscode"
-            "zoxide"
-            #"zsh-autosuggestions"
-            #"zsh-syntax-highlighting"
           ];
         };
       };
