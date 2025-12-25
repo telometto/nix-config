@@ -90,19 +90,6 @@
   };
 
   programs = {
-    keychain = {
-      enable = false;
-
-      enableBashIntegration = true;
-      enableZshIntegration = true;
-
-      keys = [
-        "borg-blizzard"
-        "sops-hm-blizzard"
-        "zeno-blizzard"
-      ];
-    };
-
     zsh.shellAliases = {
       # Kubernetes
       k = "kubectl";
@@ -132,10 +119,10 @@
       jctlerr = "journalctl -p err -b";
 
       # ZFS management
-      zlist = "zfs list";
-      zsnap = "zfs list -t snapshot";
-      zpool-status = "zpool status";
-      zpool-list = "zpool list";
+      zList = "zfs list";
+      zSnap = "zfs list -t snapshot";
+      zpStatus = "zpool status";
+      zpList = "zpool list";
 
       # Docker/Podman (if enabled)
       dps = "podman ps";
@@ -173,13 +160,9 @@
       glog = "git log --oneline --graph --decorate";
 
       # Nix specific
-      nix-gc = "nix-collect-garbage -d";
-      nix-update = "sudo nixos-rebuild switch --flake .#blizzard";
-      nix-test = "sudo nixos-rebuild test --flake .#blizzard";
-      nix-boot = "sudo nixos-rebuild boot --flake .#blizzard";
+      nGc = "nix-collect-garbage -d";
 
       # Quick navigation
-      ".." = "cd ..";
       "..." = "cd ../..";
       "...." = "cd ../../..";
 
