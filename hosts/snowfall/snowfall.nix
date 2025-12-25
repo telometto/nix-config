@@ -72,9 +72,7 @@ in
         apiTokenFile = config.sops.secrets."cloudflare/access_api_token".path;
         interval = "30min";
       };
-    };
 
-    services = {
       /*
         nfs = {
           enable = true;
