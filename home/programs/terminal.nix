@@ -118,13 +118,21 @@ in
 
         autosuggestion = {
           enable = lib.mkDefault true;
-          strategy = [ "history" "completion" ];
+          strategy = [
+            "history"
+            "completion"
+          ];
           highlight = "fg=#666666";
         };
 
         syntaxHighlighting = {
           enable = lib.mkDefault true;
-          highlighters = [ "main" "brackets" "pattern" "cursor" ];
+          highlighters = [
+            "main"
+            "brackets"
+            "pattern"
+            "cursor"
+          ];
           patterns = {
             "rm -rf *" = "fg=white,bold,bg=red";
           };
