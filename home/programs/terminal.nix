@@ -102,10 +102,33 @@ in
       zsh = {
         enable = lib.mkDefault true;
         enableCompletion = lib.mkDefault true;
-        autosuggestion.enable = lib.mkDefault true;
-        syntaxHighlighting.enable = lib.mkDefault true;
         autocd = lib.mkDefault true;
         enableVteIntegration = lib.mkDefault true;
+        dotDir = "${config.xdg.configHome}/zsh";
+
+        setOptions = [
+          "EXTENDED_HISTORY"
+          "SHARE_HISTORY"
+          "HIST_REDUCE_BLANKS"
+          "HIST_VERIFY"
+          "NO_BEEP"
+          "INTERACTIVE_COMMENTS"
+          "CORRECT"
+        ];
+
+        autosuggestion = {
+          enable = lib.mkDefault true;
+          strategy = [ "history" "completion" ];
+          highlight = "fg=#666666";
+        };
+
+        syntaxHighlighting = {
+          enable = lib.mkDefault true;
+          highlighters = [ "main" "brackets" "pattern" "cursor" ];
+          patterns = {
+            "rm -rf *" = "fg=white,bold,bg=red";
+          };
+        };
 
         sessionVariables = {
           kaizerAddr = "root@kaizer.boreal-ruler.ts.net";
@@ -134,6 +157,37 @@ in
           expireDuplicatesFirst = true;
           extended = true;
           ignoreAllDups = true;
+        };
+
+        dirHashes = {
+          nix = "/home/zeno/.versioncontrol/github/projects/personal/nix-config";
+          projects = "/home/zeno/.versioncontrol/github/projects";
+        };
+
+        siteFunctions = {
+          mkcd = ''
+            mkdir --parents "$1" && cd "$1"
+          '';
+          extract = ''
+            if [[ -f "$1" ]]; then
+              case "$1" in
+                *.tar.bz2) tar xjf "$1" ;;
+                *.tar.gz)  tar xzf "$1" ;;
+                *.tar.xz)  tar xJf "$1" ;;
+                *.bz2)     bunzip2 "$1" ;;
+                *.gz)      gunzip "$1" ;;
+                *.tar)     tar xf "$1" ;;
+                *.tbz2)    tar xjf "$1" ;;
+                *.tgz)     tar xzf "$1" ;;
+                *.zip)     unzip "$1" ;;
+                *.Z)       uncompress "$1" ;;
+                *.7z)      7z x "$1" ;;
+                *)         echo "Cannot extract '$1'" ;;
+              esac
+            else
+              echo "'$1' is not a valid file"
+            fi
+          '';
         };
 
         initContent = lib.mkMerge [
