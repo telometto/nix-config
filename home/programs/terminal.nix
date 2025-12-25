@@ -168,8 +168,8 @@ in
         };
 
         dirHashes = {
-          nix = "/home/zeno/.versioncontrol/github/projects/personal/nix-config";
-          projects = "/home/zeno/.versioncontrol/github/projects";
+          nix = "${config.home.homeDirectory}/.versioncontrol/github/projects/personal/nix-config";
+          projects = "${config.home.homeDirectory}/.versioncontrol/github/projects";
         };
 
         siteFunctions = {
