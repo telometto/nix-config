@@ -52,7 +52,7 @@ in
         enableZshIntegration = lib.mkDefault true;
         git = lib.mkDefault true;
         icons = lib.mkDefault "always";
-        color = lib.mkDefault "always";
+        colors = lib.mkDefault "always";
         extraOptions = [
           "--group"
           "--group-directories-first"
