@@ -52,8 +52,8 @@ in
         enableZshIntegration = lib.mkDefault true;
         git = lib.mkDefault true;
         icons = lib.mkDefault "always";
+        color = lib.mkDefault "always";
         extraOptions = [
-          "--color=always"
           "--group"
           "--group-directories-first"
           "--header"
@@ -168,8 +168,8 @@ in
         };
 
         dirHashes = {
-          nix = "${config.home.homeDirectory}/.versioncontrol/github/projects/personal/nix-config";
-          projects = "${config.home.homeDirectory}/.versioncontrol/github/projects";
+          nixConf = "${config.home.homeDirectory}/.versioncontrol/github/projects/personal/nix-config";
+          projectsDir = "${config.home.homeDirectory}/.versioncontrol/github/projects";
         };
 
         siteFunctions = {
