@@ -15,16 +15,19 @@ in
     operation = lib.mkOption {
       type = lib.types.str;
       default = "boot";
+      description = "The operation to perform (switch or boot)";
     };
 
     dates = lib.mkOption {
       type = lib.types.str;
       default = "weekly";
+      description = "How often to run the upgrade (systemd calendar format)";
     };
 
     flags = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
+      description = "Additional flags to pass to nixos-rebuild";
     };
 
     rebootWindow = lib.mkOption {
