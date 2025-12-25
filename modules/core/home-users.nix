@@ -79,9 +79,8 @@ let
         (userAttrs.home or null)
         (userAttrs.homeDirectory or null)
         systemUserHome
-        "/home/${username}"
       ];
-      homeDir = lib.findFirst (home: home != null) preferredHomes "/home/${username}";
+      homeDir = lib.findFirst (home: home != null) "/home/${username}" preferredHomes;
     in
     {
       imports = collectImports username userAttrs;
