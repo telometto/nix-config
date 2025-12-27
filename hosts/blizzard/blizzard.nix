@@ -119,6 +119,8 @@ in
       };
 
       prometheusExporters = {
+        node.enableRapl = true;
+
         zfs = {
           enable = true;
           pools = [
@@ -126,6 +128,11 @@ in
             "tank"
           ];
         };
+      };
+
+      electricityPriceExporter = {
+        enable = true;
+        priceArea = "NO2";
       };
 
       prometheus = {
@@ -180,6 +187,15 @@ in
               }
             ];
           }
+          {
+            job_name = "electricity-price";
+            scrape_interval = "5m";
+            static_configs = [
+              {
+                targets = [ "localhost:9101" ];
+              }
+            ];
+          }
         ];
       };
 
@@ -196,6 +212,7 @@ in
 
           # Custom dashboards (locally maintained)
           "zfs-overview" = grafanaDashboards.custom.zfs-overview;
+          "power-consumption" = grafanaDashboards.custom.power-consumption;
         };
 
         reverseProxy = {
