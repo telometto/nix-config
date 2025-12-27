@@ -82,7 +82,7 @@
       },
       "targets": [
         {
-          "expr": "node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}",
+          "expr": "node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"} or on() vector(0)",
           "refId": "A"
         }
       ],
@@ -135,7 +135,7 @@
       },
       "targets": [
         {
-          "expr": "rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]) + on() group_left() node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}",
+          "expr": "rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]) + on() (node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"} or vector(0))",
           "refId": "A"
         }
       ],
@@ -188,7 +188,7 @@
       },
       "targets": [
         {
-          "expr": "(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]) + on() group_left() node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) / 1000 * 24 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
+          "expr": "(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]) + on() (node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"} or vector(0))) / 1000 * 24 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
           "refId": "A"
         }
       ],
@@ -338,12 +338,12 @@
       },
       "targets": [
         {
-          "expr": "avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[1h])",
+          "expr": "avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[1h]) or on() vector(0)",
           "legendFormat": "1h avg",
           "refId": "A"
         },
         {
-          "expr": "avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[24h])",
+          "expr": "avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[24h]) or on() vector(0)",
           "legendFormat": "24h avg",
           "refId": "B"
         }
@@ -386,12 +386,12 @@
       },
       "targets": [
         {
-          "expr": "avg_over_time(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m])[1h:]) + on() avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[1h])",
+          "expr": "avg_over_time(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m])[1h:]) + on() (avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[1h]) or vector(0))",
           "legendFormat": "1h avg",
           "refId": "A"
         },
         {
-          "expr": "avg_over_time(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m])[24h:]) + on() avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[24h])",
+          "expr": "avg_over_time(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m])[24h:]) + on() (avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[24h]) or vector(0))",
           "legendFormat": "24h avg",
           "refId": "B"
         }
@@ -439,12 +439,12 @@
           "refId": "A"
         },
         {
-          "expr": "node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}",
+          "expr": "node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"} or on() vector(0)",
           "legendFormat": "GPU",
           "refId": "B"
         },
         {
-          "expr": "rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]) + on() group_left() node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}",
+          "expr": "rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]) + on() (node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"} or vector(0))",
           "legendFormat": "Total",
           "refId": "C"
         }
@@ -585,7 +585,7 @@
           "refId": "A"
         },
         {
-          "expr": "node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"} * $__range_s / 3600000",
+          "expr": "(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"} or on() vector(0)) * $__range_s / 3600000",
           "legendFormat": "GPU (kWh est.)",
           "refId": "B"
         }
@@ -670,7 +670,7 @@
       },
       "targets": [
         {
-          "expr": "(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]) + on() group_left() node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) / 1000 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
+          "expr": "(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]) + on() (node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"} or vector(0))) / 1000 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Cost Rate",
           "refId": "A"
         }
@@ -716,7 +716,7 @@
       },
       "targets": [
         {
-          "expr": "(increase(node_rapl_package_joules_total{instance=~\"$instance\"}[1h]) / 3600000 + on() avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[1h]) * 3600 / 3600000) * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
+          "expr": "(increase(node_rapl_package_joules_total{instance=~\"$instance\"}[1h]) / 3600000 + on() (avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[1h]) or vector(0)) * 3600 / 3600000) * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
           "refId": "A"
         }
       ],
@@ -769,7 +769,7 @@
       },
       "targets": [
         {
-          "expr": "(increase(node_rapl_package_joules_total{instance=~\"$instance\"}[1d]) / 3600000 + on() avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[1d]) * 86400 / 3600000) * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
+          "expr": "(increase(node_rapl_package_joules_total{instance=~\"$instance\"}[1d]) / 3600000 + on() (avg_over_time(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}[1d]) or vector(0)) * 86400 / 3600000) * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Daily Cost",
           "refId": "A",
           "interval": "1d"
@@ -836,7 +836,7 @@
       },
       "targets": [
         {
-          "expr": "(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]) + on() group_left() node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) / 1000 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
+          "expr": "(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]) + on() (node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"} or vector(0))) / 1000 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Cost Rate",
           "refId": "A"
         }
