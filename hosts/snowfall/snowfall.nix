@@ -73,6 +73,15 @@ in
         interval = "30min";
       };
 
+      # Enable RAPL power monitoring for CPU
+      prometheusExporters.node.enableRapl = true;
+
+      # Norwegian electricity price exporter (NO2 = Sør-Norge)
+      electricityPriceExporter = {
+        enable = true;
+        priceArea = "NO2";
+      };
+
       /*
         nfs = {
           enable = true;
@@ -102,6 +111,15 @@ in
               }
             ];
           }
+          {
+            job_name = "electricity-price";
+            static_configs = [
+              {
+                targets = [ "localhost:9101" ];
+              }
+            ];
+            scrape_interval = "5m"; # Prices change hourly, no need to scrape often
+          }
         ];
       };
 
@@ -115,6 +133,8 @@ in
         provision.dashboards = {
           # Community dashboards (automatically fetched from grafana.com)
           "node-exporter-full" = grafanaDashboards.community.node-exporter-full;
+          # Custom dashboards
+          "power-consumption" = grafanaDashboards.custom.power-consumption;
         };
 
         reverseProxy = {

@@ -32,7 +32,19 @@ in
           "systemd"
           "processes"
           "zfs"
+          "rapl"
+          "hwmon"
         ];
+      };
+
+      enableRapl = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Enable RAPL (Running Average Power Limit) power monitoring.
+          This adds the rapl and hwmon collectors and grants the necessary
+          capability (CAP_DAC_READ_SEARCH) to read power metrics.
+        '';
       };
 
       extraFlags = lib.mkOption {
@@ -86,9 +98,22 @@ in
         inherit (cfg.node)
           port
           openFirewall
-          enabledCollectors
           extraFlags
           ;
+        enabledCollectors =
+          cfg.node.enabledCollectors
+          ++ lib.optionals cfg.node.enableRapl [
+            "rapl"
+            "hwmon"
+          ];
+      };
+
+      # Grant capability to read RAPL energy files when enableRapl is true
+      systemd.services.prometheus-node-exporter = lib.mkIf cfg.node.enableRapl {
+        serviceConfig = {
+          AmbientCapabilities = [ "CAP_DAC_READ_SEARCH" ];
+          CapabilityBoundingSet = [ "CAP_DAC_READ_SEARCH" ];
+        };
       };
     })
 
