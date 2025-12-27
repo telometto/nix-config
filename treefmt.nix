@@ -21,6 +21,12 @@
     # JSON formatting
     jsonfmt.enable = true;
 
+    # Python formatting and linting
+    ruff = {
+      enable = true;
+      format = true; # Enable ruff format (replaces black)
+    };
+
     # GitHub Actions workflow linting (disabled to avoid shellcheck conflicts)
     # actionlint.enable = true;
 
