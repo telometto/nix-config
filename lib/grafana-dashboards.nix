@@ -32,6 +32,7 @@ rec {
 
   custom = {
     zfs-overview = ../dashboards/host/blizzard/zfs-overview.json;
+    power-consumption = ../dashboards/host/snowfall/power-consumption.json;
   };
 
   all = community // custom;
