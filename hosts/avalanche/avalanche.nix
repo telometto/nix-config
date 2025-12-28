@@ -1,10 +1,14 @@
 {
   config,
   lib,
+  pkgs,
   VARS,
   inputs,
   ...
 }:
+let
+  grafanaDashboards = import ../../lib/grafana-dashboards.nix { inherit lib pkgs; };
+in
 {
   imports = [
     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p51
@@ -78,6 +82,11 @@
         port = 11010;
         addr = "127.0.0.1";
         openFirewall = false;
+
+        provision.dashboards = {
+          # Community dashboards (automatically fetched from grafana.com)
+          "node-exporter-full" = grafanaDashboards.community.node-exporter-full;
+        };
       };
 
       # Remote write metrics to central InfluxDB on Blizzard for long-term storage
