@@ -74,11 +74,15 @@ in
       };
 
       # Enable RAPL power monitoring for CPU
-      prometheusExporters.node.enableRapl = true;
+      prometheusExporters.node = {
+        enableRapl = true;
+        port = 11011;
+      };
 
       # Norwegian electricity price exporter (NO2 = Sør-Norge)
       electricityPriceExporter = {
         enable = true;
+        port = 11012;
         priceArea = "NO2";
       };
 
@@ -98,6 +102,7 @@ in
 
       prometheus = {
         enable = lib.mkDefault true;
+        port = 11009;
         listenAddress = "127.0.0.1";
         openFirewall = lib.mkDefault false;
         scrapeInterval = "15s";
@@ -115,7 +120,7 @@ in
             job_name = "electricity-price";
             static_configs = [
               {
-                targets = [ "localhost:9101" ];
+                targets = [ "localhost:${toString config.telometto.services.electricityPriceExporter.port}" ];
               }
             ];
             scrape_interval = "5m"; # Prices change hourly, no need to scrape often
@@ -125,6 +130,7 @@ in
 
       grafana = {
         enable = lib.mkDefault true;
+        port = 11010;
 
         addr = "127.0.0.1";
         openFirewall = lib.mkDefault false;
@@ -166,6 +172,7 @@ in
       influxdbRemoteWrite = {
         enable = true;
         influxdbHost = "blizzard"; # Tailscale hostname
+        influxdbPort = 11008; # Custom port on Blizzard
         organization = "homelab";
         bucket = "prometheus";
       };

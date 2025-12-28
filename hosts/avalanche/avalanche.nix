@@ -59,6 +59,36 @@
         interval = "30min";
       };
 
+      # Enable RAPL power monitoring for CPU
+      prometheusExporters.node = {
+        enableRapl = true;
+        port = 11011;
+      };
+
+      prometheus = {
+        enable = true;
+        port = 11009;
+        listenAddress = "127.0.0.1";
+        openFirewall = false;
+        scrapeInterval = "15s";
+      };
+
+      grafana = {
+        enable = true;
+        port = 11010;
+        addr = "127.0.0.1";
+        openFirewall = false;
+      };
+
+      # Remote write metrics to central InfluxDB on Blizzard for long-term storage
+      influxdbRemoteWrite = {
+        enable = true;
+        influxdbHost = "blizzard"; # Tailscale hostname
+        influxdbPort = 11008;
+        organization = "homelab";
+        bucket = "prometheus";
+      };
+
       # nfs = {
       #   enable = true;
       #   server = {
