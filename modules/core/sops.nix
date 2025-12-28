@@ -88,10 +88,16 @@ in
       }
       # InfluxDB server needs both password and token
       // whenEnabled hasInfluxdb {
-        "influxdb/password" = { };
-        "influxdb/token" = {
-          # Grafana needs to read this for datasource provisioning
+        "influxdb/password" = {
+          # InfluxDB provision script needs to read this
           mode = "0440";
+          owner = config.services.influxdb2.user;
+          group = config.services.influxdb2.group;
+        };
+        "influxdb/token" = {
+          # Both InfluxDB (owner) and Grafana (group) need to read this
+          mode = "0440";
+          owner = config.services.influxdb2.user;
           group = config.services.grafana.settings.server.user or "grafana";
         };
       }
