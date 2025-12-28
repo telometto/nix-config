@@ -91,14 +91,14 @@ in
         "influxdb/password" = {
           # InfluxDB provision script needs to read this
           mode = "0440";
-          owner = config.services.influxdb2.user;
-          group = config.services.influxdb2.group;
+          owner = "influxdb2";
+          group = "influxdb2";
         };
         "influxdb/token" = {
           # Both InfluxDB (owner) and Grafana (group) need to read this
           mode = "0440";
-          owner = config.services.influxdb2.user;
-          group = config.services.grafana.settings.server.user or "grafana";
+          owner = "influxdb2";
+          group = config.services.grafana.user or "grafana";
         };
       }
       # Remote hosts only need the token for authentication
@@ -177,6 +177,11 @@ in
     // whenEnabled (hasInfluxdbRemoteWrite && !hasInfluxdb) {
       influxdbTokenFile = toString config.sops.secrets."influxdb/token".path;
     };
+
+  # Add service users to the keys group so they can traverse /run/secrets/ directory
+  users.users = lib.mkIf hasInfluxdb {
+    influxdb2.extraGroups = [ "keys" ];
+  };
 
   environment.systemPackages = [
     pkgs.age
