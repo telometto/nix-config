@@ -119,10 +119,14 @@ in
       };
 
       prometheusExporters = {
-        node.enableRapl = true;
+        node = {
+          enableRapl = true;
+          port = 11011;
+        };
 
         zfs = {
           enable = true;
+          port = 11013;
           pools = [
             "rpool"
             "tank"
@@ -132,11 +136,13 @@ in
 
       electricityPriceExporter = {
         enable = true;
+        port = 11012;
         priceArea = "NO2";
       };
 
       influxdb = {
         enable = true;
+        port = 11008;
 
         # Listen on all interfaces to allow remote write from other hosts via Tailscale
         listenAddress = "0.0.0.0";
@@ -169,6 +175,7 @@ in
 
       prometheus = {
         enable = true;
+        port = 11009;
 
         listenAddress = "127.0.0.1";
         openFirewall = false;
@@ -187,7 +194,7 @@ in
             job_name = "zfs";
             static_configs = [
               {
-                targets = [ "localhost:9134" ];
+                targets = [ "localhost:${toString config.telometto.services.prometheusExporters.zfs.port}" ];
               }
             ];
           }
@@ -224,7 +231,7 @@ in
             scrape_interval = "5m";
             static_configs = [
               {
-                targets = [ "localhost:9101" ];
+                targets = [ "localhost:${toString config.telometto.services.electricityPriceExporter.port}" ];
               }
             ];
           }
@@ -233,6 +240,7 @@ in
 
       grafana = {
         enable = true;
+        port = 11010;
 
         addr = "127.0.0.1";
         openFirewall = false;
