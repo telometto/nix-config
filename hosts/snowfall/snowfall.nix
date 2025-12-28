@@ -161,6 +161,14 @@ in
         username = "2710025";
         remoteWriteUrl = "https://prometheus-prod-39-prod-eu-north-0.grafana.net/api/prom/push";
       };
+
+      # Remote write metrics to central InfluxDB on Blizzard for long-term storage
+      influxdbRemoteWrite = {
+        enable = true;
+        influxdbHost = "blizzard"; # Tailscale hostname
+        organization = "homelab";
+        bucket = "prometheus";
+      };
     };
 
     storage = {
