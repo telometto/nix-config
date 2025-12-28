@@ -142,7 +142,9 @@ in
 
       influxdb = {
         enable = true;
-        port = 11008;
+        # Note: Using default port 8086 due to upstream NixOS bug that hardcodes
+        # this port in the wait-until-service-is-ready script
+        # port = 8086; # default
 
         # Listen on all interfaces to allow remote write from other hosts via Tailscale
         listenAddress = "0.0.0.0";

@@ -89,7 +89,11 @@ in
       # InfluxDB server needs both password and token
       // whenEnabled hasInfluxdb {
         "influxdb/password" = { };
-        "influxdb/token" = { };
+        "influxdb/token" = {
+          # Grafana needs to read this for datasource provisioning
+          mode = "0440";
+          group = config.services.grafana.settings.server.user or "grafana";
+        };
       }
       # Remote hosts only need the token for authentication
       // whenEnabled (hasInfluxdbRemoteWrite && !hasInfluxdb) {
