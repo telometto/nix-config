@@ -135,5 +135,21 @@
         Used by cloudflare-access-ip-updater service. Mapped from SOPS in core/sops.nix.
       '';
     };
+
+    influxdbPasswordFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the InfluxDB admin password. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    influxdbTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the InfluxDB admin API token. Mapped from SOPS in core/sops.nix.
+      '';
+    };
   };
 }

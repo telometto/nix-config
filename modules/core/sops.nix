@@ -19,6 +19,7 @@ let
   hasCloudflared = config.telometto.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
   hasCloudflareAccessIpUpdater = config.telometto.services.cloudflareAccessIpUpdater.enable or false;
+  hasInfluxdb = config.telometto.services.influxdb.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -83,6 +84,10 @@ in
       }
       // whenEnabled hasCloudflareAccessIpUpdater {
         "cloudflare/access_api_token" = { };
+      }
+      // whenEnabled hasInfluxdb {
+        "influxdb/password" = { };
+        "influxdb/token" = { };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -146,6 +151,10 @@ in
     }
     // whenEnabled hasCloudflareAccessIpUpdater {
       cloudflareAccessApiTokenFile = toString config.sops.secrets."cloudflare/access_api_token".path;
+    }
+    // whenEnabled hasInfluxdb {
+      influxdbPasswordFile = toString config.sops.secrets."influxdb/password".path;
+      influxdbTokenFile = toString config.sops.secrets."influxdb/token".path;
     };
 
   environment.systemPackages = [

@@ -135,6 +135,34 @@ in
         priceArea = "NO2";
       };
 
+      influxdb = {
+        enable = true;
+
+        initialSetup = {
+          organization = "homelab";
+          bucket = "prometheus";
+          username = "admin";
+          retention = 0; # Infinite retention for long-term historical data
+        };
+
+        # Additional buckets for different retention policies (optional)
+        extraBuckets = {
+          metrics-30d = {
+            description = "High-resolution metrics (30 day retention)";
+            retention = 2592000; # 30 days in seconds
+          };
+        };
+
+        # Automatically configure Prometheus remote write
+        prometheusRemoteWrite.enable = true;
+
+        # Automatically add as Grafana datasource
+        grafanaDatasource = {
+          enable = true;
+          name = "InfluxDB (Long-term)";
+        };
+      };
+
       prometheus = {
         enable = true;
 
