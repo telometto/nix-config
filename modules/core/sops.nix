@@ -20,6 +20,7 @@ let
   hasCrowdsec = config.services.crowdsec.enable or false;
   hasCloudflareAccessIpUpdater = config.telometto.services.cloudflareAccessIpUpdater.enable or false;
   hasInfluxdb = config.telometto.services.influxdb.enable or false;
+  hasInfluxdbRemoteWrite = config.telometto.services.influxdbRemoteWrite.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -85,8 +86,13 @@ in
       // whenEnabled hasCloudflareAccessIpUpdater {
         "cloudflare/access_api_token" = { };
       }
+      # InfluxDB server needs both password and token
       // whenEnabled hasInfluxdb {
         "influxdb/password" = { };
+        "influxdb/token" = { };
+      }
+      # Remote hosts only need the token for authentication
+      // whenEnabled (hasInfluxdbRemoteWrite && !hasInfluxdb) {
         "influxdb/token" = { };
       };
 
@@ -152,8 +158,13 @@ in
     // whenEnabled hasCloudflareAccessIpUpdater {
       cloudflareAccessApiTokenFile = toString config.sops.secrets."cloudflare/access_api_token".path;
     }
+    # InfluxDB server gets both password and token
     // whenEnabled hasInfluxdb {
       influxdbPasswordFile = toString config.sops.secrets."influxdb/password".path;
+      influxdbTokenFile = toString config.sops.secrets."influxdb/token".path;
+    }
+    # Remote write hosts only need the token
+    // whenEnabled (hasInfluxdbRemoteWrite && !hasInfluxdb) {
       influxdbTokenFile = toString config.sops.secrets."influxdb/token".path;
     };
 

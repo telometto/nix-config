@@ -138,6 +138,10 @@ in
       influxdb = {
         enable = true;
 
+        # Listen on all interfaces to allow remote write from other hosts via Tailscale
+        listenAddress = "0.0.0.0";
+        openFirewall = true; # Allow other hosts to connect
+
         initialSetup = {
           organization = "homelab";
           bucket = "prometheus";

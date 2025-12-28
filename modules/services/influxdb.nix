@@ -19,6 +19,16 @@ in
       description = "Port on which InfluxDB listens";
     };
 
+    listenAddress = lib.mkOption {
+      type = lib.types.str;
+      default = "127.0.0.1";
+      description = ''
+        Address on which InfluxDB listens.
+        Set to "0.0.0.0" to listen on all interfaces (required for remote write from other hosts).
+      '';
+      example = "0.0.0.0";
+    };
+
     openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -147,7 +157,7 @@ in
       inherit (cfg) package;
 
       settings = {
-        http-bind-address = "127.0.0.1:${toString cfg.port}";
+        http-bind-address = "${cfg.listenAddress}:${toString cfg.port}";
       };
 
       provision = {
