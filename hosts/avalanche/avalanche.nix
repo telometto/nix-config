@@ -175,5 +175,7 @@ in
 
   programs.virt-manager.enable = true;
 
+  services.rpcbind.enable = lib.mkDefault true;
+
   system.stateVersion = "24.05";
 }
