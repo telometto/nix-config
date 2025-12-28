@@ -172,7 +172,7 @@ in
       influxdbRemoteWrite = {
         enable = true;
         influxdbHost = "blizzard"; # Tailscale hostname
-        influxdbPort = 11008; # Custom port on Blizzard
+        # Using default port 8086 due to upstream NixOS bug
         organization = "homelab";
         bucket = "prometheus";
       };
