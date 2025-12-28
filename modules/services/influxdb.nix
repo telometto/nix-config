@@ -179,12 +179,10 @@ in
             inherit (bucketCfg) description retention;
           }) cfg.extraBuckets;
 
-          # Create a token for Prometheus remote write
-          auths.prometheus-remote-write = lib.mkIf cfg.prometheusRemoteWrite.enable {
-            description = "Token for Prometheus remote write";
-            writeBuckets = [ cfg.prometheusRemoteWrite.bucket ];
-            tokenFile = cfg.initialSetup.tokenFile; # Reuse admin token for simplicity
-          };
+          # Note: We intentionally don't create a separate prometheus-remote-write token.
+          # The admin token (from initialSetup.tokenFile) is used directly for Prometheus
+          # remote write. This is simpler and avoids issues with token conflicts.
+          # If you need a restricted token, create a separate sops secret for it.
         };
       };
     };
