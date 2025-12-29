@@ -236,9 +236,6 @@ in
       };
     };
 
-    # Open firewall for Telegraf remote write if requested
-    networking.firewall.allowedTCPPorts = lib.mkIf cfg.telegraf.openFirewall [ cfg.telegraf.port ];
-
     # Configure Prometheus remote write to Telegraf (which forwards to InfluxDB)
     services.prometheus.remoteWrite =
       lib.mkIf
@@ -295,6 +292,9 @@ in
           }
         ];
 
-    networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
+    # Open firewall for InfluxDB and/or Telegraf
+    networking.firewall.allowedTCPPorts =
+      (lib.optional cfg.openFirewall cfg.port)
+      ++ (lib.optional cfg.telegraf.openFirewall cfg.telegraf.port);
   };
 }
