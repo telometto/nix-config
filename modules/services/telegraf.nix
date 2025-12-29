@@ -33,7 +33,7 @@ in
       url = lib.mkOption {
         type = lib.types.str;
         default = "http://127.0.0.1:${toString (influxdbCfg.port or 8086)}";
-        defaultText = lib.literalExpression ''"http://127.0.0.1:''${toString config.telometto.services.influxdb.port}"'';
+        defaultText = lib.literalExpression "\"http://127.0.0.1:\${toString config.telometto.services.influxdb.port}\"";
         description = "URL of the InfluxDB instance to write to";
       };
 
@@ -82,8 +82,8 @@ in
           agent = {
             interval = "10s";
             round_interval = true;
-            metric_batch_size = 1000;
-            metric_buffer_limit = 10000;
+            metric_batch_size = 5000;
+            metric_buffer_limit = 100000;
             collection_jitter = "0s";
             flush_interval = "10s";
             flush_jitter = "0s";
@@ -118,6 +118,23 @@ in
                   new = "inf";
                 }
               ];
+            }
+          ];
+
+          # Processor: Filter out Inf/NaN field values that InfluxDB can't serialize
+          processors.starlark = [
+            {
+              namepass = [ "*" ];
+              source = ''
+                def apply(metric):
+                    for k in list(metric.fields):
+                        v = metric.fields[k]
+                        if type(v) == "float":
+                            s = str(v)
+                            if "Inf" in s or "inf" in s or "NaN" in s or "nan" in s:
+                                metric.fields.pop(k)
+                    return metric
+              '';
             }
           ];
 
