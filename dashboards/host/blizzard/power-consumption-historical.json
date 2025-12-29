@@ -1,0 +1,237 @@
+{
+  "title": "Power Consumption (Historical)",
+  "uid": "power-historical",
+  "description": "Long-term historical power monitoring from InfluxDB",
+  "tags": [
+    "power",
+    "historical",
+    "influxdb"
+  ],
+  "editable": true,
+  "schemaVersion": 38,
+  "refresh": "",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "templating": {
+    "list": [
+      {
+        "name": "host",
+        "type": "query",
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-longterm"
+        },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"prometheus\", tag: \"source_host\")",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "CPU Power Over Time",
+      "type": "timeseries",
+      "id": 1,
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-longterm"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"cpu_power\")",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "spanNulls": true
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "GPU Power Over Time",
+      "type": "timeseries",
+      "id": 2,
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-longterm"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"node_hwmon_power_average_watt\")\n  |> filter(fn: (r) => r.sensor == \"power1\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"gpu_power\")",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "spanNulls": true
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Daily Average Power by Host",
+      "type": "timeseries",
+      "id": 3,
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-longterm"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"daily_avg\")",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 50,
+            "gradientMode": "scheme"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Estimated Daily Energy Cost",
+      "type": "timeseries",
+      "id": 4,
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-longterm"
+      },
+      "targets": [
+        {
+          "query": "cpuPower = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n\n// Convert watts to kWh/day (W * 24h / 1000)\ncpuPower\n  |> map(fn: (r) => ({r with _value: r._value * 24.0 / 1000.0}))\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"daily_kwh\")",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "decimals": 2,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 50,
+            "gradientMode": "scheme"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      }
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "links": []
+}
