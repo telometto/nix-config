@@ -162,7 +162,7 @@ in
       };
 
       grafanaCloud = {
-        enable = true;
+        enable = false;
 
         username = "2710025";
         remoteWriteUrl = "https://prometheus-prod-39-prod-eu-north-0.grafana.net/api/prom/push";
