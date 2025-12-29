@@ -55,15 +55,15 @@
               },
               {
                 "color": "yellow",
-                "value": 80
+                "value": 65
               },
               {
                 "color": "orange",
-                "value": 120
+                "value": 105
               },
               {
                 "color": "red",
-                "value": 160
+                "value": 142
               }
             ]
           }
@@ -108,11 +108,11 @@
               },
               {
                 "color": "yellow",
-                "value": 100
+                "value": 150
               },
               {
                 "color": "orange",
-                "value": 180
+                "value": 200
               },
               {
                 "color": "red",
@@ -161,7 +161,7 @@
               },
               {
                 "color": "yellow",
-                "value": 150
+                "value": 200
               },
               {
                 "color": "orange",
@@ -169,7 +169,7 @@
               },
               {
                 "color": "red",
-                "value": 450
+                "value": 392
               }
             ]
           }
@@ -279,105 +279,178 @@
       }
     },
     {
-      "title": "CPU Power - Averages",
-      "type": "stat",
+      "title": "Power Averages",
+      "type": "table",
       "id": 5,
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 12,
         "x": 0,
         "y": 4
       },
       "targets": [
         {
           "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[1h:])",
-          "legendFormat": "1h avg",
-          "refId": "A"
+          "legendFormat": "CPU",
+          "refId": "A",
+          "instant": true,
+          "format": "table"
         },
         {
           "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:])",
-          "legendFormat": "24h avg",
-          "refId": "B"
-        }
-      ],
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
+          "legendFormat": "CPU",
+          "refId": "B",
+          "instant": true,
+          "format": "table"
         },
-        "orientation": "horizontal"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "watt",
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "title": "GPU Power - Averages",
-      "type": "stat",
-      "id": 6,
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 6,
-        "y": 4
-      },
-      "targets": [
         {
           "expr": "avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0)",
-          "legendFormat": "1h avg",
-          "refId": "A"
+          "legendFormat": "GPU",
+          "refId": "C",
+          "instant": true,
+          "format": "table"
         },
         {
           "expr": "avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[24h:]) or vector(0)",
-          "legendFormat": "24h avg",
-          "refId": "B"
+          "legendFormat": "GPU",
+          "refId": "D",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[1h:]) + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0))",
+          "legendFormat": "Total",
+          "refId": "E",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:]) + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[24h:]) or vector(0))",
+          "legendFormat": "Total",
+          "refId": "F",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value #A": "CPU 1h",
+              "Value #B": "CPU 24h",
+              "Value #C": "GPU 1h",
+              "Value #D": "GPU 24h",
+              "Value #E": "Total 1h",
+              "Value #F": "Total 24h"
+            },
+            "indexByName": {
+              "Value #A": 0,
+              "Value #B": 1,
+              "Value #C": 2,
+              "Value #D": 3,
+              "Value #E": 4,
+              "Value #F": 5
+            }
+          }
         }
       ],
       "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "orientation": "horizontal"
+        "showHeader": true,
+        "cellHeight": "md",
+        "footer": {
+          "show": false
+        }
       },
       "fieldConfig": {
         "defaults": {
           "unit": "watt",
           "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "CPU.*"
+            },
+            "properties": [
               {
-                "color": "purple",
-                "value": null
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "GPU.*"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "Total.*"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-yellow",
+                  "mode": "fixed"
+                }
               }
             ]
           }
-        }
+        ]
       }
     },
     {
-      "title": "Total - Averages",
+      "title": "Cost (Last Hour)",
       "type": "stat",
-      "id": 7,
+      "id": 14,
       "gridPos": {
         "h": 4,
         "w": 6,
@@ -386,14 +459,8 @@
       },
       "targets": [
         {
-          "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[1h:]) + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0))",
-          "legendFormat": "1h avg",
+          "expr": "(sum(increase(node_rapl_package_joules_total{instance=~\"$instance\"}[1h])) / 3600000 + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0)) * 3600 / 3600000) * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
           "refId": "A"
-        },
-        {
-          "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:]) + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[24h:]) or vector(0))",
-          "legendFormat": "24h avg",
-          "refId": "B"
         }
       ],
       "options": {
@@ -403,19 +470,30 @@
           "calcs": [
             "lastNotNull"
           ]
-        },
-        "orientation": "horizontal"
+        }
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "watt",
-          "decimals": 1,
+          "unit": "currencyNOK",
+          "decimals": 2,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "orange",
+                "color": "green",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
               }
             ]
           }
@@ -644,16 +722,38 @@
       "fieldConfig": {
         "defaults": {
           "unit": "NOK/kWh",
-          "decimals": 2,
+          "decimals": 4,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 15,
             "staircase": true,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "gradientMode": "scheme"
           },
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.9
+              },
+              {
+                "color": "orange",
+                "value": 1.1
+              },
+              {
+                "color": "red",
+                "value": 1.2
+              }
+            ]
           }
         }
       }
@@ -689,50 +789,17 @@
       "fieldConfig": {
         "defaults": {
           "unit": "kr/h",
-          "decimals": 2,
+          "decimals": 4,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 20,
-            "gradientMode": "opacity",
+            "gradientMode": "scheme",
             "showPoints": "never",
             "spanNulls": true
           },
           "color": {
-            "fixedColor": "green",
-            "mode": "fixed"
-          }
-        }
-      }
-    },
-    {
-      "title": "Cost (Last Hour)",
-      "type": "stat",
-      "id": 14,
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 4
-      },
-      "targets": [
-        {
-          "expr": "(sum(increase(node_rapl_package_joules_total{instance=~\"$instance\"}[1h])) / 3600000 + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0)) * 3600 / 3600000) * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyNOK",
-          "decimals": 2,
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -742,15 +809,15 @@
               },
               {
                 "color": "yellow",
-                "value": 5
+                "value": 0.3
               },
               {
                 "color": "orange",
-                "value": 15
+                "value": 0.5
               },
               {
                 "color": "red",
-                "value": 30
+                "value": 0.8
               }
             ]
           }
@@ -825,11 +892,11 @@
       }
     },
     {
-      "title": "Cost Heatmap (Weekly View)",
-      "type": "heatmap",
+      "title": "Cost State Timeline (Weekly View)",
+      "type": "state-timeline",
       "id": 16,
       "gridPos": {
-        "h": 8,
+        "h": 6,
         "w": 24,
         "x": 0,
         "y": 40
@@ -837,42 +904,54 @@
       "targets": [
         {
           "expr": "(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
-          "legendFormat": "Cost Rate",
+          "legendFormat": "Cost Rate (kr/h)",
           "refId": "A"
         }
       ],
       "options": {
-        "calculate": false,
-        "cellGap": 1,
-        "color": {
-          "mode": "scheme",
-          "scheme": "RdYlGn",
-          "reverse": true,
-          "fill": "opacity",
-          "exponent": 0.5
-        },
-        "yAxis": {
-          "axisPlacement": "left",
-          "reverse": false
+        "showValue": "auto",
+        "alignValue": "center",
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
-          "show": true,
-          "yHistogram": false
-        },
-        "legend": {
-          "show": true
-        },
-        "cellValues": {
-          "decimals": 2
+          "mode": "single"
         }
       },
       "fieldConfig": {
         "defaults": {
           "unit": "kr/h",
+          "decimals": 4,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.3
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 0.8
+              }
+            ]
+          },
           "custom": {
-            "scaleDistribution": {
-              "type": "linear"
-            }
+            "fillOpacity": 80
           }
         }
       }
