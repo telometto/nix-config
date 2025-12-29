@@ -168,6 +168,12 @@ in
         # Automatically configure Prometheus remote write
         prometheusRemoteWrite.enable = true;
 
+        # Telegraf settings for receiving remote writes
+        telegraf = {
+          listenAddress = "0.0.0.0"; # Accept from other hosts
+          openFirewall = true; # Open port 11014
+        };
+
         # Automatically add as Grafana datasource
         grafanaDatasource = {
           enable = true;

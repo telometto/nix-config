@@ -146,6 +146,21 @@ in
         default = 11014;
         description = "Port on which Telegraf listens for Prometheus remote write";
       };
+
+      listenAddress = lib.mkOption {
+        type = lib.types.str;
+        default = "127.0.0.1";
+        description = ''
+          Address on which Telegraf listens for Prometheus remote write.
+          Set to "0.0.0.0" to accept connections from remote hosts.
+        '';
+      };
+
+      openFirewall = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Open the firewall for Telegraf's Prometheus remote write port";
+      };
     };
 
     # Grafana datasource integration
@@ -211,7 +226,7 @@ in
       enable = true;
       prometheusRemoteWrite = {
         port = cfg.telegraf.port;
-        listenAddress = "127.0.0.1";
+        listenAddress = cfg.telegraf.listenAddress;
       };
       influxdb = {
         url = "http://127.0.0.1:${toString cfg.port}";
@@ -220,6 +235,9 @@ in
         tokenFile = cfg.initialSetup.tokenFile;
       };
     };
+
+    # Open firewall for Telegraf remote write if requested
+    networking.firewall.allowedTCPPorts = lib.mkIf cfg.telegraf.openFirewall [ cfg.telegraf.port ];
 
     # Configure Prometheus remote write to Telegraf (which forwards to InfluxDB)
     services.prometheus.remoteWrite =
