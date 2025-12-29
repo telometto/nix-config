@@ -29,7 +29,7 @@
       },
       "targets": [
         {
-          "expr": "rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])",
+          "expr": "sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]))",
           "refId": "A"
         }
       ],
@@ -82,7 +82,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (instance) (node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0)",
+          "expr": "sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0)",
           "refId": "A"
         }
       ],
@@ -290,12 +290,12 @@
       },
       "targets": [
         {
-          "expr": "avg_over_time(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m])[1h:])",
+          "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[1h:])",
           "legendFormat": "1h avg",
           "refId": "A"
         },
         {
-          "expr": "avg_over_time(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m])[24h:])",
+          "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:])",
           "legendFormat": "24h avg",
           "refId": "B"
         }
@@ -542,7 +542,7 @@
       },
       "targets": [
         {
-          "expr": "rate(node_rapl_core_joules_total{instance=~\"$instance\"}[$__rate_interval])",
+          "expr": "sum by (index) (rate(node_rapl_core_joules_total{instance=~\"$instance\"}[$__rate_interval]))",
           "legendFormat": "Core {{index}}",
           "refId": "A"
         }
@@ -895,7 +895,7 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "query": "label_values(node_rapl_package_joules_total, instance)",
+        "query": "label_values(up{job=\"node\"}, instance)",
         "current": {},
         "refresh": 2,
         "includeAll": true,
