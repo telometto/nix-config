@@ -261,6 +261,7 @@ in
           # Custom dashboards (locally maintained)
           "zfs-overview" = grafanaDashboards.custom.zfs-overview;
           "power-consumption" = grafanaDashboards.custom.power-consumption;
+          "power-consumption-historical" = grafanaDashboards.custom.power-consumption-historical;
         };
 
         reverseProxy = {
