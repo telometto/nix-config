@@ -1,5 +1,6 @@
 # Module for configuring Prometheus to remote write to a central InfluxDB instance
 # Use this on hosts that don't run InfluxDB but want to send metrics to one
+# Note: The remote host must be running Telegraf to receive Prometheus remote write
 {
   lib,
   config,
@@ -10,50 +11,64 @@ let
 in
 {
   options.telometto.services.influxdbRemoteWrite = {
-    enable = lib.mkEnableOption "Prometheus remote write to a central InfluxDB instance";
+    enable = lib.mkEnableOption "Prometheus remote write to a central InfluxDB instance via Telegraf";
 
-    influxdbHost = lib.mkOption {
+    telegrafHost = lib.mkOption {
       type = lib.types.str;
       default = "blizzard";
       description = ''
-        Hostname or IP address of the InfluxDB server.
+        Hostname or IP address of the Telegraf server (which forwards to InfluxDB).
         Can be a Tailscale hostname (e.g., "blizzard") or IP address.
       '';
       example = "192.168.1.100";
     };
 
+    telegrafPort = lib.mkOption {
+      type = lib.types.port;
+      default = 11014;
+      description = "Port on which the remote Telegraf listens for Prometheus remote write";
+    };
+
+    # Legacy options for backwards compatibility
+    influxdbHost = lib.mkOption {
+      type = lib.types.str;
+      default = cfg.telegrafHost;
+      description = "Deprecated: Use telegrafHost instead";
+      visible = false;
+    };
+
     influxdbPort = lib.mkOption {
       type = lib.types.port;
       default = 8086;
-      description = "Port on which the remote InfluxDB listens";
+      description = "Deprecated: Use telegrafPort instead. This is now ignored.";
+      visible = false;
     };
 
     organization = lib.mkOption {
       type = lib.types.str;
       default = "homelab";
-      description = "InfluxDB organization to write to";
+      description = "InfluxDB organization (for documentation, Telegraf handles this)";
     };
 
     bucket = lib.mkOption {
       type = lib.types.str;
       default = "prometheus";
-      description = "InfluxDB bucket to write Prometheus metrics to";
+      description = "InfluxDB bucket (for documentation, Telegraf handles this)";
     };
 
     tokenFile = lib.mkOption {
-      type = lib.types.path;
-      default = config.telometto.secrets.influxdbTokenFile or "/run/secrets/influxdb-token";
-      defaultText = lib.literalExpression "config.telometto.secrets.influxdbTokenFile";
+      type = lib.types.nullOr lib.types.path;
+      default = null;
       description = ''
-        Path to file containing the InfluxDB API token for authentication.
-        This should be the same token used by the central InfluxDB instance.
+        Deprecated: Token is no longer needed for remote write.
+        Telegraf on the receiving end handles authentication to InfluxDB.
       '';
     };
 
     useHttps = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Use HTTPS for the connection to InfluxDB";
+      description = "Use HTTPS for the connection to Telegraf";
     };
 
     queueConfig = {
@@ -111,9 +126,8 @@ in
           let
             protocol = if cfg.useHttps then "https" else "http";
           in
-          "${protocol}://${cfg.influxdbHost}:${toString cfg.influxdbPort}/api/v1/prom/write?org=${cfg.organization}&bucket=${cfg.bucket}";
-
-        bearer_token_file = cfg.tokenFile;
+          # Write to Telegraf's Prometheus remote write endpoint
+          "${protocol}://${cfg.telegrafHost}:${toString cfg.telegrafPort}/api/v1/write";
 
         queue_config = {
           capacity = cfg.queueConfig.capacity;
