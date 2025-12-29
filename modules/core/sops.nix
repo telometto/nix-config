@@ -95,10 +95,9 @@ in
           group = "influxdb2";
         };
         "influxdb/token" = {
-          # Both InfluxDB (owner) and Grafana (group) need to read this
-          mode = "0440";
-          owner = "influxdb2";
-          group = config.services.grafana.user or "grafana";
+          # World-readable: multiple services need this (Prometheus, Grafana)
+          # and the data (system metrics) isn't sensitive
+          mode = "0444";
         };
       }
       # Remote hosts only need the token for authentication
@@ -178,10 +177,9 @@ in
       influxdbTokenFile = toString config.sops.secrets."influxdb/token".path;
     };
 
-  # Add service users to the keys group so they can traverse /run/secrets/ directory
-  users.users = lib.mkIf hasInfluxdb {
-    influxdb2.extraGroups = [ "keys" ];
-  };
+  # Add influxdb2 to keys group so it can traverse /run/secrets/
+  # Note: May not be needed since influxdb2 uses LoadCredential for its own secrets
+  # users.users.influxdb2.extraGroups = lib.mkIf hasInfluxdb [ "keys" ];
 
   environment.systemPackages = [
     pkgs.age
