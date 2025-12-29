@@ -101,6 +101,26 @@ in
             }
           ];
 
+          # Processor: Convert strings to match InfluxDB requirements
+          # Prometheus histograms/summaries can have +Inf which causes serialization issues
+          processors.strings = [
+            {
+              namepass = [ "*" ];
+              replace = [
+                {
+                  tag = "le";
+                  old = "+Inf";
+                  new = "inf";
+                }
+                {
+                  tag = "quantile";
+                  old = "+Inf";
+                  new = "inf";
+                }
+              ];
+            }
+          ];
+
           # Output: InfluxDB v2
           outputs.influxdb_v2 = [
             {
