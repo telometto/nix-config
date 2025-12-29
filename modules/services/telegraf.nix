@@ -72,9 +72,6 @@ in
       enable = true;
       inherit (cfg) package;
 
-      # Use environment file to inject the token securely
-      environmentFiles = [ ];
-
       extraConfig = lib.mkMerge [
         {
           # Global agent configuration
@@ -101,11 +98,11 @@ in
           ];
 
           # Output: InfluxDB v2
+          # Token is read directly from file using @path syntax
           outputs.influxdb_v2 = [
             {
               urls = [ cfg.influxdb.url ];
-              # Token will be read from the file at runtime
-              token = "$INFLUX_TOKEN";
+              token = "@${cfg.influxdb.tokenFile}";
               organization = cfg.influxdb.organization;
               bucket = cfg.influxdb.bucket;
             }
@@ -115,27 +112,13 @@ in
       ];
     };
 
-    # Create a wrapper script to read the token and set it as an environment variable
+    # Ensure telegraf starts after influxdb if it's enabled
     systemd.services.telegraf = {
-      serviceConfig = {
-        ExecStartPre = lib.mkBefore [
-          (pkgs.writeShellScript "telegraf-load-token" ''
-            if [ -f "${cfg.influxdb.tokenFile}" ]; then
-              echo "INFLUX_TOKEN=$(cat ${cfg.influxdb.tokenFile})" > /run/telegraf/env
-            else
-              echo "Warning: Token file not found at ${cfg.influxdb.tokenFile}" >&2
-            fi
-          '')
-        ];
-        EnvironmentFile = [ "/run/telegraf/env" ];
-        RuntimeDirectory = "telegraf";
-      };
-      # Ensure telegraf starts after influxdb if it's enabled
       after = lib.mkIf (influxdbCfg.enable or false) [ "influxdb2.service" ];
       wants = lib.mkIf (influxdbCfg.enable or false) [ "influxdb2.service" ];
     };
 
-    # Add telegraf user to the group that can read secrets if needed
+    # Add telegraf user to the group that can read secrets
     users.users.telegraf.extraGroups = [ "keys" ];
   };
 }
