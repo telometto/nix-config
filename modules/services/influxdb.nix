@@ -114,18 +114,37 @@ in
       '';
     };
 
-    # Prometheus remote write integration
+    # Prometheus remote write integration (via Telegraf)
     prometheusRemoteWrite = {
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Configure Prometheus to remote write to this InfluxDB instance";
+        description = "Configure Prometheus to remote write to InfluxDB via Telegraf";
       };
 
       bucket = lib.mkOption {
         type = lib.types.str;
         default = "prometheus";
         description = "InfluxDB bucket to write Prometheus metrics to";
+      };
+    };
+
+    # Telegraf integration for Prometheus remote write
+    telegraf = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Enable Telegraf as a Prometheus remote write receiver.
+          InfluxDB 2.x OSS doesn't have a native Prometheus remote write endpoint,
+          so Telegraf acts as a translator.
+        '';
+      };
+
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 11014;
+        description = "Port on which Telegraf listens for Prometheus remote write";
       };
     };
 
@@ -187,13 +206,28 @@ in
       };
     };
 
-    # Configure Prometheus remote write to InfluxDB
+    # Enable Telegraf as Prometheus remote write receiver
+    telometto.services.telegraf = lib.mkIf (cfg.prometheusRemoteWrite.enable && cfg.telegraf.enable) {
+      enable = true;
+      prometheusRemoteWrite = {
+        port = cfg.telegraf.port;
+        listenAddress = "127.0.0.1";
+      };
+      influxdb = {
+        url = "http://127.0.0.1:${toString cfg.port}";
+        organization = cfg.initialSetup.organization;
+        bucket = cfg.prometheusRemoteWrite.bucket;
+        tokenFile = cfg.initialSetup.tokenFile;
+      };
+    };
+
+    # Configure Prometheus remote write to Telegraf (which forwards to InfluxDB)
     services.prometheus.remoteWrite =
-      lib.mkIf (cfg.prometheusRemoteWrite.enable && config.services.prometheus.enable or false)
+      lib.mkIf (cfg.prometheusRemoteWrite.enable && cfg.telegraf.enable && config.services.prometheus.enable or false)
         [
           {
-            url = "http://127.0.0.1:${toString cfg.port}/api/v1/prom/write?org=${cfg.initialSetup.organization}&bucket=${cfg.prometheusRemoteWrite.bucket}";
-            bearer_token_file = cfg.initialSetup.tokenFile;
+            # Write to Telegraf, not directly to InfluxDB
+            url = "http://127.0.0.1:${toString cfg.telegraf.port}/api/v1/write";
 
             queue_config = {
               capacity = 10000;
