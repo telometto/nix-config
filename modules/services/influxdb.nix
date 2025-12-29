@@ -263,7 +263,7 @@ in
             write_relabel_configs = [
               {
                 source_labels = [ "__address__" ];
-                target_label = "instance";
+                target_label = "source_host";
                 replacement = config.networking.hostName;
               }
             ];
