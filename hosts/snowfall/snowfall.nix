@@ -171,8 +171,7 @@ in
       # Remote write metrics to central InfluxDB on Blizzard for long-term storage
       influxdbRemoteWrite = {
         enable = true;
-        influxdbHost = "blizzard"; # Tailscale hostname
-        # Using default port 8086 due to upstream NixOS bug
+        telegrafHost = "blizzard"; # Tailscale hostname
         organization = "homelab";
         bucket = "prometheus";
       };
