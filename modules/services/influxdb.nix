@@ -223,7 +223,12 @@ in
 
     # Configure Prometheus remote write to Telegraf (which forwards to InfluxDB)
     services.prometheus.remoteWrite =
-      lib.mkIf (cfg.prometheusRemoteWrite.enable && cfg.telegraf.enable && config.services.prometheus.enable or false)
+      lib.mkIf
+        (
+          cfg.prometheusRemoteWrite.enable
+          && cfg.telegraf.enable
+          && config.services.prometheus.enable or false
+        )
         [
           {
             # Write to Telegraf, not directly to InfluxDB
