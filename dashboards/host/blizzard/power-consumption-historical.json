@@ -20,10 +20,7 @@
       {
         "name": "host",
         "type": "query",
-        "datasource": {
-          "type": "influxdb",
-          "uid": "influxdb-longterm"
-        },
+        "datasource": "InfluxDB (Long-term)",
         "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"prometheus\", tag: \"source_host\")",
         "refresh": 1,
         "includeAll": true,
@@ -47,10 +44,7 @@
         "x": 0,
         "y": 0
       },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "influxdb-longterm"
-      },
+      "datasource": "InfluxDB (Long-term)",
       "targets": [
         {
           "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"cpu_power\")",
@@ -96,10 +90,7 @@
         "x": 0,
         "y": 10
       },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "influxdb-longterm"
-      },
+      "datasource": "InfluxDB (Long-term)",
       "targets": [
         {
           "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"node_hwmon_power_average_watt\")\n  |> filter(fn: (r) => r.sensor == \"power1\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"gpu_power\")",
@@ -145,10 +136,7 @@
         "x": 0,
         "y": 20
       },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "influxdb-longterm"
-      },
+      "datasource": "InfluxDB (Long-term)",
       "targets": [
         {
           "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"daily_avg\")",
@@ -192,10 +180,7 @@
         "x": 12,
         "y": 20
       },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "influxdb-longterm"
-      },
+      "datasource": "InfluxDB (Long-term)",
       "targets": [
         {
           "query": "cpuPower = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n\n// Convert watts to kWh/day (W * 24h / 1000)\ncpuPower\n  |> map(fn: (r) => ({r with _value: r._value * 24.0 / 1000.0}))\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"daily_kwh\")",

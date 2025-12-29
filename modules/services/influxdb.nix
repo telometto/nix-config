@@ -277,7 +277,6 @@ in
           {
             name = cfg.grafanaDatasource.name;
             type = "influxdb";
-            uid = "influxdb-longterm";
             access = "proxy";
             url = "http://127.0.0.1:${toString cfg.port}";
             jsonData = {
