@@ -72,6 +72,10 @@ in
       enable = true;
       inherit (cfg) package;
 
+      # Setting environmentFiles causes the upstream module to copy config to /var/run/telegraf/config.toml
+      # We use /dev/null as a dummy since we do our own secret substitution
+      environmentFiles = [ "/dev/null" ];
+
       extraConfig = lib.mkMerge [
         {
           # Global agent configuration
@@ -98,11 +102,11 @@ in
           ];
 
           # Output: InfluxDB v2
-          # Token is read directly from file using @path syntax
           outputs.influxdb_v2 = [
             {
               urls = [ cfg.influxdb.url ];
-              token = "@${cfg.influxdb.tokenFile}";
+              # Placeholder that gets replaced by replace-secret in ExecStartPre
+              token = "@INFLUX_TOKEN@";
               organization = cfg.influxdb.organization;
               bucket = cfg.influxdb.bucket;
             }
@@ -112,13 +116,23 @@ in
       ];
     };
 
-    # Ensure telegraf starts after influxdb if it's enabled
+    # Configure systemd service
     systemd.services.telegraf = {
+      serviceConfig = {
+        # Run replace-secret after the config is copied to /var/run/telegraf/config.toml
+        # but before telegraf starts
+        ExecStartPre = lib.mkAfter [
+          (pkgs.writeShellScript "telegraf-inject-secrets" ''
+            ${lib.getExe pkgs.replace-secret} \
+              '@INFLUX_TOKEN@' \
+              '${cfg.influxdb.tokenFile}' \
+              /var/run/telegraf/config.toml
+          '')
+        ];
+      };
+      # Ensure telegraf starts after influxdb if it's enabled
       after = lib.mkIf (influxdbCfg.enable or false) [ "influxdb2.service" ];
       wants = lib.mkIf (influxdbCfg.enable or false) [ "influxdb2.service" ];
     };
-
-    # Add telegraf user to the group that can read secrets
-    users.users.telegraf.extraGroups = [ "keys" ];
   };
 }
