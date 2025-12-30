@@ -1,14 +1,14 @@
 {
   "title": "Power Consumption (Historical)",
   "uid": "power-historical",
-  "description": "Long-term historical power monitoring from InfluxDB",
+  "description": "Long-term historical power monitoring from InfluxDB. Note: Daily panels require multi-day time ranges for meaningful data.",
   "tags": [
     "power",
     "historical",
     "influxdb"
   ],
   "editable": true,
-  "schemaVersion": 38,
+  "schemaVersion": 41,
   "refresh": "",
   "time": {
     "from": "now-30d",
@@ -47,15 +47,20 @@
       "datasource": "InfluxDB (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> rename(columns: {_value: \"CPU Power\"})\n  |> yield(name: \"cpu_power\")",
+          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> yield(name: \"cpu_power\")",
           "refId": "A"
         }
       ],
       "options": {
         "legend": {
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
         },
         "tooltip": {
           "mode": "multi",
@@ -69,15 +74,114 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 10,
+            "fillOpacity": 0,
             "gradientMode": "scheme",
-            "spanNulls": true
+            "spanNulls": true,
+            "lineWidth": 2
           },
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 35
+              },
+              {
+                "color": "orange",
+                "value": 65
+              },
+              {
+                "color": "red",
+                "value": 95
+              }
+            ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "blizzard"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 35
+                    },
+                    {
+                      "color": "orange",
+                      "value": 65
+                    },
+                    {
+                      "color": "red",
+                      "value": 95
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "snowfall"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#00FFFF",
+                      "value": null
+                    },
+                    {
+                      "color": "#008080",
+                      "value": 40
+                    },
+                    {
+                      "color": "#0000FF",
+                      "value": 70
+                    },
+                    {
+                      "color": "#800080",
+                      "value": 90
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -93,15 +197,20 @@
       "datasource": "InfluxDB (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_hwmon_power_average_watt\")\n  |> filter(fn: (r) => r.sensor == \"power1\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> rename(columns: {_value: \"GPU Power\"})\n  |> yield(name: \"gpu_power\")",
+          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_hwmon_power_average_watt\")\n  |> filter(fn: (r) => r.sensor == \"power1\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> yield(name: \"gpu_power\")",
           "refId": "A"
         }
       ],
       "options": {
         "legend": {
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
         },
         "tooltip": {
           "mode": "multi",
@@ -115,20 +224,43 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 10,
-            "gradientMode": "scheme",
-            "spanNulls": true
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "spanNulls": true,
+            "lineWidth": 2
           },
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#00FFFF",
+                "value": null
+              },
+              {
+                "color": "#008080",
+                "value": 30
+              },
+              {
+                "color": "#0000FF",
+                "value": 100
+              },
+              {
+                "color": "#800080",
+                "value": 200
+              }
+            ]
           }
         },
         "overrides": []
       }
     },
     {
-      "title": "Daily Average Power by Host",
-      "type": "timeseries",
+      "title": "Daily Average Power by Host (use 7d+ range)",
+      "description": "Average CPU power per calendar day. Best viewed with 7+ day time ranges.",
+      "type": "barchart",
       "id": 3,
       "gridPos": {
         "h": 10,
@@ -139,15 +271,24 @@
       "datasource": "InfluxDB (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> rename(columns: {_value: \"Avg Power\"})\n  |> yield(name: \"daily_avg\")",
+          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\", \"_time\"])\n  |> sum()\n  |> group(columns: [\"source_host\"])\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> yield(name: \"daily_avg\")",
           "refId": "A"
         }
       ],
       "options": {
+        "orientation": "vertical",
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "stacking": "none",
+        "showValue": "auto",
+        "xTickLabelRotation": -45,
         "legend": {
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "calcs": [
+            "mean"
+          ]
         },
         "tooltip": {
           "mode": "multi",
@@ -158,11 +299,6 @@
         "defaults": {
           "unit": "watt",
           "decimals": 1,
-          "custom": {
-            "drawStyle": "bars",
-            "fillOpacity": 50,
-            "gradientMode": "scheme"
-          },
           "color": {
             "mode": "palette-classic"
           }
@@ -171,8 +307,9 @@
       }
     },
     {
-      "title": "Estimated Daily Energy Cost",
-      "type": "timeseries",
+      "title": "Daily Energy Estimate by Host (use 7d+ range)",
+      "description": "Estimated daily energy consumption (avg watts × 24h). Best viewed with 7+ day time ranges.",
+      "type": "barchart",
       "id": 4,
       "gridPos": {
         "h": 10,
@@ -183,15 +320,25 @@
       "datasource": "InfluxDB (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({r with _value: r._value * 24.0 / 1000.0}))\n  |> group(columns: [\"source_host\"])\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> rename(columns: {_value: \"Energy\"})\n  |> yield(name: \"daily_kwh\")",
+          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\", \"_time\"])\n  |> sum()\n  |> group(columns: [\"source_host\"])\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({r with _value: r._value * 24.0 / 1000.0}))\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> yield(name: \"daily_kwh\")",
           "refId": "A"
         }
       ],
       "options": {
+        "orientation": "vertical",
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "stacking": "none",
+        "showValue": "auto",
+        "xTickLabelRotation": -45,
         "legend": {
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "sum"
+          ]
         },
         "tooltip": {
           "mode": "multi",
@@ -202,13 +349,387 @@
         "defaults": {
           "unit": "kwatth",
           "decimals": 2,
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Electricity Price History (NOK/kWh)",
+      "type": "timeseries",
+      "id": 5,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "datasource": "InfluxDB (Long-term)",
+      "targets": [
+        {
+          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"electricity_price_nok_per_kwh\")\n  |> filter(fn: (r) => r.tax == \"incl_mva\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\"])\n  |> yield(name: \"price\")",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "min",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "NOK/kWh",
+          "decimals": 4,
+          "displayName": "Price (incl. MVA)",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "spanNulls": false,
+            "lineWidth": 2
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.9
+              },
+              {
+                "color": "orange",
+                "value": 1.1
+              },
+              {
+                "color": "red",
+                "value": 1.2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Daily Energy Cost (Actual)",
+      "description": "Actual daily energy cost calculated by multiplying hourly power consumption with the electricity price at that hour",
+      "type": "timeseries",
+      "id": 6,
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      },
+      "datasource": "InfluxDB (Long-term)",
+      "targets": [
+        {
+          "query": "import \"date\"\nimport \"experimental\"\n\n// Get hourly average power in watts, truncate to hour boundary\npower = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({r with _time: date.truncate(t: r._time, unit: 1h)}))\n  |> group(columns: [\"source_host\", \"_time\"])\n  |> sum()\n  |> group(columns: [\"source_host\"])\n\n// Get hourly price, truncate to hour boundary\nprice = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"electricity_price_nok_per_kwh\")\n  |> filter(fn: (r) => r.tax == \"incl_mva\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({r with _time: date.truncate(t: r._time, unit: 1h)}))\n  |> group(columns: [\"_time\"])\n  |> mean()\n  |> group()\n\n// Join power and price, calculate hourly cost, then sum per day\nexperimental.join(\n  left: power,\n  right: price,\n  fn: (left, right) => ({left with price: right._value})\n)\n  |> map(fn: (r) => ({r with _value: r._value / 1000.0 * r.price}))\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"daily_cost\")",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyNOK",
+          "decimals": 2,
           "custom": {
             "drawStyle": "bars",
-            "fillOpacity": 50,
-            "gradientMode": "scheme"
+            "fillOpacity": 70,
+            "gradientMode": "none"
           },
           "color": {
             "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Hourly Cost Over Time",
+      "description": "Cost rate (NOK/hour) based on actual power consumption and electricity price",
+      "type": "timeseries",
+      "id": 7,
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "datasource": "InfluxDB (Long-term)",
+      "targets": [
+        {
+          "query": "import \"date\"\nimport \"experimental\"\n\n// Get power in watts, aggregated to 1h windows\npower = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({r with _time: date.truncate(t: r._time, unit: 1h)}))\n  |> group(columns: [\"source_host\", \"_time\"])\n  |> sum()\n  |> group(columns: [\"source_host\"])\n\n// Get electricity price, aggregated to 1h windows\nprice = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"electricity_price_nok_per_kwh\")\n  |> filter(fn: (r) => r.tax == \"incl_mva\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({r with _time: date.truncate(t: r._time, unit: 1h)}))\n  |> group(columns: [\"_time\"])\n  |> mean()\n  |> group()\n\n// Join and calculate cost rate (NOK/hour)\nexperimental.join(\n  left: power,\n  right: price,\n  fn: (left, right) => ({left with price: right._value})\n)\n  |> map(fn: (r) => ({r with _value: r._value / 1000.0 * r.price}))  // kW * NOK/kWh = NOK/hour\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"cost_rate\")",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyNOK",
+          "decimals": 3,
+          "displayName": "Cost (NOK/h)",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "spanNulls": false,
+            "lineWidth": 2
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.03
+              },
+              {
+                "color": "orange",
+                "value": 0.05
+              },
+              {
+                "color": "red",
+                "value": 0.08
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Cumulative Cost (Selected Period)",
+      "description": "Total accumulated cost over the selected time period",
+      "type": "stat",
+      "id": 8,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 48
+      },
+      "datasource": "InfluxDB (Long-term)",
+      "targets": [
+        {
+          "query": "import \"date\"\nimport \"experimental\"\n\n// Get hourly power (all hosts summed)\npower = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({r with _time: date.truncate(t: r._time, unit: 1h)}))\n  |> group(columns: [\"_time\"])\n  |> sum()\n  |> group()\n\n// Get hourly price\nprice = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"electricity_price_nok_per_kwh\")\n  |> filter(fn: (r) => r.tax == \"incl_mva\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({r with _time: date.truncate(t: r._time, unit: 1h)}))\n  |> group(columns: [\"_time\"])\n  |> mean()\n  |> group()\n\n// Join, calculate hourly cost, sum total\nexperimental.join(\n  left: power,\n  right: price,\n  fn: (left, right) => ({left with price: right._value})\n)\n  |> map(fn: (r) => ({r with _value: r._value / 1000.0 * r.price}))\n  |> sum()\n  |> yield(name: \"total_cost\")",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyNOK",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Average Price (Selected Period)",
+      "description": "Average electricity price over the selected time period",
+      "type": "stat",
+      "id": 9,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 48
+      },
+      "datasource": "InfluxDB (Long-term)",
+      "targets": [
+        {
+          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"electricity_price_nok_per_kwh\")\n  |> filter(fn: (r) => r.tax == \"incl_mva\")\n  |> mean()\n  |> yield(name: \"avg_price\")",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyNOK",
+          "decimals": 3,
+          "displayName": "Avg NOK/kWh",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 1.0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Total Energy (Selected Period)",
+      "description": "Total energy consumed over the selected time period",
+      "type": "stat",
+      "id": 10,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 48
+      },
+      "datasource": "InfluxDB (Long-term)",
+      "targets": [
+        {
+          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> group()\n  |> map(fn: (r) => ({r with _value: r._value / 1000.0}))  // W to kW\n  |> sum()  // Sum kW*hours = kWh\n  |> yield(name: \"total_kwh\")",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "decimals": 2,
+          "displayName": "Total kWh",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
           }
         },
         "overrides": []

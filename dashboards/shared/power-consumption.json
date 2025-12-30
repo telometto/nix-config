@@ -1,15 +1,15 @@
 {
   "title": "Power Consumption",
   "uid": "power-consumption",
-  "description": "Real-time and historical power monitoring for CPU (RAPL) and GPU (hwmon)",
+  "description": "Real-time power monitoring for CPU (RAPL) and GPU (hwmon). Works across all hosts with RAPL support.",
   "tags": [
     "power",
-    "amd",
     "rapl",
-    "monitoring"
+    "monitoring",
+    "shared"
   ],
   "editable": true,
-  "schemaVersion": 38,
+  "schemaVersion": 41,
   "refresh": "5s",
   "time": {
     "from": "now-1h",
@@ -29,7 +29,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]))",
+          "expr": "sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]))",
           "refId": "A"
         }
       ],
@@ -82,7 +82,7 @@
       },
       "targets": [
         {
-          "expr": "sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0)",
+          "expr": "sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) > vector(0)",
           "refId": "A"
         }
       ],
@@ -135,7 +135,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))",
+          "expr": "sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))",
           "refId": "A"
         }
       ],
@@ -188,7 +188,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * 24 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
+          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * 24 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
           "refId": "A"
         }
       ],
@@ -223,6 +223,72 @@
             ]
           }
         }
+      }
+    },
+    {
+      "title": "Peak CPU (24h)",
+      "type": "stat",
+      "id": 17,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "max_over_time(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:1m])",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "decimals": 1
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Peak Total (24h)",
+      "type": "stat",
+      "id": 18,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "max_over_time((sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0)))[24h:1m])",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "decimals": 1
+        },
+        "overrides": []
       }
     },
     {
@@ -290,14 +356,14 @@
       },
       "targets": [
         {
-          "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[1h:])",
+          "expr": "avg_over_time(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[1h:])",
           "legendFormat": "CPU",
           "refId": "A",
           "instant": true,
           "format": "table"
         },
         {
-          "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:])",
+          "expr": "avg_over_time(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:])",
           "legendFormat": "CPU",
           "refId": "B",
           "instant": true,
@@ -318,14 +384,14 @@
           "format": "table"
         },
         {
-          "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[1h:]) + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0))",
+          "expr": "avg_over_time(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[1h:]) + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0))",
           "legendFormat": "Total",
           "refId": "E",
           "instant": true,
           "format": "table"
         },
         {
-          "expr": "avg_over_time(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:]) + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[24h:]) or vector(0))",
+          "expr": "avg_over_time(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:]) + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[24h:]) or vector(0))",
           "legendFormat": "Total",
           "refId": "F",
           "instant": true,
@@ -502,6 +568,7 @@
     },
     {
       "title": "Power Consumption Over Time",
+      "description": "Note: Legend stats (mean/max) use adaptive resolution. For longer time ranges, data is downsampled which may hide brief spikes. Use shorter ranges for accurate peak detection.",
       "type": "timeseries",
       "id": 8,
       "gridPos": {
@@ -512,7 +579,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]))",
+          "expr": "sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]))",
           "legendFormat": "CPU",
           "refId": "A"
         },
@@ -522,7 +589,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))",
+          "expr": "sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))",
           "legendFormat": "Total",
           "refId": "C"
         }
@@ -680,7 +747,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "kwatth",
-          "decimals": 3,
+          "decimals": 1,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 20,
@@ -770,7 +837,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
+          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Cost Rate",
           "refId": "A"
         }
@@ -903,7 +970,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(rate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
+          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Cost Rate (kr/h)",
           "refId": "A"
         }
@@ -925,7 +992,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "kr/h",
-          "decimals": 4,
+          "decimals": 2,
           "color": {
             "mode": "thresholds"
           },
