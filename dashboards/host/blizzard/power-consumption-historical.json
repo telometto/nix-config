@@ -260,9 +260,9 @@
       }
     },
     {
-      "title": "Daily Average Power by Host (use 7d+ range)",
-      "description": "Average CPU power per calendar day. Best viewed with 7+ day time ranges.",
-      "type": "barchart",
+      "title": "Average Power by Host",
+      "description": "Average CPU power aggregated by the selected interval. Use longer time ranges for daily view.",
+      "type": "timeseries",
       "id": 3,
       "gridPos": {
         "h": 10,
@@ -273,18 +273,12 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "avg_over_time(sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[5m]))[1d:1h])",
+          "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval]))",
           "legendFormat": "{{source_host}}",
           "refId": "A"
         }
       ],
       "options": {
-        "orientation": "vertical",
-        "barWidth": 0.8,
-        "groupWidth": 0.7,
-        "stacking": "none",
-        "showValue": "auto",
-        "xTickLabelRotation": -45,
         "legend": {
           "displayMode": "table",
           "placement": "bottom",
@@ -302,6 +296,14 @@
         "defaults": {
           "unit": "watt",
           "decimals": 1,
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 70,
+            "lineWidth": 0,
+            "pointSize": 5,
+            "showPoints": "never"
+          },
           "color": {
             "mode": "palette-classic"
           }
@@ -310,9 +312,9 @@
       }
     },
     {
-      "title": "Daily Energy Estimate by Host (use 7d+ range)",
-      "description": "Estimated daily energy consumption (avg watts × 24h). Best viewed with 7+ day time ranges.",
-      "type": "barchart",
+      "title": "Energy Estimate by Host",
+      "description": "Estimated energy consumption (power × time). Legend shows totals over selected period.",
+      "type": "timeseries",
       "id": 4,
       "gridPos": {
         "h": 10,
@@ -323,18 +325,12 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "avg_over_time(sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[5m]))[1d:1h]) * 24 / 1000",
+          "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval])) / 1000",
           "legendFormat": "{{source_host}}",
           "refId": "A"
         }
       ],
       "options": {
-        "orientation": "vertical",
-        "barWidth": 0.8,
-        "groupWidth": 0.7,
-        "stacking": "none",
-        "showValue": "auto",
-        "xTickLabelRotation": -45,
         "legend": {
           "displayMode": "table",
           "placement": "bottom",
@@ -351,8 +347,16 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "kwatth",
-          "decimals": 2,
+          "unit": "kwatt",
+          "decimals": 3,
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 70,
+            "lineWidth": 0,
+            "pointSize": 5,
+            "showPoints": "never"
+          },
           "color": {
             "mode": "palette-classic"
           }
@@ -373,7 +377,7 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "expr": "max(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Price (incl. MVA)",
           "refId": "A"
         }
@@ -391,15 +395,14 @@
           ]
         },
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         }
       },
       "fieldConfig": {
         "defaults": {
           "unit": "NOK/kWh",
           "decimals": 4,
-          "displayName": "Price (incl. MVA)",
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "stepAfter",
@@ -450,7 +453,7 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "sum_over_time(\n  (\n    sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h]))\n    / 1000\n    * on() group_left electricity_price_nok_per_kwh{tax=\"incl_mva\"}\n  )[1d:1h]\n)",
+          "expr": "sum_over_time((sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h])) / 1000)[1d:1h]) * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "{{source_host}}",
           "refId": "A"
         }
@@ -512,7 +515,7 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval])) / 1000 * on() group_left electricity_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval])) / 1000 * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "{{source_host}}",
           "refId": "A"
         }
@@ -675,7 +678,7 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "sum(\n  sum_over_time(\n    (\n      sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h]))\n      / 1000\n      * on() group_left electricity_price_nok_per_kwh{tax=\"incl_mva\"}\n    )[$__range:1h]\n  )\n)",
+          "expr": "sum(sum_over_time((sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h])) / 1000)[$__range:1h])) * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "Total Cost",
           "refId": "A"
         }
@@ -736,7 +739,7 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "avg_over_time(electricity_price_nok_per_kwh{tax=\"incl_mva\"}[$__range])",
+          "expr": "avg_over_time(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"})[$__range])",
           "legendFormat": "Avg Price",
           "refId": "A"
         }
