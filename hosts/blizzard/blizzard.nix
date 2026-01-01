@@ -144,7 +144,7 @@ in
       # Replaces InfluxDB + Telegraf with a simpler, more performant solution
       victoriametrics = {
         enable = true;
-        port = 8428;
+        # port = 11008; # default, in monitoring stack port range (11008-11014)
 
         # Listen on all interfaces to allow remote write from other hosts via Tailscale
         listenAddress = "0.0.0.0";

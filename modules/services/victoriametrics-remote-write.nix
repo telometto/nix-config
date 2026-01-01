@@ -24,7 +24,7 @@ in
 
     vmPort = lib.mkOption {
       type = lib.types.port;
-      default = 8428;
+      default = 11008;
       description = "Port on which the remote VictoriaMetrics listens";
     };
 
