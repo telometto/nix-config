@@ -140,44 +140,32 @@ in
         priceArea = "NO2";
       };
 
-      influxdb = {
+      # VictoriaMetrics for long-term metrics storage
+      # Replaces InfluxDB + Telegraf with a simpler, more performant solution
+      victoriametrics = {
         enable = true;
-        # Note: Using default port 8086 due to upstream NixOS bug that hardcodes
-        # this port in the wait-until-service-is-ready script
-        # port = 8086; # default
+        port = 8428;
 
         # Listen on all interfaces to allow remote write from other hosts via Tailscale
         listenAddress = "0.0.0.0";
         openFirewall = true; # Allow other hosts to connect
 
-        initialSetup = {
-          organization = "homelab";
-          bucket = "prometheus";
-          username = "admin";
-          retention = 0; # Infinite retention for long-term historical data
-        };
+        # Retain metrics for 1 year (adjust as needed)
+        retentionPeriod = "1y";
 
-        # Additional buckets for different retention policies (optional)
-        extraBuckets = {
-          metrics-30d = {
-            description = "High-resolution metrics (30 day retention)";
-            retention = 2592000; # 30 days in seconds
-          };
-        };
-
-        # Automatically configure Prometheus remote write
+        # Automatically configure local Prometheus remote write
         prometheusRemoteWrite.enable = true;
 
-        # Telegraf settings for receiving remote writes
-        telegraf = {
-          listenAddress = "0.0.0.0"; # Accept from other hosts
-          openFirewall = true; # Open port 11014
+        # Deduplication for metrics from multiple Prometheus instances
+        dedup = {
+          enable = true;
+          minScrapeInterval = "1ms";
         };
 
         # Automatically add as Grafana datasource
         grafanaDatasource = {
           enable = true;
-          name = "InfluxDB (Long-term)";
+          name = "VictoriaMetrics (Long-term)";
         };
       };
 

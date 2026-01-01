@@ -89,13 +89,10 @@ in
         };
       };
 
-      # Remote write metrics to central InfluxDB on Blizzard for long-term storage
-      influxdbRemoteWrite = {
+      # Remote write metrics to central VictoriaMetrics on Blizzard for long-term storage
+      victoriametricsRemoteWrite = {
         enable = true;
-        influxdbHost = "blizzard"; # Tailscale hostname
-        # Using default port 8086 due to upstream NixOS bug
-        organization = "homelab";
-        bucket = "prometheus";
+        vmHost = "blizzard"; # Tailscale hostname
       };
 
       # nfs = {
