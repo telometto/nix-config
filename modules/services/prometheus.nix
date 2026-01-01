@@ -113,6 +113,18 @@ in
             ];
           }
         ]
+        ++ lib.optionals (config.telometto.services.prometheusExporters.nvidia.enable or false) [
+          {
+            job_name = "nvidia-gpu";
+            static_configs = [
+              {
+                targets = [
+                  "localhost:${toString config.telometto.services.prometheusExporters.nvidia.port}"
+                ];
+              }
+            ];
+          }
+        ]
         ++ cfg.extraScrapeConfigs;
     };
 
