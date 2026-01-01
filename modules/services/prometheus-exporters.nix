@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, pkgs, ... }:
 let
   cfg = config.telometto.services.prometheusExporters;
 in
@@ -83,6 +83,24 @@ in
         ];
       };
     };
+
+    nvidia = {
+      enable = lib.mkEnableOption "Prometheus NVIDIA GPU Exporter";
+
+      package = lib.mkPackageOption pkgs "prometheus-nvidia-gpu-exporter" { };
+
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 9835;
+        description = "Port on which the NVIDIA GPU exporter listens";
+      };
+
+      openFirewall = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Open firewall for NVIDIA GPU exporter port";
+      };
+    };
   };
 
   config = lib.mkMerge [
@@ -122,6 +140,34 @@ in
         enable = lib.mkDefault true;
         inherit (cfg.zfs) port openFirewall pools;
       };
+    })
+
+    (lib.mkIf cfg.nvidia.enable {
+      assertions = [
+        {
+          assertion = config.hardware.nvidia.package != null;
+          message = "NVIDIA GPU exporter requires NVIDIA drivers to be configured (hardware.nvidia.package)";
+        }
+      ];
+
+      systemd.services.prometheus-nvidia-gpu-exporter = {
+        description = "Prometheus NVIDIA GPU Exporter";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
+        serviceConfig = {
+          Type = "simple";
+          ExecStart = "${cfg.nvidia.package}/bin/nvidia_gpu_exporter --web.listen-address=:${toString cfg.nvidia.port}";
+          Restart = "on-failure";
+          RestartSec = "5s";
+          # Run as root to access nvidia-smi
+          DynamicUser = false;
+          User = "root";
+        };
+        # Ensure nvidia-smi is available in PATH
+        path = [ config.hardware.nvidia.package.bin or config.hardware.nvidia.package ];
+      };
+
+      networking.firewall.allowedTCPPorts = lib.mkIf cfg.nvidia.openFirewall [ cfg.nvidia.port ];
     })
   ];
 }
