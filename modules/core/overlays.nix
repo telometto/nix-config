@@ -90,18 +90,21 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    nixpkgs.overlays = generatedOverlays ++ cfg.custom ++ [
-      # FIXME: udevil fails to build with GCC 15 due to stricter C standard (gnu23).
-      # The signal handler functions use old-style function declarations.
-      # Force -std=gnu17 until upstream fixes the issue.
-      # See: https://github.com/NixOS/nixpkgs/issues/475579
-      (final: prev: {
-        udevil = prev.udevil.overrideAttrs (oldAttrs: {
-          env = (oldAttrs.env or { }) // {
-            NIX_CFLAGS_COMPILE = toString ((oldAttrs.env.NIX_CFLAGS_COMPILE or "") + " -std=gnu17");
-          };
-        });
-      })
-    ];
+    nixpkgs.overlays =
+      generatedOverlays
+      ++ cfg.custom
+      ++ [
+        # FIXME: udevil fails to build with GCC 15 due to stricter C standard (gnu23).
+        # The signal handler functions use old-style function declarations.
+        # Force -std=gnu17 until upstream fixes the issue.
+        # See: https://github.com/NixOS/nixpkgs/issues/475579
+        (final: prev: {
+          udevil = prev.udevil.overrideAttrs (oldAttrs: {
+            env = (oldAttrs.env or { }) // {
+              NIX_CFLAGS_COMPILE = toString ((oldAttrs.env.NIX_CFLAGS_COMPILE or "") + " -std=gnu17");
+            };
+          });
+        })
+      ];
   };
 }
