@@ -168,12 +168,10 @@ in
         remoteWriteUrl = "https://prometheus-prod-39-prod-eu-north-0.grafana.net/api/prom/push";
       };
 
-      # Remote write metrics to central InfluxDB on Blizzard for long-term storage
-      influxdbRemoteWrite = {
+      # Remote write metrics to central VictoriaMetrics on Blizzard for long-term storage
+      victoriametricsRemoteWrite = {
         enable = true;
-        telegrafHost = "blizzard"; # Tailscale hostname
-        organization = "homelab";
-        bucket = "prometheus";
+        vmHost = "blizzard"; # Tailscale hostname
       };
     };
 
