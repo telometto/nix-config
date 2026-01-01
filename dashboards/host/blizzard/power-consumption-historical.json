@@ -1,11 +1,11 @@
 {
   "title": "Power Consumption (Historical)",
   "uid": "power-historical",
-  "description": "Long-term historical power monitoring from InfluxDB. Note: Daily panels require multi-day time ranges for meaningful data.",
+  "description": "Long-term historical power monitoring from VictoriaMetrics. Note: Daily panels require multi-day time ranges for meaningful data.",
   "tags": [
     "power",
     "historical",
-    "influxdb"
+    "victoriametrics"
   ],
   "editable": true,
   "schemaVersion": 41,
@@ -20,8 +20,8 @@
       {
         "name": "host",
         "type": "query",
-        "datasource": "InfluxDB (Long-term)",
-        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"prometheus\", tag: \"source_host\")",
+        "datasource": "VictoriaMetrics (Long-term)",
+        "query": "label_values(node_rapl_package_joules_total, source_host)",
         "refresh": 1,
         "includeAll": true,
         "multi": true,
@@ -44,10 +44,11 @@
         "x": 0,
         "y": 0
       },
-      "datasource": "InfluxDB (Long-term)",
+      "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> yield(name: \"cpu_power\")",
+          "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval]))",
+          "legendFormat": "{{source_host}}",
           "refId": "A"
         }
       ],
@@ -194,10 +195,11 @@
         "x": 0,
         "y": 10
       },
-      "datasource": "InfluxDB (Long-term)",
+      "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_hwmon_power_average_watt\")\n  |> filter(fn: (r) => r.sensor == \"power1\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> yield(name: \"gpu_power\")",
+          "expr": "sum by (source_host) (node_hwmon_power_average_watt{sensor=\"power1\", source_host=~\"$host\"})",
+          "legendFormat": "{{source_host}}",
           "refId": "A"
         }
       ],
@@ -268,10 +270,11 @@
         "x": 0,
         "y": 20
       },
-      "datasource": "InfluxDB (Long-term)",
+      "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> yield(name: \"daily_avg\")",
+          "expr": "avg_over_time(sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[5m]))[1d:1h])",
+          "legendFormat": "{{source_host}}",
           "refId": "A"
         }
       ],
@@ -317,10 +320,11 @@
         "x": 12,
         "y": 20
       },
-      "datasource": "InfluxDB (Long-term)",
+      "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({r with _value: r._value * 24.0 / 1000.0}))  // avg W * 24h / 1000 = kWh\n  |> group(columns: [\"source_host\"])\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n  |> yield(name: \"daily_kwh\")",
+          "expr": "avg_over_time(sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[5m]))[1d:1h]) * 24 / 1000",
+          "legendFormat": "{{source_host}}",
           "refId": "A"
         }
       ],
@@ -366,10 +370,11 @@
         "x": 0,
         "y": 30
       },
-      "datasource": "InfluxDB (Long-term)",
+      "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"electricity_price_nok_per_kwh\")\n  |> filter(fn: (r) => r.tax == \"incl_mva\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\"])\n  |> yield(name: \"price\")",
+          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Price (incl. MVA)",
           "refId": "A"
         }
       ],
@@ -433,7 +438,7 @@
     },
     {
       "title": "Daily Energy Cost (Actual)",
-      "description": "Actual daily energy cost calculated by multiplying hourly power consumption with the electricity price at that hour",
+      "description": "Actual daily energy cost calculated by multiplying hourly power consumption with the electricity price at that hour. Note: This uses instant values multiplied together, assuming price is sampled at similar times.",
       "type": "timeseries",
       "id": 6,
       "gridPos": {
@@ -442,10 +447,11 @@
         "x": 0,
         "y": 38
       },
-      "datasource": "InfluxDB (Long-term)",
+      "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "query": "import \"join\"\n\n// Get hourly average power in watts\npower = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> group()\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n\n// Get hourly price\nprice = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"electricity_price_nok_per_kwh\")\n  |> filter(fn: (r) => r.tax == \"incl_mva\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> group()\n  |> keep(columns: [\"_time\", \"_value\"])\n  |> rename(columns: {_value: \"price\"})\n\n// Join power and price on time, calculate hourly cost, then sum per day\njoin.inner(\n  left: power,\n  right: price,\n  on: (l, r) => l._time == r._time,\n  as: (l, r) => ({_time: l._time, _value: l._value / 1000.0 * r.price, source_host: l.source_host})\n)\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: false)\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"daily_cost\")",
+          "expr": "sum_over_time(\n  (\n    sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h]))\n    / 1000\n    * on() group_left electricity_price_nok_per_kwh{tax=\"incl_mva\"}\n  )[1d:1h]\n)",
+          "legendFormat": "{{source_host}}",
           "refId": "A"
         }
       ],
@@ -503,10 +509,11 @@
         "x": 12,
         "y": 38
       },
-      "datasource": "InfluxDB (Long-term)",
+      "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "query": "import \"join\"\n\n// Get power in watts, aggregated to 1h windows\npower = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> group()\n  |> keep(columns: [\"_time\", \"_value\", \"source_host\"])\n\n// Get electricity price, aggregated to 1h windows\nprice = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"electricity_price_nok_per_kwh\")\n  |> filter(fn: (r) => r.tax == \"incl_mva\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> group()\n  |> keep(columns: [\"_time\", \"_value\"])\n  |> rename(columns: {_value: \"price\"})\n\n// Join and calculate cost rate (NOK/hour)\njoin.inner(\n  left: power,\n  right: price,\n  on: (l, r) => l._time == r._time,\n  as: (l, r) => ({_time: l._time, _value: l._value / 1000.0 * r.price, source_host: l.source_host})\n)\n  |> group(columns: [\"source_host\"])\n  |> yield(name: \"cost_rate\")",
+          "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval])) / 1000 * on() group_left electricity_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "{{source_host}}",
           "refId": "A"
         }
       ],
@@ -665,10 +672,11 @@
         "x": 0,
         "y": 48
       },
-      "datasource": "InfluxDB (Long-term)",
+      "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "query": "import \"join\"\n\n// Get hourly power (all hosts summed)\npower = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> group(columns: [\"_time\"])\n  |> sum()\n  |> group()\n  |> keep(columns: [\"_time\", \"_value\"])\n\n// Get hourly price\nprice = from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"electricity_price_nok_per_kwh\")\n  |> filter(fn: (r) => r.tax == \"incl_mva\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> group()\n  |> keep(columns: [\"_time\", \"_value\"])\n  |> rename(columns: {_value: \"price\"})\n\n// Join, calculate hourly cost, sum total\njoin.inner(\n  left: power,\n  right: price,\n  on: (l, r) => l._time == r._time,\n  as: (l, r) => ({_time: l._time, _value: l._value / 1000.0 * r.price})\n)\n  |> sum()\n  |> yield(name: \"total_cost\")",
+          "expr": "sum(\n  sum_over_time(\n    (\n      sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h]))\n      / 1000\n      * on() group_left electricity_price_nok_per_kwh{tax=\"incl_mva\"}\n    )[$__range:1h]\n  )\n)",
+          "legendFormat": "Total Cost",
           "refId": "A"
         }
       ],
@@ -725,10 +733,11 @@
         "x": 8,
         "y": 48
       },
-      "datasource": "InfluxDB (Long-term)",
+      "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"electricity_price_nok_per_kwh\")\n  |> filter(fn: (r) => r.tax == \"incl_mva\")\n  |> mean()\n  |> yield(name: \"avg_price\")",
+          "expr": "avg_over_time(electricity_price_nok_per_kwh{tax=\"incl_mva\"}[$__range])",
+          "legendFormat": "Avg Price",
           "refId": "A"
         }
       ],
@@ -786,10 +795,11 @@
         "x": 16,
         "y": 48
       },
-      "datasource": "InfluxDB (Long-term)",
+      "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "query": "from(bucket: \"prometheus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._field == \"node_rapl_package_joules_total\")\n  |> filter(fn: (r) => r.source_host =~ /${host:regex}/)\n  |> derivative(unit: 1s, nonNegative: true)\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> group()\n  |> map(fn: (r) => ({r with _value: r._value / 1000.0}))  // W to kW\n  |> sum()  // Sum kW*hours = kWh\n  |> yield(name: \"total_kwh\")",
+          "expr": "sum(\n  sum_over_time(\n    (sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h])) / 1000)[$__range:1h]\n  )\n)",
+          "legendFormat": "Total kWh",
           "refId": "A"
         }
       ],
