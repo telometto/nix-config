@@ -31,7 +31,8 @@
       "targets": [
         {
           "expr": "sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]))",
-          "refId": "A"
+          "refId": "A",
+          "instant": true
         }
       ],
       "options": {
@@ -84,7 +85,8 @@
       "targets": [
         {
           "expr": "sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) > vector(0)",
-          "refId": "A"
+          "refId": "A",
+          "instant": true
         }
       ],
       "options": {
@@ -137,7 +139,8 @@
       "targets": [
         {
           "expr": "sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))",
-          "refId": "A"
+          "refId": "A",
+          "instant": true
         }
       ],
       "options": {
@@ -752,12 +755,80 @@
           "unit": "kwatth",
           "decimals": 1,
           "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 20,
-            "gradientMode": "scheme",
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 70,
+            "lineWidth": 0,
             "showPoints": "never"
+          },
+          "color": {
+            "mode": "palette-classic-by-name"
           }
-        }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU (kWh)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.lineInterpolation",
+                "value": "stepAfter"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "GPU (kWh est.)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineInterpolation",
+                "value": "smooth"
+              }
+            ]
+          }
+        ]
       }
     },
     {
