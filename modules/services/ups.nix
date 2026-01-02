@@ -258,9 +258,11 @@ in
       (lib.mkIf cfg.prometheusExporter.enable {
         services.prometheus.exporters.nut = {
           enable = true;
-          inherit (cfg.prometheusExporter) port
-          openFirewall
-          nutVariables;
+          inherit (cfg.prometheusExporter)
+            port
+            openFirewall
+            nutVariables
+            ;
           nutServer = "127.0.0.1";
         };
       })

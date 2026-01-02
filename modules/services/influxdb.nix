@@ -229,9 +229,11 @@ in
       };
       influxdb = {
         url = "http://127.0.0.1:${toString cfg.port}";
-        inherit (cfg.initialSetup) organization
-        bucket
-        tokenFile;
+        inherit (cfg.initialSetup)
+          organization
+          bucket
+          tokenFile
+          ;
       };
     };
 
