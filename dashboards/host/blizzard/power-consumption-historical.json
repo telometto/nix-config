@@ -3,6 +3,7 @@
   "uid": "power-historical",
   "description": "Long-term historical power monitoring from VictoriaMetrics. Note: Daily panels require multi-day time ranges for meaningful data.",
   "tags": [
+    "provisioned",
     "power",
     "historical",
     "victoriametrics"
