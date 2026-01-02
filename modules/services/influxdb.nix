@@ -225,14 +225,13 @@ in
     telometto.services.telegraf = lib.mkIf (cfg.prometheusRemoteWrite.enable && cfg.telegraf.enable) {
       enable = true;
       prometheusRemoteWrite = {
-        port = cfg.telegraf.port;
-        listenAddress = cfg.telegraf.listenAddress;
+        inherit (cfg.telegraf) port listenAddress;
       };
       influxdb = {
         url = "http://127.0.0.1:${toString cfg.port}";
-        organization = cfg.initialSetup.organization;
-        bucket = cfg.prometheusRemoteWrite.bucket;
-        tokenFile = cfg.initialSetup.tokenFile;
+        inherit (cfg.initialSetup) organization
+        bucket
+        tokenFile;
       };
     };
 
@@ -275,19 +274,19 @@ in
       lib.mkIf (cfg.grafanaDatasource.enable && config.telometto.services.grafana.enable or false)
         [
           {
-            name = cfg.grafanaDatasource.name;
+            inherit (cfg.grafanaDatasource) name;
             type = "influxdb";
             access = "proxy";
             url = "http://127.0.0.1:${toString cfg.port}";
             jsonData = {
               version = "Flux";
-              organization = cfg.initialSetup.organization;
+              inherit (cfg.initialSetup) organization;
               defaultBucket = cfg.prometheusRemoteWrite.bucket;
             };
             secureJsonData = {
               token = "$__file{${cfg.initialSetup.tokenFile}}";
             };
-            isDefault = cfg.grafanaDatasource.isDefault;
+            inherit (cfg.grafanaDatasource) isDefault;
             editable = false;
           }
         ];

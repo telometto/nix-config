@@ -144,8 +144,8 @@ in
               urls = [ cfg.influxdb.url ];
               # Placeholder that gets replaced by replace-secret in ExecStartPre
               token = "@INFLUX_TOKEN@";
-              organization = cfg.influxdb.organization;
-              bucket = cfg.influxdb.bucket;
+              inherit (cfg.influxdb) organization
+              bucket;
             }
           ];
         }

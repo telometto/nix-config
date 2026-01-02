@@ -98,7 +98,8 @@ in
           "${protocol}://${cfg.vmHost}:${toString cfg.vmPort}${cfg.path}";
 
         queue_config = {
-          capacity = cfg.queueConfig.capacity;
+          inherit (cfg.queueConfig) capacity;
+
           max_shards = cfg.queueConfig.maxShards;
           min_shards = cfg.queueConfig.minShards;
           max_samples_per_send = cfg.queueConfig.maxSamplesPerSend;

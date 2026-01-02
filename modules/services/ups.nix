@@ -258,10 +258,10 @@ in
       (lib.mkIf cfg.prometheusExporter.enable {
         services.prometheus.exporters.nut = {
           enable = true;
-          port = cfg.prometheusExporter.port;
-          openFirewall = cfg.prometheusExporter.openFirewall;
+          inherit (cfg.prometheusExporter) port
+          openFirewall
+          nutVariables;
           nutServer = "127.0.0.1";
-          nutVariables = cfg.prometheusExporter.variables;
         };
       })
     ]
