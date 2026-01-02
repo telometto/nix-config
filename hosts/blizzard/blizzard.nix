@@ -166,9 +166,24 @@ in
         prometheusExporter = {
           enable = true;
           port = 11014; # In your monitoring stack port range
-          # Export all numeric variables from NUT
-          # This includes: battery.*, input.*, output.*, ups.*, ambient.*
-          variables = [ ];
+          # Explicitly list variables to export for the dashboard
+          # Empty list doesn't work - must specify each metric
+          variables = [
+            "battery.charge"
+            "battery.runtime"
+            "input.frequency"
+            "input.voltage"
+            "input.voltage.nominal"
+            "output.current"
+            "output.frequency"
+            "output.voltage"
+            "output.voltage.nominal"
+            "ups.load"
+            "ups.power"
+            "ups.realpower"
+            "ups.status"
+            "ups.temperature"
+          ];
         };
       };
 
