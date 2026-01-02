@@ -166,6 +166,9 @@ in
         prometheusExporter = {
           enable = true;
           port = 11014; # In your monitoring stack port range
+          # Export all numeric variables from NUT
+          # This includes: battery.*, input.*, output.*, ups.*, ambient.*
+          variables = [ ];
         };
       };
 
@@ -268,9 +271,26 @@ in
           }
           {
             job_name = "ups";
+            # Multi-target exporter pattern: Prometheus queries the exporter with ?target=<ups_name>
+            # See: https://prometheus.io/docs/guides/multi-target-exporter/
+            metrics_path = "/ups_metrics";
             static_configs = [
               {
-                targets = [ "localhost:${toString config.telometto.services.ups.prometheusExporter.port}" ];
+                targets = lib.mapAttrsToList (name: _: name) config.telometto.services.ups.devices;
+              }
+            ];
+            relabel_configs = [
+              {
+                source_labels = [ "__address__" ];
+                target_label = "__param_target";
+              }
+              {
+                source_labels = [ "__param_target" ];
+                target_label = "ups";
+              }
+              {
+                target_label = "__address__";
+                replacement = "localhost:${toString config.telometto.services.ups.prometheusExporter.port}";
               }
             ];
           }
