@@ -260,10 +260,9 @@ in
           enable = true;
           inherit (cfg.prometheusExporter)
             port
-            openFirewall
-            nutVariables
-            ;
+            openFirewall;
           nutServer = "127.0.0.1";
+          nutVariables = cfg.prometheusExporter.variables;
         };
       })
     ]
