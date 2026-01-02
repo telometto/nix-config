@@ -3,10 +3,11 @@
   "uid": "power-consumption",
   "description": "Real-time power monitoring for CPU (RAPL) and GPU (hwmon). Works across all hosts with RAPL support.",
   "tags": [
+    "provisioned",
+    "shared",
     "power",
     "rapl",
-    "monitoring",
-    "shared"
+    "monitoring"
   ],
   "editable": true,
   "schemaVersion": 41,
