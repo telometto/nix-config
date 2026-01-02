@@ -214,16 +214,14 @@ in
 
           ups = lib.mapAttrs mkUpsConfig cfg.devices;
 
-          users = lib.mapAttrs (
-            name: userCfg: {
-              inherit (userCfg)
-                passwordFile
-                upsmon
-                actions
-                instcmds
-                ;
-            }
-          ) cfg.users;
+          users = lib.mapAttrs (name: userCfg: {
+            inherit (userCfg)
+              passwordFile
+              upsmon
+              actions
+              instcmds
+              ;
+          }) cfg.users;
 
           upsmon = lib.mkIf (cfg.monitorPasswordFile != null) {
             enable = true;
