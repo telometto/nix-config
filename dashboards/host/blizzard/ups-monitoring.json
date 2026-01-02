@@ -262,7 +262,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_battery_runtime_seconds{ups=\"$ups\"}",
+          "expr": "network_ups_tools_battery_runtime{ups=\"$ups\"} * 60",
           "legendFormat": "Runtime",
           "refId": "A"
         }
@@ -897,7 +897,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_battery_runtime_seconds{ups=\"$ups\"}",
+          "expr": "network_ups_tools_battery_runtime{ups=\"$ups\"} * 60",
           "legendFormat": "Estimated Runtime",
           "refId": "A"
         }
@@ -1005,15 +1005,6 @@
           "expr": "network_ups_tools_ups_temperature{ups=\"$ups\"}",
           "legendFormat": "UPS Temperature",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "network_ups_tools_ambient_temperature{ups=\"$ups\"}",
-          "legendFormat": "Ambient Temperature",
-          "refId": "B"
         }
       ],
       "title": "Temperature",
@@ -1151,7 +1142,7 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(nut_ups_status, ups)",
+        "definition": "label_values(network_ups_tools_ups_status, ups)",
         "hide": 0,
         "includeAll": false,
         "label": "UPS",
@@ -1160,7 +1151,7 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(nut_ups_status, ups)",
+          "query": "label_values(network_ups_tools_ups_status, ups)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
