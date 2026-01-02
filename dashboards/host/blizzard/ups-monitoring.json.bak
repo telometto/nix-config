@@ -113,8 +113,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "label_replace(network_ups_tools_ups_status{ups=\"$ups\", flag=~\"OL|OB|LB\"} == 1, \"status\", \"$1\", \"flag\", \"(.*)\")",
-          "legendFormat": "{{flag}}",
+          "expr": "nut_status{ups=\"$ups\"}",
+          "legendFormat": "{{status}}",
           "refId": "A"
         }
       ],
@@ -188,7 +188,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_battery_charge{ups=\"$ups\"}",
+          "expr": "nut_battery_charge{ups=\"$ups\"}",
           "legendFormat": "Battery Charge",
           "refId": "A"
         }
@@ -262,7 +262,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_battery_runtime_seconds{ups=\"$ups\"}",
+          "expr": "nut_battery_runtime_seconds{ups=\"$ups\"}",
           "legendFormat": "Runtime",
           "refId": "A"
         }
@@ -337,7 +337,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_ups_load{ups=\"$ups\"}",
+          "expr": "nut_ups_load{ups=\"$ups\"}",
           "legendFormat": "Load",
           "refId": "A"
         }
@@ -411,7 +411,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_ups_temperature{ups=\"$ups\"}",
+          "expr": "nut_ups_temperature{ups=\"$ups\"}",
           "legendFormat": "Temperature",
           "refId": "A"
         }
@@ -473,7 +473,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_ups_power{ups=\"$ups\"}",
+          "expr": "nut_ups_power{ups=\"$ups\"}",
           "legendFormat": "Power",
           "refId": "A"
         }
@@ -578,7 +578,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_input_voltage{ups=\"$ups\"}",
+          "expr": "nut_input_voltage{ups=\"$ups\"}",
           "legendFormat": "Input Voltage",
           "refId": "A"
         },
@@ -587,7 +587,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_output_voltage{ups=\"$ups\"}",
+          "expr": "nut_output_voltage{ups=\"$ups\"}",
           "legendFormat": "Output Voltage",
           "refId": "B"
         }
@@ -680,7 +680,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_ups_power{ups=\"$ups\"}",
+          "expr": "nut_ups_power{ups=\"$ups\"}",
           "legendFormat": "Apparent Power (VA)",
           "refId": "A"
         },
@@ -689,7 +689,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_ups_realpower{ups=\"$ups\"}",
+          "expr": "nut_ups_realpower{ups=\"$ups\"}",
           "legendFormat": "Real Power (W)",
           "refId": "B"
         }
@@ -796,7 +796,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_battery_charge{ups=\"$ups\"}",
+          "expr": "nut_battery_charge{ups=\"$ups\"}",
           "legendFormat": "Battery Charge",
           "refId": "A"
         },
@@ -805,7 +805,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_ups_load{ups=\"$ups\"}",
+          "expr": "nut_ups_load{ups=\"$ups\"}",
           "legendFormat": "UPS Load",
           "refId": "B"
         }
@@ -897,7 +897,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_battery_runtime_seconds{ups=\"$ups\"}",
+          "expr": "nut_battery_runtime_seconds{ups=\"$ups\"}",
           "legendFormat": "Estimated Runtime",
           "refId": "A"
         }
@@ -1002,7 +1002,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_ups_temperature{ups=\"$ups\"}",
+          "expr": "nut_ups_temperature{ups=\"$ups\"}",
           "legendFormat": "UPS Temperature",
           "refId": "A"
         },
@@ -1011,7 +1011,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_ambient_temperature{ups=\"$ups\"}",
+          "expr": "nut_ambient_temperature{ups=\"$ups\"}",
           "legendFormat": "Ambient Temperature",
           "refId": "B"
         }
@@ -1103,7 +1103,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_input_frequency{ups=\"$ups\"}",
+          "expr": "nut_input_frequency{ups=\"$ups\"}",
           "legendFormat": "Input Frequency",
           "refId": "A"
         },
@@ -1112,7 +1112,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_output_frequency{ups=\"$ups\"}",
+          "expr": "nut_output_frequency{ups=\"$ups\"}",
           "legendFormat": "Output Frequency",
           "refId": "B"
         }
