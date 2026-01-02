@@ -134,6 +134,41 @@ in
         };
       };
 
+      # UPS monitoring (Eaton 9130)
+      ups = {
+        enable = true;
+        mode = "standalone"; # UPS directly connected via USB
+
+        devices.eaton9130 = {
+          driver = "usbhid-ups"; # USB HID driver for Eaton 9130
+          port = "auto"; # Auto-detect USB device
+          description = "Eaton 9130 UPS";
+          directives = [
+            "pollinterval = 5" # Poll every 5 seconds
+          ];
+        };
+
+        # NUT user for local monitoring
+        users.upsmon = {
+          passwordFile = config.telometto.secrets.upsmonPasswordFile;
+          upsmon = "primary"; # This server controls shutdown
+          actions = [
+            "SET"
+            "FSD"
+          ]; # Allow setting variables and forced shutdown
+          instcmds = [ "ALL" ]; # Allow all instant commands
+        };
+
+        monitorUser = "upsmon";
+        monitorPasswordFile = config.telometto.secrets.upsmonPasswordFile;
+
+        # Prometheus exporter for UPS metrics
+        prometheusExporter = {
+          enable = true;
+          port = 11014; # In your monitoring stack port range
+        };
+      };
+
       electricityPriceExporter = {
         enable = true;
         port = 11012;
@@ -231,6 +266,14 @@ in
               }
             ];
           }
+          {
+            job_name = "ups";
+            static_configs = [
+              {
+                targets = [ "localhost:${toString config.telometto.services.ups.prometheusExporter.port}" ];
+              }
+            ];
+          }
         ];
       };
 
@@ -250,6 +293,7 @@ in
           "zfs-overview" = grafanaDashboards.custom.zfs-overview;
           "power-consumption" = grafanaDashboards.custom.power-consumption;
           "power-consumption-historical" = grafanaDashboards.custom.power-consumption-historical;
+          "ups-monitoring" = grafanaDashboards.custom.ups-monitoring;
         };
 
         reverseProxy = {

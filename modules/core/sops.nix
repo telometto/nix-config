@@ -21,6 +21,7 @@ let
   hasCloudflareAccessIpUpdater = config.telometto.services.cloudflareAccessIpUpdater.enable or false;
   hasInfluxdb = config.telometto.services.influxdb.enable or false;
   hasInfluxdbRemoteWrite = config.telometto.services.influxdbRemoteWrite.enable or false;
+  hasUps = config.telometto.services.ups.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -103,6 +104,14 @@ in
       # Remote hosts only need the token for authentication
       // whenEnabled (hasInfluxdbRemoteWrite && !hasInfluxdb) {
         "influxdb/token" = { };
+      }
+      # UPS monitoring password (for NUT upsmon)
+      // whenEnabled hasUps {
+        "ups/upsmon_password" = {
+          mode = "0440";
+          owner = "nutmon";
+          group = "nutmon";
+        };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -175,6 +184,10 @@ in
     # Remote write hosts only need the token
     // whenEnabled (hasInfluxdbRemoteWrite && !hasInfluxdb) {
       influxdbTokenFile = toString config.sops.secrets."influxdb/token".path;
+    }
+    # UPS monitoring password
+    // whenEnabled hasUps {
+      upsmonPasswordFile = toString config.sops.secrets."ups/upsmon_password".path;
     };
 
   # Add influxdb2 to keys group so it can traverse /run/secrets/

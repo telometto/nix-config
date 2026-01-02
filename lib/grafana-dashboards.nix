@@ -34,6 +34,7 @@ rec {
     zfs-overview = ../dashboards/host/blizzard/zfs-overview.json;
     power-consumption = ../dashboards/shared/power-consumption.json;
     power-consumption-historical = ../dashboards/host/blizzard/power-consumption-historical.json;
+    ups-monitoring = ../dashboards/host/blizzard/ups-monitoring.json;
   };
 
   all = community // custom;
