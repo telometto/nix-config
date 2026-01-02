@@ -190,11 +190,10 @@ in
       lib.mkIf (cfg.grafanaDatasource.enable && config.telometto.services.grafana.enable or false)
         [
           {
-            name = cfg.grafanaDatasource.name;
+            inherit (cfg.grafanaDatasource) name isDefault;
             type = "prometheus"; # VictoriaMetrics is PromQL-compatible
             access = "proxy";
             url = "http://127.0.0.1:${toString cfg.port}";
-            isDefault = cfg.grafanaDatasource.isDefault;
             editable = false;
             jsonData = {
               # VictoriaMetrics supports Prometheus-compatible API

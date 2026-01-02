@@ -130,7 +130,8 @@ in
           "${protocol}://${cfg.telegrafHost}:${toString cfg.telegrafPort}/api/v1/write";
 
         queue_config = {
-          capacity = cfg.queueConfig.capacity;
+          inherit (cfg.queueConfig) capacity;
+
           max_shards = cfg.queueConfig.maxShards;
           min_shards = cfg.queueConfig.minShards;
           max_samples_per_send = cfg.queueConfig.maxSamplesPerSend;
