@@ -145,6 +145,8 @@ in
           description = "Eaton 9130 UPS";
           directives = [
             "pollinterval = 5" # Poll every 5 seconds
+            "battery.charge.low = 30"
+            "battery.runtime.low = 600"
           ];
         };
 
@@ -161,6 +163,8 @@ in
 
         monitorUser = "upsmon";
         monitorPasswordFile = config.telometto.secrets.upsmonPasswordFile;
+
+        shutdownOrder = 0;
 
         # Prometheus exporter for UPS metrics
         prometheusExporter = {
