@@ -42,6 +42,11 @@ in
 
     boot.lanzaboote.enable = lib.mkForce false;
 
+    overlays.fromInputs = {
+      # nixpkgs-unstable = [ "firefox" "discord" ];
+      nixpkgs-stable = [ "vesktop" ];
+    };
+
     hardware.nvidia = {
       enable = true;
 
