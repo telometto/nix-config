@@ -134,7 +134,7 @@ in
             "cursor"
           ];
           patterns = {
-            "rm -rf *" = "fg=white,bold,bg=red";
+            "rm -rf [^&|]*" = "fg=white,bold,bg=red";
           };
         };
 
@@ -159,6 +159,11 @@ in
           sTsh = "tailscale ssh zeno@snowfall";
           aTsh = "tailscale ssh zeno@avalanche";
           kTsh = "tailscale ssh root@kaizer";
+
+          zeat = "zellij a";
+          zels = "zellij ls";
+          zeda = "zellij da";
+          zeks = "zellij kill-session";
         };
 
         history = {
@@ -170,6 +175,7 @@ in
         dirHashes = {
           nixConf = "${config.home.homeDirectory}/.versioncontrol/github/projects/personal/nix-config";
           projectsDir = "${config.home.homeDirectory}/.versioncontrol/github/projects";
+          homeDir = "${config.home.homeDirectory}";
         };
 
         siteFunctions = {
