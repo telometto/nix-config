@@ -45,10 +45,10 @@ in
     };
 
     # Pull specific packages from different nixpkgs inputs
-    # overlays.fromInputs = {
-    #   nixpkgs-unstable = [ "firefox" "discord" ];
-    #   nixpkgs-stable = [ "thunderbird" ];
-    # };
+    overlays.fromInputs = {
+      # nixpkgs-unstable = [ "firefox" "discord" ];
+      nixpkgs-stable = [ "vesktop" ];
+    };
     #
     # Add custom overlays
     # overlays.custom = [
