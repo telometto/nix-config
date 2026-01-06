@@ -1,985 +1,985 @@
 {
-    "title": "Electricity Prices",
-    "uid": "electricity-prices",
-    "description": "Comprehensive electricity price tracking including spot prices, Norgespris, grid tariff, and government taxes. Pure price monitoring without power consumption data.",
-    "tags": [
-        "provisioned",
-        "shared",
-        "electricity",
-        "prices",
-        "norgespris"
-    ],
-    "editable": true,
-    "schemaVersion": 41,
-    "refresh": "5m",
-    "time": {
-        "from": "now-24h",
-        "to": "now"
-    },
-    "timezone": "browser",
-    "panels": [
+  "title": "Electricity Prices",
+  "uid": "electricity-prices",
+  "description": "Comprehensive electricity price tracking including spot prices, Norgespris, grid tariff, and government taxes. Pure price monitoring without power consumption data.",
+  "tags": [
+    "provisioned",
+    "shared",
+    "electricity",
+    "prices",
+    "norgespris"
+  ],
+  "editable": true,
+  "schemaVersion": 41,
+  "refresh": "5m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "panels": [
+    {
+      "title": "Current Total Cost",
+      "type": "stat",
+      "id": 1,
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
         {
-            "title": "Current Total Cost",
-            "type": "stat",
-            "id": 1,
-            "gridPos": {
-                "h": 5,
-                "w": 6,
-                "x": 0,
-                "y": 0
-            },
-            "targets": [
-                {
-                    "expr": "electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}",
-                    "refId": "A",
-                    "instant": true
-                }
-            ],
-            "options": {
-                "colorMode": "background",
-                "graphMode": "area",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ]
-                }
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "NOK/kWh",
-                    "decimals": 4,
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "yellow",
-                                "value": 1.0
-                            },
-                            {
-                                "color": "orange",
-                                "value": 1.5
-                            },
-                            {
-                                "color": "red",
-                                "value": 2.0
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        {
-            "title": "Current Spot Price",
-            "type": "stat",
-            "id": 2,
-            "gridPos": {
-                "h": 5,
-                "w": 4,
-                "x": 6,
-                "y": 0
-            },
-            "targets": [
-                {
-                    "expr": "electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"}",
-                    "refId": "A",
-                    "instant": true
-                }
-            ],
-            "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ]
-                }
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "NOK/kWh",
-                    "decimals": 4,
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "yellow",
-                                "value": 0.9
-                            },
-                            {
-                                "color": "orange",
-                                "value": 1.1
-                            },
-                            {
-                                "color": "red",
-                                "value": 1.5
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        {
-            "title": "Norgespris Status",
-            "type": "stat",
-            "id": 3,
-            "gridPos": {
-                "h": 5,
-                "w": 4,
-                "x": 10,
-                "y": 0
-            },
-            "targets": [
-                {
-                    "expr": "electricity_uses_norgespris",
-                    "refId": "A",
-                    "instant": true
-                }
-            ],
-            "options": {
-                "colorMode": "background",
-                "graphMode": "none",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ]
-                },
-                "textMode": "value_and_name"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "short",
-                    "decimals": 0,
-                    "mappings": [
-                        {
-                            "type": "value",
-                            "options": {
-                                "0": {
-                                    "text": "Disabled",
-                                    "color": "dark-blue"
-                                },
-                                "1": {
-                                    "text": "Active",
-                                    "color": "green"
-                                }
-                            }
-                        }
-                    ],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "dark-blue",
-                                "value": null
-                            },
-                            {
-                                "color": "green",
-                                "value": 1
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        {
-            "title": "Grid Tariff (Energiledd)",
-            "type": "stat",
-            "id": 4,
-            "gridPos": {
-                "h": 5,
-                "w": 5,
-                "x": 14,
-                "y": 0
-            },
-            "targets": [
-                {
-                    "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
-                    "refId": "A",
-                    "instant": true
-                }
-            ],
-            "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ]
-                }
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "NOK/kWh",
-                    "decimals": 4,
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "blue",
-                                "value": null
-                            },
-                            {
-                                "color": "purple",
-                                "value": 0.3
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        {
-            "title": "Peak/Off-Peak Status",
-            "type": "stat",
-            "id": 5,
-            "gridPos": {
-                "h": 5,
-                "w": 5,
-                "x": 19,
-                "y": 0
-            },
-            "targets": [
-                {
-                    "expr": "electricity_is_peak_hour",
-                    "refId": "A",
-                    "instant": true
-                }
-            ],
-            "options": {
-                "colorMode": "background",
-                "graphMode": "none",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ]
-                },
-                "textMode": "value_and_name"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "short",
-                    "decimals": 0,
-                    "mappings": [
-                        {
-                            "type": "value",
-                            "options": {
-                                "0": {
-                                    "text": "Off-Peak",
-                                    "color": "green"
-                                },
-                                "1": {
-                                    "text": "Peak",
-                                    "color": "orange"
-                                }
-                            }
-                        }
-                    ],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "orange",
-                                "value": 1
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        {
-            "title": "Price Components Comparison",
-            "type": "timeseries",
-            "id": 6,
-            "gridPos": {
-                "h": 12,
-                "w": 24,
-                "x": 0,
-                "y": 5
-            },
-            "targets": [
-                {
-                    "expr": "electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"}",
-                    "legendFormat": "Spot Price (what you'd pay without Norgespris)",
-                    "refId": "A"
-                },
-                {
-                    "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"} and (time() >= 1736121600)",
-                    "legendFormat": "Norgespris (fixed 50 øre)",
-                    "refId": "B"
-                },
-                {
-                    "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
-                    "legendFormat": "Grid Tariff (Fagne AS)",
-                    "refId": "C"
-                },
-                {
-                    "expr": "electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}",
-                    "legendFormat": "Total Cost (all inclusive)",
-                    "refId": "D"
-                }
-            ],
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "min",
-                        "max",
-                        "lastNotNull"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "NOK/kWh",
-                    "decimals": 4,
-                    "custom": {
-                        "lineWidth": 2,
-                        "fillOpacity": 10,
-                        "gradientMode": "none",
-                        "showPoints": "never",
-                        "spanNulls": true
-                    }
-                },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Spot Price (what you'd pay without Norgespris)"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "red",
-                                    "mode": "fixed"
-                                }
-                            },
-                            {
-                                "id": "custom.lineStyle",
-                                "value": {
-                                    "dash": [
-                                        10,
-                                        5
-                                    ],
-                                    "fill": "dash"
-                                }
-                            },
-                            {
-                                "id": "custom.lineWidth",
-                                "value": 2
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Norgespris (fixed 50 øre)"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "green",
-                                    "mode": "fixed"
-                                }
-                            },
-                            {
-                                "id": "custom.lineStyle",
-                                "value": {
-                                    "dash": [
-                                        8,
-                                        8
-                                    ],
-                                    "fill": "dash"
-                                }
-                            },
-                            {
-                                "id": "custom.lineWidth",
-                                "value": 3
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Grid Tariff (Fagne AS)"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "blue",
-                                    "mode": "fixed"
-                                }
-                            },
-                            {
-                                "id": "custom.lineStyle",
-                                "value": {
-                                    "dash": [
-                                        5,
-                                        10
-                                    ],
-                                    "fill": "dash"
-                                }
-                            },
-                            {
-                                "id": "custom.lineWidth",
-                                "value": 2
-                            },
-                            {
-                                "id": "custom.stacking",
-                                "value": {
-                                    "mode": "none"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Total Cost (all inclusive)"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "orange",
-                                    "mode": "fixed"
-                                }
-                            },
-                            {
-                                "id": "custom.lineWidth",
-                                "value": 3
-                            },
-                            {
-                                "id": "custom.fillOpacity",
-                                "value": 20
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "title": "Norgespris Savings",
-            "description": "Shows how much you save (or lose) by using Norgespris instead of spot prices. Positive = savings, Negative = you're paying more with Norgespris.",
-            "type": "timeseries",
-            "id": 7,
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 17
-            },
-            "targets": [
-                {
-                    "expr": "(electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"} - electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"}) and (time() >= 1736121600)",
-                    "legendFormat": "Savings per kWh (spot - Norgespris)",
-                    "refId": "A"
-                }
-            ],
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "min",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "mode": "single"
-                }
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "NOK/kWh",
-                    "decimals": 4,
-                    "custom": {
-                        "lineWidth": 2,
-                        "fillOpacity": 30,
-                        "gradientMode": "scheme",
-                        "showPoints": "never",
-                        "spanNulls": true
-                    },
-                    "color": {
-                        "mode": "thresholds"
-                    },
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "red",
-                                "value": null
-                            },
-                            {
-                                "color": "yellow",
-                                "value": 0
-                            },
-                            {
-                                "color": "green",
-                                "value": 0.2
-                            },
-                            {
-                                "color": "dark-green",
-                                "value": 0.5
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        {
-            "title": "Total Cost Breakdown (Stacked)",
-            "type": "timeseries",
-            "id": 8,
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 17
-            },
-            "targets": [
-                {
-                    "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\"}",
-                    "legendFormat": "Electricity ({{type}})",
-                    "refId": "A"
-                },
-                {
-                    "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
-                    "legendFormat": "Grid Tariff",
-                    "refId": "B"
-                },
-                {
-                    "expr": "enova_avgift_nok_per_kwh{tax=\"incl_mva\"}",
-                    "legendFormat": "Enova-avgift",
-                    "refId": "C"
-                },
-                {
-                    "expr": "elavgift_nok_per_kwh{tax=\"incl_mva\"}",
-                    "legendFormat": "Elavgift",
-                    "refId": "D"
-                }
-            ],
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "lastNotNull"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "NOK/kWh",
-                    "decimals": 4,
-                    "custom": {
-                        "lineWidth": 0,
-                        "fillOpacity": 80,
-                        "gradientMode": "none",
-                        "showPoints": "never",
-                        "spanNulls": true,
-                        "stacking": {
-                            "mode": "normal",
-                            "group": "A"
-                        }
-                    }
-                },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byRegexp",
-                            "options": "Electricity.*"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "green",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Grid Tariff"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "blue",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Enova-avgift"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "yellow",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Elavgift"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "orange",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "title": "Price Component Table",
-            "type": "table",
-            "id": 9,
-            "gridPos": {
-                "h": 6,
-                "w": 12,
-                "x": 0,
-                "y": 25
-            },
-            "targets": [
-                {
-                    "expr": "electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"}",
-                    "refId": "A",
-                    "instant": true,
-                    "format": "table"
-                },
-                {
-                    "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\"}",
-                    "refId": "B",
-                    "instant": true,
-                    "format": "table"
-                },
-                {
-                    "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
-                    "refId": "C",
-                    "instant": true,
-                    "format": "table"
-                },
-                {
-                    "expr": "enova_avgift_nok_per_kwh{tax=\"incl_mva\"}",
-                    "refId": "D",
-                    "instant": true,
-                    "format": "table"
-                },
-                {
-                    "expr": "elavgift_nok_per_kwh{tax=\"incl_mva\"}",
-                    "refId": "E",
-                    "instant": true,
-                    "format": "table"
-                },
-                {
-                    "expr": "electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}",
-                    "refId": "F",
-                    "instant": true,
-                    "format": "table"
-                }
-            ],
-            "transformations": [
-                {
-                    "id": "merge",
-                    "options": {}
-                },
-                {
-                    "id": "organize",
-                    "options": {
-                        "excludeByName": {
-                            "Time": true,
-                            "area": true,
-                            "grid_owner": true,
-                            "instance": true,
-                            "job": true,
-                            "period": true,
-                            "tax": true,
-                            "type": false
-                        },
-                        "renameByName": {
-                            "Value #A": "Spot Price",
-                            "Value #B": "Active Price",
-                            "Value #C": "Grid Tariff",
-                            "Value #D": "Enova-avgift",
-                            "Value #E": "Elavgift",
-                            "Value #F": "Total Cost",
-                            "type": "Price Type"
-                        }
-                    }
-                }
-            ],
-            "options": {
-                "showHeader": true,
-                "cellHeight": "md",
-                "footer": {
-                    "show": false
-                }
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "NOK/kWh",
-                    "decimals": 4,
-                    "custom": {
-                        "align": "center",
-                        "cellOptions": {
-                            "type": "color-text"
-                        }
-                    }
-                },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Price Type"
-                        },
-                        "properties": [
-                            {
-                                "id": "unit",
-                                "value": "string"
-                            },
-                            {
-                                "id": "custom.width",
-                                "value": 150
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Total Cost"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "orange",
-                                    "mode": "fixed"
-                                }
-                            },
-                            {
-                                "id": "custom.cellOptions",
-                                "value": {
-                                    "type": "color-background"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "title": "Grid Tariff Peak/Off-Peak Timeline",
-            "type": "state-timeline",
-            "id": 10,
-            "gridPos": {
-                "h": 6,
-                "w": 12,
-                "x": 12,
-                "y": 25
-            },
-            "targets": [
-                {
-                    "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
-                    "legendFormat": "Grid Tariff ({{period}})",
-                    "refId": "A"
-                }
-            ],
-            "options": {
-                "showValue": "auto",
-                "alignValue": "left",
-                "mergeValues": true,
-                "rowHeight": 0.9,
-                "legend": {
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "mode": "single"
-                }
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "NOK/kWh",
-                    "decimals": 4,
-                    "color": {
-                        "mode": "thresholds"
-                    },
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "orange",
-                                "value": 0.3
-                            }
-                        ]
-                    },
-                    "custom": {
-                        "fillOpacity": 80
-                    }
-                }
-            }
-        },
-        {
-            "title": "Daily Average Prices",
-            "type": "timeseries",
-            "id": 11,
-            "gridPos": {
-                "h": 8,
-                "w": 24,
-                "x": 0,
-                "y": 31
-            },
-            "targets": [
-                {
-                    "expr": "avg_over_time(electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"}[1d])",
-                    "legendFormat": "Spot Price (daily avg)",
-                    "refId": "A"
-                },
-                {
-                    "expr": "avg_over_time(electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"}[1d]) and (time() >= 1736121600)",
-                    "legendFormat": "Norgespris (daily avg)",
-                    "refId": "B"
-                },
-                {
-                    "expr": "avg_over_time(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}[1d])",
-                    "legendFormat": "Total Cost (daily avg)",
-                    "refId": "C"
-                }
-            ],
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "min",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "NOK/kWh",
-                    "decimals": 4,
-                    "custom": {
-                        "lineWidth": 2,
-                        "fillOpacity": 15,
-                        "gradientMode": "scheme",
-                        "showPoints": "auto",
-                        "spanNulls": true,
-                        "lineInterpolation": "smooth"
-                    }
-                },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byRegexp",
-                            "options": ".*Spot.*"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "red",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byRegexp",
-                            "options": ".*Norgespris.*"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "green",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byRegexp",
-                            "options": ".*Total.*"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "orange",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
+          "expr": "electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}",
+          "refId": "A",
+          "instant": true
         }
-    ],
-    "templating": {
-        "list": []
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "NOK/kWh",
+          "decimals": 4,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1.0
+              },
+              {
+                "color": "orange",
+                "value": 1.5
+              },
+              {
+                "color": "red",
+                "value": 2.0
+              }
+            ]
+          }
+        }
+      }
     },
-    "annotations": {
-        "list": []
+    {
+      "title": "Current Spot Price",
+      "type": "stat",
+      "id": 2,
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 6,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "NOK/kWh",
+          "decimals": 4,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.9
+              },
+              {
+                "color": "orange",
+                "value": 1.1
+              },
+              {
+                "color": "red",
+                "value": 1.5
+              }
+            ]
+          }
+        }
+      }
     },
-    "links": []
+    {
+      "title": "Norgespris Status",
+      "type": "stat",
+      "id": 3,
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 10,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "electricity_uses_norgespris",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Disabled",
+                  "color": "dark-blue"
+                },
+                "1": {
+                  "text": "Active",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Grid Tariff (Energiledd)",
+      "type": "stat",
+      "id": 4,
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 14,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "NOK/kWh",
+          "decimals": 4,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "purple",
+                "value": 0.3
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Peak/Off-Peak Status",
+      "type": "stat",
+      "id": 5,
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "electricity_is_peak_hour",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Off-Peak",
+                  "color": "green"
+                },
+                "1": {
+                  "text": "Peak",
+                  "color": "orange"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Price Components Comparison",
+      "type": "timeseries",
+      "id": 6,
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "targets": [
+        {
+          "expr": "electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Spot Price (what you'd pay without Norgespris)",
+          "refId": "A"
+        },
+        {
+          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"} and (time() >= 1736121600)",
+          "legendFormat": "Norgespris (fixed 50 øre)",
+          "refId": "B"
+        },
+        {
+          "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Grid Tariff (Fagne AS)",
+          "refId": "C"
+        },
+        {
+          "expr": "electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Total Cost (all inclusive)",
+          "refId": "D"
+        }
+      ],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "min",
+            "max",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "NOK/kWh",
+          "decimals": 4,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Spot Price (what you'd pay without Norgespris)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    5
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Norgespris (fixed 50 øre)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    8
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Grid Tariff (Fagne AS)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    5,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.stacking",
+                "value": {
+                  "mode": "none"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Cost (all inclusive)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 20
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Norgespris Savings",
+      "description": "Shows how much you save (or lose) by using Norgespris instead of spot prices. Positive = savings, Negative = you're paying more with Norgespris.",
+      "type": "timeseries",
+      "id": 7,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "targets": [
+        {
+          "expr": "(electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"} - electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"}) and (time() >= 1736121600)",
+          "legendFormat": "Savings per kWh (spot - Norgespris)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "NOK/kWh",
+          "decimals": 4,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 30,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 0.2
+              },
+              {
+                "color": "dark-green",
+                "value": 0.5
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Total Cost Breakdown (Stacked)",
+      "type": "timeseries",
+      "id": 8,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "targets": [
+        {
+          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Electricity ({{type}})",
+          "refId": "A"
+        },
+        {
+          "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Grid Tariff",
+          "refId": "B"
+        },
+        {
+          "expr": "enova_avgift_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Enova-avgift",
+          "refId": "C"
+        },
+        {
+          "expr": "elavgift_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Elavgift",
+          "refId": "D"
+        }
+      ],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "NOK/kWh",
+          "decimals": 4,
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "Electricity.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Grid Tariff"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Enova-avgift"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Elavgift"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Price Component Table",
+      "type": "table",
+      "id": 9,
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      },
+      "targets": [
+        {
+          "expr": "electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "refId": "A",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "refId": "B",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
+          "refId": "C",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "expr": "enova_avgift_nok_per_kwh{tax=\"incl_mva\"}",
+          "refId": "D",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "expr": "elavgift_nok_per_kwh{tax=\"incl_mva\"}",
+          "refId": "E",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "expr": "electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}",
+          "refId": "F",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "area": true,
+              "grid_owner": true,
+              "instance": true,
+              "job": true,
+              "period": true,
+              "tax": true,
+              "type": false
+            },
+            "renameByName": {
+              "Value #A": "Spot Price",
+              "Value #B": "Active Price",
+              "Value #C": "Grid Tariff",
+              "Value #D": "Enova-avgift",
+              "Value #E": "Elavgift",
+              "Value #F": "Total Cost",
+              "type": "Price Type"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "md",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "NOK/kWh",
+          "decimals": 4,
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "color-text"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Price Type"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "string"
+              },
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Cost"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Grid Tariff Peak/Off-Peak Timeline",
+      "type": "state-timeline",
+      "id": 10,
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 25
+      },
+      "targets": [
+        {
+          "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Grid Tariff ({{period}})",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showValue": "auto",
+        "alignValue": "left",
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "NOK/kWh",
+          "decimals": 4,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.3
+              }
+            ]
+          },
+          "custom": {
+            "fillOpacity": 80
+          }
+        }
+      }
+    },
+    {
+      "title": "Daily Average Prices",
+      "type": "timeseries",
+      "id": 11,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "targets": [
+        {
+          "expr": "avg_over_time(electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"}[1d])",
+          "legendFormat": "Spot Price (daily avg)",
+          "refId": "A"
+        },
+        {
+          "expr": "avg_over_time(electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"}[1d]) and (time() >= 1736121600)",
+          "legendFormat": "Norgespris (daily avg)",
+          "refId": "B"
+        },
+        {
+          "expr": "avg_over_time(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}[1d])",
+          "legendFormat": "Total Cost (daily avg)",
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "NOK/kWh",
+          "decimals": 4,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "spanNulls": true,
+            "lineInterpolation": "smooth"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Spot.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Norgespris.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Total.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": []
 }
