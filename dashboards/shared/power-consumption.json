@@ -192,7 +192,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * 24 * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
+          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * 24 * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "refId": "A"
         }
       ],
@@ -298,7 +298,7 @@
       }
     },
     {
-      "title": "Current Price",
+      "title": "Current Total Cost",
       "type": "stat",
       "id": 11,
       "gridPos": {
@@ -309,7 +309,7 @@
       },
       "targets": [
         {
-          "expr": "max(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
+          "expr": "max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"})",
           "refId": "A"
         }
       ],
@@ -325,7 +325,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "NOK/kWh",
-          "decimals": 2,
+          "decimals": 4,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -335,15 +335,15 @@
               },
               {
                 "color": "yellow",
-                "value": 0.9
+                "value": 1.0
               },
               {
                 "color": "orange",
-                "value": 1.1
+                "value": 1.5
               },
               {
                 "color": "red",
-                "value": 1.2
+                "value": 2.0
               }
             ]
           }
@@ -531,7 +531,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(increase(node_rapl_package_joules_total{instance=~\"$instance\"}[1h])) / 3600000 + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0)) * 3600 / 3600000) * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
+          "expr": "(sum(increase(node_rapl_package_joules_total{instance=~\"$instance\"}[1h])) / 3600000 + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0)) * 3600 / 3600000) * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "refId": "A"
         }
       ],
@@ -832,7 +832,7 @@
       }
     },
     {
-      "title": "Electricity Price History (NO2)",
+      "title": "Electricity Price History",
       "type": "timeseries",
       "id": 12,
       "gridPos": {
@@ -843,9 +843,19 @@
       },
       "targets": [
         {
-          "expr": "max(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
-          "legendFormat": "Price (incl. MVA)",
+          "expr": "electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Spot Price",
           "refId": "A"
+        },
+        {
+          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"} and (time() >= 1736121600)",
+          "legendFormat": "Norgespris (active)",
+          "refId": "B"
+        },
+        {
+          "expr": "electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}",
+          "legendFormat": "Total Cost",
+          "refId": "C"
         }
       ],
       "options": {
@@ -870,33 +880,88 @@
             "staircase": true,
             "showPoints": "never",
             "spanNulls": true,
-            "gradientMode": "scheme"
+            "gradientMode": "none"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Spot Price"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    5
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
           },
-          "color": {
-            "mode": "thresholds"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Norgespris (active)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    8
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              }
+            ]
           },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Cost"
+            },
+            "properties": [
               {
-                "color": "green",
-                "value": null
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
               },
               {
-                "color": "yellow",
-                "value": 0.9
+                "id": "custom.lineWidth",
+                "value": 3
               },
               {
-                "color": "orange",
-                "value": 1.1
-              },
-              {
-                "color": "red",
-                "value": 1.2
+                "id": "custom.fillOpacity",
+                "value": 20
               }
             ]
           }
-        }
+        ]
       }
     },
     {
@@ -911,7 +976,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
+          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "Cost Rate",
           "refId": "A"
         }
@@ -978,7 +1043,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
+          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "Cost Rate",
           "refId": "A"
         }
@@ -1046,7 +1111,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
+          "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "Cost Rate (kr/h)",
           "refId": "A"
         }

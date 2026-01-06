@@ -35,6 +35,7 @@ rec {
     power-consumption = ../dashboards/shared/power-consumption.json;
     power-consumption-historical = ../dashboards/host/blizzard/power-consumption-historical.json;
     ups-monitoring = ../dashboards/host/blizzard/ups-monitoring.json;
+    electricity-prices = ../dashboards/shared/electricity-prices.json;
   };
 
   all = community // custom;
