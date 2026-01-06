@@ -843,17 +843,17 @@
       },
       "targets": [
         {
-          "expr": "electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "expr": "max(electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Spot Price",
           "refId": "A"
         },
         {
-          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"}",
+          "expr": "max(electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"})",
           "legendFormat": "Norgespris (active)",
           "refId": "B"
         },
         {
-          "expr": "electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}",
+          "expr": "max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Total Cost",
           "refId": "C"
         }

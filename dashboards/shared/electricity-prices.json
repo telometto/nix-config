@@ -326,12 +326,12 @@
           "refId": "B"
         },
         {
-          "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
+          "expr": "max(grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Grid Tariff (Fagne AS)",
           "refId": "C"
         },
         {
-          "expr": "electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}",
+          "expr": "max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Total Cost",
           "refId": "D"
         }
@@ -655,7 +655,7 @@
           "refId": "A"
         },
         {
-          "expr": "grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"}",
+          "expr": "max(grid_tariff_energiledd_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Grid tariff",
           "refId": "B"
         },
@@ -1025,7 +1025,7 @@
           "refId": "B"
         },
         {
-          "expr": "avg_over_time(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}[1d])",
+          "expr": "max(avg_over_time(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}[1d]))",
           "legendFormat": "Total Cost",
           "refId": "C"
         }
