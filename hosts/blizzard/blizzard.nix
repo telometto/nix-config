@@ -144,8 +144,7 @@ in
           port = "auto"; # Auto-detect USB device
           description = "Eaton 9130 UPS";
           directives = [
-            "pollinterval = 5" # Poll every 5 seconds
-            "battery.runtime.low = 600"
+            "pollinterval = 5"
           ];
         };
 
