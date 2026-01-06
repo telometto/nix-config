@@ -141,7 +141,7 @@ in
 
         devices.eaton9130 = {
           driver = "usbhid-ups";
-          port = "auto"; #
+          port = "auto";
           description = "Eaton 9130 UPS";
           directives = [
             "pollinterval = 5"
