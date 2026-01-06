@@ -440,7 +440,7 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "max(electricity_price_nok_per_kwh{tax=\"incl_mva\"})",
+          "expr": "max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Price (incl. MVA)",
           "refId": "A"
         }
@@ -516,7 +516,7 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "sum_over_time((sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h])) / 1000)[1d:1h]) * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
+          "expr": "sum_over_time((sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h])) / 1000)[1d:1h]) * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "{{source_host}}",
           "refId": "A"
         }
@@ -642,7 +642,7 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval])) / 1000 * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
+          "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval])) / 1000 * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "{{source_host}}",
           "refId": "A"
         }
@@ -805,7 +805,7 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "sum(sum_over_time((sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h])) / 1000)[$__range:1h])) * scalar(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"}))",
+          "expr": "sum(sum_over_time((sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h])) / 1000)[$__range:1h])) * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "Total Cost",
           "refId": "A"
         }
@@ -866,7 +866,7 @@
       "datasource": "VictoriaMetrics (Long-term)",
       "targets": [
         {
-          "expr": "avg_over_time(max(electricity_price_nok_per_kwh{tax=\"incl_mva\"})[$__range])",
+          "expr": "avg_over_time(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"})[$__range])",
           "legendFormat": "Avg Price",
           "refId": "A"
         }
