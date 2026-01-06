@@ -137,11 +137,11 @@ in
       # UPS monitoring (Eaton 9130)
       ups = {
         enable = true;
-        mode = "standalone"; # UPS directly connected via USB
+        mode = "standalone";
 
         devices.eaton9130 = {
-          driver = "usbhid-ups"; # USB HID driver for Eaton 9130
-          port = "auto"; # Auto-detect USB device
+          driver = "usbhid-ups";
+          port = "auto"; #
           description = "Eaton 9130 UPS";
           directives = [
             "pollinterval = 5"
@@ -151,12 +151,12 @@ in
         # NUT user for local monitoring
         users.upsmon = {
           passwordFile = config.telometto.secrets.upsmonPasswordFile;
-          upsmon = "primary"; # This server controls shutdown
+          upsmon = "primary";
           actions = [
             "SET"
             "FSD"
-          ]; # Allow setting variables and forced shutdown
-          instcmds = [ "ALL" ]; # Allow all instant commands
+          ];
+          instcmds = [ "ALL" ];
         };
 
         monitorUser = "upsmon";
@@ -167,9 +167,8 @@ in
         # Prometheus exporter for UPS metrics
         prometheusExporter = {
           enable = true;
-          port = 11014; # In your monitoring stack port range
-          # Explicitly list variables to export for the dashboard
-          # Empty list doesn't work - must specify each metric
+          port = 11014;
+          # Empty list doesn't work - each metric must be specified
           variables = [
             "battery.charge"
             "battery.runtime"
