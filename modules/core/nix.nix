@@ -10,6 +10,10 @@
       experimental-features = [
         "nix-command"
         "flakes"
+        "no-url-literals"
+        "parse-toml-timestamps"
+        "verified-fetches"
+        "cgroups"
       ];
 
       auto-optimise-store = lib.mkDefault true;
