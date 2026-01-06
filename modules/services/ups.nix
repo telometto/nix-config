@@ -10,7 +10,7 @@ let
   cfg = config.telometto.services.ups;
 
   # Helper to generate UPS configuration
-  mkUpsConfig = name: upsCfg: {
+  mkUpsConfig = upsCfg: {
     inherit (upsCfg) driver port;
     description = upsCfg.description or "${upsCfg.driver} UPS";
     directives = upsCfg.directives or [ ];
@@ -214,7 +214,7 @@ in
 
           ups = lib.mapAttrs mkUpsConfig cfg.devices;
 
-          users = lib.mapAttrs (name: userCfg: {
+          users = lib.mapAttrs (userCfg: {
             inherit (userCfg)
               passwordFile
               upsmon
