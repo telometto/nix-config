@@ -1,7 +1,6 @@
 # User-specific configuration for admin user on blizzard host
 # This file is automatically imported only for the admin user on blizzard
 {
-  lib,
   config,
   pkgs,
   ...

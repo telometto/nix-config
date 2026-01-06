@@ -1,4 +1,4 @@
-{ pkgs, lib }:
+{ pkgs }:
 
 rec {
   # Fetch dashboard from grafana.com

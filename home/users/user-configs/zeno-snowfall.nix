@@ -1,7 +1,6 @@
 # User-specific configuration for admin user on snowfall host
 # This file is automatically imported only for the admin user on snowfall
 {
-  lib,
   config,
   pkgs,
   ...

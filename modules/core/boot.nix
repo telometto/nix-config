@@ -2,7 +2,7 @@
 {
   lib,
   config,
-  VARS,
+  # VARS,
   ...
 }:
 {

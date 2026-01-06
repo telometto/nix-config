@@ -1,7 +1,6 @@
 # User-specific configuration for admin user on avalanche host
 # This file is automatically imported only for the admin user on avalanche
 {
-  lib,
   config,
   pkgs,
   ...
