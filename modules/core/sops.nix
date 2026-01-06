@@ -27,7 +27,7 @@ let
   isKaizer = config.networking.hostName == "kaizer";
   isBlizzard = config.networking.hostName == "blizzard";
   isSnowfall = config.networking.hostName == "snowfall";
-  # isAvalanche = config.networking.hostName == "avalanche";
+  isAvalanche = config.networking.hostName == "avalanche";
 in
 
 {

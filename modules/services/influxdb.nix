@@ -209,7 +209,7 @@ in
         };
 
         organizations.${cfg.initialSetup.organization} = {
-          buckets = lib.mapAttrs (bucketCfg: {
+          buckets = lib.mapAttrs (name: bucketCfg: {
             inherit (bucketCfg) description retention;
           }) cfg.extraBuckets;
 
