@@ -848,7 +848,7 @@
           "refId": "A"
         },
         {
-          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"} and (time() >= 1736121600)",
+          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"}",
           "legendFormat": "Norgespris (active)",
           "refId": "B"
         },
