@@ -650,7 +650,7 @@
       },
       "targets": [
         {
-          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\"}",
+          "expr": "electricity_price_nok_per_kwh{tax=\"incl_mva\",type!=\"\"}",
           "legendFormat": "Electricity ({{type}})",
           "refId": "A"
         },
