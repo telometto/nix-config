@@ -1,6 +1,6 @@
 # treefmt-nix configuration
 # Documentation: https://github.com/numtide/treefmt-nix
-{ ... }:
+{ pkgs, ... }:
 {
   # Used to find the project root
   projectRootFile = "flake.nix";

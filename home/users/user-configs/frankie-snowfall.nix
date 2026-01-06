@@ -2,6 +2,7 @@
 # This file is automatically imported only for the frankie user on snowfall
 {
   lib,
+  config,
   pkgs,
   ...
 }:

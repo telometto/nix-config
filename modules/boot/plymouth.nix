@@ -2,7 +2,7 @@
 {
   config,
   lib,
-  # pkgs,
+  pkgs,
   ...
 }:
 let
