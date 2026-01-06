@@ -1118,6 +1118,7 @@
     "ups",
     "nut",
     "power",
+    "provisioned",
     "eaton"
   ],
   "templating": {
