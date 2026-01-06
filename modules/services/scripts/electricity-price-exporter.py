@@ -119,8 +119,7 @@ def fetch_prices():
         prices = resp.json()
         price_cache["prices"] = prices
         price_cache["date"] = today
-        print(
-            f"Fetched {len(prices)} hourly prices for {today} ({PRICE_AREA})")
+        print(f"Fetched {len(prices)} hourly prices for {today} ({PRICE_AREA})")
         return prices
     except Exception as e:
         print(f"Error fetching prices: {e}")
@@ -173,8 +172,9 @@ def calculate_total_price() -> dict:
         elavgift_nok = get_current_elavgift_ore() / 100.0
 
     # Calculate totals excluding MVA
-    total_excl_mva = electricity_price + \
-        grid_energiledd_nok + enova_avgift_nok + elavgift_nok
+    total_excl_mva = (
+        electricity_price + grid_energiledd_nok + enova_avgift_nok + elavgift_nok
+    )
 
     # Add MVA (25%) if not exempt
     if is_mva_exempt_area(PRICE_AREA):
@@ -264,9 +264,7 @@ electricity_uses_norgespris {1 if prices["uses_norgespris"] else 0}
 
 
 if __name__ == "__main__":
-    print(
-        f"Starting electricity price exporter on port {LISTEN_PORT}"
-    )
+    print(f"Starting electricity price exporter on port {LISTEN_PORT}")
     print(f"  Price area: {PRICE_AREA}")
     print(f"  Norgespris enabled: {USE_NORGESPRIS}")
     print(f"  Grid owner: {GRID_OWNER}")
