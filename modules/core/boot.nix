@@ -7,6 +7,8 @@
 }:
 {
   boot = {
+    crashDump.enable = lib.mkDefault true;
+
     initrd = {
       enable = lib.mkDefault true;
 
