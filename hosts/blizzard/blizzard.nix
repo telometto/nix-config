@@ -339,6 +339,7 @@ in
           "power-consumption" = grafanaDashboards.custom.power-consumption;
           "power-consumption-historical" = grafanaDashboards.custom.power-consumption-historical;
           "ups-monitoring" = grafanaDashboards.custom.ups-monitoring;
+          "electricity-prices" = grafanaDashboards.custom.electricity-prices;
         };
 
         reverseProxy = {
