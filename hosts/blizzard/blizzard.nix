@@ -450,6 +450,34 @@ in
         };
       };
 
+      gitea = {
+        enable = true;
+
+        port = 11015;
+        sshPort = 2222;
+        openFirewall = true;
+
+        stateDir = "/rpool/unenc/apps/nixos/gitea";
+        repositoryRoot = "/rpool/unenc/apps/nixos/gitea/repositories";
+
+        database = {
+          type = "postgres";
+          createDatabase = true;
+        };
+
+        lfs = {
+          enable = true;
+        };
+
+        disableRegistration = true;
+
+        reverseProxy = {
+          enable = true;
+          domain = "git.${VARS.domains.public}";
+          cfTunnel.enable = true;
+        };
+      };
+
       cloudflared = {
         enable = true;
 

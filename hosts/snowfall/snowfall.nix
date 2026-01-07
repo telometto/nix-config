@@ -39,6 +39,29 @@ in
       frankie.enable = false;
     };
 
+    nix.distributedBuilds = {
+      enable = true;
+
+      # Expose Snowfall as a remote builder using the non-root zeno account.
+      server = {
+        enable = true;
+        write = true;
+        keys = config.users.users.zeno.openssh.authorizedKeys.keys or [ ];
+      };
+
+      buildMachines = [
+        {
+          hostName = "blizzard";
+          systems = [ "x86_64-linux" ];
+          sshUser = "zeno";
+          sshKey = "/home/zeno/.ssh/id_ed25519";
+          maxJobs = 8;
+          speedFactor = 2;
+          supportedFeatures = [ "kvm" "big-parallel" ];
+        }
+      ];
+    };
+
     programs = {
       nix-ld.enable = true;
       python-venv.enable = true;
