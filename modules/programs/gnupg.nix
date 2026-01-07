@@ -1,10 +1,10 @@
 # OK
 { lib, config, ... }:
 let
-  cfg = config.telometto.programs.gnupg;
+  cfg = config.sys.programs.gnupg;
 in
 {
-  options.telometto.programs.gnupg = {
+  options.sys.programs.gnupg = {
     enable = lib.mkEnableOption "GnuPG agent with long cache TTL";
     enableSSHSupport = lib.mkOption {
       type = lib.types.bool;

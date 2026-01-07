@@ -5,10 +5,10 @@
   ...
 }:
 let
-  cfg = config.telometto.programs.nix-ld;
+  cfg = config.sys.programs.nix-ld;
 in
 {
-  options.telometto.programs.nix-ld = {
+  options.sys.programs.nix-ld = {
     enable = lib.mkEnableOption "nix-ld with comprehensive library support";
 
     extraLibraries = lib.mkOption {

@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.searx or { };
+  cfg = config.sys.services.searx or { };
 in
 {
-  options.telometto.services.searx = {
+  options.sys.services.searx = {
     enable = lib.mkEnableOption "Searx Meta Search";
 
     publicInstance = lib.mkOption {
@@ -159,7 +159,7 @@ in
           # Server configuration
           server = {
             # Use centralized secrets bridge; avoids direct SOPS references here
-            secret_key = config.telometto.secrets.searxSecretKeyFile;
+            secret_key = config.sys.secrets.searxSecretKeyFile;
             inherit (cfg) port;
             bind_address = cfg.bind;
 
@@ -350,13 +350,13 @@ in
         };
 
     # Configure Cloudflare Tunnel ingress if enabled
-    telometto.services.cloudflared.ingress =
+    sys.services.cloudflared.ingress =
       lib.mkIf
         (
           cfg.reverseProxy.cfTunnel.enable
           && cfg.reverseProxy.enable
           && cfg.reverseProxy.domain != null
-          && config.telometto.services.cloudflared.enable or false
+          && config.sys.services.cloudflared.enable or false
         )
         {
           "${cfg.reverseProxy.domain}" = "http://localhost:80";
@@ -366,19 +366,19 @@ in
     assertions = [
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "telometto.services.searx.reverseProxy.domain must be set when cfTunnel.enable is true";
+        message = "sys.services.searx.reverseProxy.domain must be set when cfTunnel.enable is true";
       }
       {
         assertion = !cfg.publicInstance || cfg.contactUrl != null;
-        message = "telometto.services.searx.contactUrl must be set when publicInstance = true (required for abuse reports)";
+        message = "sys.services.searx.contactUrl must be set when publicInstance = true (required for abuse reports)";
       }
       {
         assertion = !cfg.publicInstance || (cfg.bind == "127.0.0.1" || cfg.bind == "::1");
-        message = "telometto.services.searx.bind must be localhost (127.0.0.1 or ::1) when publicInstance = true (security requirement - only accessible via reverse proxy)";
+        message = "sys.services.searx.bind must be localhost (127.0.0.1 or ::1) when publicInstance = true (security requirement - only accessible via reverse proxy)";
       }
       {
         assertion = !cfg.publicInstance || cfg.reverseProxy.enable;
-        message = "telometto.services.searx.reverseProxy.enable must be true when publicInstance = true (security requirement)";
+        message = "sys.services.searx.reverseProxy.enable must be true when publicInstance = true (security requirement)";
       }
     ];
   };

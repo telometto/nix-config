@@ -5,11 +5,11 @@
   ...
 }:
 let
-  cfg = config.telometto.role.desktop;
+  cfg = config.sys.role.desktop;
 in
 {
   config = lib.mkIf cfg.enable {
-    telometto = {
+    sys = {
       boot = {
         lanzaboote.enable = true;
         plymouth = {
@@ -54,7 +54,7 @@ in
       virtualisation.enable = true;
     };
 
-    telometto.home.enable = true;
+    sys.home.enable = true;
 
     networking.firewall.enable = true;
   };

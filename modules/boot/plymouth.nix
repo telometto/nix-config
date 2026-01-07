@@ -6,10 +6,10 @@
   ...
 }:
 let
-  cfg = config.telometto.boot.plymouth;
+  cfg = config.sys.boot.plymouth;
 in
 {
-  options.telometto.boot.plymouth = {
+  options.sys.boot.plymouth = {
     enable = lib.mkEnableOption "Enable Plymouth splash screen with silent boot tweaks";
 
     theme = lib.mkOption {

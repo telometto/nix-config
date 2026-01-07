@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.paperless or { };
+  cfg = config.sys.services.paperless or { };
 in
 {
-  options.telometto.services.paperless = {
+  options.sys.services.paperless = {
     enable = lib.mkEnableOption "Paperless-ngx";
     address = lib.mkOption {
       type = lib.types.str;
@@ -27,7 +27,7 @@ in
 
     passwordFile = lib.mkOption {
       type = lib.types.path;
-      default = config.telometto.secrets.paperlessKeyFile;
+      default = config.sys.secrets.paperlessKeyFile;
     };
 
     consumptionDirIsPublic = lib.mkOption {

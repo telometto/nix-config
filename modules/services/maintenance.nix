@@ -1,10 +1,10 @@
 # OK
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.maintenance;
+  cfg = config.sys.services.maintenance;
 in
 {
-  options.telometto.services.maintenance.enable =
+  options.sys.services.maintenance.enable =
     lib.mkEnableOption "Basic maintenance timers/services (fstrim, fwupd, zram, gvfs, udisks2)";
   config = lib.mkIf cfg.enable {
     services = {

@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.storage.filesystems;
+  cfg = config.sys.storage.filesystems;
 in
 {
-  options.telometto.storage.filesystems = {
+  options.sys.storage.filesystems = {
     enable = lib.mkEnableOption "BTRFS filesystem management";
 
     baseUser = lib.mkOption {

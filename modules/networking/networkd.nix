@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.networking.networkd;
+  cfg = config.sys.networking.networkd;
 in
 {
-  options.telometto.networking.networkd = {
+  options.sys.networking.networkd = {
     enable = lib.mkEnableOption "systemd-networkd service";
   };
   config = lib.mkIf cfg.enable {

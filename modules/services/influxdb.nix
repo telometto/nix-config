@@ -5,10 +5,10 @@
   ...
 }:
 let
-  cfg = config.telometto.services.influxdb;
+  cfg = config.sys.services.influxdb;
 in
 {
-  options.telometto.services.influxdb = {
+  options.sys.services.influxdb = {
     enable = lib.mkEnableOption "InfluxDB 2.x time-series database for long-term metrics storage";
 
     package = lib.mkPackageOption pkgs "influxdb2" { };
@@ -64,16 +64,16 @@ in
 
       passwordFile = lib.mkOption {
         type = lib.types.path;
-        default = config.telometto.secrets.influxdbPasswordFile or "/run/secrets/influxdb-password";
-        defaultText = lib.literalExpression "config.telometto.secrets.influxdbPasswordFile";
+        default = config.sys.secrets.influxdbPasswordFile or "/run/secrets/influxdb-password";
+        defaultText = lib.literalExpression "config.sys.secrets.influxdbPasswordFile";
         description = "Path to file containing the admin password. Do not use a file from the nix store!";
         example = "/run/secrets/influxdb-password";
       };
 
       tokenFile = lib.mkOption {
         type = lib.types.path;
-        default = config.telometto.secrets.influxdbTokenFile or "/run/secrets/influxdb-token";
-        defaultText = lib.literalExpression "config.telometto.secrets.influxdbTokenFile";
+        default = config.sys.secrets.influxdbTokenFile or "/run/secrets/influxdb-token";
+        defaultText = lib.literalExpression "config.sys.secrets.influxdbTokenFile";
         description = "Path to file containing the admin API token. Do not use a file from the nix store!";
         example = "/run/secrets/influxdb-token";
       };
@@ -222,7 +222,7 @@ in
     };
 
     # Enable Telegraf as Prometheus remote write receiver
-    telometto.services.telegraf = lib.mkIf (cfg.prometheusRemoteWrite.enable && cfg.telegraf.enable) {
+    sys.services.telegraf = lib.mkIf (cfg.prometheusRemoteWrite.enable && cfg.telegraf.enable) {
       enable = true;
       prometheusRemoteWrite = {
         inherit (cfg.telegraf) port listenAddress;
@@ -272,8 +272,8 @@ in
         ];
 
     # Add InfluxDB as Grafana datasource
-    telometto.services.grafana.provision.datasources =
-      lib.mkIf (cfg.grafanaDatasource.enable && config.telometto.services.grafana.enable or false)
+    sys.services.grafana.provision.datasources =
+      lib.mkIf (cfg.grafanaDatasource.enable && config.sys.services.grafana.enable or false)
         [
           {
             inherit (cfg.grafanaDatasource) name;

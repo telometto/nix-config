@@ -5,7 +5,7 @@
   ...
 }:
 let
-  cfg = config.telometto.services.nfs;
+  cfg = config.sys.services.nfs;
   inherit (lib) types;
 
   mkWhat = m: "${m.server}:${m.export}";
@@ -38,7 +38,7 @@ let
 
 in
 {
-  options.telometto.services.nfs = {
+  options.sys.services.nfs = {
     enable = lib.mkEnableOption "NFS client/server configuration";
 
     mounts = lib.mkOption {

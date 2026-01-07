@@ -1,10 +1,10 @@
 # OK
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.timesyncd;
+  cfg = config.sys.services.timesyncd;
 in
 {
-  options.telometto.services.timesyncd.enable = lib.mkEnableOption "systemd-timesyncd";
+  options.sys.services.timesyncd.enable = lib.mkEnableOption "systemd-timesyncd";
 
   config = lib.mkIf cfg.enable {
     services.timesyncd = {

@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.firefly or { };
+  cfg = config.sys.services.firefly or { };
 in
 {
-  options.telometto.services.firefly = {
+  options.sys.services.firefly = {
     enable = lib.mkEnableOption "Firefly III";
     enableNginx = lib.mkOption {
       type = lib.types.bool;

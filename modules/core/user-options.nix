@@ -1,4 +1,4 @@
-# telometto.users.*: Per-host user enablement control
+# sys.users.*: Per-host user enablement control
 # Provides options to selectively enable/disable users from VARS on each host
 { lib, VARS, ... }:
 let
@@ -22,5 +22,5 @@ let
   );
 in
 {
-  options.telometto.users = userOptions;
+  options.sys.users = userOptions;
 }

@@ -6,10 +6,10 @@
   ...
 }:
 let
-  cfg = config.telometto.services.victoriametricsRemoteWrite;
+  cfg = config.sys.services.victoriametricsRemoteWrite;
 in
 {
-  options.telometto.services.victoriametricsRemoteWrite = {
+  options.sys.services.victoriametricsRemoteWrite = {
     enable = lib.mkEnableOption "Prometheus remote write to a central VictoriaMetrics instance";
 
     vmHost = lib.mkOption {
@@ -77,14 +77,14 @@ in
     assertions = [
       {
         assertion =
-          config.services.prometheus.enable or config.telometto.services.prometheus.enable or false;
+          config.services.prometheus.enable or config.sys.services.prometheus.enable or false;
         message = "victoriametricsRemoteWrite requires Prometheus to be enabled";
       }
       {
-        assertion = !config.telometto.services.victoriametrics.enable or false;
+        assertion = !config.sys.services.victoriametrics.enable or false;
         message = ''
           victoriametricsRemoteWrite should not be used on hosts running VictoriaMetrics locally.
-          Use telometto.services.victoriametrics.prometheusRemoteWrite instead.
+          Use sys.services.victoriametrics.prometheusRemoteWrite instead.
         '';
       }
     ];

@@ -5,13 +5,13 @@
   ...
 }:
 let
-  cfg = config.telometto.services.prometheusExporters;
+  cfg = config.sys.services.prometheusExporters;
 in
 {
-  options.telometto.services.prometheusExporters = {
+  options.sys.services.prometheusExporters = {
     node = {
       enable = lib.mkEnableOption "Prometheus Node Exporter" // {
-        default = config.telometto.services.prometheus.enable or false;
+        default = config.sys.services.prometheus.enable or false;
       };
 
       port = lib.mkOption {
@@ -110,8 +110,8 @@ in
 
   config = lib.mkMerge [
     {
-      telometto.services.prometheusExporters.node.enable = lib.mkDefault (
-        config.telometto.services.prometheus.enable or false
+      sys.services.prometheusExporters.node.enable = lib.mkDefault (
+        config.sys.services.prometheus.enable or false
       );
     }
 

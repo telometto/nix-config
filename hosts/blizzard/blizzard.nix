@@ -29,7 +29,7 @@ in
     };
   };
 
-  telometto = {
+  sys = {
     role.server.enable = true;
 
     users.zeno.enable = true;
@@ -150,7 +150,7 @@ in
 
         # NUT user for local monitoring
         users.upsmon = {
-          passwordFile = config.telometto.secrets.upsmonPasswordFile;
+          passwordFile = config.sys.secrets.upsmonPasswordFile;
           upsmon = "primary";
           actions = [
             "SET"
@@ -160,7 +160,7 @@ in
         };
 
         monitorUser = "upsmon";
-        monitorPasswordFile = config.telometto.secrets.upsmonPasswordFile;
+        monitorPasswordFile = config.sys.secrets.upsmonPasswordFile;
 
         shutdownOrder = 0;
 
@@ -250,7 +250,7 @@ in
             job_name = "zfs";
             static_configs = [
               {
-                targets = [ "localhost:${toString config.telometto.services.prometheusExporters.zfs.port}" ];
+                targets = [ "localhost:${toString config.sys.services.prometheusExporters.zfs.port}" ];
               }
             ];
           }
@@ -287,7 +287,7 @@ in
             scrape_interval = "5m";
             static_configs = [
               {
-                targets = [ "localhost:${toString config.telometto.services.electricityPriceExporter.port}" ];
+                targets = [ "localhost:${toString config.sys.services.electricityPriceExporter.port}" ];
               }
             ];
           }
@@ -298,7 +298,7 @@ in
             metrics_path = "/ups_metrics";
             static_configs = [
               {
-                targets = lib.mapAttrsToList (name: _: name) config.telometto.services.ups.devices;
+                targets = lib.mapAttrsToList (name: _: name) config.sys.services.ups.devices;
               }
             ];
             relabel_configs = [
@@ -312,7 +312,7 @@ in
               }
               {
                 target_label = "__address__";
-                replacement = "localhost:${toString config.telometto.services.ups.prometheusExporter.port}";
+                replacement = "localhost:${toString config.sys.services.ups.prometheusExporter.port}";
               }
             ];
           }
@@ -454,7 +454,7 @@ in
         enable = true;
 
         tunnelId = "ce54cb73-83b2-4628-8246-26955d280641";
-        credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile;
+        credentialsFile = config.sys.secrets.cloudflaredCredentialsFile;
 
         ingress = {
           "requests.${VARS.domains.public}" = "http://localhost:80";
@@ -477,13 +477,13 @@ in
         jobs.homeserver = {
           paths = [ "/home/${VARS.users.zeno.user}" ];
           environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
-          repo = config.telometto.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo";
+          repo = config.sys.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo";
           compression = "zstd,8";
           startAt = "daily";
 
           encryption = {
             mode = "repokey-blake2";
-            passCommand = "cat ${config.telometto.secrets.borgKeyFile}";
+            passCommand = "cat ${config.sys.secrets.borgKeyFile}";
           };
         };
       };
@@ -564,7 +564,7 @@ in
         capi.credentialsFile = "/var/lib/crowdsec/state/online_api_credentials.yaml";
 
         console = {
-          tokenFile = config.telometto.secrets.crowdsecConsoleTokenFile;
+          tokenFile = config.sys.secrets.crowdsecConsoleTokenFile;
 
           configuration = {
             share_manual_decisions = true;
@@ -685,7 +685,7 @@ in
       serviceConfig = {
         Type = "simple";
         # Inject the API key from SOPS into the config file before starting
-        ExecStartPre = "${pkgs.bash}/bin/bash -c '${pkgs.gnused}/bin/sed -i \"s|api_key: \\\"\\\"|api_key: \\\"$(cat ${config.telometto.secrets.crowdsecFirewallBouncerTokenFile})\\\"|\" /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml'";
+        ExecStartPre = "${pkgs.bash}/bin/bash -c '${pkgs.gnused}/bin/sed -i \"s|api_key: \\\"\\\"|api_key: \\\"$(cat ${config.sys.secrets.crowdsecFirewallBouncerTokenFile})\\\"|\" /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml'";
         ExecStart = "${pkgs.crowdsec-firewall-bouncer}/bin/crowdsec-firewall-bouncer -c /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml";
         Restart = "on-failure";
         RestartSec = "5s";
@@ -761,7 +761,7 @@ in
                 crowdsecMode = "stream";
                 crowdsecLapiScheme = "http";
                 crowdsecLapiHost = "127.0.0.1:8085";
-                crowdsecLapiKeyFile = "${config.telometto.secrets.crowdsecTraefikBouncerTokenFile}";
+                crowdsecLapiKeyFile = "${config.sys.secrets.crowdsecTraefikBouncerTokenFile}";
 
                 forwardedHeadersTrustedIPs = [
                   "127.0.0.1/32"
@@ -912,7 +912,7 @@ in
 
   systemd.services.traefik.serviceConfig = {
     BindReadOnlyPaths = [
-      config.telometto.secrets.crowdsecTraefikBouncerTokenFile
+      config.sys.secrets.crowdsecTraefikBouncerTokenFile
     ];
   };
 
