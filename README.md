@@ -1,237 +1,148 @@
-# ❄️ NixOS Configuration
+# NixOS Configurations (Flakes + Auto-Loaded Modules)
 
-A declarative, reproducible NixOS configuration for multiple hosts using flakes, home-manager, and automated maintenance.
+Welcome. This repo provides a modular NixOS setup for multiple hosts with automatic system and Home Manager module loading. Newcomers can onboard quickly: define a host, toggle roles and users, and switch.
 
-## 📚 Overview
+## What You Get
 
-This repository contains my personal NixOS configuration for managing multiple machines with a unified, declarative approach. It leverages Nix flakes for reproducibility, home-manager for user environment management, and includes automated formatting and compliance checking via GitHub Actions.
+- Multi-host flake outputs for `snowfall`, `blizzard`, `avalanche`, `kaizer`.
+- Auto-loaded system modules via [system-loader.nix](system-loader.nix).
+- Auto-loaded Home Manager modules via [hm-loader.nix](hm-loader.nix) integrated as a NixOS module.
+- Opt-in roles and services (enable via `sys.*` options).
+- Per-host user enable/disable sourced from secrets (`VARS`) with Home Manager profiles built automatically.
 
-### ✨ Features
-
-- **Multi-host support** - Configurations for `snowfall`, `blizzard`, and `avalanche` hosts
-- **Modular architecture** - Reusable modules for common configurations
-- **Home Manager integration** - Declarative user environment management
-- **Automated formatting** - Uses `treefmt-nix` for consistent code style across Nix, Shell, YAML, and Markdown files
-- **CI/CD Pipeline** - GitHub Actions for validation, compliance checking, and automatic updates
-- **Security-first** - Automated checks for hardcoded secrets and security patterns
-
-## 🏗️ Structure
+## Repo Layout
 
 ```
 .
-├── flake.nix           # Entry point - defines inputs and outputs
-├── flake.lock          # Locked dependencies for reproducibility
-├── treefmt.nix         # Multi-language formatter configuration
-├── hosts/              # Host-specific configurations
-│   ├── avalanche/      # Desktop configuration
-│   ├── blizzard/       # Server configuration
-│   └── snowfall/       # Laptop configuration
-├── modules/            # Reusable NixOS modules
-│   ├── core/           # Core system modules (locale, networking, etc.)
-│   ├── desktop/        # Desktop environment modules
-│   ├── hardware/       # Hardware-specific modules
-│   └── services/       # Service configurations
-├── home/               # Home Manager configurations
-│   └── users/          # Per-user home configurations
-└── .github/            # CI/CD workflows
-    └── workflows/      # GitHub Actions automation
+├── flake.nix                 # Flake inputs/outputs; defines hosts via mkHost
+├── system-loader.nix         # Auto-imports all .nix under modules/
+├── hm-loader.nix             # Auto-imports home/ modules (excludes overrides)
+├── modules/                  # System modules and options (auto-loaded)
+│   ├── core/                 # Core: roles, users, home integration, sops, etc.
+│   ├── desktop/              # Desktop base + flavors
+│   ├── hardware/             # Hardware helpers (e.g., nvidia)
+│   └── services/             # Services (grafana, jellyfin, tailscale, ...)
+├── home/                     # Home Manager modules (auto-loaded)
+│   ├── programs/             # HM program configs
+│   ├── desktop/              # HM desktop integrations
+│   └── users/                # Overrides per host/user (opt-in)
+│       ├── host-overrides/   # Applied to all HM users on a host
+│       └── user-configs/     # Applied to a specific user@host
+└── hosts/                    # Host definitions (avalanche, blizzard, snowfall, kaizer)
 ```
 
-## 🚀 Quick Start
+## Onboarding Tutorial (New Machine)
 
-### Prerequisites
-
-- NixOS installed on your system
-- Git for cloning the repository
-- (Optional) SSH keys configured for GitHub access
-
-### Installation
-
-1. **Clone the repository:**
+1) Install NixOS and clone this repo:
 
 ```bash
 git clone https://github.com/yourusername/nix-config.git
 cd nix-config
 ```
 
-2. **Build a specific host configuration:**
+2) Pick or create a host under [hosts/](hosts). Example: [hosts/avalanche/avalanche.nix](hosts/avalanche/avalanche.nix)
+
+- Set hostname and bring in hardware and packages files.
+- Toggle a role and desktop flavor:
+
+```nix
+sys.role.desktop.enable = true;
+sys.desktop.flavor = "gnome"; # or "kde", "hyprland"
+```
+
+3) Enable users for this host (from secrets `VARS`):
+
+```nix
+# Per-host user switches (defined for each user found in VARS)
+sys.users.zeno.enable = true;
+```
+
+4) Switch to the host configuration:
 
 ```bash
-# Build the snowfall (laptop) configuration
+sudo nixos-rebuild switch --flake .#avalanche
+```
+
+That’s it. System modules are auto-imported; HM profiles are generated and applied for enabled users.
+
+## How It Works
+
+- System modules: [system-loader.nix](system-loader.nix) imports every `.nix` under [modules/](modules). Modules expose options (e.g., `sys.services.grafana.enable`) you can toggle in a host file.
+
+- Home Manager integration: `inputs.home-manager.nixosModules.home-manager` is included in the system. The HM layer is orchestrated by:
+  - [modules/core/home-options.nix](modules/core/home-options.nix): `sys.home.enable` and per-user knobs.
+  - [modules/core/home-users.nix](modules/core/home-users.nix): Builds HM configs for enabled users from `VARS`, auto-imports [hm-loader.nix](hm-loader.nix), host/user overrides, and desktop flavor defaults.
+  - [hm-loader.nix](hm-loader.nix): imports all `.nix` under [home/](home), excluding [home/users/host-overrides/](home/users/host-overrides) and [home/users/user-configs/](home/users/user-configs).
+
+- Users and secrets: Users come from `VARS` (provided by your private secrets flake). Per-host enable toggles live under `sys.users.<username>.enable` via [modules/core/user-options.nix](modules/core/user-options.nix). Accounts are created by [modules/core/users.nix](modules/core/users.nix).
+
+- Secrets with sops-nix: [modules/core/sops.nix](modules/core/sops.nix) wires secrets and templates. Secrets for services are defined only when those services are enabled.
+
+## Opt-in Toggles (Examples)
+
+Enable desktop role and HM:
+
+```nix
+sys.role.desktop.enable = true;
+sys.home.enable = true; # defaults to true when roles enable HM
+```
+
+Turn on services:
+
+```nix
+sys.services.grafana.enable = true;
+sys.services.prometheus.enable = true;
+sys.services.tailscale = { enable = true; interface = "wlp4s0"; };
+```
+
+Opt-in programs:
+
+```nix
+sys.programs.python-venv.enable = true;
+sys.programs.nix-ld.enable = true;
+```
+
+Per-host HM overrides:
+
+- Put shared-for-host HM settings in [home/users/host-overrides/<hostname>.nix](home/users/host-overrides).
+- Put user@host specific HM settings in [home/users/user-configs/<user>-<hostname>.nix](home/users/user-configs).
+
+## Commands
+
+- Build a host:
+
+```bash
 nix build .#nixosConfigurations.snowfall.config.system.build.toplevel
-
-# Build the avalanche (desktop) configuration  
-nix build .#nixosConfigurations.avalanche.config.system.build.toplevel
 ```
 
-3. **Switch to a configuration:**
+- Switch to a host configuration:
 
 ```bash
-# Apply the configuration (requires root)
-nixos-rebuild boot .# --sudo
+sudo nixos-rebuild switch --flake .#snowfall
 ```
 
-## 💻 Usage Examples
-
-### Adding a New Package
-
-To add a package system-wide, edit the relevant host configuration:
-
-```nix
-# hosts/snowfall/snowfall.nix
-{ pkgs, ... }:
-{
-  environment.systemPackages = with pkgs; [
-    firefox
-    vscode
-    # Add your package here
-    neovim
-  ];
-}
-```
-
-### Configuring User Environment
-
-User-specific configurations are managed through Home Manager:
-
-```nix
-# home/users/youruser/default.nix
-{ pkgs, ... }:
-{
-  home.packages = with pkgs; [
-    git
-    tmux
-    ripgrep
-  ];
-  
-  programs.git = {
-    enable = true;
-    userName = "Your Name";
-    userEmail = "your.email@example.com";
-  };
-}
-```
-
-### Creating a New Module
-
-Modules provide reusable configuration:
-
-```nix
-# modules/services/my-service.nix
-{ config, lib, pkgs, ... }:
-with lib;
-{
-  options.services.myService = {
-    enable = mkEnableOption "My custom service";
-    
-    port = mkOption {
-      type = types.int;
-      default = 8080;
-      description = "Port to run the service on";
-    };
-  };
-  
-  config = mkIf config.services.myService.enable {
-    # Service configuration here
-  };
-}
-```
-
-## 🔧 Development
-
-### Formatting Code
-
-This project uses `treefmt-nix` for consistent formatting:
+- Format the repo:
 
 ```bash
-# Format all files
 nix fmt
-
-# Check formatting without changes
-nix fmt -- --check
 ```
 
-### Running Compliance Checks
-
-Check for code quality and security issues:
+- Run flake checks:
 
 ```bash
-# Run full validation suite
 nix flake check
-
-# Build and test a specific host
-nix build .#nixosConfigurations.snowfall.config.system.build.toplevel --dry-run
 ```
 
-## 🤖 Automation
+## Reference & Further Reading
+- **NOTE:** Documentation has been generated using LLM
+- [Flake: `flake.nix`](flake.nix)
+- [System loader](system-loader.nix), [Home loader](hm-loader.nix)
+- Core: [roles](modules/core/roles.nix), [home options](modules/core/home-options.nix), [home users](modules/core/home-users.nix), [user options](modules/core/user-options.nix), [users](modules/core/users.nix), [sops](modules/core/sops.nix)
+- Hosts: [hosts/](hosts)
 
-### GitHub Actions Workflows
+Diátaxis docs for onboarding:
+- Tutorial: [docs/tutorial-provision-host.md](docs/tutorial-provision-host.md)
+- How-to: [docs/how-to-add-host-and-users.md](docs/how-to-add-host-and-users.md)
+- Reference: [docs/reference-architecture.md](docs/reference-architecture.md)
+- Explanation: [docs/explanation-design.md](docs/explanation-design.md)
 
-- **`validate-config.yml`** - Validates syntax and builds configurations on every PR
-- **`auto-format.yml`** - Automatically formats code on commits and PRs
-- **`compliance-check.yml`** - Weekly security and quality checks
-- **`update-nix-lock.yml`** - Automated flake.lock updates
-
-### Manual Workflow Triggers
-
-Most workflows can be triggered manually:
-
-```bash
-# Via GitHub CLI
-gh workflow run compliance-check.yml
-
-# Or through GitHub web UI
-# Navigate to Actions → Select workflow → Run workflow
-```
-
-## 📋 Host Configurations
-
-### snowfall (Laptop)
-
-- **Purpose**: Daily driver laptop
-- **Features**: Power management, WiFi, Bluetooth
-- **Display**: Configured for mobility
-
-### blizzard (Server)
-
-- **Purpose**: Home server / NAS
-- **Features**: Container hosting, file sharing
-- **Services**: Media server, backups
-
-### avalanche (Desktop)
-
-- **Purpose**: Main workstation
-- **Features**: Development environment
-- **Display**: Multi-monitor support
-
-## 🛡️ Security
-
-- Secrets are managed separately and not committed to the repository
-- Automated checks prevent hardcoded passwords
-- Regular dependency updates via automated flake.lock updates
-- Compliance checking ensures security best practices
-
-## 📝 Contributing
-
-While this is a personal configuration, suggestions and improvements are welcome:
-
-1. Fork the repository
-1. Create a feature branch
-1. Make your changes
-1. Ensure `nix fmt` and `nix flake check` pass
-1. Submit a pull request
-
-## 📜 License
-
-This configuration is provided as-is for reference and learning purposes. Feel free to use any parts that are helpful for your own configuration.
-
-## 🙏 Acknowledgments
-
-- [NixOS Community](https://nixos.org/) for the amazing ecosystem
-- [home-manager](https://github.com/nix-community/home-manager) for user environment management
-- [treefmt-nix](https://github.com/numtide/treefmt-nix) for unified formatting
-- All the Nix package maintainers who make this possible
-
-______________________________________________________________________
-
-*Configuration tested on NixOS 24.05*
