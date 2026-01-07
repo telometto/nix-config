@@ -6,7 +6,7 @@
   ...
 }:
 let
-  cfg = config.telometto.home;
+  cfg = config.sys.home;
 
   # Transform VARS.users from role-keyed to username-keyed
   varsUsersByUsername = lib.listToAttrs (
@@ -20,13 +20,13 @@ let
   # Filter to only normal users that are enabled on this host
   systemUsers = lib.filterAttrs (
     username: userData:
-    (userData.isNormalUser or false) && (config.telometto.users.${username}.enable or true)
+    (userData.isNormalUser or false) && (config.sys.users.${username}.enable or true)
   ) varsUsersByUsername;
 
   # Auto-enable desktop flavor based on system config
   autoDesktopConfig =
     let
-      flavor = config.telometto.desktop.flavor or null;
+      flavor = config.sys.desktop.flavor or null;
     in
     lib.optionalAttrs
       (
@@ -105,7 +105,7 @@ in
     # Warn about users defined in cfg.users but not in system
     warnings = map (
       username:
-      "telometto.home.users.${username} is defined, but there is no matching NixOS user. Home Manager configuration will be skipped."
+      "sys.home.users.${username} is defined, but there is no matching NixOS user. Home Manager configuration will be skipped."
     ) missingUsers;
 
     home-manager.users = lib.mapAttrs (

@@ -5,7 +5,7 @@
   ...
 }:
 let
-  cfg = config.telometto.services.cloudflareAccessIpUpdater;
+  cfg = config.sys.services.cloudflareAccessIpUpdater;
 
   # Determine API endpoint based on whether appId is provided
   # Reusable policy: /accounts/{account_id}/access/policies/{policy_id}
@@ -114,7 +114,7 @@ let
   '';
 in
 {
-  options.telometto.services.cloudflareAccessIpUpdater = {
+  options.sys.services.cloudflareAccessIpUpdater = {
     enable = lib.mkEnableOption "Cloudflare Access IP Updater";
 
     accountId = lib.mkOption {

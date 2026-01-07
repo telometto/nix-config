@@ -1,6 +1,6 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.openssh;
+  cfg = config.sys.services.openssh;
 
   defaultSettings = {
     X11Forwarding = lib.mkDefault false;
@@ -10,7 +10,7 @@ let
   };
 in
 {
-  options.telometto.services.openssh = {
+  options.sys.services.openssh = {
     enable = lib.mkEnableOption "Enable OpenSSH service (owner module)";
 
     openFirewall = lib.mkOption {

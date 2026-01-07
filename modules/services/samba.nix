@@ -5,7 +5,7 @@
   ...
 }:
 let
-  cfg = config.telometto.services.samba;
+  cfg = config.sys.services.samba;
   inherit (lib) types;
 
   mkShareConfig =
@@ -29,7 +29,7 @@ let
   sharesConfig = lib.mapAttrs mkShareConfig cfg.shares;
 in
 {
-  options.telometto.services.samba = {
+  options.sys.services.samba = {
     enable = lib.mkEnableOption "Samba file sharing service";
 
     openFirewall = lib.mkOption {

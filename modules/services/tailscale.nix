@@ -5,10 +5,10 @@
   ...
 }:
 let
-  cfg = config.telometto.services.tailscale;
+  cfg = config.sys.services.tailscale;
 in
 {
-  options.telometto.services.tailscale = {
+  options.sys.services.tailscale = {
     enable = lib.mkEnableOption "Tailscale VPN";
 
     extraUpFlags = lib.mkOption {
@@ -45,7 +45,7 @@ in
         {
           enable = lib.mkDefault true;
 
-          authKeyFile = config.telometto.secrets.tsKeyFile;
+          authKeyFile = config.sys.secrets.tsKeyFile;
           authKeyParameters = {
             preauthorized = lib.mkDefault true;
             ephemeral = lib.mkDefault false;

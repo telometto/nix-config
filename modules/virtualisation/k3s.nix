@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.k3s or { };
+  cfg = config.sys.services.k3s or { };
 in
 {
-  options.telometto.services.k3s = {
+  options.sys.services.k3s = {
     enable = lib.mkEnableOption "k3s Kubernetes";
     role = lib.mkOption {
       type = lib.types.str;

@@ -8,10 +8,10 @@
   ...
 }:
 let
-  cfg = config.telometto.services.victoriametrics;
+  cfg = config.sys.services.victoriametrics;
 in
 {
-  options.telometto.services.victoriametrics = {
+  options.sys.services.victoriametrics = {
     enable = lib.mkEnableOption "VictoriaMetrics time-series database for long-term metrics storage";
 
     package = lib.mkPackageOption pkgs "victoriametrics" { };
@@ -186,8 +186,8 @@ in
 
     # Add VictoriaMetrics as Grafana datasource
     # VictoriaMetrics is 100% compatible with Prometheus datasource type
-    telometto.services.grafana.provision.datasources =
-      lib.mkIf (cfg.grafanaDatasource.enable && config.telometto.services.grafana.enable or false)
+    sys.services.grafana.provision.datasources =
+      lib.mkIf (cfg.grafanaDatasource.enable && config.sys.services.grafana.enable or false)
         [
           {
             inherit (cfg.grafanaDatasource) name isDefault;

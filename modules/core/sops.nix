@@ -15,13 +15,13 @@ let
   hasBorg = config.services.borgbackup.jobs != { };
   hasPaperless = config.services.paperless.enable or false;
   hasSearx = config.services.searx.enable or false;
-  hasGrafanaCloud = config.telometto.services.grafanaCloud.enable or false;
-  hasCloudflared = config.telometto.services.cloudflared.enable or false;
+  hasGrafanaCloud = config.sys.services.grafanaCloud.enable or false;
+  hasCloudflared = config.sys.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
-  hasCloudflareAccessIpUpdater = config.telometto.services.cloudflareAccessIpUpdater.enable or false;
-  hasInfluxdb = config.telometto.services.influxdb.enable or false;
-  hasInfluxdbRemoteWrite = config.telometto.services.influxdbRemoteWrite.enable or false;
-  hasUps = config.telometto.services.ups.enable or false;
+  hasCloudflareAccessIpUpdater = config.sys.services.cloudflareAccessIpUpdater.enable or false;
+  hasInfluxdb = config.sys.services.influxdb.enable or false;
+  hasInfluxdbRemoteWrite = config.sys.services.influxdbRemoteWrite.enable or false;
+  hasUps = config.sys.services.ups.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -132,9 +132,9 @@ in
     };
   };
 
-  # Bridge SOPS -> telometto.secrets (legacy path mapping) as runtime path strings
+  # Bridge SOPS -> sys.secrets (legacy path mapping) as runtime path strings
   # Only expose paths for secrets that are actually defined
-  telometto.secrets =
+  sys.secrets =
     whenEnabled hasTailscale {
       tsKeyFile = toString config.sops.secrets."general/tsKeyFilePath".path;
     }

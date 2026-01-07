@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.autoUpgrade or { };
+  cfg = config.sys.services.autoUpgrade or { };
 in
 {
-  options.telometto.services.autoUpgrade = {
+  options.sys.services.autoUpgrade = {
     enable = lib.mkEnableOption "Automatic system upgrades via flakes";
 
     flake = lib.mkOption {

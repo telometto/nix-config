@@ -5,10 +5,10 @@
   ...
 }:
 let
-  cfg = config.telometto.services.grafana;
+  cfg = config.sys.services.grafana;
 in
 {
-  options.telometto.services.grafana = {
+  options.sys.services.grafana = {
     enable = lib.mkEnableOption "Grafana visualization and dashboarding";
 
     port = lib.mkOption {
@@ -183,11 +183,11 @@ in
         datasources.settings = {
           apiVersion = 1;
           datasources =
-            lib.optionals (config.telometto.services.prometheus.enable or false) [
+            lib.optionals (config.sys.services.prometheus.enable or false) [
               {
                 name = "Prometheus";
                 type = "prometheus";
-                url = "http://${config.telometto.services.prometheus.listenAddress}:${toString config.telometto.services.prometheus.port}";
+                url = "http://${config.sys.services.prometheus.listenAddress}:${toString config.sys.services.prometheus.port}";
                 isDefault = true;
                 editable = false;
               }
@@ -239,13 +239,13 @@ in
           };
         };
 
-    telometto.services.cloudflared.ingress =
+    sys.services.cloudflared.ingress =
       lib.mkIf
         (
           cfg.reverseProxy.cfTunnel.enable
           && cfg.reverseProxy.enable
           && cfg.reverseProxy.domain != null
-          && config.telometto.services.cloudflared.enable or false
+          && config.sys.services.cloudflared.enable or false
         )
         {
           "${cfg.reverseProxy.domain}" = "http://localhost:80";
@@ -254,7 +254,7 @@ in
     assertions = [
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "telometto.services.grafana.reverseProxy.domain must be set when cfTunnel.enable is true";
+        message = "sys.services.grafana.reverseProxy.domain must be set when cfTunnel.enable is true";
       }
     ];
   };

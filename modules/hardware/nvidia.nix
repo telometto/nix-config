@@ -5,10 +5,10 @@
   ...
 }:
 let
-  cfg = config.telometto.hardware.nvidia;
+  cfg = config.sys.hardware.nvidia;
 in
 {
-  options.telometto.hardware.nvidia = {
+  options.sys.hardware.nvidia = {
     enable = lib.mkEnableOption "NVIDIA GPU support with proprietary drivers";
 
     package = lib.mkOption {

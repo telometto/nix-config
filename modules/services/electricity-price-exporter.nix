@@ -6,7 +6,7 @@
 }:
 
 let
-  cfg = config.telometto.services.electricityPriceExporter;
+  cfg = config.sys.services.electricityPriceExporter;
 
   pythonEnv = pkgs.python3.withPackages (ps: [ ps.requests ]);
 
@@ -22,7 +22,7 @@ let
   };
 in
 {
-  options.telometto.services.electricityPriceExporter = {
+  options.sys.services.electricityPriceExporter = {
     enable = lib.mkEnableOption "Norwegian electricity price Prometheus exporter";
 
     port = lib.mkOption {
