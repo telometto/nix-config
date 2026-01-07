@@ -56,14 +56,18 @@ let
       };
 
       protocol = lib.mkOption {
-        type = lib.types.enum [ "ssh" "ssh-ng" ];
+        type = lib.types.enum [
+          "ssh"
+          "ssh-ng"
+        ];
         default = "ssh";
         description = "Protocol used to reach the builder";
       };
     };
   });
 
-  renderMachine = machine:
+  renderMachine =
+    machine:
     lib.filterAttrs (_: v: v != null) {
       inherit (machine)
         hostName
@@ -73,7 +77,8 @@ let
         sshUser
         supportedFeatures
         mandatoryFeatures
-        protocol;
+        protocol
+        ;
       sshKey = machine.sshKey;
     };
 

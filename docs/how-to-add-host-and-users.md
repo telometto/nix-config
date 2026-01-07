@@ -4,12 +4,13 @@ Problem: Add a new machine to the flake and enable specific users’ accounts an
 
 ## Steps
 
-1) Create a host folder under `hosts/<hostname>/` with:
+1. Create a host folder under `hosts/<hostname>/` with:
+
 - `<hostname>.nix`
 - `hardware-configuration.nix`
 - `packages.nix` (optional)
 
-2) Toggle roles and desktop flavor in `<hostname>.nix`:
+2. Toggle roles and desktop flavor in `<hostname>.nix`:
 
 ```nix
 sys.role.server.enable = true;   # for servers
@@ -18,17 +19,18 @@ sys.role.desktop.enable = true;  # for desktops/laptops
 sys.desktop.flavor = "kde";     # kde | gnome | hyprland
 ```
 
-3) Enable users from `VARS` in `<hostname>.nix`:
+3. Enable users from `VARS` in `<hostname>.nix`:
 
 ```nix
 sys.users.<username>.enable = true;  # e.g., zeno
 ```
 
-4) (Optional) Add Home Manager overrides:
+4. (Optional) Add Home Manager overrides:
+
 - Host-wide: `home/users/host-overrides/<hostname>.nix`
 - User@host specific: `home/users/user-configs/<user>-<hostname>.nix`
 
-5) Build or switch:
+5. Build or switch:
 
 ```bash
 nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel

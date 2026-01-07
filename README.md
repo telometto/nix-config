@@ -33,14 +33,14 @@ Welcome. This repo provides a modular NixOS setup for multiple hosts with automa
 
 ## Onboarding Tutorial (New Machine)
 
-1) Install NixOS and clone this repo:
+1. Install NixOS and clone this repo:
 
 ```bash
 git clone https://github.com/yourusername/nix-config.git
 cd nix-config
 ```
 
-2) Pick or create a host under [hosts/](hosts). Example: [hosts/avalanche/avalanche.nix](hosts/avalanche/avalanche.nix)
+2. Pick or create a host under [hosts/](hosts). Example: [hosts/avalanche/avalanche.nix](hosts/avalanche/avalanche.nix)
 
 - Set hostname and bring in hardware and packages files.
 - Toggle a role and desktop flavor:
@@ -50,14 +50,14 @@ sys.role.desktop.enable = true;
 sys.desktop.flavor = "gnome"; # or "kde", "hyprland"
 ```
 
-3) Enable users for this host (from secrets `VARS`):
+3. Enable users for this host (from secrets `VARS`):
 
 ```nix
 # Per-host user switches (defined for each user found in VARS)
 sys.users.zeno.enable = true;
 ```
 
-4) Switch to the host configuration:
+4. Switch to the host configuration:
 
 ```bash
 sudo nixos-rebuild switch --flake .#avalanche
@@ -70,6 +70,7 @@ That’s it. System modules are auto-imported; HM profiles are generated and app
 - System modules: [system-loader.nix](system-loader.nix) imports every `.nix` under [modules/](modules). Modules expose options (e.g., `sys.services.grafana.enable`) you can toggle in a host file.
 
 - Home Manager integration: `inputs.home-manager.nixosModules.home-manager` is included in the system. The HM layer is orchestrated by:
+
   - [modules/core/home-options.nix](modules/core/home-options.nix): `sys.home.enable` and per-user knobs.
   - [modules/core/home-users.nix](modules/core/home-users.nix): Builds HM configs for enabled users from `VARS`, auto-imports [hm-loader.nix](hm-loader.nix), host/user overrides, and desktop flavor defaults.
   - [hm-loader.nix](hm-loader.nix): imports all `.nix` under [home/](home), excluding [home/users/host-overrides/](home/users/host-overrides) and [home/users/user-configs/](home/users/user-configs).
@@ -134,6 +135,7 @@ nix flake check
 ```
 
 ## Reference & Further Reading
+
 - **NOTE:** Documentation has been generated using LLM
 - [Flake: `flake.nix`](flake.nix)
 - [System loader](system-loader.nix), [Home loader](hm-loader.nix)
@@ -141,8 +143,8 @@ nix flake check
 - Hosts: [hosts/](hosts)
 
 Diátaxis docs for onboarding:
+
 - Tutorial: [docs/tutorial-provision-host.md](docs/tutorial-provision-host.md)
 - How-to: [docs/how-to-add-host-and-users.md](docs/how-to-add-host-and-users.md)
 - Reference: [docs/reference-architecture.md](docs/reference-architecture.md)
 - Explanation: [docs/explanation-design.md](docs/explanation-design.md)
-
