@@ -1,4 +1,3 @@
-# Enabled (role)
 {
   lib,
   config,
