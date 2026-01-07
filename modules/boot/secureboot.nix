@@ -6,10 +6,10 @@
   ...
 }:
 let
-  cfg = config.telometto.boot.lanzaboote;
+  cfg = config.sys.boot.lanzaboote;
 in
 {
-  options.telometto.boot.lanzaboote.enable = lib.mkEnableOption "Secure Boot";
+  options.sys.boot.lanzaboote.enable = lib.mkEnableOption "Secure Boot";
 
   config = lib.mkIf cfg.enable {
     boot = {

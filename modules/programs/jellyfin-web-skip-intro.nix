@@ -1,15 +1,15 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.programs.jellyfinWebSkipIntro;
+  cfg = config.sys.programs.jellyfinWebSkipIntro;
 in
 {
-  options.telometto.programs.jellyfinWebSkipIntro.enable =
+  options.sys.programs.jellyfinWebSkipIntro.enable =
     lib.mkEnableOption "Inject Skip Intro button into Jellyfin Web";
 
   config = lib.mkMerge [
     {
-      telometto.programs.jellyfinWebSkipIntro.enable = lib.mkDefault (
-        config.telometto.services.jellyfin.enable or false
+      sys.programs.jellyfinWebSkipIntro.enable = lib.mkDefault (
+        config.sys.services.jellyfin.enable or false
       );
     }
 

@@ -5,7 +5,7 @@
   ...
 }:
 let
-  cfg = config.telometto.overlays;
+  cfg = config.sys.overlays;
 
   # Helper to create an overlay that pulls a package from a different nixpkgs input
   mkOverlayFromInput =
@@ -33,11 +33,11 @@ let
   );
 in
 {
-  options.telometto.overlays = {
+  options.sys.overlays = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Enable the telometto overlay system";
+      description = "Enable the sys overlay system";
     };
 
     fromInputs = lib.mkOption {
@@ -48,7 +48,7 @@ in
 
         Example:
         ```nix
-        telometto.overlays.fromInputs = {
+        sys.overlays.fromInputs = {
           nixpkgs-unstable = [ "firefox" "chromium" ];
           nixpkgs-stable = [ "vscode" ];
         };
@@ -72,7 +72,7 @@ in
 
         Example:
         ```nix
-        telometto.overlays.custom = [
+        sys.overlays.custom = [
           (final: prev: {
             myPackage = prev.myPackage.override { enableFeature = true; };
           })

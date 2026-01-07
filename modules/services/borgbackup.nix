@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.borgbackup or { };
+  cfg = config.sys.services.borgbackup or { };
 in
 {
-  options.telometto.services.borgbackup = {
+  options.sys.services.borgbackup = {
     enable = lib.mkEnableOption "BorgBackup jobs";
 
     jobs = lib.mkOption {

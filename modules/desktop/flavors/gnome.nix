@@ -5,7 +5,7 @@
   ...
 }:
 let
-  flavor = config.telometto.desktop.flavor or "none";
+  flavor = config.sys.desktop.flavor or "none";
   is = v: flavor == v;
 in
 {

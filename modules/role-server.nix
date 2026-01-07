@@ -1,10 +1,10 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.role.server;
+  cfg = config.sys.role.server;
 in
 {
   config = lib.mkIf cfg.enable {
-    telometto = {
+    sys = {
       boot = {
         lanzaboote.enable = true;
         plymouth.enable = false;
@@ -35,7 +35,7 @@ in
       };
     };
 
-    telometto.home.enable = true;
+    sys.home.enable = true;
 
     networking.firewall.enable = true;
   };

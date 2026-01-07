@@ -5,10 +5,10 @@
   ...
 }:
 let
-  cfg = config.telometto.programs.python-venv;
+  cfg = config.sys.programs.python-venv;
 in
 {
-  options.telometto.programs.python-venv = {
+  options.sys.programs.python-venv = {
     enable = lib.mkEnableOption "Python virtual environment support with nix-ld";
 
     pythonPackage = lib.mkOption {
@@ -29,10 +29,10 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = config.programs.nix-ld.enable || config.telometto.programs.nix-ld.enable;
+        assertion = config.programs.nix-ld.enable || config.sys.programs.nix-ld.enable;
         message = ''
           Python venv support requires nix-ld to be enabled.
-          Either enable programs.nix-ld.enable or telometto.programs.nix-ld.enable.
+          Either enable programs.nix-ld.enable or sys.programs.nix-ld.enable.
         '';
       }
     ];

@@ -6,7 +6,7 @@
   ...
 }:
 let
-  cfg = config.telometto.home;
+  cfg = config.sys.home;
 in
 {
   config = lib.mkIf cfg.enable {

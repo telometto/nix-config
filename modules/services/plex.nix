@@ -1,11 +1,11 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.plex or { };
+  cfg = config.sys.services.plex or { };
 in
 {
-  options.telometto.services.plex.enable = lib.mkEnableOption "Plex Media Server";
+  options.sys.services.plex.enable = lib.mkEnableOption "Plex Media Server";
 
-  options.telometto.services.plex.openFirewall = lib.mkOption {
+  options.sys.services.plex.openFirewall = lib.mkOption {
     type = lib.types.bool;
     default = false;
   };

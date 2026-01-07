@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.actual or { };
+  cfg = config.sys.services.actual or { };
 in
 {
-  options.telometto.services.actual = {
+  options.sys.services.actual = {
     enable = lib.mkEnableOption "Actual Budget";
 
     port = lib.mkOption {

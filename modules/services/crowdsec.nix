@@ -8,16 +8,16 @@
     ...
   }:
   # Namespace & layering notes:
-  # - This module owns options under `telometto.services.crowdsec.*`.
+  # - This module owns options under `sys.services.crowdsec.*`.
   # - Other modules should not redeclare these options; they may set sub-options
   #   we expose (e.g., hub collections, local configs) to avoid namespace collisions.
   # - Use mkDefault in core, mkOverride in roles/features, mkForce in host overrides
   #   for predictable precedence.
   let
-    cfg = config.telometto.services.crowdsec;
+    cfg = config.sys.services.crowdsec;
   in
   {
-    options.telometto.services.crowdsec = {
+    options.sys.services.crowdsec = {
       enable = lib.mkEnableOption "CrowdSec security engine";
 
       package = lib.mkOption {

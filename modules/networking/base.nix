@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.networking.base;
+  cfg = config.sys.networking.base;
 in
 {
-  options.telometto.networking.base.enable = lib.mkEnableOption "Base networking defaults";
+  options.sys.networking.base.enable = lib.mkEnableOption "Base networking defaults";
 
   config = lib.mkIf cfg.enable {
     networking = {

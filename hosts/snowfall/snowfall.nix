@@ -29,7 +29,7 @@ in
     };
   };
 
-  telometto = {
+  sys = {
     role.desktop.enable = true;
 
     desktop.flavor = "kde";
@@ -120,7 +120,7 @@ in
             job_name = "electricity-price";
             static_configs = [
               {
-                targets = [ "localhost:${toString config.telometto.services.electricityPriceExporter.port}" ];
+                targets = [ "localhost:${toString config.sys.services.electricityPriceExporter.port}" ];
               }
             ];
             scrape_interval = "5m"; # Prices change hourly, no need to scrape often
@@ -153,7 +153,7 @@ in
       cloudflared = {
         enable = true;
         tunnelId = "8e2c0187-8e1c-4700-958f-a8276707e641";
-        credentialsFile = config.telometto.secrets.cloudflaredCredentialsFile;
+        credentialsFile = config.sys.secrets.cloudflaredCredentialsFile;
 
         ingress = {
           # Grafana is automatically added via cfTunnel.enable

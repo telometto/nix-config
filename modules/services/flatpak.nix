@@ -5,12 +5,12 @@
   ...
 }:
 let
-  cfg = config.telometto.services.flatpak;
+  cfg = config.sys.services.flatpak;
 in
 {
-  options.telometto.services.flatpak.enable = lib.mkEnableOption "Flatpak + auto add flathub repo";
+  options.sys.services.flatpak.enable = lib.mkEnableOption "Flatpak + auto add flathub repo";
 
-  options.telometto.services.flatpak.unitOverrides = lib.mkOption {
+  options.sys.services.flatpak.unitOverrides = lib.mkOption {
     type = lib.types.attrsOf lib.types.anything;
     default = { };
     description = "Extra attributes merged into systemd.services.flatpak-repo (owner extension point).";

@@ -1,6 +1,6 @@
 { lib, ... }:
 {
-  options.telometto.secrets = {
+  options.sys.secrets = {
     tsKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string (do not coerce into store)
       default = null;
@@ -47,8 +47,8 @@
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = ''
-        Borg repository URL. If null, set per-host under telometto.services.borgbackup.jobs.<name>.repo.
-        If provided here, hosts can reference config.telometto.secrets.borgRepo.
+        Borg repository URL. If null, set per-host under sys.services.borgbackup.jobs.<name>.repo.
+        If provided here, hosts can reference config.sys.secrets.borgRepo.
       '';
     };
 

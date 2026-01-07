@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.sanoid or { };
+  cfg = config.sys.services.sanoid or { };
 in
 {
-  options.telometto.services.sanoid = {
+  options.sys.services.sanoid = {
     enable = lib.mkEnableOption "Sanoid snapshot management";
 
     templates = lib.mkOption {
