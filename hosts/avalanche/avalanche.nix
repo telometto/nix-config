@@ -44,10 +44,10 @@ in
     };
 
     # Pull specific packages from different nixpkgs inputs
-    overlays.fromInputs = {
-      # nixpkgs-unstable = [ "intel-graphics-compiler" ];
-      nixpkgs-stable = [ "vesktop" ];
-    };
+    # overlays.fromInputs = {
+    #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
+    #   nixpkgs-stable = [ "vesktop" ];
+    # };
 
     services = {
       tailscale = {
