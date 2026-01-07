@@ -51,9 +51,7 @@ in
 
   config = lib.mkMerge [
     {
-      sys.programs.jellyfinGpu.enable = lib.mkDefault (
-        config.sys.services.jellyfin.enable or false
-      );
+      sys.programs.jellyfinGpu.enable = lib.mkDefault (config.sys.services.jellyfin.enable or false);
     }
 
     (lib.mkIf cfg.enable {

@@ -107,8 +107,7 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion =
-          config.services.prometheus.enable or config.sys.services.prometheus.enable or false;
+        assertion = config.services.prometheus.enable or config.sys.services.prometheus.enable or false;
         message = "influxdbRemoteWrite requires Prometheus to be enabled";
       }
       {
