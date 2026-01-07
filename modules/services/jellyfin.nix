@@ -5,10 +5,10 @@
   ...
 }:
 let
-  cfg = config.telometto.services.jellyfin;
+  cfg = config.sys.services.jellyfin;
 in
 {
-  options.telometto.services.jellyfin = {
+  options.sys.services.jellyfin = {
     enable = lib.mkEnableOption "Jellyfin service";
 
     openFirewall = lib.mkOption {

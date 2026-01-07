@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.ombi or { };
+  cfg = config.sys.services.ombi or { };
 in
 {
-  options.telometto.services.ombi = {
+  options.sys.services.ombi = {
     enable = lib.mkEnableOption "Ombi";
 
     port = lib.mkOption {
@@ -101,13 +101,13 @@ in
           };
         };
 
-    telometto.services.cloudflared.ingress =
+    sys.services.cloudflared.ingress =
       lib.mkIf
         (
           cfg.reverseProxy.cfTunnel.enable
           && cfg.reverseProxy.enable
           && cfg.reverseProxy.domain != null
-          && config.telometto.services.cloudflared.enable or false
+          && config.sys.services.cloudflared.enable or false
         )
         {
           "${cfg.reverseProxy.domain}" = "http://localhost:80";
@@ -116,7 +116,7 @@ in
     assertions = [
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "telometto.services.ombi.reverseProxy.domain must be set when cfTunnel.enable is true";
+        message = "sys.services.ombi.reverseProxy.domain must be set when cfTunnel.enable is true";
       }
     ];
   };

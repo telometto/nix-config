@@ -1,10 +1,10 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.home;
+  cfg = config.sys.home;
 in
 {
-  options.telometto.home = {
-    enable = lib.mkEnableOption "Home-manager integration across all telometto hosts";
+  options.sys.home = {
+    enable = lib.mkEnableOption "Home-manager integration across all sys hosts";
 
     template = lib.mkOption {
       type = lib.types.attrs;
@@ -55,7 +55,7 @@ in
   options.home.enable = lib.mkOption {
     type = lib.types.bool;
     default = false;
-    description = "Deprecated. Use telometto.home.enable instead.";
+    description = "Deprecated. Use sys.home.enable instead.";
   };
 
   config.home.enable = lib.mkIf cfg.enable (lib.mkDefault true);

@@ -36,7 +36,7 @@
   hm = {
     # desktop = {
     #   xdg.enable = lib.mkForce false;
-    #   # Desktop environments are auto-detected based on telometto.desktop.flavor
+    #   # Desktop environments are auto-detected based on sys.desktop.flavor
     #   # Individual DEs can be explicitly enabled/disabled per-user if needed
     # };
 

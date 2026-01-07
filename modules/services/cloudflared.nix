@@ -4,10 +4,10 @@
   ...
 }:
 let
-  cfg = config.telometto.services.cloudflared;
+  cfg = config.sys.services.cloudflared;
 in
 {
-  options.telometto.services.cloudflared = {
+  options.sys.services.cloudflared = {
     enable = lib.mkEnableOption "Cloudflare Tunnel";
 
     tunnelId = lib.mkOption {

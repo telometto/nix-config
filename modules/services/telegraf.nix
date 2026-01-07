@@ -6,11 +6,11 @@
   ...
 }:
 let
-  cfg = config.telometto.services.telegraf;
-  influxdbCfg = config.telometto.services.influxdb;
+  cfg = config.sys.services.telegraf;
+  influxdbCfg = config.sys.services.influxdb;
 in
 {
-  options.telometto.services.telegraf = {
+  options.sys.services.telegraf = {
     enable = lib.mkEnableOption "Telegraf as a Prometheus remote write receiver for InfluxDB";
 
     package = lib.mkPackageOption pkgs "telegraf" { };
@@ -33,28 +33,28 @@ in
       url = lib.mkOption {
         type = lib.types.str;
         default = "http://127.0.0.1:${toString (influxdbCfg.port or 8086)}";
-        defaultText = lib.literalExpression "\"http://127.0.0.1:\${toString config.telometto.services.influxdb.port}\"";
+        defaultText = lib.literalExpression "\"http://127.0.0.1:\${toString config.sys.services.influxdb.port}\"";
         description = "URL of the InfluxDB instance to write to";
       };
 
       organization = lib.mkOption {
         type = lib.types.str;
         default = influxdbCfg.initialSetup.organization or "homelab";
-        defaultText = lib.literalExpression "config.telometto.services.influxdb.initialSetup.organization";
+        defaultText = lib.literalExpression "config.sys.services.influxdb.initialSetup.organization";
         description = "InfluxDB organization to write to";
       };
 
       bucket = lib.mkOption {
         type = lib.types.str;
         default = influxdbCfg.prometheusRemoteWrite.bucket or "prometheus";
-        defaultText = lib.literalExpression "config.telometto.services.influxdb.prometheusRemoteWrite.bucket";
+        defaultText = lib.literalExpression "config.sys.services.influxdb.prometheusRemoteWrite.bucket";
         description = "InfluxDB bucket to write to";
       };
 
       tokenFile = lib.mkOption {
         type = lib.types.path;
-        default = config.telometto.secrets.influxdbTokenFile or "/run/secrets/influxdb/token";
-        defaultText = lib.literalExpression "config.telometto.secrets.influxdbTokenFile";
+        default = config.sys.secrets.influxdbTokenFile or "/run/secrets/influxdb/token";
+        defaultText = lib.literalExpression "config.sys.secrets.influxdbTokenFile";
         description = "Path to file containing the InfluxDB API token";
       };
     };

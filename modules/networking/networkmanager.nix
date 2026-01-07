@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.networking.networkmanager;
+  cfg = config.sys.networking.networkmanager;
 in
 {
-  options.telometto.networking.networkmanager = {
+  options.sys.networking.networkmanager = {
     enable = lib.mkEnableOption "NetworkManager service";
   };
   config = lib.mkIf cfg.enable {

@@ -5,11 +5,10 @@
   ...
 }:
 let
-  cfg = config.telometto.programs.gaming;
+  cfg = config.sys.programs.gaming;
 in
 {
-  options.telometto.programs.gaming.enable =
-    lib.mkEnableOption "Gaming stack (gamescope, steam, gamemode)";
+  options.sys.programs.gaming.enable = lib.mkEnableOption "Gaming stack (gamescope, steam, gamemode)";
   config = lib.mkIf cfg.enable {
     hardware.steam-hardware.enable = lib.mkDefault true;
 

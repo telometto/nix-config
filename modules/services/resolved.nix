@@ -1,14 +1,14 @@
 # OK
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.resolved or { };
+  cfg = config.sys.services.resolved or { };
 in
 {
-  options.telometto.services.resolved.enable = (lib.mkEnableOption "systemd-resolved") // {
+  options.sys.services.resolved.enable = (lib.mkEnableOption "systemd-resolved") // {
     default = true;
   };
 
-  options.telometto.services.resolved.extraSettings = lib.mkOption {
+  options.sys.services.resolved.extraSettings = lib.mkOption {
     type = lib.types.attrsOf lib.types.anything;
     default = { };
     description = "Extra settings merged into services.resolved (owner extension point).";

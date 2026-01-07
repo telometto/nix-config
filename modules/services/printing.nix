@@ -1,10 +1,10 @@
 # OK
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.printing;
+  cfg = config.sys.services.printing;
 in
 {
-  options.telometto.services.printing.enable = lib.mkEnableOption "CUPS printing";
+  options.sys.services.printing.enable = lib.mkEnableOption "CUPS printing";
 
   config = lib.mkIf cfg.enable { services.printing.enable = true; };
 }

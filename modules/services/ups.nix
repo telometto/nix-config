@@ -7,7 +7,7 @@
   ...
 }:
 let
-  cfg = config.telometto.services.ups;
+  cfg = config.sys.services.ups;
 
   # Helper to generate UPS configuration
   mkUpsConfig = name: upsCfg: {
@@ -17,7 +17,7 @@ let
   };
 in
 {
-  options.telometto.services.ups = {
+  options.sys.services.ups = {
     enable = lib.mkEnableOption "UPS monitoring with NUT";
 
     mode = lib.mkOption {

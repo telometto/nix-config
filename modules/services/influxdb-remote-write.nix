@@ -7,10 +7,10 @@
   ...
 }:
 let
-  cfg = config.telometto.services.influxdbRemoteWrite;
+  cfg = config.sys.services.influxdbRemoteWrite;
 in
 {
-  options.telometto.services.influxdbRemoteWrite = {
+  options.sys.services.influxdbRemoteWrite = {
     enable = lib.mkEnableOption "Prometheus remote write to a central InfluxDB instance via Telegraf";
 
     telegrafHost = lib.mkOption {
@@ -107,15 +107,14 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion =
-          config.services.prometheus.enable or config.telometto.services.prometheus.enable or false;
+        assertion = config.services.prometheus.enable or config.sys.services.prometheus.enable or false;
         message = "influxdbRemoteWrite requires Prometheus to be enabled";
       }
       {
-        assertion = !config.telometto.services.influxdb.enable or false;
+        assertion = !config.sys.services.influxdb.enable or false;
         message = ''
           influxdbRemoteWrite should not be used on hosts running InfluxDB locally.
-          Use telometto.services.influxdb.prometheusRemoteWrite instead.
+          Use sys.services.influxdb.prometheusRemoteWrite instead.
         '';
       }
     ];

@@ -31,7 +31,7 @@ in
     };
   };
 
-  telometto = {
+  sys = {
     role.desktop.enable = true;
 
     desktop.flavor = "gnome";

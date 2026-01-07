@@ -1,6 +1,6 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.desktop;
+  cfg = config.sys.desktop;
   flavor = cfg.flavor or "none";
   is = v: flavor == v;
   mkNone = {
@@ -14,7 +14,7 @@ let
   };
 in
 {
-  options.telometto.desktop.flavor = lib.mkOption {
+  options.sys.desktop.flavor = lib.mkOption {
     type = lib.types.enum [
       "none"
       "gnome"

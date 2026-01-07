@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.cockpit or { };
+  cfg = config.sys.services.cockpit or { };
 in
 {
-  options.telometto.services.cockpit = {
+  options.sys.services.cockpit = {
     enable = lib.mkEnableOption "Cockpit web UI";
 
     port = lib.mkOption {

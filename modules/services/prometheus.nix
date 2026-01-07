@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.prometheus;
+  cfg = config.sys.services.prometheus;
 in
 {
-  options.telometto.services.prometheus = {
+  options.sys.services.prometheus = {
     enable = lib.mkEnableOption "Prometheus monitoring system";
 
     port = lib.mkOption {
@@ -101,25 +101,25 @@ in
       };
 
       scrapeConfigs =
-        lib.optionals (config.telometto.services.prometheusExporters.node.enable or false) [
+        lib.optionals (config.sys.services.prometheusExporters.node.enable or false) [
           {
             job_name = "node";
             static_configs = [
               {
                 targets = [
-                  "localhost:${toString config.telometto.services.prometheusExporters.node.port}"
+                  "localhost:${toString config.sys.services.prometheusExporters.node.port}"
                 ];
               }
             ];
           }
         ]
-        ++ lib.optionals (config.telometto.services.prometheusExporters.nvidia.enable or false) [
+        ++ lib.optionals (config.sys.services.prometheusExporters.nvidia.enable or false) [
           {
             job_name = "nvidia-gpu";
             static_configs = [
               {
                 targets = [
-                  "localhost:${toString config.telometto.services.prometheusExporters.nvidia.port}"
+                  "localhost:${toString config.sys.services.prometheusExporters.nvidia.port}"
                 ];
               }
             ];

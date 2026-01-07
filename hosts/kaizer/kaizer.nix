@@ -30,7 +30,7 @@ in
     };
   };
 
-  telometto = {
+  sys = {
     role.desktop.enable = true;
 
     desktop.flavor = "kde";
@@ -92,7 +92,7 @@ in
     };
   };
 
-  services.tailscale.authKeyFile = lib.mkForce config.telometto.secrets.kaizerTsKey;
+  services.tailscale.authKeyFile = lib.mkForce config.sys.secrets.kaizerTsKey;
 
   i18n.extraLocaleSettings = lib.mkForce (
     lib.genAttrs [

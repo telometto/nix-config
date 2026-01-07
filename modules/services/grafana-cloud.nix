@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.grafanaCloud;
+  cfg = config.sys.services.grafanaCloud;
 in
 {
-  options.telometto.services.grafanaCloud = {
+  options.sys.services.grafanaCloud = {
     enable = lib.mkEnableOption "Grafana Cloud remote write integration";
 
     username = lib.mkOption {
@@ -22,7 +22,7 @@ in
 
     apiKeyFile = lib.mkOption {
       type = lib.types.path;
-      default = config.telometto.secrets.grafanaCloudApiKeyFile or "/run/secrets/grafana-cloud-key";
+      default = config.sys.secrets.grafanaCloudApiKeyFile or "/run/secrets/grafana-cloud-key";
       description = ''
         Path to file containing the Grafana Cloud API key (from SOPS by default).
         Falls back to /run/secrets/grafana-cloud-key if not using SOPS.
@@ -43,7 +43,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    telometto.services.prometheus = {
+    sys.services.prometheus = {
       enable = true;
       listenAddress = lib.mkDefault "127.0.0.1";
       scrapeInterval = lib.mkDefault cfg.scrapeInterval;
@@ -82,6 +82,6 @@ in
       ];
     };
 
-    telometto.services.prometheusExporters.node.enable = lib.mkDefault true;
+    sys.services.prometheusExporters.node.enable = lib.mkDefault true;
   };
 }

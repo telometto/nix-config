@@ -5,11 +5,11 @@
   ...
 }:
 let
-  cfg = config.telometto.programs.jellyfinGpu;
-  jellyfinEnabled = config.telometto.services.jellyfin.enable or false;
+  cfg = config.sys.programs.jellyfinGpu;
+  jellyfinEnabled = config.sys.services.jellyfin.enable or false;
 in
 {
-  options.telometto.programs.jellyfinGpu = {
+  options.sys.programs.jellyfinGpu = {
     enable = lib.mkEnableOption "Jellyfin VAAPI/Intel GPU support packages";
 
     driver = lib.mkOption {
@@ -51,9 +51,7 @@ in
 
   config = lib.mkMerge [
     {
-      telometto.programs.jellyfinGpu.enable = lib.mkDefault (
-        config.telometto.services.jellyfin.enable or false
-      );
+      sys.programs.jellyfinGpu.enable = lib.mkDefault (config.sys.services.jellyfin.enable or false);
     }
 
     (lib.mkIf cfg.enable {
@@ -90,7 +88,7 @@ in
     })
 
     (lib.mkIf (cfg.enable && jellyfinEnabled) {
-      users.users.${config.telometto.services.jellyfin.user or "jellyfin"}.extraGroups = [
+      users.users.${config.sys.services.jellyfin.user or "jellyfin"}.extraGroups = [
         "video"
         "render"
       ];

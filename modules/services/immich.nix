@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  cfg = config.telometto.services.immich or { };
+  cfg = config.sys.services.immich or { };
 in
 {
-  options.telometto.services.immich = {
+  options.sys.services.immich = {
     enable = lib.mkEnableOption "Immich media server";
 
     host = lib.mkOption {
