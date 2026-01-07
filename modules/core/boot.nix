@@ -1,4 +1,3 @@
-# Automatically imported
 {
   lib,
   config,

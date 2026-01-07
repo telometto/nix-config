@@ -224,6 +224,7 @@ in
           && config.services.traefik.enable or false
         )
         {
+          # Configure Traefik only when reverse proxying is explicitly enabled and a domain is present.
           http = {
             routers.grafana = {
               rule = "Host(`${cfg.reverseProxy.domain}`)";

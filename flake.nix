@@ -23,14 +23,8 @@
       url = "github:nix-community/lanzaboote/master";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        # rust-overlay.follows = "rust-overlay";
       };
     };
-
-    # rust-overlay = {
-    # url = "github:oxalica/rust-overlay";
-    # inputs.nixpkgs.follows = "nixpkgs";
-    # };
 
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -66,13 +60,8 @@
     inputs@{ nixpkgs, nix-secrets, ... }:
     let
       system = "x86_64-linux";
-      # Import VARS from your secrets repository
       VARS = import nix-secrets.vars.varsFile;
-
-      # Treefmt configuration
       treefmtEval = inputs.treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} ./treefmt.nix;
-
-      # Host configuration template
       mkHost =
         hostname: extraModules:
         nixpkgs.lib.nixosSystem {
@@ -80,7 +69,6 @@
           modules = [
             ./system-loader.nix
             ./hosts/${hostname}/${hostname}.nix
-            # External modules
             inputs.home-manager.nixosModules.home-manager
             inputs.sops-nix.nixosModules.sops
             inputs.lanzaboote.nixosModules.lanzaboote
@@ -98,10 +86,7 @@
         kaizer = mkHost "kaizer" [ ];
       };
 
-      # Formatter (treefmt)
       formatter.${system} = treefmtEval.config.build.wrapper;
-
-      # Expose treefmt as a check
       checks.${system}.formatting = treefmtEval.config.build.check inputs.self;
     };
 }
