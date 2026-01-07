@@ -9,21 +9,21 @@ Goal: Bring a new machine under this repo, with auto-loaded system and Home Mana
 
 ## Steps
 
-1) Clone the repo on the target machine:
+1. Clone the repo on the target machine:
 
 ```bash
 git clone https://github.com/yourusername/nix-config.git
 cd nix-config
 ```
 
-2) Create a host directory or reuse one under `hosts/`:
+2. Create a host directory or reuse one under `hosts/`:
 
 - Copy an existing host (e.g., `hosts/avalanche/`) as a template, or create a new `<hostname>/` with:
   - `<hostname>.nix`
   - `hardware-configuration.nix` (from `nixos-generate-config`)
   - `packages.nix` (optional per-host packages)
 
-3) Define basics in `<hostname>.nix`:
+3. Define basics in `<hostname>.nix`:
 
 ```nix
 { lib, inputs, ... }:
@@ -43,7 +43,7 @@ cd nix-config
 }
 ```
 
-4) Switch to the configuration:
+4. Switch to the configuration:
 
 ```bash
 sudo nixos-rebuild switch --flake .#<hostname>

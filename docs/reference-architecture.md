@@ -10,6 +10,7 @@ Information reference for this repo’s moving parts, options, and commands.
   - External modules: home-manager, sops-nix, lanzaboote, microvm
 
 Outputs:
+
 - `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}`
 - `formatter.<system>` (treefmt wrapper)
 - `checks.<system>.formatting`
@@ -22,13 +23,16 @@ Outputs:
 ## Home Manager Integration
 
 - Enabled as a NixOS module via flake.
+
 - Control: [modules/core/home-options.nix](../modules/core/home-options.nix)
+
   - `sys.home.enable` (bool)
   - `sys.home.template` (attrs)
   - `sys.home.extraModules` (list)
   - `sys.home.users.<username>.{enable,extraConfig,extraModules}`
 
 - Build logic: [modules/core/home-users.nix](../modules/core/home-users.nix)
+
   - Users sourced from `VARS.users` (private secrets flake)
   - Imports HM modules via [hm-loader.nix](../hm-loader.nix)
   - Adds host-wide and user@host overrides when files exist

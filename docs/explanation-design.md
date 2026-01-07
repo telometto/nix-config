@@ -8,6 +8,7 @@ This repo aims for fast onboarding and consistent configuration across machines 
 - Home loader ([hm-loader.nix](../hm-loader.nix)) provides the same for Home Manager while deliberately excluding host/user overrides so those remain opt-in.
 
 Trade-offs:
+
 - Pros: Less boilerplate, fewer import mistakes, easy module growth.
 - Cons: Requires naming discipline and clear option namespaces (`sys.*`).
 
