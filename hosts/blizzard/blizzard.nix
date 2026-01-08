@@ -468,6 +468,11 @@ in
 
         disableRegistration = true;
 
+        settings.server = {
+          SSH_DOMAIN = "ssh.git.${VARS.domains.public}";
+          SSH_PORT = 22;
+        };
+
         reverseProxy = {
           enable = true;
           domain = "git.${VARS.domains.public}";
@@ -495,6 +500,7 @@ in
           "series.${VARS.domains.public}" = "http://localhost:80";
 
           "git.${VARS.domains.public}" = "http://localhost:80";
+          "ssh.git.${VARS.domains.public}" = "ssh://localhost:22";
         };
       };
 
