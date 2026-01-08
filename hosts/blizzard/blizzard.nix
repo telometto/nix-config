@@ -450,6 +450,31 @@ in
         };
       };
 
+      gitea = {
+        enable = true;
+
+        port = 11015;
+        openFirewall = true;
+
+        stateDir = "/rpool/unenc/apps/nixos/gitea";
+        repositoryRoot = "/rpool/unenc/apps/nixos/gitea/repositories";
+
+        database = {
+          type = "postgres";
+          createDatabase = true;
+        };
+
+        lfs.enable = true;
+
+        disableRegistration = true;
+
+        reverseProxy = {
+          enable = true;
+          domain = "git.${VARS.domains.public}";
+          cfTunnel.enable = true;
+        };
+      };
+
       cloudflared = {
         enable = true;
 
@@ -468,6 +493,8 @@ in
           "movies.${VARS.domains.public}" = "http://localhost:80";
           "books.${VARS.domains.public}" = "http://localhost:80";
           "series.${VARS.domains.public}" = "http://localhost:80";
+
+          "git.${VARS.domains.public}" = "http://localhost:80";
         };
       };
 
