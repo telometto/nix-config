@@ -493,6 +493,8 @@ in
           "movies.${VARS.domains.public}" = "http://localhost:80";
           "books.${VARS.domains.public}" = "http://localhost:80";
           "series.${VARS.domains.public}" = "http://localhost:80";
+
+          "git.${VARS.domains.public}" = "http://localhost:80";
         };
       };
 
