@@ -119,12 +119,16 @@ in
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = "gitea";
               entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ];
+              middlewares = [ "security-headers" "gitea-xfp-https" ];
             };
 
             services.gitea.loadBalancer = {
               servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
               passHostHeader = true;
+            };
+
+            middlewares."gitea-xfp-https".headers.customRequestHeaders = {
+              "X-Forwarded-Proto" = "https";
             };
           };
         };
