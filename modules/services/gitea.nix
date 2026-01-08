@@ -6,51 +6,19 @@ in
   options.sys.services.gitea = {
     enable = lib.mkEnableOption "Gitea";
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 3000;
-      description = "Port where Gitea web interface listens.";
-    };
-
-    sshPort = lib.mkOption {
-      type = lib.types.port;
-      default = 2222;
-      description = "Port where Gitea SSH server listens.";
-    };
-
-    user = lib.mkOption {
-      type = lib.types.str;
-      default = "gitea";
-      description = "User account under which Gitea runs.";
-    };
-
-    group = lib.mkOption {
-      type = lib.types.str;
-      default = "gitea";
-      description = "Group under which Gitea runs.";
-    };
-
-    stateDir = lib.mkOption {
-      type = lib.types.str;
-      default = "/var/lib/gitea";
-      description = "Gitea data directory.";
-    };
-
-    repositoryRoot = lib.mkOption {
-      type = lib.types.str;
-      default = "/var/lib/gitea/repositories";
-      description = "Path to the git repositories.";
-    };
-
-    openFirewall = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Open firewall for Gitea web and SSH ports.";
+    httpPort = lib.mkOption {
+      type = lib.types.nullOr lib.types.port;
+      default = null;
+      description = "Optional override for the Gitea HTTP port (falls back to upstream default when null).";
     };
 
     database = {
       type = lib.mkOption {
-        type = lib.types.enum [ "sqlite3" "mysql" "postgres" ];
+        type = lib.types.enum [
+          "sqlite3"
+          "mysql"
+          "postgres"
+        ];
         default = "postgres";
         description = "Database engine to use.";
       };
@@ -70,9 +38,9 @@ in
       };
 
       contentDir = lib.mkOption {
-        type = lib.types.str;
-        default = "${cfg.stateDir}/lfs";
-        description = "Where to store LFS files.";
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Where to store LFS files (uses upstream default when null).";
       };
     };
 
@@ -123,92 +91,77 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    services.gitea = {
-      enable = true;
-      inherit (cfg)
-        user
-        group
-        stateDir
-        repositoryRoot
-        ;
-
-      database = {
-        inherit (cfg.database) type createDatabase;
-      };
-
-      lfs = lib.mkIf cfg.lfs.enable {
-        enable = true;
-        contentDir = cfg.lfs.contentDir;
-      };
-
-      settings = lib.mkMerge [
+  config = lib.mkIf cfg.enable (
+    let
+      giteaPort = cfg.httpPort or 3000;
+      traefikEnabled = config.services.traefik.enable or false;
+      cloudflaredEnabled = config.sys.services.cloudflared.enable or false;
+      reverseProxyEnabled = cfg.reverseProxy.enable && cfg.reverseProxy.domain != null;
+    in
+    {
+      services.gitea = lib.mkMerge [
         {
-          server = {
-            HTTP_PORT = cfg.port;
-            SSH_PORT = cfg.sshPort;
-            ROOT_URL = lib.mkIf (cfg.reverseProxy.enable && cfg.reverseProxy.domain != null)
-              "https://${cfg.reverseProxy.domain}/";
+          enable = true;
+
+          database = {
+            inherit (cfg.database) type createDatabase;
           };
 
-          service = {
-            DISABLE_REGISTRATION = cfg.disableRegistration;
-          };
+          lfs = lib.mkIf cfg.lfs.enable (
+            lib.mkMerge [
+              { enable = true; }
+              (lib.mkIf (cfg.lfs.contentDir != null) { contentDir = cfg.lfs.contentDir; })
+            ]
+          );
 
-          session = {
-            COOKIE_SECURE = lib.mkIf cfg.reverseProxy.enable true;
-          };
+          settings = lib.mkMerge [
+            { service.DISABLE_REGISTRATION = cfg.disableRegistration; }
+            (lib.mkIf reverseProxyEnabled {
+              server.ROOT_URL = "https://${cfg.reverseProxy.domain}/";
+              session.COOKIE_SECURE = true;
+            })
+            cfg.settings
+          ];
         }
-        cfg.settings
+        (lib.optionalAttrs (cfg.httpPort != null) { httpPort = cfg.httpPort; })
       ];
-    };
 
-    networking.firewall = lib.mkIf cfg.openFirewall {
-      allowedTCPPorts = [ cfg.port cfg.sshPort ];
-    };
+      services.traefik.dynamicConfigOptions = lib.mkIf (reverseProxyEnabled && traefikEnabled) {
+        http = {
+          routers.gitea = {
+            rule = "Host(`${cfg.reverseProxy.domain}`)";
+            service = "gitea";
+            entryPoints = [ "web" ];
+            middlewares = [ "security-headers" ];
+          };
 
-    services.traefik.dynamicConfigOptions =
-      lib.mkIf (cfg.reverseProxy.enable && config.services.traefik.enable or false)
-        {
-          http = {
-            routers.gitea = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "gitea";
-              entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ];
-            };
-
-            services.gitea.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
-            };
+          services.gitea.loadBalancer = {
+            servers = [ { url = "http://localhost:${toString giteaPort}"; } ];
+            passHostHeader = true;
           };
         };
+      };
 
-    sys.services.cloudflared.ingress =
-      lib.mkIf
-        (
-          cfg.reverseProxy.cfTunnel.enable
-          && cfg.reverseProxy.enable
-          && config.sys.services.cloudflared.enable or false
-        )
+      sys.services.cloudflared.ingress =
+        lib.mkIf (cfg.reverseProxy.cfTunnel.enable && reverseProxyEnabled && cloudflaredEnabled)
+          {
+            "${cfg.reverseProxy.domain}" = "http://localhost:80";
+          };
+
+      assertions = [
         {
-          "${cfg.reverseProxy.domain}" = "http://localhost:80";
-        };
-
-    assertions = [
-      {
-        assertion = !cfg.reverseProxy.enable || cfg.reverseProxy.domain != null;
-        message = "sys.services.gitea.reverseProxy.domain must be set when reverseProxy is enabled";
-      }
-      {
-        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
-        message = "sys.services.gitea.reverseProxy.enable must be true when cfTunnel.enable is true";
-      }
-      {
-        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "sys.services.gitea.reverseProxy.domain must be set when cfTunnel.enable is true";
-      }
-    ];
-  };
+          assertion = !cfg.reverseProxy.enable || cfg.reverseProxy.domain != null;
+          message = "sys.services.gitea.reverseProxy.domain must be set when reverseProxy is enabled";
+        }
+        {
+          assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
+          message = "sys.services.gitea.reverseProxy.enable must be true when cfTunnel.enable is true";
+        }
+        {
+          assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
+          message = "sys.services.gitea.reverseProxy.domain must be set when cfTunnel.enable is true";
+        }
+      ];
+    }
+  );
 }
