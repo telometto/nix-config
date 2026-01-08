@@ -469,7 +469,10 @@ in
         disableRegistration = true;
 
         settings.server = {
-          SSH_DOMAIN = "ssh.git.${VARS.domains.public}";
+          # Cloudflare Universal SSL typically covers only the apex and one-level wildcard
+          # (e.g. zzxyz.no + *.zzxyz.no). A hostname like ssh.git.zzxyz.no is *not* covered
+          # without Advanced Certificate Manager / Total TLS.
+          SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
           SSH_PORT = 22;
         };
 
@@ -500,7 +503,7 @@ in
           "series.${VARS.domains.public}" = "http://localhost:80";
 
           "git.${VARS.domains.public}" = "http://localhost:80";
-          "ssh.git.${VARS.domains.public}" = "ssh://localhost:22";
+          "ssh-git.${VARS.domains.public}" = "ssh://localhost:22";
         };
       };
 

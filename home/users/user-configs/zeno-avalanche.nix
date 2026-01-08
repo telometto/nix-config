@@ -59,7 +59,7 @@
             SetEnv = "TERM=xterm-256color";
           };
 
-          "ssh.git.*" = {
+          "ssh-git.*" = {
             User = "git";
             ProxyCommand = "${pkgs.cloudflared.out}/bin/cloudflared access ssh --hostname %h";
           };
