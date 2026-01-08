@@ -71,6 +71,11 @@
             User = "git";
             IdentityFile = "${config.home.homeDirectory}/.ssh/zeno-blizzard";
           };
+
+          "ssh.git.*" = {
+            User = "git";
+            ProxyCommand = "${pkgs.cloudflared.out}/bin/cloudflared access ssh --hostname %h";
+          };
         };
       };
     };
