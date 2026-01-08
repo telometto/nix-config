@@ -16,6 +16,7 @@
     pkgs.vorta # Borg backup GUI
     pkgs.hugo # static website engine
     pkgs.signal-desktop
+    pkgs.logseq
   ];
 
   hm = {
