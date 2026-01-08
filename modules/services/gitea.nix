@@ -29,7 +29,11 @@ in
 
     database = {
       type = lib.mkOption {
-        type = lib.types.enum [ "sqlite3" "mysql" "postgres" ];
+        type = lib.types.enum [
+          "sqlite3"
+          "mysql"
+          "postgres"
+        ];
         default = "postgres";
       };
 
@@ -90,8 +94,9 @@ in
         {
           server = {
             HTTP_PORT = cfg.port;
-            ROOT_URL = lib.mkIf (cfg.reverseProxy.enable && cfg.reverseProxy.domain != null)
-              "https://${cfg.reverseProxy.domain}/";
+            ROOT_URL = lib.mkIf (
+              cfg.reverseProxy.enable && cfg.reverseProxy.domain != null
+            ) "https://${cfg.reverseProxy.domain}/";
           };
 
           service.DISABLE_REGISTRATION = cfg.disableRegistration;
