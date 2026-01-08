@@ -57,7 +57,10 @@ in
           sshKey = "/home/zeno/.ssh/id_ed25519";
           maxJobs = 8;
           speedFactor = 2;
-          supportedFeatures = [ "kvm" "big-parallel" ];
+          supportedFeatures = [
+            "kvm"
+            "big-parallel"
+          ];
         }
       ];
     };
