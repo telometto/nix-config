@@ -454,7 +454,6 @@ in
         enable = true;
 
         port = 11015;
-        sshPort = 2222;
         openFirewall = true;
 
         stateDir = "/rpool/unenc/apps/nixos/gitea";
@@ -465,9 +464,7 @@ in
           createDatabase = true;
         };
 
-        lfs = {
-          enable = true;
-        };
+        lfs.enable = true;
 
         disableRegistration = true;
 
