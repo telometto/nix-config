@@ -17,6 +17,7 @@ let
   ];
 
   networking = [
+    pkgs.cloudflared
     pkgs.realmd
     pkgs.nettools
     pkgs.wget
