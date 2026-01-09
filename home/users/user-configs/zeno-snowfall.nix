@@ -17,6 +17,7 @@
     pkgs.hugo # static website engine
     pkgs.signal-desktop
     pkgs.logseq
+    pkgs.kdePackages.krdc
   ];
 
   hm = {
@@ -62,7 +63,9 @@
           };
 
           "ssh-git.*" = {
-            User = "git";
+            User = "gitea";
+            IdentityFile = "${config.home.homeDirectory}/.ssh/github-key";
+            IdentitiesOnly = "yes";
             ProxyCommand = "${pkgs.cloudflared.out}/bin/cloudflared access ssh --hostname %h";
           };
         };
@@ -70,6 +73,7 @@
         allowedSigners = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com"
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMdEoq7fpm5wfF6GKpOaebHJUccxcPimffler4ohmRsH 226052356+amonomega@users.noreply.github.com"
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINpFgTwAXaVs3LSoVuQsQoylu2G80QzkqFA751naKNUQ telometto@gitea"
         ];
       };
     };
