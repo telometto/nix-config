@@ -127,19 +127,16 @@ in
           tag.gpgSign = true;
           pull.rebase = false;
 
-          gpg = {
-            format = "ssh";
-            # ssh = {
-            #   defaultKeyCommand = "sh -c 'echo key::$(ssh-add -L | tail -n1)'";
-            #   allowedSignersFile =
-            #     "${config.home.homeDirectory}/.ssh/allowed_signers";
-            # };
-          };
+          gpg.format = "ssh";
         };
 
         includes = [
           {
             condition = "gitdir:~/.versioncontrol/github/";
+            contents.user.email = "65364211+telometto@users.noreply.github.com";
+          }
+          {
+            condition = "gitdir:~/.versioncontrol/gitea/";
             contents.user.email = "65364211+telometto@users.noreply.github.com";
           }
         ];
