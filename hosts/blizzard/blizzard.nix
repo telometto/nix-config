@@ -474,6 +474,10 @@ in
           # without Advanced Certificate Manager / Total TLS.
           SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
           SSH_PORT = 22;
+
+          START_SSH_SERVER = true;
+          SSH_LISTEN_HOST = "127.0.0.1";
+          SSH_LISTEN_PORT = 2222;
         };
 
         reverseProxy = {
@@ -503,7 +507,7 @@ in
           "series.${VARS.domains.public}" = "http://localhost:80";
 
           "git.${VARS.domains.public}" = "http://localhost:80";
-          "ssh-git.${VARS.domains.public}" = "ssh://localhost:22";
+          "ssh-git.${VARS.domains.public}" = "ssh://localhost:2222";
         };
       };
 
