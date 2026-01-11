@@ -24,7 +24,8 @@ in
       settings = {
         inherit (cfg)
           port
-          dataDir;
+          dataDir
+          ;
       };
     };
   };
