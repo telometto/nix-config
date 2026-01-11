@@ -73,6 +73,13 @@ in
         };
       };
 
+      adguardhome = {
+        enable = true;
+        port = 11016;
+        openFirewall = true;
+        mutableSettings = false;
+      };
+
       zfs.enable = true;
 
       sanoid = {
