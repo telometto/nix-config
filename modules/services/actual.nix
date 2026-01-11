@@ -10,13 +10,22 @@ in
       type = lib.types.port;
       default = 3838;
     };
+
+    dataDir = lib.mkOption {
+      type = lib.types.str;
+      default = "/var/lib/actual";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     services.actual = {
       enable = lib.mkDefault true;
       openFirewall = lib.mkDefault false;
-      settings.port = cfg.port;
+      settings = {
+        inherit (cfg)
+          port
+          dataDir;
+      };
     };
   };
 }
