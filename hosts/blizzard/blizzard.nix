@@ -372,8 +372,10 @@ in
       };
 
       actual = {
-        enable = false;
+        enable = true;
+
         port = 11005;
+        dataDir = "/rpool/unenc/apps/nixos/actual";
       };
 
       firefly.enable = false;
