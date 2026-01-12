@@ -22,10 +22,14 @@
 
   hm = {
     programs = {
-      development.extraPackages = [
-        pkgs.vscode
-        pkgs.jetbrains.idea-oss
-      ];
+      development = {
+        extraPackages = [
+          pkgs.vscode
+          pkgs.jetbrains.idea-oss
+        ];
+
+        git.lfs = true;
+      };
 
       media.jf-mpv.enable = false;
     };
