@@ -868,6 +868,22 @@ in
                 # stsPreload = true;
               };
             };
+
+            actual-headers = {
+              headers = {
+                customResponseHeaders = {
+                  X-Content-Type-Options = "nosniff";
+                  X-Frame-Options = "SAMEORIGIN";
+                  X-XSS-Protection = "1; mode=block";
+                  Referrer-Policy = "no-referrer";
+                  Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+                  Cross-Origin-Embedder-Policy = "require-corp";
+                  Cross-Origin-Opener-Policy = "same-origin";
+                };
+
+                contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:;";
+              };
+            };
           };
 
           routers = {
@@ -941,6 +957,14 @@ in
               entryPoints = [ "web" ];
               middlewares = [ "security-headers" ];
             };
+
+            actual = {
+              rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && PathPrefix(`/actual`)";
+              service = "actual";
+              entryPoints = [ "websecure" ];
+              tls.certResolver = "myresolver";
+              middlewares = [ "actual-headers" ];
+            };
           };
 
           services = {
@@ -953,6 +977,7 @@ in
             lingarr.loadBalancer.servers = [ { url = "http://localhost:10031"; } ];
             sabnzbd.loadBalancer.servers = [ { url = "http://localhost:10050"; } ];
             firefox.loadBalancer.servers = [ { url = "http://localhost:10060"; } ];
+            actual.loadBalancer.servers = [ { url = "http://localhost:11005"; } ];
           };
         };
       };
