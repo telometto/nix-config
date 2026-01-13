@@ -54,6 +54,12 @@ in
         default = 1024;
         description = "Maximum volume size in MB for single-node setup";
       };
+
+      port = mkOption {
+        type = types.port;
+        default = 8080;
+        description = "Volume server HTTP port";
+      };
     };
 
     ip = mkOption {
@@ -147,10 +153,13 @@ in
             -master.dir=${cfg.master.dataDir} \
             -dir=${cfg.volume.dataDir} \
             -volume.max=${toString cfg.volume.maxSize} \
+            -volume.port=${toString cfg.volume.port} \
             -master.volumeSizeLimitMB=${toString cfg.volume.maxVolumeSizeMb} \
             ${optionalString cfg.s3.enable "-s3.port=${toString cfg.s3.port}"} \
             ${optionalString cfg.filer.enable "-filer.port=${toString cfg.filer.port}"} \
-            ${optionalString (cfg.master.metricsAddress != null) "-metrics.address=${cfg.master.metricsAddress}"} \
+            ${
+              optionalString (cfg.master.metricsAddress != null) "-metrics.address=${cfg.master.metricsAddress}"
+            } \
             -metricsPort=9324
         '';
 
