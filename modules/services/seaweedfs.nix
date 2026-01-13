@@ -144,7 +144,7 @@ in
             ${optionalString cfg.tailscale.enable "-ip.bind=${cfg.tailscale.hostname}"} \
             ${optionalString cfg.filer.enable "-filer"} \
             ${optionalString cfg.s3.enable "-s3"} \
-            -master.mdir=${cfg.master.dataDir} \
+            -master.dir=${cfg.master.dataDir} \
             -dir=${cfg.volume.dataDir} \
             -volume.max=${toString cfg.volume.maxSize} \
             -master.volumeSizeLimitMB=${toString cfg.volume.maxVolumeSizeMb} \
