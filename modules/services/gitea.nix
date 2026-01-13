@@ -43,9 +43,37 @@ in
       };
     };
 
-    lfs.enable = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
+    lfs = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+
+      tailscale = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Enable Tailscale-specific LFS configuration.
+            When enabled, creates a .lfsconfig file in repositories that directs
+            LFS traffic through Tailscale instead of Cloudflare Tunnels.
+            This bypasses Cloudflare's file size limits for large LFS objects.
+          '';
+        };
+
+        hostname = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          example = "host.tailnet-name.ts.net";
+          description = "Tailscale hostname for LFS operations";
+        };
+
+        port = lib.mkOption {
+          type = lib.types.nullOr lib.types.port;
+          default = null;
+          description = "Port for LFS operations over Tailscale. Defaults to main Gitea port.";
+        };
+      };
     };
 
     disableRegistration = lib.mkOption {
@@ -92,12 +120,15 @@ in
 
       settings = lib.mkMerge [
         {
-          server = {
-            HTTP_PORT = cfg.port;
-            ROOT_URL = lib.mkIf (
-              cfg.reverseProxy.enable && cfg.reverseProxy.domain != null
-            ) "https://${cfg.reverseProxy.domain}/";
-          };
+          server = lib.mkMerge [
+            {
+              HTTP_PORT = cfg.port;
+              DOMAIN = lib.mkIf (cfg.lfs.tailscale.hostname != null) cfg.lfs.tailscale.hostname;
+              LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
+              LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
+              PUBLIC_URL_DETECTION = "auto";
+            }
+          ];
 
           service.DISABLE_REGISTRATION = cfg.disableRegistration;
 
@@ -160,6 +191,33 @@ in
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
         message = "sys.services.gitea.reverseProxy.domain must be set when cfTunnel.enable is true";
       }
+      {
+        assertion = !cfg.lfs.tailscale.enable || cfg.lfs.tailscale.hostname != null;
+        message = "sys.services.gitea.lfs.tailscale.hostname must be set when lfs.tailscale.enable is true";
+      }
+      {
+        assertion = !cfg.lfs.tailscale.enable || cfg.lfs.enable;
+        message = "sys.services.gitea.lfs.enable must be true when lfs.tailscale.enable is true";
+      }
     ];
+
+    # When Tailscale LFS is enabled, create a system-level note for users
+    warnings = lib.optional (cfg.lfs.tailscale.enable) ''
+      Gitea LFS Tailscale routing is enabled. To use Tailscale for LFS operations:
+
+      For existing repositories, add a .lfsconfig file to each repository:
+        [lfs]
+        url = http${lib.optionalString (cfg.reverseProxy.enable) "s"}://${cfg.lfs.tailscale.hostname}${
+          lib.optionalString (cfg.lfs.tailscale.port != null) ":${toString cfg.lfs.tailscale.port}"
+        }/<owner>/<repo>.git/info/lfs
+
+      Or configure git-lfs globally on client machines:
+        git config --global lfs.url http${lib.optionalString (cfg.reverseProxy.enable) "s"}://${cfg.lfs.tailscale.hostname}${
+          lib.optionalString (cfg.lfs.tailscale.port != null) ":${toString cfg.lfs.tailscale.port}"
+        }/<owner>/<repo>.git/info/lfs
+
+      This routes LFS traffic through Tailscale (${cfg.lfs.tailscale.hostname}) instead of Cloudflare Tunnel,
+      bypassing Cloudflare's file size restrictions.
+    '';
   };
 }
