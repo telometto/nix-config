@@ -29,6 +29,7 @@ in
     };
   };
 
+  # SeaweedFS - S3-compatible object storage (port range: 9320-9324)
   services.seaweedfs = {
     enable = true;
 
@@ -40,9 +41,22 @@ in
     };
 
     configDir = "/rpool/unenc/apps/nixos/seaweedfs/config";
-    volume.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/volume";
+
     master.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/master";
-    filer.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/filer";
+    # master.port = 9320; # TODO: Add master.port option to module
+
+    volume = {
+      dataDir = "/rpool/unenc/apps/nixos/seaweedfs/volume";
+      port = 9321;
+    };
+
+    filer = {
+      dataDir = "/rpool/unenc/apps/nixos/seaweedfs/filer";
+      port = 9322;
+    };
+
+    s3.port = 9323;
+    # metrics.port = 9324; # TODO: Add metrics.port option to module (currently hardcoded)
   };
 
   sys = {
@@ -494,7 +508,7 @@ in
 
           s3Backend = {
             enable = true;
-            endpoint = "${config.networking.hostName}.mole-delta.ts.net:8333";
+            endpoint = "${config.networking.hostName}.mole-delta.ts.net:9323";
             bucket = "gitea-lfs";
           };
         };
