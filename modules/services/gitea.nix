@@ -131,10 +131,12 @@ in
               LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
             }
             (lib.mkIf (cfg.lfs.tailscale.enable && cfg.lfs.tailscale.hostname != null) {
-              ALLOWED_HOST_LIST = lib.filter (host: host != null) [
-                cfg.reverseProxy.domain
-                cfg.lfs.tailscale.hostname
-              ];
+              ALLOWED_HOST_LIST = lib.concatStringsSep "," (
+                lib.filter (host: host != null) [
+                  cfg.reverseProxy.domain
+                  cfg.lfs.tailscale.hostname
+                ]
+              );
               # Echo back whatever host was used, so Tailscale requests keep Tailscale URLs
               PUBLIC_URL_DETECTION = "auto";
             })
