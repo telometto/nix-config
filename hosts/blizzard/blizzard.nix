@@ -494,7 +494,7 @@ in
 
           s3Backend = {
             enable = true;
-            endpoint = "http://${config.networking.hostName}.mole-delta.ts.net:8333";
+            endpoint = "${config.networking.hostName}.mole-delta.ts.net:8333";
             bucket = "gitea-lfs";
           };
         };
@@ -535,7 +535,7 @@ in
           "books.${VARS.domains.public}" = "http://localhost:80";
           "series.${VARS.domains.public}" = "http://localhost:80";
 
-          "git.${VARS.domains.public}" = "http://localhost:80";
+          # Gitea HTTP is auto-configured by the Gitea module
           "ssh-git.${VARS.domains.public}" = "ssh://localhost:2222";
         };
       };
