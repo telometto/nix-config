@@ -150,9 +150,7 @@ in
             -master.volumeSizeLimitMB=${toString cfg.volume.maxVolumeSizeMb} \
             ${optionalString cfg.s3.enable "-s3.port=${toString cfg.s3.port}"} \
             ${optionalString cfg.filer.enable "-filer.port=${toString cfg.filer.port}"} \
-            ${
-              optionalString (cfg.master.metricsAddress != null) "-metrics.address=${cfg.master.metricsAddress}"
-            } \
+            ${optionalString (cfg.master.metricsAddress != null) "-metrics.address=${cfg.master.metricsAddress}"} \
             -metricsPort=9324
         '';
 
