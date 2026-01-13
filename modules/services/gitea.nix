@@ -207,10 +207,14 @@ in
 
       For existing repositories, add a .lfsconfig file to each repository:
         [lfs]
-        url = http${lib.optionalString (cfg.reverseProxy.enable) "s"}://${cfg.lfs.tailscale.hostname}${lib.optionalString (cfg.lfs.tailscale.port != null) ":${toString cfg.lfs.tailscale.port}"}/<owner>/<repo>.git/info/lfs
+        url = http${lib.optionalString (cfg.reverseProxy.enable) "s"}://${cfg.lfs.tailscale.hostname}${
+          lib.optionalString (cfg.lfs.tailscale.port != null) ":${toString cfg.lfs.tailscale.port}"
+        }/<owner>/<repo>.git/info/lfs
 
       Or configure git-lfs globally on client machines:
-        git config --global lfs.url http${lib.optionalString (cfg.reverseProxy.enable) "s"}://${cfg.lfs.tailscale.hostname}${lib.optionalString (cfg.lfs.tailscale.port != null) ":${toString cfg.lfs.tailscale.port}"}/<owner>/<repo>.git/info/lfs
+        git config --global lfs.url http${lib.optionalString (cfg.reverseProxy.enable) "s"}://${cfg.lfs.tailscale.hostname}${
+          lib.optionalString (cfg.lfs.tailscale.port != null) ":${toString cfg.lfs.tailscale.port}"
+        }/<owner>/<repo>.git/info/lfs
 
       This routes LFS traffic through Tailscale (${cfg.lfs.tailscale.hostname}) instead of Cloudflare Tunnel,
       bypassing Cloudflare's file size restrictions.
