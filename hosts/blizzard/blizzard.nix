@@ -39,6 +39,7 @@ in
       hostname = "${config.networking.hostName}.mole-delta.ts.net";
     };
 
+    configDir = "/rpool/unenc/apps/nixos/seaweedfs/config";
     volume.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/volume";
     master.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/master";
     filer.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/filer";

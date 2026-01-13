@@ -16,6 +16,12 @@ in
 
     package = mkPackageOption pkgs "seaweedfs" { };
 
+    configDir = mkOption {
+      type = types.path;
+      default = "/var/lib/seaweedfs/config";
+      description = "Directory for SeaweedFS configuration files (s3.config.json, etc)";
+    };
+
     master = {
       dataDir = mkOption {
         type = types.path;
@@ -120,8 +126,9 @@ in
       preStart = ''
         mkdir -p ${cfg.master.dataDir}
         mkdir -p ${cfg.volume.dataDir}
+        mkdir -p ${cfg.configDir}
         ${optionalString cfg.filer.enable "mkdir -p ${cfg.filer.dataDir}"}
-        chown -R seaweedfs:seaweedfs ${cfg.master.dataDir} ${cfg.volume.dataDir} ${optionalString cfg.filer.enable cfg.filer.dataDir}
+        chown -R seaweedfs:seaweedfs ${cfg.master.dataDir} ${cfg.volume.dataDir} ${cfg.configDir} ${optionalString cfg.filer.enable cfg.filer.dataDir}
       '';
 
       serviceConfig = {
@@ -157,6 +164,7 @@ in
         ReadWritePaths = [
           cfg.master.dataDir
           cfg.volume.dataDir
+          cfg.configDir
         ]
         ++ (optionals cfg.filer.enable [ cfg.filer.dataDir ]);
       };
