@@ -29,7 +29,7 @@ in
     };
   };
 
-  # SeaweedFS - S3-compatible object storage (port range: 9320-9324)
+  # SeaweedFS - S3-compatible object storage (port range: 9320-9329)
   services.seaweedfs = {
     enable = true;
 
@@ -48,6 +48,7 @@ in
     volume = {
       dataDir = "/rpool/unenc/apps/nixos/seaweedfs/volume";
       port = 9321;
+      grpcPort = 19321;
     };
 
     filer = {

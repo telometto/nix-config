@@ -60,6 +60,12 @@ in
         default = 8080;
         description = "Volume server HTTP port";
       };
+
+      grpcPort = mkOption {
+        type = types.port;
+        default = 18080;
+        description = "Volume server gRPC port";
+      };
     };
 
     ip = mkOption {
@@ -154,6 +160,7 @@ in
             -dir=${cfg.volume.dataDir} \
             -volume.max=${toString cfg.volume.maxSize} \
             -volume.port=${toString cfg.volume.port} \
+            -volume.port.grpc=${toString cfg.volume.grpcPort} \
             -master.volumeSizeLimitMB=${toString cfg.volume.maxVolumeSizeMb} \
             ${optionalString cfg.s3.enable "-s3.port=${toString cfg.s3.port}"} \
             ${optionalString cfg.filer.enable "-filer.port=${toString cfg.filer.port}"} \
