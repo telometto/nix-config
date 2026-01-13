@@ -123,19 +123,11 @@ in
           server = lib.mkMerge [
             {
               HTTP_PORT = cfg.port;
-              ROOT_URL = lib.mkIf (
-                cfg.reverseProxy.enable && cfg.reverseProxy.domain != null
-              ) "https://${cfg.reverseProxy.domain}/";
-
+              DOMAIN = lib.mkIf (cfg.lfs.tailscale.hostname != null) cfg.lfs.tailscale.hostname;
               LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
               LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
-            }
-            (lib.mkIf (cfg.lfs.tailscale.enable && cfg.lfs.tailscale.hostname != null) {
-              # Use incoming request host for generating LFS URLs instead of ROOT_URL
-              # This allows Tailscale requests to get Tailscale URLs back
-              # while Cloudflare requests still get Cloudflare URLs
               PUBLIC_URL_DETECTION = "auto";
-            })
+            }
           ];
 
           service.DISABLE_REGISTRATION = cfg.disableRegistration;
