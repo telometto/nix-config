@@ -473,7 +473,15 @@ in
           createDatabase = true;
         };
 
-        lfs.enable = true;
+        lfs = {
+          enable = true;
+
+          tailscale = {
+            enable = true;
+            hostname = "${config.networking.hostName}.mole-delta.ts.net";
+            port = 11015;
+          };
+        };
 
         disableRegistration = true;
 
