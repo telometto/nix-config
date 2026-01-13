@@ -161,12 +161,7 @@ in
         PrivateTmp = true;
         ProtectSystem = "strict";
         ProtectHome = true;
-        ReadWritePaths = [
-          cfg.master.dataDir
-          cfg.volume.dataDir
-          cfg.configDir
-        ]
-        ++ (optionals cfg.filer.enable [ cfg.filer.dataDir ]);
+        ReadWritePaths = [ "/rpool/unenc/apps/nixos" ];
       };
     };
 
