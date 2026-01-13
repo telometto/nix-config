@@ -123,11 +123,21 @@ in
           server = lib.mkMerge [
             {
               HTTP_PORT = cfg.port;
-              DOMAIN = lib.mkIf (cfg.lfs.tailscale.hostname != null) cfg.lfs.tailscale.hostname;
+              ROOT_URL = lib.mkIf (
+                cfg.reverseProxy.enable && cfg.reverseProxy.domain != null
+              ) "https://${cfg.reverseProxy.domain}/";
+
               LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
               LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
-              PUBLIC_URL_DETECTION = "auto";
             }
+            (lib.mkIf (cfg.lfs.tailscale.enable && cfg.lfs.tailscale.hostname != null) {
+              ALLOWED_HOST_LIST = lib.filter (host: host != null) [
+                cfg.reverseProxy.domain
+                cfg.lfs.tailscale.hostname
+              ];
+              # Echo back whatever host was used, so Tailscale requests keep Tailscale URLs
+              PUBLIC_URL_DETECTION = "auto";
+            })
           ];
 
           service.DISABLE_REGISTRATION = cfg.disableRegistration;
