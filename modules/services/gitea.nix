@@ -120,20 +120,23 @@ in
 
       settings = lib.mkMerge [
         {
-          server = {
-            HTTP_PORT = cfg.port;
-            ROOT_URL = lib.mkIf (
-              cfg.reverseProxy.enable && cfg.reverseProxy.domain != null
-            ) "https://${cfg.reverseProxy.domain}/";
+          server = lib.mkMerge [
+            {
+              HTTP_PORT = cfg.port;
+              ROOT_URL = lib.mkIf (
+                cfg.reverseProxy.enable && cfg.reverseProxy.domain != null
+              ) "https://${cfg.reverseProxy.domain}/";
 
-            # LFS settings for Tailscale routing
-            LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
-          } // lib.optionalAttrs (cfg.lfs.tailscale.enable && cfg.lfs.tailscale.hostname != null) {
-            # When Tailscale LFS is enabled, add LFS-specific settings
-            # Note: Gitea doesn't support separate LFS URLs natively,
-            # so we document the Tailscale hostname for client configuration
-            LFS_HTTP_AUTH_EXPIRY = "24h";  # Ensure tokens last long enough for large uploads
-          };
+              LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
+              LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
+            }
+            (lib.mkIf (cfg.lfs.tailscale.enable && cfg.lfs.tailscale.hostname != null) {
+              # Use incoming request host for generating LFS URLs instead of ROOT_URL
+              # This allows Tailscale requests to get Tailscale URLs back
+              # while Cloudflare requests still get Cloudflare URLs
+              PUBLIC_URL_DETECTION = "auto";
+            })
+          ];
 
           service.DISABLE_REGISTRATION = cfg.disableRegistration;
 
