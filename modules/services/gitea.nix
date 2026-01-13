@@ -60,7 +60,11 @@ in
           type = lib.types.nullOr lib.types.str;
           default = null;
           example = "http://127.0.0.1:8333";
-          description = "S3 endpoint URL (required if s3Backend.enable is true)";
+          description = ''
+            S3 endpoint URL (required if s3Backend.enable is true).
+            Use http://127.0.0.1:8333 for local-only access.
+            Use http://your-tailscale-hostname:8333 for remote LFS access (requires SeaweedFS tailscale.enable).
+          '';
         };
 
         bucket = lib.mkOption {

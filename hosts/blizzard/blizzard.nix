@@ -29,6 +29,21 @@ in
     };
   };
 
+  services.seaweedfs = {
+    enable = true;
+
+    ip = "127.0.0.1";
+
+    tailscale = {
+      enable = true;
+      hostname = "${config.networking.hostName}.mole-delta.ts.net";
+    };
+
+    volume.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/volume";
+    master.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/master";
+    filer.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/filer";
+  };
+
   sys = {
     role.server.enable = true;
 
@@ -476,10 +491,10 @@ in
         lfs = {
           enable = true;
 
-          tailscale = {
+          s3Backend = {
             enable = true;
-            hostname = "${config.networking.hostName}.mole-delta.ts.net";
-            port = 11015;
+            endpoint = "http://${config.networking.hostName}.mole-delta.ts.net:8333";
+            bucket = "gitea-lfs";
           };
         };
 

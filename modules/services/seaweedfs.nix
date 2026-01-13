@@ -105,6 +105,10 @@ in
         assertion = cfg.volume.dataDir != "";
         message = "services.seaweedfs.volume.dataDir must not be empty";
       }
+      {
+        assertion = !cfg.tailscale.enable || cfg.tailscale.hostname != null;
+        message = "services.seaweedfs.tailscale.hostname must be set when tailscale.enable is true";
+      }
     ];
 
     systemd.services.seaweedfs = {
@@ -130,6 +134,7 @@ in
         ExecStart = ''
           ${cfg.package}/bin/weed server \
             -ip=${cfg.ip} \
+            ${optionalString cfg.tailscale.enable "-ip.bind=${cfg.tailscale.hostname}"} \
             ${optionalString cfg.filer.enable "-filer"} \
             ${optionalString cfg.s3.enable "-s3"} \
             -master.mdir=${cfg.master.dataDir} \
@@ -138,9 +143,9 @@ in
             -master.volumeSizeLimitMB=${toString cfg.volume.maxVolumeSizeMb} \
             ${optionalString cfg.s3.enable "-s3.port=${toString cfg.s3.port}"} \
             ${optionalString cfg.filer.enable "-filer.port=${toString cfg.filer.port}"} \
-            ${optionalString (
-              cfg.master.metricsAddress != null
-            ) "-metrics.address=${cfg.master.metricsAddress}"} \
+            ${
+              optionalString (cfg.master.metricsAddress != null) "-metrics.address=${cfg.master.metricsAddress}"
+            } \
             -metricsPort=9324
         '';
 
