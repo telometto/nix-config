@@ -506,10 +506,16 @@ in
 
         lfs = {
           enable = true;
+          # Disable pure SSH LFS to force HTTP-based transfers
+          # This bypasses Cloudflare Tunnel's 100MB limit since HTTP LFS
+          # uses a separate URL that clients access directly via Tailscale
+          allowPureSSH = false;
 
           s3Backend = {
             enable = true;
-            endpoint = "${config.networking.hostName}.mole-delta.ts.net:9323";
+            # Use localhost since Gitea and SeaweedFS are on the same machine
+            # Tailscale MagicDNS may not be available in systemd service namespace
+            endpoint = "127.0.0.1:${toString config.services.seaweedfs.s3.port}";
             bucket = "gitea-lfs";
           };
         };
@@ -522,6 +528,9 @@ in
           SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
           SSH_LISTEN_HOST = "127.0.0.1";
           SSH_LISTEN_PORT = 2222;
+
+          # LFS JWT secret from sops for secure HTTP-based LFS authentication
+          LFS_JWT_SECRET_URI = "file:${config.sys.secrets.giteaLfsJwtSecretFile}";
         };
 
         reverseProxy = {

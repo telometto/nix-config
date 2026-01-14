@@ -22,6 +22,7 @@ let
   hasInfluxdb = config.sys.services.influxdb.enable or false;
   hasInfluxdbRemoteWrite = config.sys.services.influxdbRemoteWrite.enable or false;
   hasUps = config.sys.services.ups.enable or false;
+  hasGitea = config.sys.services.gitea.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -112,6 +113,14 @@ in
           owner = "nutmon";
           group = "nutmon";
         };
+      }
+      # Gitea LFS JWT secret
+      // whenEnabled hasGitea {
+        "gitea/lfs_jwt_secret" = {
+          mode = "0440";
+          owner = "gitea";
+          group = "gitea";
+        };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -188,6 +197,10 @@ in
     # UPS monitoring password
     // whenEnabled hasUps {
       upsmonPasswordFile = toString config.sops.secrets."ups/upsmon_password".path;
+    }
+    # Gitea LFS JWT secret
+    // whenEnabled hasGitea {
+      giteaLfsJwtSecretFile = toString config.sops.secrets."gitea/lfs_jwt_secret".path;
     };
 
   # Add influxdb2 to keys group so it can traverse /run/secrets/
