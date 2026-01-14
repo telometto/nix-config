@@ -101,6 +101,27 @@ in
           default = false;
           description = "Use HTTPS for S3 connection";
         };
+
+        serveDirect = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Enable SERVE_DIRECT to return signed S3 URLs for uploads/downloads.
+            This allows clients to upload directly to S3 backend, bypassing Gitea.
+            Requires the S3 endpoint to be accessible from clients.
+          '';
+        };
+
+        externalEndpoint = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          example = "blizzard.mole-delta.ts.net:9323";
+          description = ''
+            External S3 endpoint for clients when using serveDirect.
+            If null, uses the same as endpoint.
+            Use this when Gitea connects via localhost but clients need Tailscale access.
+          '';
+        };
       };
 
     };
@@ -176,6 +197,7 @@ in
             ) cfg.lfs.s3Backend.secretAccessKey;
             MINIO_BUCKET = cfg.lfs.s3Backend.bucket;
             MINIO_USE_SSL = cfg.lfs.s3Backend.useSSL;
+            SERVE_DIRECT = cfg.lfs.s3Backend.serveDirect;
           };
         })
         cfg.settings

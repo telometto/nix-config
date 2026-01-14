@@ -520,14 +520,18 @@ in
 
           s3Backend = {
             enable = true;
-            # Use localhost since Gitea and SeaweedFS are on the same machine
-            # Tailscale MagicDNS may not be available in systemd service namespace
-            endpoint = "127.0.0.1:${toString config.services.seaweedfs.s3.port}";
+            # Use Tailscale IP for the endpoint since:
+            # 1. Gitea can reach it (same machine)
+            # 2. Clients can reach it via Tailscale
+            # 3. MagicDNS hostnames don't work in systemd namespace
+            endpoint = "100.86.227.97:${toString config.services.seaweedfs.s3.port}";
             bucket = "gitea-lfs";
-            # SeaweedFS doesn't require auth, but minio-go library needs credentials
-            # to avoid IAM/STS lookups that timeout
+            # SeaweedFS requires auth when credentials are provided
             accessKeyId = "seaweedfs";
             secretAccessKey = "seaweedfs";
+            # Return signed S3 URLs for direct client uploads to SeaweedFS
+            # This bypasses Gitea (and Cloudflare) for large file transfers
+            serveDirect = true;
           };
         };
 
