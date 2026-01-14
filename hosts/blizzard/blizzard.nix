@@ -528,9 +528,6 @@ in
           SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
           SSH_LISTEN_HOST = "127.0.0.1";
           SSH_LISTEN_PORT = 2222;
-
-          # LFS JWT secret from sops for secure HTTP-based LFS authentication
-          LFS_JWT_SECRET_URI = "file:${config.sys.secrets.giteaLfsJwtSecretFile}";
         };
 
         reverseProxy = {
