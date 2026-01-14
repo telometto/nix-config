@@ -56,7 +56,14 @@ in
       port = 9322;
     };
 
-    s3.port = 9323;
+    s3 = {
+      port = 9323;
+      auth = {
+        enable = true;
+        accessKeyId = "seaweedfs";
+        secretAccessKey = "seaweedfs";
+      };
+    };
     # metrics.port = 9324; # TODO: Add metrics.port option to module (currently hardcoded)
   };
 
@@ -517,6 +524,10 @@ in
             # Tailscale MagicDNS may not be available in systemd service namespace
             endpoint = "127.0.0.1:${toString config.services.seaweedfs.s3.port}";
             bucket = "gitea-lfs";
+            # SeaweedFS doesn't require auth, but minio-go library needs credentials
+            # to avoid IAM/STS lookups that timeout
+            accessKeyId = "seaweedfs";
+            secretAccessKey = "seaweedfs";
           };
         };
 
