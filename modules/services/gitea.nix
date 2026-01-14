@@ -49,6 +49,15 @@ in
         default = true;
       };
 
+      allowPureSSH = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Allow LFS transfers over pure SSH. Disable this to force HTTP-based LFS,
+          which is useful when SSH goes through a tunnel with size limits (e.g., Cloudflare).
+        '';
+      };
+
       s3Backend = {
         enable = lib.mkOption {
           type = lib.types.bool;
@@ -147,6 +156,7 @@ in
             ) "https://${cfg.reverseProxy.domain}/";
 
             LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
+            LFS_ALLOW_PURE_SSH = lib.mkIf cfg.lfs.enable cfg.lfs.allowPureSSH;
             LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
           };
 
