@@ -159,5 +159,13 @@
         Path to a file containing the UPS monitoring password for NUT upsmon. Mapped from SOPS in core/sops.nix.
       '';
     };
+
+    giteaLfsJwtSecretFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the Gitea LFS JWT secret for authenticating LFS batch API requests. Mapped from SOPS in core/sops.nix.
+      '';
+    };
   };
 }
