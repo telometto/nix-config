@@ -84,6 +84,22 @@ in
       description = "S3 API server port";
     };
 
+    s3.auth = {
+      enable = mkEnableOption "S3 authentication";
+
+      accessKeyId = mkOption {
+        type = types.str;
+        default = "seaweedfs";
+        description = "S3 access key ID";
+      };
+
+      secretAccessKey = mkOption {
+        type = types.str;
+        default = "seaweedfs";
+        description = "S3 secret access key";
+      };
+    };
+
     filer = {
       enable = mkEnableOption "Filer service" // {
         default = true;
@@ -140,6 +156,30 @@ in
         mkdir -p ${cfg.volume.dataDir}
         mkdir -p ${cfg.configDir}
         ${optionalString cfg.filer.enable "mkdir -p ${cfg.filer.dataDir}"}
+        ${optionalString cfg.s3.auth.enable ''
+          cat > ${cfg.configDir}/s3.config.json << 'EOF'
+        {
+          "identities": [
+            {
+              "name": "admin",
+              "credentials": [
+                {
+                  "accessKey": "${cfg.s3.auth.accessKeyId}",
+                  "secretKey": "${cfg.s3.auth.secretAccessKey}"
+                }
+              ],
+              "actions": [
+                "Admin",
+                "Read",
+                "Write",
+                "List",
+                "Tagging"
+              ]
+            }
+          ]
+        }
+        EOF
+        ''}
         chown -R seaweedfs:seaweedfs ${cfg.master.dataDir} ${cfg.volume.dataDir} ${cfg.configDir} ${optionalString cfg.filer.enable cfg.filer.dataDir}
       '';
 
@@ -163,6 +203,7 @@ in
             -volume.port.grpc=${toString cfg.volume.grpcPort} \
             -master.volumeSizeLimitMB=${toString cfg.volume.maxVolumeSizeMb} \
             ${optionalString cfg.s3.enable "-s3.port=${toString cfg.s3.port}"} \
+            ${optionalString (cfg.s3.enable && cfg.s3.auth.enable) "-s3.config=${cfg.configDir}/s3.config.json"} \
             ${optionalString cfg.filer.enable "-filer.port=${toString cfg.filer.port}"} \
             ${
               optionalString (cfg.master.metricsAddress != null) "-metrics.address=${cfg.master.metricsAddress}"
