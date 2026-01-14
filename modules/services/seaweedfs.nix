@@ -153,7 +153,7 @@ in
         ExecStart = ''
           ${cfg.package}/bin/weed server \
             -ip=${cfg.ip} \
-            ${optionalString cfg.tailscale.enable "-ip.bind=${cfg.tailscale.hostname}"} \
+            -ip.bind=0.0.0.0 \
             ${optionalString cfg.filer.enable "-filer"} \
             ${optionalString cfg.s3.enable "-s3"} \
             -master.dir=${cfg.master.dataDir} \
