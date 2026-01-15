@@ -43,6 +43,7 @@ in
           mpv.enable = lib.mkDefault true;
           yt-dlp.enable = lib.mkDefault true;
           jf-mpv.enable = lib.mkDefault true;
+          obs.enable = lib.mkDefault true;
         };
 
         social = {
