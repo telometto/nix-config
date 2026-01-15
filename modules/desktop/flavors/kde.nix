@@ -31,11 +31,11 @@ in
           post-apocalyptic_hacker
           purple_leaves
         */
-        theme = lib.mkForce "sddm-astronaut-theme";
-        extraPackages = with pkgs; [
-          kdePackages.qtsvg
-          kdePackages.qtmultimedia
-          kdePackages.qtvirtualkeyboard
+        theme = "sddm-astronaut-theme";
+        extraPackages = [
+          pkgs.kdePackages.qtsvg
+          pkgs.kdePackages.qtmultimedia
+          pkgs.kdePackages.qtvirtualkeyboard
         ];
       };
     };
@@ -52,7 +52,7 @@ in
         pkgs.kdePackages.qtwebengine
         pkgs.xwayland
         (pkgs.sddm-astronaut.override {
-          embeddedTheme = "pixel_sakura";
+          embeddedTheme = "jake_the_dog";
         })
       ];
 
