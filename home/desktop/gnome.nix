@@ -98,6 +98,7 @@ in
       pkgs.gnomeExtensions.clipboard-indicator
       pkgs.gnomeExtensions.gsconnect
       pkgs.gnomeExtensions.openweather-refined
+      pkgs.gnomeExtensions.proton-vpn-button
       pkgs.gnomeExtensions.status-area-horizontal-spacing
       pkgs.gnomeExtensions.tailscale-status
       pkgs.gnomeExtensions.thinkpad-battery-threshold
@@ -132,19 +133,6 @@ in
       gtk4.extraConfig = {
         gtk-application-prefer-dark-theme = 1;
       };
-
-      # OR THIS
-      # gtk3.extraConfig = {
-      #   Settings = ''
-      #     gtk-application-prefer-dark-theme=1
-      #   '';
-      # };
-
-      # gtk4.extraConfig = {
-      #   Settings = ''
-      #     gtk-application-prefer-dark-theme=1
-      #   '';
-      # };
     };
 
     # XDG MIME associations from old config
