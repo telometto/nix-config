@@ -24,6 +24,8 @@ in
         default = "65364211+telometto@users.noreply.github.com";
         description = "Git user email";
       };
+
+      lfs = lib.mkEnableOption "Git Large File Storage (LFS)";
     };
 
     gh = {
@@ -140,6 +142,12 @@ in
             contents.user.email = "65364211+telometto@users.noreply.github.com";
           }
         ];
+
+        lfs = {
+          enable = lib.mkDefault cfg.git.lfs;
+
+          skipSmudge = lib.mkDefault true;
+        };
       };
 
       diff-so-fancy = {
