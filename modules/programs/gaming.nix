@@ -26,6 +26,7 @@ in
           steam-run
           sc-controller # Replaced deprecated steamcontroller
           steamtinkerlaunch
+          protonplus
         ];
       };
       gamemode.enable = lib.mkDefault true;
