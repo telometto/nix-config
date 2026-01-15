@@ -14,7 +14,7 @@ in
         lanzaboote.enable = true;
         plymouth = {
           enable = true;
-          theme = "cuts";
+          theme = "dna";
           themePackages = [
             (pkgs.adi1090x-plymouth-themes.override {
               selected_themes = [ "dna" ];
