@@ -48,9 +48,7 @@
 
       # development.enable = lib.mkForce false;
 
-      gaming = {
-        enable = lib.mkForce false;
-      };
+      gaming.enable = lib.mkForce false;
 
       # gpg.enable = lib.mkForce false;
 
