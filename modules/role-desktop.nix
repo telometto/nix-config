@@ -17,7 +17,7 @@ in
           theme = "cuts";
           themePackages = [
             (pkgs.adi1090x-plymouth-themes.override {
-              selected_themes = [ "cuts" ];
+              selected_themes = [ "dna" ];
             })
           ];
         };
