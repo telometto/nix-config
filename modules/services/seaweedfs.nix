@@ -8,12 +8,12 @@
 with lib;
 
 let
-  cfg = config.services.seaweedfs;
+  cfg = config.sys.services.seaweedfs;
   advertisedIp =
     if cfg.tailscale.enable && cfg.tailscale.hostname != null then cfg.tailscale.hostname else cfg.ip;
 in
 {
-  options.services.seaweedfs = {
+  options.sys.services.seaweedfs = {
     enable = mkEnableOption "SeaweedFS S3 object storage";
 
     package = mkPackageOption pkgs "seaweedfs" { };
