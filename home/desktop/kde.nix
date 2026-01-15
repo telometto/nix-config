@@ -100,8 +100,13 @@ in
     xdg = {
       mimeApps = {
         enable = lib.mkDefault true;
+        defaultApplicationPackages = [ pkgs.nomacs ];
         defaultApplications = {
-          "image/*" = [ "org.nomacs.ImageLounge.desktop" ];
+          "image/png" = [ "org.nomacs.ImageLounge.desktop" ];
+          "image/jpeg" = [ "org.nomacs.ImageLounge.desktop" ];
+          "image/jpg" = [ "org.nomacs.ImageLounge.desktop" ];
+          "image/webp" = [ "org.nomacs.ImageLounge.desktop" ];
+          "image/gif" = [ "org.nomacs.ImageLounge.desktop" ];
         };
       };
     };
