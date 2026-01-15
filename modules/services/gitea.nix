@@ -1,8 +1,15 @@
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.sys.services.gitea;
 
-  useS3Creds = cfg.lfs.enable && cfg.lfs.s3Backend.enable
+  useS3Creds =
+    cfg.lfs.enable
+    && cfg.lfs.s3Backend.enable
     && cfg.lfs.s3Backend.accessKeyFile != null
     && cfg.lfs.s3Backend.secretAccessKeyFile != null;
 
@@ -223,7 +230,9 @@ in
             SERVE_DIRECT = cfg.lfs.s3Backend.serveDirect;
             # SeaweedFS requires path-style bucket lookup
             MINIO_BUCKET_LOOKUP_TYPE = "path";
-            MINIO_EXTERNAL_ENDPOINT = lib.mkIf (cfg.lfs.s3Backend.serveDirect && cfg.lfs.s3Backend.externalEndpoint != null) cfg.lfs.s3Backend.externalEndpoint;
+            MINIO_EXTERNAL_ENDPOINT = lib.mkIf (
+              cfg.lfs.s3Backend.serveDirect && cfg.lfs.s3Backend.externalEndpoint != null
+            ) cfg.lfs.s3Backend.externalEndpoint;
           };
         })
         cfg.settings
@@ -304,7 +313,9 @@ in
         message = "sys.services.gitea.lfs.enable must be true when s3Backend.enable is true";
       }
       {
-        assertion = !cfg.lfs.s3Backend.enable || (cfg.lfs.s3Backend.accessKeyFile != null && cfg.lfs.s3Backend.secretAccessKeyFile != null);
+        assertion =
+          !cfg.lfs.s3Backend.enable
+          || (cfg.lfs.s3Backend.accessKeyFile != null && cfg.lfs.s3Backend.secretAccessKeyFile != null);
         message = "sys.services.gitea.lfs.s3Backend.accessKeyFile and secretAccessKeyFile must be set when s3Backend.enable is true";
       }
     ];

@@ -9,7 +9,8 @@ with lib;
 
 let
   cfg = config.sys.services.seaweedfs;
-  advertisedIp = if cfg.tailscale.enable && cfg.tailscale.hostname != null then cfg.tailscale.hostname else cfg.ip;
+  advertisedIp =
+    if cfg.tailscale.enable && cfg.tailscale.hostname != null then cfg.tailscale.hostname else cfg.ip;
 in
 {
   options.sys.services.seaweedfs = {
@@ -175,7 +176,9 @@ in
         message = "services.seaweedfs.tailscale.hostname must be set when tailscale.enable is true";
       }
       {
-        assertion = !cfg.s3.auth.enable || (cfg.s3.auth.accessKeyFile != null && cfg.s3.auth.secretAccessKeyFile != null);
+        assertion =
+          !cfg.s3.auth.enable
+          || (cfg.s3.auth.accessKeyFile != null && cfg.s3.auth.secretAccessKeyFile != null);
         message = "services.seaweedfs.s3.auth.accessKeyFile and secretAccessKeyFile must be set when s3.auth.enable is true";
       }
     ];
@@ -192,36 +195,36 @@ in
         mkdir -p ${cfg.configDir}
         ${optionalString cfg.filer.enable "mkdir -p ${cfg.filer.dataDir}"}
         ${optionalString cfg.s3.auth.enable ''
-          accessKeyFile="$CREDENTIALS_DIRECTORY/seaweedfs-s3-access-key"
-          secretKeyFile="$CREDENTIALS_DIRECTORY/seaweedfs-s3-secret-key"
+            accessKeyFile="$CREDENTIALS_DIRECTORY/seaweedfs-s3-access-key"
+            secretKeyFile="$CREDENTIALS_DIRECTORY/seaweedfs-s3-secret-key"
 
-          if [ ! -s "$accessKeyFile" ] || [ ! -s "$secretKeyFile" ]; then
-            echo "SeaweedFS S3 credentials missing" >&2
-            exit 1
-          fi
+            if [ ! -s "$accessKeyFile" ] || [ ! -s "$secretKeyFile" ]; then
+              echo "SeaweedFS S3 credentials missing" >&2
+              exit 1
+            fi
 
-          cat > ${cfg.configDir}/s3.config.json << EOF
-        {
-          "identities": [
-            {
-              "name": "admin",
-              "credentials": [
-                {
-                  "accessKey": "$(cat "$accessKeyFile")",
-                  "secretKey": "$(cat "$secretKeyFile")"
-                }
-              ],
-              "actions": [
-                "Admin",
-                "Read",
-                "Write",
-                "List",
-                "Tagging"
-              ]
-            }
-          ]
-        }
-        EOF
+            cat > ${cfg.configDir}/s3.config.json << EOF
+          {
+            "identities": [
+              {
+                "name": "admin",
+                "credentials": [
+                  {
+                    "accessKey": "$(cat "$accessKeyFile")",
+                    "secretKey": "$(cat "$secretKeyFile")"
+                  }
+                ],
+                "actions": [
+                  "Admin",
+                  "Read",
+                  "Write",
+                  "List",
+                  "Tagging"
+                ]
+              }
+            ]
+          }
+          EOF
         ''}
         chown -R seaweedfs:seaweedfs ${cfg.master.dataDir} ${cfg.volume.dataDir} ${cfg.configDir} ${optionalString cfg.filer.enable cfg.filer.dataDir}
       '';
@@ -252,7 +255,9 @@ in
             -volume.port.grpc=${toString cfg.volume.grpcPort} \
             -master.volumeSizeLimitMB=${toString cfg.volume.maxVolumeSizeMb} \
             ${optionalString cfg.s3.enable "-s3.port=${toString cfg.s3.port}"} \
-            ${optionalString (cfg.s3.enable && cfg.s3.auth.enable) "-s3.config=${cfg.configDir}/s3.config.json"} \
+            ${
+              optionalString (cfg.s3.enable && cfg.s3.auth.enable) "-s3.config=${cfg.configDir}/s3.config.json"
+            } \
             ${optionalString cfg.filer.enable "-filer.port=${toString cfg.filer.port}"} \
             ${
               optionalString (cfg.master.metricsAddress != null) "-metrics.address=${cfg.master.metricsAddress}"
@@ -265,7 +270,12 @@ in
         PrivateTmp = true;
         ProtectSystem = "strict";
         ProtectHome = true;
-        ReadWritePaths = [ cfg.master.dataDir cfg.volume.dataDir cfg.configDir ] ++ lib.optional cfg.filer.enable cfg.filer.dataDir;
+        ReadWritePaths = [
+          cfg.master.dataDir
+          cfg.volume.dataDir
+          cfg.configDir
+        ]
+        ++ lib.optional cfg.filer.enable cfg.filer.dataDir;
       };
     };
 
