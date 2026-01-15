@@ -22,6 +22,8 @@ let
   hasInfluxdb = config.sys.services.influxdb.enable or false;
   hasInfluxdbRemoteWrite = config.sys.services.influxdbRemoteWrite.enable or false;
   hasUps = config.sys.services.ups.enable or false;
+  hasGitea = config.sys.services.gitea.enable or false;
+  hasSeaweedfs = config.services.seaweedfs.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -112,6 +114,27 @@ in
           owner = "nutmon";
           group = "nutmon";
         };
+      }
+      # Gitea LFS JWT secret
+      // whenEnabled hasGitea {
+        "gitea/lfs_jwt_secret" = {
+          mode = "0440";
+          owner = "gitea";
+          group = "gitea";
+        };
+      }
+      # SeaweedFS S3 credentials
+      // whenEnabled hasSeaweedfs {
+        "seaweedfs/access_key" = {
+          mode = "0400";
+          owner = "root";
+          group = "root";
+        };
+        "seaweedfs/secret_key" = {
+          mode = "0400";
+          owner = "root";
+          group = "root";
+        };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -188,6 +211,15 @@ in
     # UPS monitoring password
     // whenEnabled hasUps {
       upsmonPasswordFile = toString config.sops.secrets."ups/upsmon_password".path;
+    }
+    # Gitea LFS JWT secret
+    // whenEnabled hasGitea {
+      giteaLfsJwtSecretFile = toString config.sops.secrets."gitea/lfs_jwt_secret".path;
+    }
+    # SeaweedFS S3 credentials (shared with Gitea LFS S3 backend)
+    // whenEnabled hasSeaweedfs {
+      seaweedfsAccessKeyFile = toString config.sops.secrets."seaweedfs/access_key".path;
+      seaweedfsSecretAccessKeyFile = toString config.sops.secrets."seaweedfs/secret_key".path;
     };
 
   # Add influxdb2 to keys group so it can traverse /run/secrets/

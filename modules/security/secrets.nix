@@ -159,5 +159,29 @@
         Path to a file containing the UPS monitoring password for NUT upsmon. Mapped from SOPS in core/sops.nix.
       '';
     };
+
+    giteaLfsJwtSecretFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the Gitea LFS JWT secret for authenticating LFS batch API requests. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    seaweedfsAccessKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the SeaweedFS S3 access key. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    seaweedfsSecretAccessKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the SeaweedFS S3 secret access key. Mapped from SOPS in core/sops.nix.
+      '';
+    };
   };
 }

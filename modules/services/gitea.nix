@@ -1,6 +1,39 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.sys.services.gitea;
+
+  useS3Creds =
+    cfg.lfs.enable
+    && cfg.lfs.s3Backend.enable
+    && cfg.lfs.s3Backend.accessKeyFile != null
+    && cfg.lfs.s3Backend.secretAccessKeyFile != null;
+
+  useLfsJwt = cfg.lfs.enable && config.sys.secrets.giteaLfsJwtSecretFile != null;
+
+  envFile = "/run/gitea/lfs-secrets.env";
+
+  # Writes secrets from LoadCredential to environment file for Gitea
+  preStartScript = pkgs.writeShellScript "gitea-lfs-secrets" ''
+    set -euo pipefail
+    : > "${envFile}"
+
+    ${lib.optionalString useS3Creds ''
+      echo "GITEA__LFS__MINIO_ACCESS_KEY_ID=$(cat "$CREDENTIALS_DIRECTORY/s3-access-key")" >> "${envFile}"
+      echo "GITEA__LFS__MINIO_SECRET_ACCESS_KEY=$(cat "$CREDENTIALS_DIRECTORY/s3-secret-key")" >> "${envFile}"
+    ''}
+
+    ${lib.optionalString useLfsJwt ''
+      echo "GITEA__SECURITY__LFS_JWT_SECRET=$(cat "$CREDENTIALS_DIRECTORY/lfs-jwt")" >> "${envFile}"
+    ''}
+
+    chmod 0400 "${envFile}"
+    chown gitea:gitea "${envFile}"
+  '';
 in
 {
   options.sys.services.gitea = {
@@ -9,6 +42,7 @@ in
     port = lib.mkOption {
       type = lib.types.port;
       default = 3000;
+      description = "HTTP port for Gitea web interface";
     };
 
     stateDir = lib.mkOption {
@@ -49,31 +83,81 @@ in
         default = true;
       };
 
-      tailscale = {
+      allowPureSSH = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Allow LFS transfers over pure SSH. Disable this to force HTTP-based LFS,
+          which is useful when SSH goes through a tunnel with size limits (e.g., Cloudflare).
+        '';
+      };
+
+      s3Backend = {
         enable = lib.mkOption {
           type = lib.types.bool;
           default = false;
+          description = "Use S3-compatible backend (e.g., SeaweedFS) instead of local storage";
+        };
+
+        endpoint = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          example = "blizzard.mole-delta.ts.net:8333";
           description = ''
-            Enable Tailscale-specific LFS configuration.
-            When enabled, creates a .lfsconfig file in repositories that directs
-            LFS traffic through Tailscale instead of Cloudflare Tunnels.
-            This bypasses Cloudflare's file size limits for large LFS objects.
+            S3 endpoint hostname:port (required if s3Backend.enable is true).
+            Format: hostname:port (WITHOUT http:// prefix)
+            Examples:
+              - "127.0.0.1:8333" for local-only access
+              - "blizzard.mole-delta.ts.net:8333" for Tailscale access
           '';
         };
 
-        hostname = lib.mkOption {
-          type = lib.types.nullOr lib.types.str;
-          default = null;
-          example = "host.tailnet-name.ts.net";
-          description = "Tailscale hostname for LFS operations";
+        bucket = lib.mkOption {
+          type = lib.types.str;
+          default = "gitea";
+          description = "S3 bucket name for LFS storage";
         };
 
-        port = lib.mkOption {
-          type = lib.types.nullOr lib.types.port;
+        accessKeyFile = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
           default = null;
-          description = "Port for LFS operations over Tailscale. Defaults to main Gitea port.";
+          description = "Path to a file containing the S3 access key";
+        };
+
+        secretAccessKeyFile = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "Path to a file containing the S3 secret access key";
+        };
+
+        useSSL = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = "Use HTTPS for S3 connection";
+        };
+
+        serveDirect = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Enable SERVE_DIRECT to return signed S3 URLs for uploads/downloads.
+            This allows clients to upload directly to S3 backend, bypassing Gitea.
+            Requires the S3 endpoint to be accessible from clients.
+          '';
+        };
+
+        externalEndpoint = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          example = "blizzard.mole-delta.ts.net:9323";
+          description = ''
+            External S3 endpoint for clients when using serveDirect.
+            If null, uses the same as endpoint.
+            Use this when Gitea connects via localhost but clients need Tailscale access.
+          '';
         };
       };
+
     };
 
     disableRegistration = lib.mkOption {
@@ -120,22 +204,51 @@ in
 
       settings = lib.mkMerge [
         {
-          server = lib.mkMerge [
-            {
-              HTTP_PORT = cfg.port;
-              DOMAIN = lib.mkIf (cfg.lfs.tailscale.hostname != null) cfg.lfs.tailscale.hostname;
-              LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
-              LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
-              PUBLIC_URL_DETECTION = "auto";
-            }
-          ];
+          server = {
+            PUBLIC_URL_DETECTION = "auto";
+
+            ROOT_URL = lib.mkIf (
+              cfg.reverseProxy.enable && cfg.reverseProxy.domain != null
+            ) "https://${cfg.reverseProxy.domain}/";
+            HTTP_PORT = cfg.port;
+
+            LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
+            LFS_ALLOW_PURE_SSH = lib.mkIf cfg.lfs.enable cfg.lfs.allowPureSSH;
+            LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
+          };
 
           service.DISABLE_REGISTRATION = cfg.disableRegistration;
 
           session.COOKIE_SECURE = lib.mkIf cfg.reverseProxy.enable true;
         }
+        (lib.mkIf (cfg.lfs.enable && cfg.lfs.s3Backend.enable) {
+          lfs = {
+            STORAGE_TYPE = "minio";
+            MINIO_ENDPOINT = cfg.lfs.s3Backend.endpoint;
+            MINIO_BUCKET = cfg.lfs.s3Backend.bucket;
+            MINIO_USE_SSL = cfg.lfs.s3Backend.useSSL;
+            SERVE_DIRECT = cfg.lfs.s3Backend.serveDirect;
+            # SeaweedFS requires path-style bucket lookup
+            MINIO_BUCKET_LOOKUP_TYPE = "path";
+            MINIO_EXTERNAL_ENDPOINT = lib.mkIf (
+              cfg.lfs.s3Backend.serveDirect && cfg.lfs.s3Backend.externalEndpoint != null
+            ) cfg.lfs.s3Backend.externalEndpoint;
+          };
+        })
         cfg.settings
       ];
+    };
+
+    systemd.services.gitea.serviceConfig = lib.mkIf (useS3Creds || useLfsJwt) {
+      LoadCredential =
+        lib.optionals useS3Creds [
+          "s3-access-key:${cfg.lfs.s3Backend.accessKeyFile}"
+          "s3-secret-key:${cfg.lfs.s3Backend.secretAccessKeyFile}"
+        ]
+        ++ lib.optional useLfsJwt "lfs-jwt:${config.sys.secrets.giteaLfsJwtSecretFile}";
+
+      ExecStartPre = lib.mkAfter [ "${preStartScript}" ];
+      EnvironmentFile = lib.mkAfter [ envFile ];
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
@@ -192,32 +305,24 @@ in
         message = "sys.services.gitea.reverseProxy.domain must be set when cfTunnel.enable is true";
       }
       {
-        assertion = !cfg.lfs.tailscale.enable || cfg.lfs.tailscale.hostname != null;
-        message = "sys.services.gitea.lfs.tailscale.hostname must be set when lfs.tailscale.enable is true";
+        assertion = !cfg.lfs.s3Backend.enable || cfg.lfs.s3Backend.endpoint != null;
+        message = "sys.services.gitea.lfs.s3Backend.endpoint must be set when s3Backend.enable is true";
       }
       {
-        assertion = !cfg.lfs.tailscale.enable || cfg.lfs.enable;
-        message = "sys.services.gitea.lfs.enable must be true when lfs.tailscale.enable is true";
+        assertion = !cfg.lfs.s3Backend.enable || cfg.lfs.enable;
+        message = "sys.services.gitea.lfs.enable must be true when s3Backend.enable is true";
+      }
+      {
+        assertion =
+          !cfg.lfs.s3Backend.enable
+          || (cfg.lfs.s3Backend.accessKeyFile != null && cfg.lfs.s3Backend.secretAccessKeyFile != null);
+        message = "sys.services.gitea.lfs.s3Backend.accessKeyFile and secretAccessKeyFile must be set when s3Backend.enable is true";
       }
     ];
 
-    # When Tailscale LFS is enabled, create a system-level note for users
-    warnings = lib.optional (cfg.lfs.tailscale.enable) ''
-      Gitea LFS Tailscale routing is enabled. To use Tailscale for LFS operations:
-
-      For existing repositories, add a .lfsconfig file to each repository:
-        [lfs]
-        url = http${lib.optionalString (cfg.reverseProxy.enable) "s"}://${cfg.lfs.tailscale.hostname}${
-          lib.optionalString (cfg.lfs.tailscale.port != null) ":${toString cfg.lfs.tailscale.port}"
-        }/<owner>/<repo>.git/info/lfs
-
-      Or configure git-lfs globally on client machines:
-        git config --global lfs.url http${lib.optionalString (cfg.reverseProxy.enable) "s"}://${cfg.lfs.tailscale.hostname}${
-          lib.optionalString (cfg.lfs.tailscale.port != null) ":${toString cfg.lfs.tailscale.port}"
-        }/<owner>/<repo>.git/info/lfs
-
-      This routes LFS traffic through Tailscale (${cfg.lfs.tailscale.hostname}) instead of Cloudflare Tunnel,
-      bypassing Cloudflare's file size restrictions.
+    warnings = lib.optional (cfg.lfs.s3Backend.enable) ''
+      Gitea LFS S3 backend is enabled. LFS storage is now on SeaweedFS at ${cfg.lfs.s3Backend.endpoint}
+      bucket: ${cfg.lfs.s3Backend.bucket}
     '';
   };
 }
