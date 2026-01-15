@@ -40,7 +40,7 @@ in
     };
 
     nix.distributedBuilds = {
-      enable = true;
+      enable = false;
 
       # Expose Snowfall as a remote builder using the non-root zeno account.
       server = {
