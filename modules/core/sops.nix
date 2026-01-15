@@ -23,7 +23,7 @@ let
   hasInfluxdbRemoteWrite = config.sys.services.influxdbRemoteWrite.enable or false;
   hasUps = config.sys.services.ups.enable or false;
   hasGitea = config.sys.services.gitea.enable or false;
-  hasSeaweedfs = config.services.seaweedfs.enable or false;
+  hasSeaweedfs = config.sys.services.seaweedfs.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
