@@ -29,7 +29,7 @@ in
     };
   };
 
-  # SeaweedFS - S3-compatible object storage (port range: 9320-9329)
+  # SeaweedFS - S3-compatible object storage (ports: 11017-11022)
   services.seaweedfs = {
     enable = true;
 
@@ -43,28 +43,28 @@ in
     configDir = "/rpool/unenc/apps/nixos/seaweedfs/config";
 
     master.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/master";
-    # master.port = 9320; # TODO: Add master.port option to module
+    master.port = 11017;
 
     volume = {
       dataDir = "/rpool/unenc/apps/nixos/seaweedfs/volume";
-      port = 9321;
-      grpcPort = 19321;
+      port = 11018;
+      grpcPort = 11019;
     };
 
     filer = {
       dataDir = "/rpool/unenc/apps/nixos/seaweedfs/filer";
-      port = 9322;
+      port = 11020;
     };
 
     s3 = {
-      port = 9323;
+      port = 11021;
       auth = {
         enable = true;
-        accessKeyId = "seaweedfs";
-        secretAccessKey = "seaweedfs";
+        accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;
+        secretAccessKeyFile = config.sys.secrets.seaweedfsSecretAccessKeyFile;
       };
     };
-    # metrics.port = 9324; # TODO: Add metrics.port option to module (currently hardcoded)
+    metrics.port = 11022;
   };
 
   sys = {
@@ -497,6 +497,7 @@ in
         };
       };
 
+      # Git repository management (port 11015 HTTP, 2222 SSH)
       gitea = {
         enable = true;
 
@@ -513,25 +514,16 @@ in
 
         lfs = {
           enable = true;
-          # Disable pure SSH LFS to force HTTP-based transfers
-          # This bypasses Cloudflare Tunnel's 100MB limit since HTTP LFS
-          # uses a separate URL that clients access directly via Tailscale
-          allowPureSSH = false;
+
+          allowPureSSH = true;
 
           s3Backend = {
-            enable = true;
-            # Use Tailscale IP for the endpoint since:
-            # 1. Gitea can reach it (same machine)
-            # 2. Clients can reach it via Tailscale
-            # 3. MagicDNS hostnames don't work in systemd namespace
-            endpoint = "100.86.227.97:${toString config.services.seaweedfs.s3.port}";
+            enable = false;
+            endpoint = "${config.networking.hostName}.mole-delta.ts.net:${toString config.services.seaweedfs.s3.port}";
             bucket = "gitea-lfs";
-            # SeaweedFS requires auth when credentials are provided
-            accessKeyId = "seaweedfs";
-            secretAccessKey = "seaweedfs";
-            # Return signed S3 URLs for direct client uploads to SeaweedFS
-            # This bypasses Gitea (and Cloudflare) for large file transfers
-            serveDirect = true;
+            accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;
+            secretAccessKeyFile = config.sys.secrets.seaweedfsSecretAccessKeyFile;
+            serveDirect = false;
           };
         };
 
@@ -543,6 +535,8 @@ in
           SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
           SSH_LISTEN_HOST = "127.0.0.1";
           SSH_LISTEN_PORT = 2222;
+
+          PUBLIC_URL_DETECTION = "auto";
         };
 
         reverseProxy = {
