@@ -32,7 +32,6 @@ let
     ''}
 
     chmod 0400 "${envFile}"
-    chown gitea:gitea "${envFile}"
   '';
 in
 {
@@ -248,7 +247,7 @@ in
         ++ lib.optional useLfsJwt "lfs-jwt:${config.sys.secrets.giteaLfsJwtSecretFile}";
 
       ExecStartPre = lib.mkAfter [ "${preStartScript}" ];
-      EnvironmentFile = lib.mkAfter [ envFile ];
+      EnvironmentFile = lib.mkAfter [ "-${envFile}" ];
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
