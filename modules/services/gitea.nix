@@ -1,6 +1,32 @@
-{ lib, config, ... }:
+{ lib, config, pkgs, ... }:
 let
   cfg = config.sys.services.gitea;
+
+  useS3Creds = cfg.lfs.enable && cfg.lfs.s3Backend.enable
+    && cfg.lfs.s3Backend.accessKeyFile != null
+    && cfg.lfs.s3Backend.secretAccessKeyFile != null;
+
+  useLfsJwt = cfg.lfs.enable && config.sys.secrets.giteaLfsJwtSecretFile != null;
+
+  envFile = "/run/gitea/lfs-secrets.env";
+
+  # Writes secrets from LoadCredential to environment file for Gitea
+  preStartScript = pkgs.writeShellScript "gitea-lfs-secrets" ''
+    set -euo pipefail
+    : > "${envFile}"
+
+    ${lib.optionalString useS3Creds ''
+      echo "GITEA__LFS__MINIO_ACCESS_KEY_ID=$(cat "$CREDENTIALS_DIRECTORY/s3-access-key")" >> "${envFile}"
+      echo "GITEA__LFS__MINIO_SECRET_ACCESS_KEY=$(cat "$CREDENTIALS_DIRECTORY/s3-secret-key")" >> "${envFile}"
+    ''}
+
+    ${lib.optionalString useLfsJwt ''
+      echo "GITEA__SECURITY__LFS_JWT_SECRET=$(cat "$CREDENTIALS_DIRECTORY/lfs-jwt")" >> "${envFile}"
+    ''}
+
+    chmod 0400 "${envFile}"
+    chown gitea:gitea "${envFile}"
+  '';
 in
 {
   options.sys.services.gitea = {
@@ -9,6 +35,7 @@ in
     port = lib.mkOption {
       type = lib.types.port;
       default = 3000;
+      description = "HTTP port for Gitea web interface";
     };
 
     stateDir = lib.mkOption {
@@ -84,16 +111,16 @@ in
           description = "S3 bucket name for LFS storage";
         };
 
-        accessKeyId = lib.mkOption {
+        accessKeyFile = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
           default = null;
-          description = "S3 access key (can use secrets via sops)";
+          description = "Path to a file containing the S3 access key";
         };
 
-        secretAccessKey = lib.mkOption {
+        secretAccessKeyFile = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
           default = null;
-          description = "S3 secret access key (can use secrets via sops)";
+          description = "Path to a file containing the S3 secret access key";
         };
 
         useSSL = lib.mkOption {
@@ -171,10 +198,12 @@ in
       settings = lib.mkMerge [
         {
           server = {
-            HTTP_PORT = cfg.port;
+            PUBLIC_URL_DETECTION = "auto";
+
             ROOT_URL = lib.mkIf (
               cfg.reverseProxy.enable && cfg.reverseProxy.domain != null
             ) "https://${cfg.reverseProxy.domain}/";
+            HTTP_PORT = cfg.port;
 
             LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
             LFS_ALLOW_PURE_SSH = lib.mkIf cfg.lfs.enable cfg.lfs.allowPureSSH;
@@ -189,19 +218,28 @@ in
           lfs = {
             STORAGE_TYPE = "minio";
             MINIO_ENDPOINT = cfg.lfs.s3Backend.endpoint;
-            MINIO_ACCESS_KEY_ID = lib.mkIf (
-              cfg.lfs.s3Backend.accessKeyId != null
-            ) cfg.lfs.s3Backend.accessKeyId;
-            MINIO_SECRET_ACCESS_KEY = lib.mkIf (
-              cfg.lfs.s3Backend.secretAccessKey != null
-            ) cfg.lfs.s3Backend.secretAccessKey;
             MINIO_BUCKET = cfg.lfs.s3Backend.bucket;
             MINIO_USE_SSL = cfg.lfs.s3Backend.useSSL;
             SERVE_DIRECT = cfg.lfs.s3Backend.serveDirect;
+            # SeaweedFS requires path-style bucket lookup
+            MINIO_BUCKET_LOOKUP_TYPE = "path";
+            MINIO_EXTERNAL_ENDPOINT = lib.mkIf (cfg.lfs.s3Backend.serveDirect && cfg.lfs.s3Backend.externalEndpoint != null) cfg.lfs.s3Backend.externalEndpoint;
           };
         })
         cfg.settings
       ];
+    };
+
+    systemd.services.gitea.serviceConfig = lib.mkIf (useS3Creds || useLfsJwt) {
+      LoadCredential =
+        lib.optionals useS3Creds [
+          "s3-access-key:${cfg.lfs.s3Backend.accessKeyFile}"
+          "s3-secret-key:${cfg.lfs.s3Backend.secretAccessKeyFile}"
+        ]
+        ++ lib.optional useLfsJwt "lfs-jwt:${config.sys.secrets.giteaLfsJwtSecretFile}";
+
+      ExecStartPre = lib.mkAfter [ "${preStartScript}" ];
+      EnvironmentFile = lib.mkAfter [ envFile ];
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
@@ -264,6 +302,10 @@ in
       {
         assertion = !cfg.lfs.s3Backend.enable || cfg.lfs.enable;
         message = "sys.services.gitea.lfs.enable must be true when s3Backend.enable is true";
+      }
+      {
+        assertion = !cfg.lfs.s3Backend.enable || (cfg.lfs.s3Backend.accessKeyFile != null && cfg.lfs.s3Backend.secretAccessKeyFile != null);
+        message = "sys.services.gitea.lfs.s3Backend.accessKeyFile and secretAccessKeyFile must be set when s3Backend.enable is true";
       }
     ];
 

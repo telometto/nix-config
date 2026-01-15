@@ -9,6 +9,7 @@ with lib;
 
 let
   cfg = config.services.seaweedfs;
+  advertisedIp = if cfg.tailscale.enable && cfg.tailscale.hostname != null then cfg.tailscale.hostname else cfg.ip;
 in
 {
   options.services.seaweedfs = {
@@ -29,10 +30,28 @@ in
         description = "Directory for master metadata";
       };
 
+      port = mkOption {
+        type = types.port;
+        default = 9333;
+        description = "Master server port (internal coordination)";
+      };
+
       metricsAddress = mkOption {
         type = types.nullOr types.str;
         default = null;
         description = "Prometheus gateway address for metrics";
+      };
+    };
+
+    metrics = {
+      enable = mkEnableOption "metrics endpoint" // {
+        default = true;
+      };
+
+      port = mkOption {
+        type = types.port;
+        default = 9324;
+        description = "Prometheus metrics port";
       };
     };
 
@@ -58,13 +77,13 @@ in
       port = mkOption {
         type = types.port;
         default = 8080;
-        description = "Volume server HTTP port";
+        description = "Volume server HTTP port (data storage and retrieval)";
       };
 
       grpcPort = mkOption {
         type = types.port;
         default = 18080;
-        description = "Volume server gRPC port";
+        description = "Volume server gRPC port (internal communication)";
       };
     };
 
@@ -74,6 +93,12 @@ in
       description = "IP address to bind to";
     };
 
+    bindAddress = mkOption {
+      type = types.str;
+      default = "0.0.0.0";
+      description = "Bind address for Weed services (ip.bind)";
+    };
+
     s3.enable = mkEnableOption "S3 API support" // {
       default = true;
     };
@@ -81,23 +106,29 @@ in
     s3.port = mkOption {
       type = types.port;
       default = 8333;
-      description = "S3 API server port";
+      description = "S3 API server port (S3-compatible access)";
     };
 
     s3.auth = {
       enable = mkEnableOption "S3 authentication";
 
-      accessKeyId = mkOption {
-        type = types.str;
-        default = "seaweedfs";
-        description = "S3 access key ID";
+      accessKeyFile = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Path to a file containing the S3 access key";
       };
 
-      secretAccessKey = mkOption {
-        type = types.str;
-        default = "seaweedfs";
-        description = "S3 secret access key";
+      secretAccessKeyFile = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Path to a file containing the S3 secret access key";
       };
+    };
+
+    openFirewall = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Open firewall for S3 port";
     };
 
     filer = {
@@ -108,7 +139,7 @@ in
       port = mkOption {
         type = types.port;
         default = 8888;
-        description = "Filer server port";
+        description = "Filer server port (directory and file operations)";
       };
 
       dataDir = mkOption {
@@ -143,6 +174,10 @@ in
         assertion = !cfg.tailscale.enable || cfg.tailscale.hostname != null;
         message = "services.seaweedfs.tailscale.hostname must be set when tailscale.enable is true";
       }
+      {
+        assertion = !cfg.s3.auth.enable || (cfg.s3.auth.accessKeyFile != null && cfg.s3.auth.secretAccessKeyFile != null);
+        message = "services.seaweedfs.s3.auth.accessKeyFile and secretAccessKeyFile must be set when s3.auth.enable is true";
+      }
     ];
 
     systemd.services.seaweedfs = {
@@ -157,15 +192,23 @@ in
         mkdir -p ${cfg.configDir}
         ${optionalString cfg.filer.enable "mkdir -p ${cfg.filer.dataDir}"}
         ${optionalString cfg.s3.auth.enable ''
-          cat > ${cfg.configDir}/s3.config.json << 'EOF'
+          accessKeyFile="$CREDENTIALS_DIRECTORY/seaweedfs-s3-access-key"
+          secretKeyFile="$CREDENTIALS_DIRECTORY/seaweedfs-s3-secret-key"
+
+          if [ ! -s "$accessKeyFile" ] || [ ! -s "$secretKeyFile" ]; then
+            echo "SeaweedFS S3 credentials missing" >&2
+            exit 1
+          fi
+
+          cat > ${cfg.configDir}/s3.config.json << EOF
         {
           "identities": [
             {
               "name": "admin",
               "credentials": [
                 {
-                  "accessKey": "${cfg.s3.auth.accessKeyId}",
-                  "secretKey": "${cfg.s3.auth.secretAccessKey}"
+                  "accessKey": "$(cat "$accessKeyFile")",
+                  "secretKey": "$(cat "$secretKeyFile")"
                 }
               ],
               "actions": [
@@ -190,12 +233,18 @@ in
         Restart = "on-failure";
         RestartSec = 5;
 
+        LoadCredential = lib.optionals cfg.s3.auth.enable [
+          "seaweedfs-s3-access-key:${cfg.s3.auth.accessKeyFile}"
+          "seaweedfs-s3-secret-key:${cfg.s3.auth.secretAccessKeyFile}"
+        ];
+
         ExecStart = ''
           ${cfg.package}/bin/weed server \
-            -ip=${cfg.ip} \
-            -ip.bind=0.0.0.0 \
+            -ip=${advertisedIp} \
+            -ip.bind=${cfg.bindAddress} \
             ${optionalString cfg.filer.enable "-filer"} \
             ${optionalString cfg.s3.enable "-s3"} \
+            -master.port=${toString cfg.master.port} \
             -master.dir=${cfg.master.dataDir} \
             -dir=${cfg.volume.dataDir} \
             -volume.max=${toString cfg.volume.maxSize} \
@@ -208,7 +257,7 @@ in
             ${
               optionalString (cfg.master.metricsAddress != null) "-metrics.address=${cfg.master.metricsAddress}"
             } \
-            -metricsPort=9324
+            ${optionalString cfg.metrics.enable "-metricsPort=${toString cfg.metrics.port}"}
         '';
 
         # Security hardening
@@ -216,7 +265,7 @@ in
         PrivateTmp = true;
         ProtectSystem = "strict";
         ProtectHome = true;
-        ReadWritePaths = [ "/rpool/unenc/apps/nixos" ];
+        ReadWritePaths = [ cfg.master.dataDir cfg.volume.dataDir cfg.configDir ] ++ lib.optional cfg.filer.enable cfg.filer.dataDir;
       };
     };
 
@@ -228,5 +277,9 @@ in
     };
 
     users.groups.seaweedfs = { };
+
+    networking.firewall = mkIf cfg.openFirewall {
+      allowedTCPPorts = lib.optional cfg.s3.enable cfg.s3.port;
+    };
   };
 }
