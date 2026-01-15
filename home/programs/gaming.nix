@@ -20,6 +20,21 @@ in
         description = "Additional mangohud extra settings merged with the shared defaults.";
       };
     };
+
+    lutris = {
+      enable = lib.mkEnableOption "Game library manager";
+      extraPackages = lib.mkOption {
+        type = lib.types.listOf lib.types.package;
+        default = with pkgs; [
+          winetricks
+          gamescope
+          gamemode
+          mangohud
+          umu-launcher
+        ];
+        description = "List of extra packages to configure for Lutris";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -63,8 +78,26 @@ in
         }
         // cfg.mangohud.extraSettings;
       };
+
+      lutris = lib.mkIf cfg.lutris.enable {
+        enable = lib.mkDefault true;
+
+        defaultWinePackage = pkgs.proton-ge-bin;
+
+        winePackages = with pkgs; [
+          wineWowPackages.stagingFull
+          wineWowPackages.waylandFull
+          wineWowPackages.fonts
+        ];
+
+        protonPackages = [ pkgs.proton-ge-bin ];
+
+        steamPackage = osConfig.programs.steam.package;
+
+        inherit (cfg) extraPackages;
+      };
     };
 
-    home.packages = [ ];
+    home.packages = [ pkgs.bbe ];
   };
 }
