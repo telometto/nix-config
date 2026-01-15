@@ -29,44 +29,6 @@ in
     };
   };
 
-  # SeaweedFS - S3-compatible object storage (ports: 11017-11022)
-  services.seaweedfs = {
-    enable = true;
-
-    ip = "127.0.0.1";
-
-    tailscale = {
-      enable = true;
-      hostname = "${config.networking.hostName}.mole-delta.ts.net";
-    };
-
-    configDir = "/rpool/unenc/apps/nixos/seaweedfs/config";
-
-    master.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/master";
-    master.port = 11017;
-
-    volume = {
-      dataDir = "/rpool/unenc/apps/nixos/seaweedfs/volume";
-      port = 11018;
-      grpcPort = 11019;
-    };
-
-    filer = {
-      dataDir = "/rpool/unenc/apps/nixos/seaweedfs/filer";
-      port = 11020;
-    };
-
-    s3 = {
-      port = 11021;
-      auth = {
-        enable = true;
-        accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;
-        secretAccessKeyFile = config.sys.secrets.seaweedfsSecretAccessKeyFile;
-      };
-    };
-    metrics.port = 11022;
-  };
-
   sys = {
     role.server.enable = true;
 
@@ -519,7 +481,7 @@ in
 
           s3Backend = {
             enable = false;
-            endpoint = "${config.networking.hostName}.mole-delta.ts.net:${toString config.services.seaweedfs.s3.port}";
+            endpoint = "${config.networking.hostName}.mole-delta.ts.net:${toString config.sys.services.seaweedfs.s3.port}";
             bucket = "gitea-lfs";
             accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;
             secretAccessKeyFile = config.sys.secrets.seaweedfsSecretAccessKeyFile;
@@ -545,6 +507,43 @@ in
           cfTunnel.enable = true;
         };
       };
+
+seaweedfs = {
+    enable = false;
+
+    ip = "127.0.0.1";
+
+    tailscale = {
+      enable = true;
+      hostname = "${config.networking.hostName}.mole-delta.ts.net";
+    };
+
+    configDir = "/rpool/unenc/apps/nixos/seaweedfs/config";
+
+    master.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/master";
+    master.port = 11017;
+
+    volume = {
+      dataDir = "/rpool/unenc/apps/nixos/seaweedfs/volume";
+      port = 11018;
+      grpcPort = 11019;
+    };
+
+    filer = {
+      dataDir = "/rpool/unenc/apps/nixos/seaweedfs/filer";
+      port = 11020;
+    };
+
+    s3 = {
+      port = 11021;
+      auth = {
+        enable = true;
+        accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;
+        secretAccessKeyFile = config.sys.secrets.seaweedfsSecretAccessKeyFile;
+      };
+    };
+    metrics.port = 11022;
+  };
 
       cloudflared = {
         enable = true;
