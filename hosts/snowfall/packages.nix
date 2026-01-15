@@ -24,13 +24,17 @@ let
   desktop = [ pkgs.baobab ];
 
   wine = [
-    pkgs.wineWowPackages.stable
-    pkgs.wineWowPackages.waylandFull
-    pkgs.winetricks
+    # pkgs.wineWowPackages.stable
+    # pkgs.wineWowPackages.waylandFull
+    # pkgs.winetricks
   ];
 
   extras = [
     # inputs.agenix.packages."x86_64-linux".default
+    pkgs.protonvpn-gui
+    pkgs.deja-dup
+    pkgs.peazip
+    pkgs.mat2
   ];
 in
 {
