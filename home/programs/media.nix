@@ -15,6 +15,8 @@ in
     yt-dlp.enable = lib.mkEnableOption "yt-dlp downloader";
     jf-mpv.enable = lib.mkEnableOption "Jellyfin player";
 
+    obs.enable = lib.mkEnableOption "OBS Studio";
+
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
@@ -36,6 +38,11 @@ in
     services.jellyfin-mpv-shim = lib.mkIf cfg.jf-mpv.enable {
       enable = lib.mkDefault true;
       # TODO: Declaratively configure
+    };
+
+    programs.obs-studio = lib.mkIf cfg.obs.enable {
+      enable = lib.mkDefault true;
+      plugins = [ ];
     };
 
     home.packages = [
