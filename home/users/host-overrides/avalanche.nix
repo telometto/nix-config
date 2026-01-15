@@ -4,7 +4,11 @@
   # Avalanche-specific user configuration
   # These settings will be applied to all users on this host
 
-  hm.programs.browsers.chromium.enable = false;
+  hm = {
+    programs = {
+      browsers.chromium.enable = false;
+    };
+  };
 
   programs.ssh = {
     enableDefaultConfig = false;
