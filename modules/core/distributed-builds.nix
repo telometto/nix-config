@@ -78,8 +78,8 @@ let
         supportedFeatures
         mandatoryFeatures
         protocol
+        sshKey
         ;
-      sshKey = machine.sshKey;
     };
 
 in
@@ -119,9 +119,11 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      nix.distributedBuilds = true;
-      nix.settings.builders-use-substitutes = lib.mkDefault cfg.buildersUseSubstitutes;
-      nix.buildMachines = map renderMachine cfg.buildMachines;
+      nix = {
+        distributedBuilds = true;
+        settings.builders-use-substitutes = lib.mkDefault cfg.buildersUseSubstitutes;
+        buildMachines = map renderMachine cfg.buildMachines;
+      };
     })
 
     (lib.mkIf cfg.server.enable {

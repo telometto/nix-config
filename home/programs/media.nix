@@ -25,24 +25,26 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    programs.mpv = lib.mkIf cfg.mpv.enable {
-      enable = lib.mkDefault true;
-      # TODO: Declaratively configure mpv
-    };
+    programs = {
+      mpv = lib.mkIf cfg.mpv.enable {
+        enable = lib.mkDefault true;
+        # TODO: Declaratively configure mpv
+      };
 
-    programs.yt-dlp = lib.mkIf cfg.yt-dlp.enable {
-      enable = lib.mkDefault true;
-      # TODO: Declaratively configure yt-dlp
+      yt-dlp = lib.mkIf cfg.yt-dlp.enable {
+        enable = lib.mkDefault true;
+        # TODO: Declaratively configure yt-dlp
+      };
+
+      obs-studio = lib.mkIf cfg.obs.enable {
+        enable = lib.mkDefault true;
+        plugins = [ ];
+      };
     };
 
     services.jellyfin-mpv-shim = lib.mkIf cfg.jf-mpv.enable {
       enable = lib.mkDefault true;
       # TODO: Declaratively configure
-    };
-
-    programs.obs-studio = lib.mkIf cfg.obs.enable {
-      enable = lib.mkDefault true;
-      plugins = [ ];
     };
 
     home.packages = [
