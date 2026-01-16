@@ -13,6 +13,8 @@
         yt-dlp.enable = true;
         jf-mpv.enable = lib.mkForce false;
       };
+
+      gaming.lutris.enable = lib.mkForce false;
     };
   };
 
