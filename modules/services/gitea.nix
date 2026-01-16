@@ -319,7 +319,7 @@ in
       }
     ];
 
-    warnings = lib.optional (cfg.lfs.s3Backend.enable) ''
+    warnings = lib.optional cfg.lfs.s3Backend.enable ''
       Gitea LFS S3 backend is enabled. LFS storage is now on SeaweedFS at ${cfg.lfs.s3Backend.endpoint}
       bucket: ${cfg.lfs.s3Backend.bucket}
     '';

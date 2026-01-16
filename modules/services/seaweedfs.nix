@@ -100,29 +100,31 @@ in
       description = "Bind address for Weed services (ip.bind)";
     };
 
-    s3.enable = mkEnableOption "S3 API support" // {
-      default = true;
-    };
-
-    s3.port = mkOption {
-      type = types.port;
-      default = 8333;
-      description = "S3 API server port (S3-compatible access)";
-    };
-
-    s3.auth = {
-      enable = mkEnableOption "S3 authentication";
-
-      accessKeyFile = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        description = "Path to a file containing the S3 access key";
+    s3 = {
+      enable = mkEnableOption "S3 API support" // {
+        default = true;
       };
 
-      secretAccessKeyFile = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        description = "Path to a file containing the S3 secret access key";
+      port = mkOption {
+        type = types.port;
+        default = 8333;
+        description = "S3 API server port (S3-compatible access)";
+      };
+
+      auth = {
+        enable = mkEnableOption "S3 authentication";
+
+        accessKeyFile = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = "Path to a file containing the S3 access key";
+        };
+
+        secretAccessKeyFile = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = "Path to a file containing the S3 secret access key";
+        };
       };
     };
 
