@@ -67,7 +67,7 @@
         53 # DNS
         80 # AdGuard web UI
         443 # HTTPS
-        11016 # Initial setup
+        3000 # Initial setup
       ];
       allowedUDPPorts = [
         53 # DNS
