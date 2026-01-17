@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.sys.role.desktop;
+  THEME = "dna";
 in
 {
   config = lib.mkIf cfg.enable {
@@ -14,10 +15,10 @@ in
         lanzaboote.enable = true;
         plymouth = {
           enable = true;
-          theme = "dna";
+          theme = THEME;
           themePackages = [
             (pkgs.adi1090x-plymouth-themes.override {
-              selected_themes = [ "dna" ];
+              selected_themes = [ THEME ];
             })
           ];
         };
