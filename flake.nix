@@ -84,6 +84,17 @@
         blizzard = mkHost "blizzard" [ ];
         avalanche = mkHost "avalanche" [ ];
         kaizer = mkHost "kaizer" [ ];
+
+        # Minimal VM for AdGuard Home
+        adguard-vm = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = [
+            ./system-loader.nix
+            ./hosts/adguard-vm/adguard-vm.nix
+            inputs.sops-nix.nixosModules.sops
+          ];
+          specialArgs = { inherit inputs system VARS; };
+        };
       };
 
       formatter.${system} = treefmtEval.config.build.wrapper;
