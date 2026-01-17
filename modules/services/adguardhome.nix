@@ -691,12 +691,11 @@ in
     services.resolved = lib.mkIf cfg.disableSystemdResolved {
       enable = true;
 
-      dnssec = "false";
-      llmnr = "true";
-
-      extraConfig = ''
-        DNSStubListener=no
-      '';
+      settings.Resolve = {
+        DNSStubListener = "no";
+        DNSSEC = "false";
+        LLMNR = "true";
+      };
     };
 
     networking.nameservers = lib.mkIf cfg.disableSystemdResolved [ "127.0.0.1" ];

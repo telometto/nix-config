@@ -57,7 +57,12 @@
   };
 
   outputs =
-    inputs@{ nixpkgs, nix-secrets, ... }:
+    inputs@{
+      self,
+      nixpkgs,
+      nix-secrets,
+      ...
+    }:
     let
       system = "x86_64-linux";
       VARS = import nix-secrets.vars.varsFile;
@@ -75,7 +80,14 @@
             inputs.microvm.nixosModules.host
           ]
           ++ extraModules;
-          specialArgs = { inherit inputs system VARS; };
+          specialArgs = {
+            inherit
+              inputs
+              system
+              VARS
+              self
+              ;
+          };
         };
     in
     {
@@ -85,12 +97,13 @@
         avalanche = mkHost "avalanche" [ ];
         kaizer = mkHost "kaizer" [ ];
 
-        # Minimal VM for AdGuard Home
+        # MicroVM definitions (for use with microvm.nix on a host)
+        # Note: MicroVMs don't use system-loader.nix to avoid importing host-only modules
         adguard-vm = nixpkgs.lib.nixosSystem {
           inherit system;
           modules = [
-            ./system-loader.nix
-            ./hosts/adguard-vm/adguard-vm.nix
+            inputs.microvm.nixosModules.microvm
+            ./vms/adguard.nix
             inputs.sops-nix.nixosModules.sops
           ];
           specialArgs = { inherit inputs system VARS; };
