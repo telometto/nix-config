@@ -3,6 +3,7 @@
   config,
   VARS,
   pkgs,
+  self,
   ...
 }:
 let
@@ -588,7 +589,21 @@ in
 
     };
 
-    virtualisation.enable = true;
+    virtualisation = {
+      enable = true;
+
+      microvm = {
+        enable = true;
+        stateDir = "/rpool/unenc/vms";
+        autostart = [ "adguard-vm" ];
+
+        vms = {
+          adguard-vm = {
+            flake = self;
+          };
+        };
+      };
+    };
 
     programs = {
       ssh.enable = false;
