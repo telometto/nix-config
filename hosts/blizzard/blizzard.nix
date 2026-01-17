@@ -75,7 +75,7 @@ in
       };
 
       adguardhome = {
-        enable = true;
+        enable = false; # Disabled - using MicroVM instead
         port = 11016;
         openFirewall = true;
         mutableSettings = false;
@@ -596,10 +596,32 @@ in
         enable = true;
         stateDir = "/rpool/unenc/vms";
         autostart = [ "adguard-vm" ];
+        externalInterface = "enp8s0";
 
-        vms = {
-          adguard-vm = {
-            flake = self;
+        vms.adguard-vm.flake = self;
+
+        expose.adguard-vm = {
+          ip = "10.100.0.10";
+
+          portForward = {
+            enable = true;
+            ports = [
+              {
+                proto = "both";
+                sourcePort = 53;
+              }
+              {
+                proto = "tcp";
+                sourcePort = 3000;
+              } # Setup UI
+            ];
+          };
+
+          cfTunnel = {
+            enable = false; # Enable when ready for internet access
+            ingress = {
+              "adguard.${VARS.domains.public}" = "http://10.100.0.10:80";
+            };
           };
         };
       };
