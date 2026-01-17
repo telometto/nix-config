@@ -162,7 +162,7 @@ in
           libxkbcommon
           zenity
           freeglut
-          glew110
+          glew
         ]
         ++ cfg.extraLibraries;
     };
