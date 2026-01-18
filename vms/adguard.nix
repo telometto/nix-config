@@ -23,8 +23,8 @@
     # CID must be unique per VM (3+ range, 0-2 are reserved)
     vsock.cid = 100;
 
-    # 1GB RAM - AdGuard Home needs ~350MB+ with filters loaded
-    mem = 2048;
+    # 3GiB RAM - AdGuard Home needs ~350MB+ with filters loaded
+    mem = 3072;
     vcpu = 1;
 
     # Persistent state volume for AdGuard configuration and data
@@ -35,7 +35,7 @@
       {
         mountPoint = "/var/lib/private/AdGuardHome";
         image = "adguard-state.img";
-        size = 1024; # 1GB for logs and config
+        size = 5120; # 5GiB for logs and config
       }
     ];
 
@@ -93,17 +93,17 @@
   sys.services.adguardhome = {
     enable = true;
     port = 11016;
-    mutableSettings = true; # Use Nix-managed config
+    mutableSettings = false; # Use Nix-managed config
     openFirewall = true; # Opens web UI port (11016) in VM firewall
 
     # Add admin user (password: changeme123 - CHANGE THIS!)
     # Generate new hash: htpasswd -nbB admin "yourpassword" | cut -d: -f2
-    # settings.users = [
-    #   {
-    #     name = "admin";
-    #     password = "$2y$05$UTSIVL5c7Nomp/hkndSl5.zFVNItSseS.1J2AxF4Z0yp6d1RsqqZ6"; # changeme123
-    #   }
-    # ];
+    settings.users = [
+      {
+        name = VARS.svc.agh.user;
+        password = VARS.svc.agh.password;
+      }
+    ];
   };
 
   # Create admin user for SSH management
