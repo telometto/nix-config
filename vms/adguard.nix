@@ -2,6 +2,8 @@
   lib,
   config,
   pkgs,
+  inputs,
+  VARS,
   ...
 }:
 {
@@ -21,16 +23,17 @@
     # CID must be unique per VM (3+ range, 0-2 are reserved)
     vsock.cid = 100;
 
-    # 512MB RAM is sufficient for AdGuard Home
-    mem = 512;
+    # 1GB RAM - AdGuard Home needs ~350MB+ with filters loaded
+    mem = 2048;
     vcpu = 1;
 
     # Persistent state volume for AdGuard configuration and data
     # Path is relative to host's microvm.stateDir/<vm-name>/
     # Configure stateDir on the HOST via sys.virtualisation.microvm.stateDir
+    # NOTE: NixOS adguardhome uses DynamicUser=true, requiring /var/lib/private/
     volumes = [
       {
-        mountPoint = "/var/lib/AdGuardHome";
+        mountPoint = "/var/lib/private/AdGuardHome";
         image = "adguard-state.img";
         size = 1024; # 1GB for logs and config
       }
@@ -63,11 +66,12 @@
 
     firewall = {
       enable = true;
+      # DNS and potential future HTTPS/DoH ports
+      # Web UI port (11016) is handled by openFirewall = true
       allowedTCPPorts = [
-        53 # DNS
-        80 # AdGuard web UI
-        443 # HTTPS
-        3000 # Initial setup
+        53 # DNS over TCP
+        80 # HTTP (for future use or Cloudflare tunnel)
+        443 # HTTPS/DoH (if TLS enabled later)
       ];
       allowedUDPPorts = [
         53 # DNS
@@ -88,7 +92,18 @@
   # Enable AdGuard Home
   sys.services.adguardhome = {
     enable = true;
-    openFirewall = false; # Handled above
+    port = 11016;
+    mutableSettings = true; # Use Nix-managed config
+    openFirewall = true; # Opens web UI port (11016) in VM firewall
+
+    # Add admin user (password: changeme123 - CHANGE THIS!)
+    # Generate new hash: htpasswd -nbB admin "yourpassword" | cut -d: -f2
+    # settings.users = [
+    #   {
+    #     name = "admin";
+    #     password = "$2y$05$UTSIVL5c7Nomp/hkndSl5.zFVNItSseS.1J2AxF4Z0yp6d1RsqqZ6"; # changeme123
+    #   }
+    # ];
   };
 
   # Create admin user for SSH management
@@ -96,7 +111,8 @@
     isNormalUser = true;
     extraGroups = [ "wheel" ];
     openssh.authorizedKeys.keys = [
-      # Add your SSH public key here or use sops
+      VARS.users.zeno.sshPubKey
+      VARS.users.zeno.gpgSshPubKey
     ];
   };
 
