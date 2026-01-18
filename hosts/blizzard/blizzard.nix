@@ -74,12 +74,8 @@ in
         };
       };
 
-      adguardhome = {
-        enable = false; # Disabled - using MicroVM instead
-        port = 11016;
-        openFirewall = true;
-        mutableSettings = false;
-      };
+      # AdGuard Home now runs in MicroVM (see sys.virtualisation.microvm)
+      # adguardhome.enable = false;
 
       zfs.enable = true;
 
@@ -612,7 +608,7 @@ in
               }
               {
                 proto = "tcp";
-                sourcePort = 3000;
+                sourcePort = 11016;
               } # Setup UI
             ];
           };
