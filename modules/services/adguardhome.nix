@@ -117,7 +117,7 @@ let
 
     querylog = {
       ignored = [ ];
-      interval = "90d";
+      interval = "8760h";
       size_memory = 1000;
       enabled = true;
       file_enabled = true;
@@ -126,7 +126,7 @@ let
 
     statistics = {
       ignored = [ ];
-      interval = "90d";
+      interval = "8760h";
       enabled = true;
     };
 
