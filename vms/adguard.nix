@@ -117,7 +117,6 @@
     extraGroups = [ "wheel" ];
     openssh.authorizedKeys.keys = [
       VARS.users.zeno.sshPubKey
-      VARS.users.zeno.gpgSshPubKey
     ];
   };
 
