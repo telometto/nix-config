@@ -88,6 +88,10 @@
   };
 
   # SSH host keys on persistent storage for stable identity across rebuilds
+  systemd.tmpfiles.rules = [
+    "d /persist/ssh 0700 root root -"
+  ];
+
   services.openssh.hostKeys = [
     {
       path = "/persist/ssh/ssh_host_ed25519_key";
