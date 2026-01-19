@@ -108,6 +108,15 @@
           ];
           specialArgs = { inherit inputs system VARS; };
         };
+
+        actual-vm = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = [
+            inputs.microvm.nixosModules.microvm
+            ./vms/actual.nix
+          ];
+          specialArgs = { inherit inputs system VARS; };
+        };
       };
 
       formatter.${system} = treefmtEval.config.build.wrapper;
