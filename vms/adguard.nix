@@ -104,6 +104,11 @@
         password = VARS.svc.agh.password;
       }
     ];
+
+    # Workaround for AdGuard Home v0.107.71 dual-stack DoT bind issue:
+    # Use specific VM IP to avoid wildcard dual-stack socket conflicts on port 853 (https://github.com/AdguardTeam/AdGuardHome/discussions/7395).
+    # Must use mkForce because module merges settings (concatenates arrays by default).
+    settings.dns.bind_hosts = lib.mkForce [ "10.100.0.10" ];
   };
 
   # Create admin user for SSH management
@@ -115,6 +120,9 @@
       VARS.users.zeno.gpgSshPubKey
     ];
   };
+
+  # Allow wheel group sudo without password inside this MicroVM
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   system.stateVersion = "24.11";
 }
