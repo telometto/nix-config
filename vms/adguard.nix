@@ -11,7 +11,23 @@
     ./base.nix
     ../modules/services/adguardhome.nix
     ../modules/services/resolved.nix
+    inputs.sops-nix.nixosModules.sops
   ];
+
+  # SOPS configuration for this MicroVM
+  # After first boot, get the VM's age key with:
+  #   ssh admin@10.100.0.10 "sudo cat /etc/ssh/ssh_host_ed25519_key" | ssh-to-age
+  # Then add it to your .sops.yaml and re-encrypt secrets
+  sops = {
+    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
+    defaultSopsFormat = "yaml";
+    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
+  };
+
+  sops.secrets."adguard/password_hash" = {
+    mode = "0400";
+    owner = "root";
+  };
 
   networking.hostName = "adguard-vm";
 
@@ -36,6 +52,11 @@
         mountPoint = "/var/lib/private/AdGuardHome";
         image = "adguard-state.img";
         size = 5120; # 5GiB for logs and config
+      }
+      {
+        mountPoint = "/persist";
+        image = "persist.img";
+        size = 64; # 64MiB for SSH keys and other persistent state
       }
     ];
 
@@ -93,17 +114,56 @@
   sys.services.adguardhome = {
     enable = true;
     port = 11016;
-    mutableSettings = false; # Use Nix-managed config
-    openFirewall = true; # Opens web UI port (11016) in VM firewall
+    mutableSettings = false;
+    openFirewall = true;
 
-    # Add admin user (password: changeme123 - CHANGE THIS!)
-    # Generate new hash: htpasswd -nbB admin "yourpassword" | cut -d: -f2
+    # Username only - password injected at runtime via SOPS
     settings.users = [
       {
         name = VARS.svc.agh.user;
-        password = VARS.svc.agh.password;
+        password = "PLACEHOLDER_WILL_BE_REPLACED";
       }
     ];
+
+    # Workaround for AdGuard Home v0.107.71 dual-stack DoT bind issue
+    # (https://github.com/AdguardTeam/AdGuardHome/discussions/7395)
+    settings.dns.bind_hosts = lib.mkForce [ "10.100.0.10" ];
+  };
+
+  # SSH host keys on persistent storage for stable identity across rebuilds
+  systemd.tmpfiles.rules = [
+    "d /persist/ssh 0700 root root -"
+  ];
+
+  services.openssh.hostKeys = [
+    {
+      path = "/persist/ssh/ssh_host_ed25519_key";
+      type = "ed25519";
+    }
+    {
+      path = "/persist/ssh/ssh_host_rsa_key";
+      type = "rsa";
+      bits = 4096;
+    }
+  ];
+
+  # Inject password hash from SOPS at runtime (before AdGuard starts)
+  systemd.services.adguardhome-inject-secrets = {
+    description = "Inject AdGuard Home password from SOPS";
+    before = [ "adguardhome.service" ];
+    requiredBy = [ "adguardhome.service" ];
+    after = [ "sops-nix.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      CONFIG="/var/lib/AdGuardHome/AdGuardHome.yaml"
+      [ -f "$CONFIG" ] || exit 0
+
+      HASH=$(cat ${config.sops.secrets."adguard/password_hash".path})
+      ${pkgs.yq-go}/bin/yq -i '.users[0].password = "'"$HASH"'"' "$CONFIG"
+    '';
   };
 
   # Create admin user for SSH management
