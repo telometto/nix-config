@@ -1080,3 +1080,4 @@ in
   environment.variables.KUBECONFIG = "/home/${VARS.users.zeno.user}/.kube/config";
 
   system.stateVersion = "24.11";
+}
