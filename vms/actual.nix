@@ -61,9 +61,8 @@
 
     firewall = {
       enable = true;
-      # Web UI port (3838) will be handled by module's openFirewall option if enabled
       allowedTCPPorts = [
-        80 # HTTP (for Cloudflare tunnel or reverse proxy)
+        80 # HTTP - Actual Budget web UI
         443 # HTTPS (if TLS enabled later)
       ];
     };
@@ -82,7 +81,7 @@
   # Enable Actual Budget
   sys.services.actual = {
     enable = true;
-    port = 3838;
+    port = 80;
     dataDir = "/var/lib/actual";
   };
 
