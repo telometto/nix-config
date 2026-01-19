@@ -637,7 +637,7 @@ in
                 {
                   proto = "tcp";
                   sourcePort = 11005;
-                  targetPort = 80;
+                  destPort = 80;
                 }
               ];
             };
