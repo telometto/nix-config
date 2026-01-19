@@ -2,10 +2,58 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "nix flake check",
+      "label": "flake check",
+      "type": "shell",
+      "command": "nix flake check",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "flake check (trace)",
       "type": "shell",
       "command": "nix flake check --show-trace",
-      "group": "build"
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "flake check (no-build)",
+      "type": "shell",
+      "command": "nix flake check --no-build",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "flake update",
+      "type": "shell",
+      "command": "nix flake update",
+      "problemMatcher": []
+    },
+    {
+      "label": "format",
+      "type": "shell",
+      "command": "nix fmt",
+      "problemMatcher": []
+    },
+    {
+      "label": "rebuild switch",
+      "type": "shell",
+      "command": "sudo nixos-rebuild switch --flake .",
+      "problemMatcher": []
+    },
+    {
+      "label": "rebuild test",
+      "type": "shell",
+      "command": "sudo nixos-rebuild test --flake .",
+      "problemMatcher": []
+    },
+    {
+      "label": "rebuild dry-run",
+      "type": "shell",
+      "command": "nixos-rebuild dry-run --flake .",
+      "problemMatcher": []
     }
   ]
 }
