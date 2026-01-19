@@ -678,9 +678,9 @@ in
         openFirewall
         mutableSettings
         ;
-      settings = lib.recursiveUpdate
-        (lib.recursiveUpdate defaultSettings { dns.port = cfg.dnsPort; })
-        cfg.settings;
+      settings = lib.recursiveUpdate (lib.recursiveUpdate defaultSettings {
+        dns.port = cfg.dnsPort;
+      }) cfg.settings;
     };
 
     sys.services.resolved = lib.mkIf cfg.disableSystemdResolved {
