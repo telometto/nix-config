@@ -29,6 +29,14 @@
     owner = "root";
   };
 
+  sops.secrets."adguard/fullchain" = {
+    mode = "0444";
+  };
+
+  sops.secrets."adguard/privkey" = {
+    mode = "0400";
+  };
+
   networking.hostName = "adguard-vm";
 
   # MicroVM-specific configuration
@@ -128,6 +136,15 @@
     # Workaround for AdGuard Home v0.107.71 dual-stack DoT bind issue
     # (https://github.com/AdguardTeam/AdGuardHome/discussions/7395)
     settings.dns.bind_hosts = lib.mkForce [ "10.100.0.10" ];
+
+    # TLS certificates from SOPS (using file paths instead of inline content)
+    settings.tls = {
+      server_name = "adguard.${VARS.domains.public}";
+      certificate_chain = "";
+      private_key = "";
+      certificate_path = config.sops.secrets."adguard/fullchain".path;
+      private_key_path = config.sops.secrets."adguard/privkey".path;
+    };
   };
 
   # SSH host keys on persistent storage for stable identity across rebuilds
