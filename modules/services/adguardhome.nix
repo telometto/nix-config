@@ -100,7 +100,7 @@ let
 
     tls = {
       enabled = true;
-      server_name = "adguard.${VARS.domains.public}";
+      server_name = "";
       force_https = true;
       port_https = 443;
       port_dns_over_tls = 853;
@@ -108,8 +108,8 @@ let
       port_dnscrypt = 0;
       dnscrypt_config_file = "";
       allow_unencrypted_doh = false;
-      certificate_chain = VARS.svc.agh.fullchain;
-      private_key = VARS.svc.agh.privkey;
+      certificate_chain = "";
+      private_key = "";
       certificate_path = "";
       private_key_path = "";
       strict_sni_check = false;
