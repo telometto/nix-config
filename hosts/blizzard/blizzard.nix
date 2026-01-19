@@ -3,6 +3,7 @@
   config,
   VARS,
   pkgs,
+  self,
   ...
 }:
 let
@@ -73,12 +74,8 @@ in
         };
       };
 
-      adguardhome = {
-        enable = true;
-        port = 11016;
-        openFirewall = true;
-        mutableSettings = false;
-      };
+      # AdGuard Home now runs in MicroVM (see sys.virtualisation.microvm)
+      # adguardhome.enable = false;
 
       zfs.enable = true;
 
@@ -588,7 +585,43 @@ in
 
     };
 
-    virtualisation.enable = true;
+    virtualisation = {
+      enable = true;
+
+      microvm = {
+        enable = true;
+        stateDir = "/rpool/unenc/vms";
+        autostart = [ "adguard-vm" ];
+        externalInterface = "enp8s0";
+
+        vms.adguard-vm.flake = self;
+
+        expose.adguard-vm = {
+          ip = "10.100.0.10";
+
+          portForward = {
+            enable = true;
+            ports = [
+              {
+                proto = "both";
+                sourcePort = 53;
+              }
+              {
+                proto = "tcp";
+                sourcePort = 11016;
+              } # Setup UI
+            ];
+          };
+
+          cfTunnel = {
+            enable = false; # Enable when ready for internet access
+            ingress = {
+              "adguard.${VARS.domains.public}" = "http://10.100.0.10:80";
+            };
+          };
+        };
+      };
+    };
 
     programs = {
       ssh.enable = false;

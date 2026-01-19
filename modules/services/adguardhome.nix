@@ -2,6 +2,7 @@
   lib,
   config,
   pkgs,
+  VARS,
   ...
 }:
 let
@@ -98,17 +99,17 @@ let
     };
 
     tls = {
-      enabled = false;
-      server_name = "";
-      force_https = false;
+      enabled = true;
+      server_name = "adguard.${VARS.domains.public}";
+      force_https = true;
       port_https = 443;
       port_dns_over_tls = 853;
       port_dns_over_quic = 853;
       port_dnscrypt = 0;
       dnscrypt_config_file = "";
       allow_unencrypted_doh = false;
-      certificate_chain = "";
-      private_key = "";
+      certificate_chain = VARS.svc.agh.fullchain;
+      private_key = VARS.svc.agh.privkey;
       certificate_path = "";
       private_key_path = "";
       strict_sni_check = false;
@@ -116,16 +117,16 @@ let
 
     querylog = {
       ignored = [ ];
-      interval = "1h";
+      interval = "8760h";
       size_memory = 1000;
       enabled = true;
       file_enabled = true;
-      anonymize_client_ip = true;
+      anonymize_client_ip = false;
     };
 
     statistics = {
       ignored = [ ];
-      interval = "1h";
+      interval = "8760h";
       enabled = true;
     };
 
@@ -691,12 +692,11 @@ in
     services.resolved = lib.mkIf cfg.disableSystemdResolved {
       enable = true;
 
-      dnssec = "false";
-      llmnr = "true";
-
-      extraConfig = ''
-        DNSStubListener=no
-      '';
+      settings.Resolve = {
+        DNSStubListener = "no";
+        DNSSEC = "false";
+        LLMNR = "true";
+      };
     };
 
     networking.nameservers = lib.mkIf cfg.disableSystemdResolved [ "127.0.0.1" ];
