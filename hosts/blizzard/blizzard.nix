@@ -369,7 +369,7 @@ in
       };
 
       actual = {
-        enable = true;
+        enable = false;
 
         port = 11005;
         dataDir = "/rpool/unenc/apps/nixos/actual";
@@ -591,32 +591,61 @@ in
       microvm = {
         enable = true;
         stateDir = "/rpool/unenc/vms";
-        autostart = [ "adguard-vm" ];
+        autostart = [
+          "adguard-vm"
+          "actual-vm"
+        ];
         externalInterface = "enp8s0";
 
-        vms.adguard-vm.flake = self;
+        vms = {
+          adguard-vm.flake = self;
+          actual-vm.flake = self;
+        };
 
-        expose.adguard-vm = {
-          ip = "10.100.0.10";
+        expose = {
+          adguard-vm = {
+            ip = "10.100.0.10";
 
-          portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "both";
-                sourcePort = 53;
-              }
-              {
-                proto = "tcp";
-                sourcePort = 11016;
-              } # Setup UI
-            ];
+            portForward = {
+              enable = true;
+              ports = [
+                {
+                  proto = "both";
+                  sourcePort = 53;
+                }
+                {
+                  proto = "tcp";
+                  sourcePort = 11016;
+                } # Setup UI
+              ];
+            };
+
+            cfTunnel = {
+              enable = false; # Enable when ready for internet access
+              ingress = {
+                "adguard.${VARS.domains.public}" = "http://10.100.0.10:80";
+              };
+            };
           };
 
-          cfTunnel = {
-            enable = false; # Enable when ready for internet access
-            ingress = {
-              "adguard.${VARS.domains.public}" = "http://10.100.0.10:80";
+          actual-vm = {
+            ip = "10.100.0.11";
+
+            portForward = {
+              enable = true;
+              ports = [
+                {
+                  proto = "tcp";
+                  sourcePort = 11005;
+                }
+              ];
+            };
+
+            cfTunnel = {
+              enable = true;
+              ingress = {
+                "actual.${VARS.domains.public}" = "http://10.100.0.11:11005";
+              };
             };
           };
         };
