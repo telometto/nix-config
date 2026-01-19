@@ -172,7 +172,8 @@
         exit 1
       fi
 
-      ${pkgs.yq-go}/bin/yq -i '.users[0].password = "'"$HASH"'"' "$CONFIG"
+      export HASH
+      ${pkgs.yq-go}/bin/yq -i '.users[0].password = strenv(HASH)' "$CONFIG"
     '';
   };
 
