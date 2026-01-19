@@ -637,15 +637,14 @@ in
                 {
                   proto = "tcp";
                   sourcePort = 11005;
-                  destPort = 80;
                 }
               ];
             };
 
             cfTunnel = {
-              enable = false;
+              enable = true;
               ingress = {
-                "actual.${VARS.domains.public}" = "http://10.100.0.11:80";
+                "actual.${VARS.domains.public}" = "http://10.100.0.11:11005";
               };
             };
           };

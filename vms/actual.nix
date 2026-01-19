@@ -61,10 +61,7 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [
-        80 # HTTP - Actual Budget web UI
-        443 # HTTPS (if TLS enabled later)
-      ];
+      allowedTCPPorts = [ 11005 ];
     };
   };
 
@@ -81,7 +78,7 @@
   # Enable Actual Budget
   sys.services.actual = {
     enable = true;
-    port = 80;
+    port = 11005;
     dataDir = "/var/lib/actual";
   };
 
@@ -93,6 +90,8 @@
       VARS.users.zeno.sshPubKey
     ];
   };
+
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   system.stateVersion = "24.11";
 }
