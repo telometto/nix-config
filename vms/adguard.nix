@@ -16,7 +16,7 @@
 
   # SOPS configuration for this MicroVM
   # After first boot, get the VM's age key with:
-  #   ssh admin@10.100.0.10 "sudo cat /etc/ssh/ssh_host_ed25519_key" | ssh-to-age
+  #   ssh admin@10.100.0.10 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then add it to your .sops.yaml and re-encrypt secrets
   sops = {
     defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
@@ -158,17 +158,22 @@
       RemainAfterExit = true;
     };
     script = ''
-      CONFIG="/var/lib/AdGuardHome/AdGuardHome.yaml"
+      CONFIG="/var/lib/private/AdGuardHome/AdGuardHome.yaml"
       [ -f "$CONFIG" ] || exit 0
 
-      HASH=$(cat ${config.sops.secrets."adguard/password_hash".path})
+      SECRET_PATH="${config.sops.secrets."adguard/password_hash".path}"
+      if ! HASH=$(cat "$SECRET_PATH" 2>/dev/null); then
+        echo "Failed to read password hash from $SECRET_PATH" >&2
+        exit 1
+      fi
+
+      if [ -z "$HASH" ]; then
+        echo "Password hash is empty" >&2
+        exit 1
+      fi
+
       ${pkgs.yq-go}/bin/yq -i '.users[0].password = "'"$HASH"'"' "$CONFIG"
     '';
-
-    # Workaround for AdGuard Home v0.107.71 dual-stack DoT bind issue:
-    # Use specific VM IP to avoid wildcard dual-stack socket conflicts on port 853 (https://github.com/AdguardTeam/AdGuardHome/discussions/7395).
-    # Must use mkForce because module merges settings (concatenates arrays by default).
-    settings.dns.bind_hosts = lib.mkForce [ "10.100.0.10" ];
   };
 
   # Create admin user for SSH management
