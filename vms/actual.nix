@@ -24,13 +24,18 @@
     mem = 1024;
     vcpu = 1;
 
-    # Persistent state volume for Actual Budget data
+    # Persistent state volumes
     # NOTE: Actual service uses DynamicUser=true, requiring /var/lib/private/
     volumes = [
       {
         mountPoint = "/var/lib/private/actual";
         image = "actual-state.img";
         size = 2048; # 2GiB for budget data
+      }
+      {
+        mountPoint = "/persist";
+        image = "persist.img";
+        size = 64; # 64MiB for SSH keys and other persistent state
       }
     ];
 
@@ -81,6 +86,23 @@
     port = 11005;
     dataDir = "/var/lib/actual";
   };
+
+  # SSH host keys on persistent storage for stable identity across rebuilds
+  systemd.tmpfiles.rules = [
+    "d /persist/ssh 0700 root root -"
+  ];
+
+  services.openssh.hostKeys = [
+    {
+      path = "/persist/ssh/ssh_host_ed25519_key";
+      type = "ed25519";
+    }
+    {
+      path = "/persist/ssh/ssh_host_rsa_key";
+      type = "rsa";
+      bits = 4096;
+    }
+  ];
 
   # Create admin user for SSH management
   users.users.admin = {
