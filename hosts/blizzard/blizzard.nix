@@ -637,7 +637,7 @@ in
                 {
                   proto = "tcp";
                   sourcePort = 11005;
-                  targetPort = 3838;
+                  targetPort = 80;
                 }
               ];
             };
@@ -645,7 +645,7 @@ in
             cfTunnel = {
               enable = false;
               ingress = {
-                "actual.${VARS.domains.public}" = "http://10.100.0.11:3838";
+                "actual.${VARS.domains.public}" = "http://10.100.0.11:80";
               };
             };
           };
