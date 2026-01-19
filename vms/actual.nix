@@ -32,6 +32,11 @@
         image = "actual-state.img";
         size = 2048; # 2GiB for budget data
       }
+      {
+        mountPoint = "/etc/ssh";
+        image = "ssh-host-keys.img";
+        size = 8; # 8MiB - SSH host keys for stable identity
+      }
     ];
 
     # Network interface - connects to host bridge
