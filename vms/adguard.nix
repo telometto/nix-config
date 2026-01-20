@@ -97,12 +97,13 @@
 
     firewall = {
       enable = true;
-      # DNS and potential future HTTPS/DoH ports
+      # DNS and encrypted DNS ports
       # Web UI port (11016) is handled by openFirewall = true
       allowedTCPPorts = [
         53 # DNS over TCP
-        80 # HTTP (for future use or Cloudflare tunnel)
-        443 # HTTPS/DoH (if TLS enabled later)
+        80 # HTTP (for Cloudflare tunnel)
+        443 # DoH (DNS over HTTPS)
+        853 # DoT (DNS over TLS)
       ];
       allowedUDPPorts = [
         53 # DNS
@@ -113,7 +114,10 @@
   systemd.network.networks."20-lan" = {
     matchConfig.Type = "ether";
     networkConfig = {
-      Address = [ "10.100.0.10/24" ];
+      Address = [
+        "10.100.0.10/24"
+        "fd10:100::10/64"
+      ];
       Gateway = "10.100.0.1";
       DNS = [ "1.1.1.1" ];
       DHCP = "no";

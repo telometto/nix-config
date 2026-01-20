@@ -25,6 +25,10 @@ in
             DNSSEC = "allow-downgrade";
             LLMNR = "true";
 
+            DNS = [
+              "192.168.2.100#adguard.zzxyz.no" # IPv4 with SNI for TLS verification
+            ];
+
             FallbackDNS = [
               "1.1.1.1#cloudflare-dns.com"
               "9.9.9.9#dns.quad9.net"
