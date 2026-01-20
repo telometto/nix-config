@@ -708,13 +708,13 @@ in
       };
 
       dhcpV4Config = {
-        UseDNS = false; # Ignore DHCP DNS - use AdGuard instead
+        UseDNS = true;
         UseRoutes = true;
         RouteMetric = 100;
       };
 
       dhcpV6Config = {
-        UseDNS = false; # Ignore DHCP DNS - use AdGuard instead
+        UseDNS = true;
       };
 
       linkConfig.RequiredForOnline = "routable";
