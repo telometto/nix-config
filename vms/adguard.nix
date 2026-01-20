@@ -24,18 +24,20 @@
     age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
   };
 
-  sops.secrets."adguard/password_hash" = {
-    mode = "0400";
-    owner = "root";
-  };
+  # SOPS secrets - disabled since SOPS runs before /persist is mounted in MicroVMs
+  # Set password via web UI instead (persists with mutableSettings = true)
+  # sops.secrets."adguard/password_hash" = {
+  #   mode = "0400";
+  #   owner = "root";
+  # };
 
-  sops.secrets."adguard/fullchain" = {
-    mode = "0444";
-  };
+  # sops.secrets."adguard/fullchain" = {
+  #   mode = "0444";
+  # };
 
-  sops.secrets."adguard/privkey" = {
-    mode = "0400";
-  };
+  # sops.secrets."adguard/privkey" = {
+  #   mode = "0400";
+  # };
 
   networking.hostName = "adguard-vm";
 
@@ -122,29 +124,29 @@
   sys.services.adguardhome = {
     enable = true;
     port = 11016;
-    mutableSettings = false;
+    mutableSettings = true;
     openFirewall = true;
 
-    # Username only - password injected at runtime via SOPS
-    settings.users = [
-      {
-        name = VARS.svc.agh.user;
-        password = "PLACEHOLDER_WILL_BE_REPLACED";
-      }
-    ];
+    # User/password managed via web UI (persists with mutableSettings = true)
+    # settings.users = [
+    #   {
+    #     name = VARS.svc.agh.user;
+    #     password = "PLACEHOLDER_WILL_BE_REPLACED";
+    #   }
+    # ];
 
     # Workaround for AdGuard Home v0.107.71 dual-stack DoT bind issue
     # (https://github.com/AdguardTeam/AdGuardHome/discussions/7395)
     settings.dns.bind_hosts = lib.mkForce [ "10.100.0.10" ];
 
-    # TLS certificates from SOPS (using file paths instead of inline content)
-    settings.tls = {
-      server_name = "adguard.${VARS.domains.public}";
-      certificate_chain = "";
-      private_key = "";
-      certificate_path = config.sops.secrets."adguard/fullchain".path;
-      private_key_path = config.sops.secrets."adguard/privkey".path;
-    };
+    # TLS managed via web UI or disabled if using Cloudflare tunnel
+    # settings.tls = {
+    #   server_name = "adguard.${VARS.domains.public}";
+    #   certificate_chain = "";
+    #   private_key = "";
+    #   certificate_path = config.sops.secrets."adguard/fullchain".path;
+    #   private_key_path = config.sops.secrets."adguard/privkey".path;
+    # };
   };
 
   # SSH host keys on persistent storage for stable identity across rebuilds
@@ -164,35 +166,35 @@
     }
   ];
 
-  # Inject password hash from SOPS at runtime (before AdGuard starts)
-  systemd.services.adguardhome-inject-secrets = {
-    description = "Inject AdGuard Home password from SOPS";
-    before = [ "adguardhome.service" ];
-    requiredBy = [ "adguardhome.service" ];
-    after = [ "sops-nix.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      CONFIG="/var/lib/private/AdGuardHome/AdGuardHome.yaml"
-      [ -f "$CONFIG" ] || exit 0
-
-      SECRET_PATH="${config.sops.secrets."adguard/password_hash".path}"
-      if ! HASH=$(cat "$SECRET_PATH" 2>/dev/null); then
-        echo "Failed to read password hash from $SECRET_PATH" >&2
-        exit 1
-      fi
-
-      if [ -z "$HASH" ]; then
-        echo "Password hash is empty" >&2
-        exit 1
-      fi
-
-      export HASH
-      ${pkgs.yq-go}/bin/yq -i '.users[0].password = strenv(HASH)' "$CONFIG"
-    '';
-  };
+  # Password injection disabled - use web UI instead (Settings → Authentication)
+  # systemd.services.adguardhome-inject-secrets = {
+  #   description = "Inject AdGuard Home password from SOPS";
+  #   before = [ "adguardhome.service" ];
+  #   requiredBy = [ "adguardhome.service" ];
+  #   after = [ "sops-nix.service" ];
+  #   serviceConfig = {
+  #     Type = "oneshot";
+  #     RemainAfterExit = true;
+  #   };
+  #   script = ''
+  #     CONFIG="/var/lib/private/AdGuardHome/AdGuardHome.yaml"
+  #     [ -f "$CONFIG" ] || exit 0
+  #
+  #     SECRET_PATH="${config.sops.secrets."adguard/password_hash".path}"
+  #     if ! HASH=$(cat "$SECRET_PATH" 2>/dev/null); then
+  #       echo "Failed to read password hash from $SECRET_PATH" >&2
+  #       exit 1
+  #     fi
+  #
+  #     if [ -z "$HASH" ]; then
+  #       echo "Password hash is empty" >&2
+  #       exit 1
+  #     fi
+  #
+  #     export HASH
+  #     ${pkgs.yq-go}/bin/yq -i '.users[0].password = strenv(HASH)' "$CONFIG"
+  #   '';
+  # };
 
   # Create admin user for SSH management
   users.users.admin = {
@@ -204,7 +206,7 @@
   };
 
   # Allow wheel group sudo without password inside this MicroVM
-  # security.sudo.wheelNeedsPassword = lib.mkForce false;
+  security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   system.stateVersion = "24.11";
 }
