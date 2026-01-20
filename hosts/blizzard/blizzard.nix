@@ -616,14 +616,22 @@ in
                 {
                   proto = "tcp";
                   sourcePort = 11016;
-                } # Setup UI
+                } # Web UI
+                {
+                  proto = "tcp";
+                  sourcePort = 443;
+                } # DoH (DNS over HTTPS)
+                {
+                  proto = "tcp";
+                  sourcePort = 853;
+                } # DoT (DNS over TLS)
               ];
             };
 
             cfTunnel = {
               enable = false; # Enable when ready for internet access
               ingress = {
-                "adguard.${VARS.domains.public}" = "http://10.100.0.10:80";
+                "adguard.${VARS.domains.public}" = "http://10.100.0.10:11016";
               };
             };
           };
