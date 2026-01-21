@@ -50,6 +50,8 @@ in
     # };
 
     services = {
+      resolved.DNS = [ "192.168.2.100" ];
+
       tailscale = {
         interface = "wlp4s0";
         openFirewall = true;
