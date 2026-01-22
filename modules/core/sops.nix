@@ -19,8 +19,6 @@ let
   hasCloudflared = config.sys.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
   hasCloudflareAccessIpUpdater = config.sys.services.cloudflareAccessIpUpdater.enable or false;
-  hasInfluxdb = config.sys.services.influxdb.enable or false;
-  hasInfluxdbRemoteWrite = config.sys.services.influxdbRemoteWrite.enable or false;
   hasUps = config.sys.services.ups.enable or false;
   hasGitea = config.sys.services.gitea.enable or false;
   hasSeaweedfs = config.sys.services.seaweedfs.enable or false;
@@ -88,24 +86,6 @@ in
       }
       // whenEnabled hasCloudflareAccessIpUpdater {
         "cloudflare/access_api_token" = { };
-      }
-      # InfluxDB server needs both password and token
-      // whenEnabled hasInfluxdb {
-        "influxdb/password" = {
-          # InfluxDB provision script needs to read this
-          mode = "0440";
-          owner = "influxdb2";
-          group = "influxdb2";
-        };
-        "influxdb/token" = {
-          # World-readable: multiple services need this (Prometheus, Grafana)
-          # and the data (system metrics) isn't sensitive
-          mode = "0444";
-        };
-      }
-      # Remote hosts only need the token for authentication
-      // whenEnabled (hasInfluxdbRemoteWrite && !hasInfluxdb) {
-        "influxdb/token" = { };
       }
       # UPS monitoring password (for NUT upsmon)
       // whenEnabled hasUps {
@@ -199,15 +179,6 @@ in
     // whenEnabled hasCloudflareAccessIpUpdater {
       cloudflareAccessApiTokenFile = toString config.sops.secrets."cloudflare/access_api_token".path;
     }
-    # InfluxDB server gets both password and token
-    // whenEnabled hasInfluxdb {
-      influxdbPasswordFile = toString config.sops.secrets."influxdb/password".path;
-      influxdbTokenFile = toString config.sops.secrets."influxdb/token".path;
-    }
-    # Remote write hosts only need the token
-    // whenEnabled (hasInfluxdbRemoteWrite && !hasInfluxdb) {
-      influxdbTokenFile = toString config.sops.secrets."influxdb/token".path;
-    }
     # UPS monitoring password
     // whenEnabled hasUps {
       upsmonPasswordFile = toString config.sops.secrets."ups/upsmon_password".path;
@@ -221,10 +192,6 @@ in
       seaweedfsAccessKeyFile = toString config.sops.secrets."seaweedfs/access_key".path;
       seaweedfsSecretAccessKeyFile = toString config.sops.secrets."seaweedfs/secret_key".path;
     };
-
-  # Add influxdb2 to keys group so it can traverse /run/secrets/
-  # Note: May not be needed since influxdb2 uses LoadCredential for its own secrets
-  # users.users.influxdb2.extraGroups = lib.mkIf hasInfluxdb [ "keys" ];
 
   environment.systemPackages = [
     pkgs.age
