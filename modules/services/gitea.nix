@@ -211,12 +211,14 @@ in
             ) "https://${cfg.reverseProxy.domain}/";
             HTTP_PORT = cfg.port;
 
-            ENABLE_PUSH_CREATE_USER = true;
-            ENABLE_PUSH_CREATE_ORG = true;
-
             LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
             LFS_ALLOW_PURE_SSH = lib.mkIf cfg.lfs.enable cfg.lfs.allowPureSSH;
             LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
+          };
+
+          repository = {
+            ENABLE_PUSH_CREATE_USER = true;
+            ENABLE_PUSH_CREATE_ORG = true;
           };
 
           service.DISABLE_REGISTRATION = cfg.disableRegistration;
