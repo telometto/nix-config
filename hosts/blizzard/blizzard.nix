@@ -41,6 +41,8 @@ in
     # };
 
     services = {
+      resolved.DNS = [ "10.100.0.10" ];
+
       tailscale = {
         interface = "enp8s0";
         openFirewall = true;

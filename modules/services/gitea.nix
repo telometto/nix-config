@@ -216,6 +216,11 @@ in
             LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
           };
 
+          repository = {
+            ENABLE_PUSH_CREATE_USER = true;
+            ENABLE_PUSH_CREATE_ORG = true;
+          };
+
           service.DISABLE_REGISTRATION = cfg.disableRegistration;
 
           session.COOKIE_SECURE = lib.mkIf cfg.reverseProxy.enable true;

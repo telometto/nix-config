@@ -8,10 +8,17 @@ in
     default = true;
   };
 
-  options.sys.services.resolved.extraSettings = lib.mkOption {
-    type = lib.types.attrsOf lib.types.anything;
-    default = { };
-    description = "Extra settings merged into services.resolved (owner extension point).";
+  options.sys.services.resolved = {
+    DNS = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      description = "DNS servers to use (can be overridden per-host).";
+    };
+
+    extraSettings = lib.mkOption {
+      type = lib.types.attrsOf lib.types.anything;
+      default = { };
+      description = "Extra settings merged into services.resolved (owner extension point).";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -25,9 +32,7 @@ in
             DNSSEC = "allow-downgrade";
             LLMNR = "true";
 
-            DNS = [
-              "192.168.2.100#adguard.zzxyz.no" # IPv4 with SNI for TLS verification
-            ];
+            inherit (cfg) DNS;
 
             FallbackDNS = [
               "1.1.1.1#cloudflare-dns.com"
