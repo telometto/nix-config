@@ -210,7 +210,9 @@
   };
 
   # Allow wheel group sudo without password inside this MicroVM
-  security.sudo.wheelNeedsPassword = lib.mkForce false;
+  # NOTE! THIS POSES A SIGNIFICANT SECURITY RISK - UNCOMMENT IT
+  # ONLY IF YOU UNDERSTAND THE IMPLICATIONS!
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   system.stateVersion = "24.11";
 }
