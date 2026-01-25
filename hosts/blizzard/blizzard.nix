@@ -35,10 +35,10 @@ in
 
     users.zeno.enable = true;
 
-    # overlays.fromInputs = {
+    overlays.fromInputs = {
     #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
-    #   # nixpkgs-stable = [ "thunderbird" ];
-    # };
+      nixpkgs-stable = [ "searxng" ]; # Issues on the unstable branch
+    };
 
     services = {
       resolved.DNS = [ "10.100.0.10" ];
