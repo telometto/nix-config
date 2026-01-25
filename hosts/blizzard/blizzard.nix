@@ -81,6 +81,13 @@ in
 
       zfs.enable = true;
 
+      webzfs = {
+        enable = true;
+        host = "0.0.0.0";
+        port = 26619;
+        openFirewall = false;
+      };
+
       sanoid = {
         enable = true;
 

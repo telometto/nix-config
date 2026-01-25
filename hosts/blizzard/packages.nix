@@ -24,6 +24,7 @@ let
     pkgs.zfs
     pkgs.zfstools
     pkgs.shadow
+    pkgs.webzfs
   ];
 in
 {

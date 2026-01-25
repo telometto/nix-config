@@ -94,6 +94,11 @@ in
       generatedOverlays
       ++ cfg.custom
       ++ [
+        # Custom packages overlay
+        (final: prev: {
+          webzfs = final.callPackage ../../pkgs/webzfs.nix { };
+        })
+
         # FIXME: udevil fails to build with GCC 15 due to stricter C standard (gnu23).
         # The signal handler functions use old-style function declarations.
         # Force -std=gnu17 until upstream fixes the issue.
