@@ -36,7 +36,7 @@ in
     users.zeno.enable = true;
 
     overlays.fromInputs = {
-    #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
+      #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
       nixpkgs-stable = [ "searxng" ]; # Issues on the unstable branch
     };
 
