@@ -61,12 +61,6 @@ let
 
   security = [
     pkgs.sbctl
-    pkgs.apparmor-bin-utils
-    pkgs.apparmor-pam
-    pkgs.apparmor-parser
-    pkgs.apparmor-profiles
-    pkgs.apparmor-utils
-    pkgs.libapparmor
     pkgs.tpm2-tools
   ];
 in
