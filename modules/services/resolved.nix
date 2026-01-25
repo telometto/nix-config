@@ -14,6 +14,15 @@ in
       description = "DNS servers to use (can be overridden per-host).";
     };
 
+    FallbackDNS = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [
+        "9.9.9.9#dns.quad9.net"
+        "1.1.1.1#cloudflare-dns.com"
+      ];
+      description = "Fallback DNS servers to use (can be overridden per-host).";
+    };
+
     extraSettings = lib.mkOption {
       type = lib.types.attrsOf lib.types.anything;
       default = { };
@@ -32,12 +41,7 @@ in
             DNSSEC = "allow-downgrade";
             LLMNR = "true";
 
-            inherit (cfg) DNS;
-
-            FallbackDNS = [
-              "1.1.1.1#cloudflare-dns.com"
-              "9.9.9.9#dns.quad9.net"
-            ];
+            inherit (cfg) DNS FallbackDNS;
           };
         };
       }
