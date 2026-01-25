@@ -86,7 +86,10 @@ in
     # ];
 
     services = {
-      resolved.DNS = [ "192.168.2.100" ];
+      resolved = {
+        DNS = [ "192.168.2.100" ];
+        FallbackDNS = [ ];
+      };
 
       tailscale = {
         interface = "enp5s0";
