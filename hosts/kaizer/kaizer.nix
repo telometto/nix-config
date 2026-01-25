@@ -37,7 +37,7 @@ in
 
     users = {
       gianluca.enable = true;
-      frankie.enable = true;
+      frankie.enable = false;
     };
 
     boot.lanzaboote.enable = lib.mkForce false;
