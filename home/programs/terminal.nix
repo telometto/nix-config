@@ -11,6 +11,22 @@ in
   options.hm.programs.terminal = {
     enable = lib.mkEnableOption "Terminal tools and shell configuration";
 
+    zellij = {
+      enable = lib.mkEnableOption "zellij multiplexer";
+
+      attachToExisting = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether to attach to an existing session.";
+      };
+
+      exitShellOnExit = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Whether to exit the shell itself on exit.";
+      };
+    };
+
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
@@ -90,7 +106,8 @@ in
         enable = lib.mkDefault true;
         enableBashIntegration = lib.mkDefault true;
         enableZshIntegration = lib.mkDefault true;
-        attachExistingSession = lib.mkDefault true;
+        attachExistingSession = cfg.zellij.attachToExisting;
+        inherit (cfg.zellij) exitShellOnExit;
       };
 
       zoxide = {
