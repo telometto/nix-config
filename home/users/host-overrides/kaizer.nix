@@ -15,6 +15,8 @@
       };
 
       gaming.lutris.enable = lib.mkForce false;
+
+      terminal.zellij.exitShellOnExit = true;
     };
   };
 
