@@ -90,8 +90,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    nixpkgs.overlays =
-      generatedOverlays
-      ++ cfg.custom;
+    nixpkgs.overlays = generatedOverlays ++ cfg.custom;
   };
 }
