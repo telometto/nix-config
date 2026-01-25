@@ -85,7 +85,7 @@ in
         enable = true;
         host = "127.0.0.1";
         port = 26619;
-        openFirewall = false;
+        openFirewall = true;
       };
 
       sanoid = {
