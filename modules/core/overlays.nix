@@ -98,13 +98,13 @@ in
         # The signal handler functions use old-style function declarations.
         # Force -std=gnu17 until upstream fixes the issue.
         # See: https://github.com/NixOS/nixpkgs/issues/475579
-        (final: prev: {
-          udevil = prev.udevil.overrideAttrs (oldAttrs: {
-            env = (oldAttrs.env or { }) // {
-              NIX_CFLAGS_COMPILE = toString ((oldAttrs.env.NIX_CFLAGS_COMPILE or "") + " -std=gnu17");
-            };
-          });
-        })
+        # (final: prev: {
+        #   udevil = prev.udevil.overrideAttrs (oldAttrs: {
+        #     env = (oldAttrs.env or { }) // {
+        #       NIX_CFLAGS_COMPILE = toString ((oldAttrs.env.NIX_CFLAGS_COMPILE or "") + " -std=gnu17");
+        #     };
+        #   });
+        # })
       ];
   };
 }
