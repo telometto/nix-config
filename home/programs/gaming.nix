@@ -95,7 +95,7 @@ in
 
         steamPackage = osConfig.programs.steam.package;
 
-        inherit (cfg) extraPackages;
+        inherit (cfg.lutris) extraPackages;
       };
     };
 
