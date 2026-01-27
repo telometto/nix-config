@@ -15,16 +15,20 @@ in
   # Create NixOS users from VARS.users
   # Transform from role-keyed (zeno, other) to username-keyed (zeno, <other's username>)
   # Only create users enabled for this host via sys.users.<username>.enable
-  users.users = lib.mapAttrs' (
-    _roleName: userData:
-    lib.nameValuePair userData.user {
-      inherit (userData) description isNormalUser hashedPassword;
-      shell = lib.mkForce pkgs.zsh;
-      extraGroups = lib.mkDefault userData.extraGroups;
-      openssh.authorizedKeys.keys = [
-        userData.sshPubKey
-        userData.gpgSshPubKey
-      ];
-    }
-  ) enabledUsers;
+  users = {
+    mutableUsers = false;
+
+    users = lib.mapAttrs' (
+      _roleName: userData:
+      lib.nameValuePair userData.user {
+        inherit (userData) description isNormalUser hashedPassword group;
+        shell = lib.mkForce pkgs.zsh;
+        extraGroups = lib.mkDefault userData.extraGroups;
+        openssh.authorizedKeys.keys = [
+          userData.sshPubKey
+          userData.gpgSshPubKey
+        ];
+      }
+    ) enabledUsers;
+  };
 }
