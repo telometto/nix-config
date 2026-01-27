@@ -21,12 +21,14 @@ let
       timeout=$((timeout - 1))
     done
 
-    # Wait for kwallet to be available
-    timeout=30
+    # Wait for kwallet to be available (reduced timeout to avoid login delays)
+    # If KWallet isn't ready, keys can be added manually later
+    timeout=5
     while ! ${pkgs.kdePackages.kwallet}/bin/kwallet-query -l ${cfg.kwalletName} > /dev/null 2>&1; do
       if [ $timeout -le 0 ]; then
-        echo "KWallet did not become available in time"
-        exit 1
+        echo "KWallet not available yet, skipping automatic SSH key import"
+        echo "Keys can be added manually with: ssh-add"
+        exit 0  # Exit gracefully instead of failing
       fi
       sleep 1
       timeout=$((timeout - 1))
@@ -122,13 +124,14 @@ in
       Unit = {
         Description = "Load SSH keys into the agent using KWallet";
 
+        # Start after KDE session is ready, but don't block it
         After = [
           "graphical-session.target"
           "ssh-agent.service"
+          "plasma-kwin_wayland.service"  # Wait for Wayland compositor
         ];
 
         Wants = [
-          "graphical-session.target"
           "ssh-agent.service"
         ];
 
@@ -138,7 +141,11 @@ in
 
       Service = {
         Type = "oneshot";
-        RemainAfterExit = true;
+        RemainAfterExit = false;  # Don't block session startup
+
+        # Restart on failure with backoff
+        Restart = "on-failure";
+        RestartSec = "5s";
 
         Environment = [
           "SSH_ASKPASS=${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass"
@@ -157,7 +164,8 @@ in
       };
 
       Install = {
-        WantedBy = [ "graphical-session.target" ];
+        # Use wants instead of required, so it doesn't block login
+        WantedBy = [ "default.target" ];
       };
     };
   };
