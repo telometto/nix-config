@@ -47,7 +47,7 @@ in
         pkgs.kdePackages.ksshaskpass
         pkgs.kdePackages.kwallet
         pkgs.kdePackages.kwalletmanager
-        pkgs.kdePackages.kwallet-pam
+        # pkgs.kdePackages.kwallet-pam
         pkgs.kdePackages.qtwayland
         pkgs.kdePackages.qtwebengine
         pkgs.xwayland
