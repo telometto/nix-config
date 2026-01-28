@@ -128,7 +128,7 @@ in
         After = [
           "graphical-session.target"
           "ssh-agent.service"
-          "plasma-kwin_wayland.service"  # Wait for Wayland compositor
+          "plasma-kwin_wayland.service" # Wait for Wayland compositor
         ];
 
         Wants = [
@@ -141,7 +141,7 @@ in
 
       Service = {
         Type = "oneshot";
-        RemainAfterExit = false;  # Don't block session startup
+        RemainAfterExit = false; # Don't block session startup
 
         # Restart on failure with backoff
         Restart = "on-failure";
