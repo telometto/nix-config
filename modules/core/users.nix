@@ -21,7 +21,12 @@ in
     users = lib.mapAttrs' (
       _roleName: userData:
       lib.nameValuePair userData.user {
-        inherit (userData) description isNormalUser hashedPassword group;
+        inherit (userData)
+          description
+          isNormalUser
+          hashedPassword
+          group
+          ;
         shell = lib.mkForce pkgs.zsh;
         extraGroups = lib.mkDefault userData.extraGroups;
         openssh.authorizedKeys.keys = [
