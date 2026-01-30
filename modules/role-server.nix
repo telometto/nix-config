@@ -15,6 +15,8 @@ in
         networkd.enable = true;
       };
 
+      programs.ssh.enable = true;
+
       services = {
         openssh = {
           enable = true;

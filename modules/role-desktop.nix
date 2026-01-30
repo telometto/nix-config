@@ -32,7 +32,7 @@ in
       programs = {
         gaming.enable = true;
         java.enable = true;
-        ssh.enable = false;
+        ssh.enable = true;
         gnupg.enable = false;
       };
 
