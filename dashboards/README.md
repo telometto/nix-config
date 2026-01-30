@@ -88,3 +88,8 @@ in
 - [Grafana service module](../modules/services/grafana.nix)
 - [Grafana dashboards library](../lib/grafana-dashboards.nix)
 - [Prometheus exporters](../modules/services/prometheus-exporters.nix)
+
+---
+
+*This documentation was generated with the assistance of LLMs and may require
+verification against current implementation.*

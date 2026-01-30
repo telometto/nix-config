@@ -106,3 +106,8 @@ head -c 4 /dev/urandom | od -A none -t x4 | tr -d ' '
 - [How to Add Hosts and Users](../docs/how-to-add-host-and-users.md)
 - [Role Desktop](../modules/role-desktop.nix) — Desktop role defaults
 - [Role Server](../modules/role-server.nix) — Server role defaults
+
+---
+
+*This documentation was generated with the assistance of LLMs and may require
+verification against current implementation.*

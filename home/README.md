@@ -100,3 +100,8 @@ in
 - [Home options module](../modules/core/home-options.nix) —
   `sys.home.*` options
 - [Architecture Blueprint](../docs/Project_Architecture_Blueprint.md)
+
+---
+
+*This documentation was generated with the assistance of LLMs and may require
+verification against current implementation.*
