@@ -81,5 +81,11 @@ nix flake check
 
 - Put new system modules under `modules/` — they’re auto-loaded.
 - Put HM modules under `home/` — they’re auto-loaded by HM.
-- Use `sys.*` options to opt-in features; avoid ad-hoc host edits when a module exists.
-- Use overrides under `home/users/*` for per-host or per-user adjustments.
+- Use `sys.*` options to opt-in features; avoid ad-hoc host edits when a module
+  exists.
+- Use overrides under `home/overrides/*` for per-host or per-user adjustments.
+
+---
+
+*This documentation was generated with the assistance of LLMs and may require
+verification against current implementation.*

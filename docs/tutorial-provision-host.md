@@ -53,8 +53,8 @@ This builds the system with all modules auto-imported and sets up Home Manager f
 
 ## Optional: Home Manager Overrides
 
-- Host-wide HM overrides: `home/users/host-overrides/<hostname>.nix`.
-- User@host HM overrides: `home/users/user-configs/<user>-<hostname>.nix`.
+- Host-wide HM overrides: `home/overrides/host/<hostname>.nix`.
+- User@host HM overrides: `home/overrides/user/<user>-<hostname>.nix`.
 
 These are automatically included via the HM integration logic.
 
@@ -64,4 +64,10 @@ These are automatically included via the HM integration logic.
 - Users exist and can login; HM profiles are active.
 - Services enabled via `sys.services.*` run as expected.
 
-You’ve provisioned a host. Continue with service enablement and secrets as needed.
+You've provisioned a host. Continue with service enablement and secrets as
+needed.
+
+---
+
+*This documentation was generated with the assistance of LLMs and may require
+verification against current implementation.*
