@@ -27,8 +27,8 @@ sys.users.<username>.enable = true;  # e.g., zeno
 
 4. (Optional) Add Home Manager overrides:
 
-- Host-wide: `home/users/host-overrides/<hostname>.nix`
-- User@host specific: `home/users/user-configs/<user>-<hostname>.nix`
+- Host-wide: `home/overrides/host/<hostname>.nix`
+- User@host specific: `home/overrides/user/<user>-<hostname>.nix`
 
 5. Build or switch:
 
@@ -45,6 +45,14 @@ sudo nixos-rebuild switch --flake .#<hostname>
 
 ## Troubleshooting
 
-- User missing: Ensure `sys.users.<username>.enable = true` and that the user exists in `VARS.users`.
-- HM not applying: Confirm `sys.home.enable = true` (defaults to true under roles) and check overrides file names.
-- Service secrets: Enable the service option first; `modules/core/sops.nix` defines secrets only when the service is on.
+- User missing: Ensure `sys.users.<username>.enable = true` and that the user
+  exists in `VARS.users`.
+- HM not applying: Confirm `sys.home.enable = true` (defaults to true under
+  roles) and check overrides file names.
+- Service secrets: Enable the service option first; `modules/core/sops.nix`
+  defines secrets only when the service is on.
+
+---
+
+*This documentation was generated with the assistance of LLMs and may require
+verification against current implementation.*
