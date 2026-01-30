@@ -85,7 +85,7 @@ nix flake check
   exists.
 - Use overrides under `home/overrides/*` for per-host or per-user adjustments.
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*

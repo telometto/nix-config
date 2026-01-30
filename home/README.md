@@ -101,7 +101,7 @@ in
   `sys.home.*` options
 - [Architecture Blueprint](../docs/Project_Architecture_Blueprint.md)
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*

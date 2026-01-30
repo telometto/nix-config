@@ -39,7 +39,7 @@ Trade-offs:
 - Keep sensitive data out of this repo; extend `nix-secrets` (`VARS`) when
   needed.
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*

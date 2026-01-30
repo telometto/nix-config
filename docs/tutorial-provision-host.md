@@ -67,7 +67,7 @@ These are automatically included via the HM integration logic.
 You've provisioned a host. Continue with service enablement and secrets as
 needed.
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*

@@ -68,7 +68,7 @@ When updating documentation:
 1. **Test instructions** — Verify commands and examples work
 1. **Link related docs** — Help users discover relevant information
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*
