@@ -663,7 +663,6 @@ in
     };
 
     programs = {
-      ssh.enable = false;
       mtr.enable = true;
       gnupg.enable = false;
     };
