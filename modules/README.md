@@ -65,9 +65,9 @@ in
 ### Adding a New Module
 
 1. Create `modules/<category>/<name>.nix`
-2. Define options under `options.sys.<category>.<name>.*`
-3. Implement `config = lib.mkIf cfg.enable { ... };`
-4. The module auto-loads—no registration needed
+1. Define options under `options.sys.<category>.<name>.*`
+1. Implement `config = lib.mkIf cfg.enable { ... };`
+1. The module auto-loads—no registration needed
 
 ### Related Documentation
 

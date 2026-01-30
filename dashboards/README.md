@@ -56,21 +56,23 @@ in
 
 1. **Design in Grafana UI** — Build and test your dashboard interactively
 
-2. **Export JSON** — Dashboard Settings → JSON Model → Copy
+1. **Export JSON** — Dashboard Settings → JSON Model → Copy
 
-3. **Save to appropriate location:**
+1. **Save to appropriate location:**
+
    - `dashboards/shared/` for multi-host dashboards
    - `dashboards/host/<hostname>/` for host-specific dashboards
 
-4. **Register in library** — Add to `custom` in
+1. **Register in library** — Add to `custom` in
    [lib/grafana-dashboards.nix](../lib/grafana-dashboards.nix):
+
    ```nix
    custom = {
      my-dashboard = ../dashboards/shared/my-dashboard.json;
    };
    ```
 
-5. **Provision in host config** — Reference in
+1. **Provision in host config** — Reference in
    `sys.services.grafana.provision.dashboards`
 
 ### Dashboard Guidelines

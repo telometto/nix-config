@@ -64,6 +64,6 @@ When updating documentation:
 
 1. **Match the type** — Tutorials teach, how-tos solve, references inform,
    explanations contextualize
-2. **Keep it current** — Update docs when code changes
-3. **Test instructions** — Verify commands and examples work
-4. **Link related docs** — Help users discover relevant information
+1. **Keep it current** — Update docs when code changes
+1. **Test instructions** — Verify commands and examples work
+1. **Link related docs** — Help users discover relevant information
