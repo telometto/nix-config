@@ -61,7 +61,7 @@ Helper functions for Grafana configuration.
 #### From Grafana.com
 
 1. Find the dashboard ID and revision on grafana.com
-2. Add to `community` in [grafana-dashboards.nix](grafana-dashboards.nix):
+1. Add to `community` in [grafana-dashboards.nix](grafana-dashboards.nix):
 
 ```nix
 community = {
@@ -76,8 +76,8 @@ community = {
 #### Custom Dashboards
 
 1. Export JSON from Grafana or create manually
-2. Save to [dashboards/](../dashboards/) (shared or host-specific)
-3. Reference in `custom`:
+1. Save to [dashboards/](../dashboards/) (shared or host-specific)
+1. Reference in `custom`:
 
 ```nix
 custom = {

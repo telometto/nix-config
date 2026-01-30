@@ -60,12 +60,14 @@ hosts/<hostname>/
 
 1. Create directory: `hosts/<hostname>/`
 
-2. Generate hardware config:
+1. Generate hardware config:
+
    ```bash
    nixos-generate-config --show-hardware-config > hosts/<hostname>/hardware-configuration.nix
    ```
 
-3. Create `packages.nix` for host-specific packages:
+1. Create `packages.nix` for host-specific packages:
+
    ```nix
    { pkgs, ... }: {
      environment.systemPackages = with pkgs; [
@@ -74,16 +76,18 @@ hosts/<hostname>/
    }
    ```
 
-4. Create `<hostname>.nix` with role and user configuration
+1. Create `<hostname>.nix` with role and user configuration
 
-5. Register in [flake.nix](../flake.nix):
+1. Register in [flake.nix](../flake.nix):
+
    ```nix
    nixosConfigurations = {
      <hostname> = mkHost "<hostname>" [ ];
    };
    ```
 
-6. Build and switch:
+1. Build and switch:
+
    ```bash
    sudo nixos-rebuild switch --flake .#<hostname>
    ```

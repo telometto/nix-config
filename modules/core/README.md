@@ -64,9 +64,9 @@ sys.home = {
 [home-users.nix](home-users.nix) automatically:
 
 1. Imports all modules via [hm-loader.nix](../../hm-loader.nix)
-2. Applies host overrides from `home/overrides/host/<hostname>.nix`
-3. Applies user overrides from `home/overrides/user/<user>-<host>.nix`
-4. Enables desktop modules based on `sys.desktop.flavor`
+1. Applies host overrides from `home/overrides/host/<hostname>.nix`
+1. Applies user overrides from `home/overrides/user/<user>-<host>.nix`
+1. Enables desktop modules based on `sys.desktop.flavor`
 
 ### Secrets Management
 

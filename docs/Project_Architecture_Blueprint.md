@@ -5,7 +5,6 @@
 > **Project Type:** NixOS Flake Configuration
 >
 > **Architecture Pattern:** Modular Auto-Loading with Role-Based Composition
->
 
 ## 1. Executive Summary
 
@@ -393,35 +392,35 @@ Custom library functions in `lib/`:
 ### Adding a New System Module
 
 1. Create `modules/<category>/<name>.nix`
-2. Define options under `options.sys.<category>.<name>.*`
-3. Implement `config = lib.mkIf cfg.enable { ... };`
-4. Module auto-imports via `system-loader.nix`
+1. Define options under `options.sys.<category>.<name>.*`
+1. Implement `config = lib.mkIf cfg.enable { ... };`
+1. Module auto-imports via `system-loader.nix`
 
 ### Adding a New Home Manager Module
 
 1. Create `home/<category>/<name>.nix`
-2. Define options under `options.hm.<category>.<name>.*`
-3. Implement `config = lib.mkIf cfg.enable { ... };`
-4. Module auto-imports via `hm-loader.nix`
+1. Define options under `options.hm.<category>.<name>.*`
+1. Implement `config = lib.mkIf cfg.enable { ... };`
+1. Module auto-imports via `hm-loader.nix`
 
 ### Adding a New Host
 
 1. Create `hosts/<hostname>/` directory
-2. Add `hardware-configuration.nix` (from `nixos-generate-config`)
-3. Add `packages.nix` for host-specific packages
-4. Add `<hostname>.nix` with role, users, and services
-5. Register in `flake.nix`: `<hostname> = mkHost "<hostname>" [ ];`
+1. Add `hardware-configuration.nix` (from `nixos-generate-config`)
+1. Add `packages.nix` for host-specific packages
+1. Add `<hostname>.nix` with role, users, and services
+1. Register in `flake.nix`: `<hostname> = mkHost "<hostname>" [ ];`
 
 ### Adding a New User
 
 1. Add user to `nix-secrets` (VARS.users)
-2. Enable per-host: `sys.users.<username>.enable = true;`
-3. Optionally add `home/users/user-configs/<user>-<host>.nix`
+1. Enable per-host: `sys.users.<username>.enable = true;`
+1. Optionally add `home/users/user-configs/<user>-<host>.nix`
 
 ### Adding Host-Wide HM Overrides
 
 1. Create `home/users/host-overrides/<hostname>.nix`
-2. Configure HM options that apply to all users on that host
+1. Configure HM options that apply to all users on that host
 
 ## 13. Dependency Graph
 
@@ -455,14 +454,14 @@ Custom library functions in `lib/`:
 Options merge with the following precedence (lowest to highest):
 
 1. **Module defaults** (`lib.mkDefault`)
-2. **Role defaults** (role-desktop.nix, role-server.nix)
-3. **Base HM template** (`sys.home.template`)
-4. **Auto desktop config** (hm.desktop.&lt;flavor&gt;.enable)
-5. **Host overrides** (`home/users/host-overrides/<hostname>.nix`)
-6. **User-specific overrides** (`home/users/user-configs/<user>-<host>.nix`)
-7. **Per-user extraConfig** (`sys.home.users.<name>.extraConfig`)
-8. **Host configuration** (`hosts/<hostname>/<hostname>.nix`)
-9. **Force overrides** (`lib.mkForce`)
+1. **Role defaults** (role-desktop.nix, role-server.nix)
+1. **Base HM template** (`sys.home.template`)
+1. **Auto desktop config** (hm.desktop.\<flavor>.enable)
+1. **Host overrides** (`home/users/host-overrides/<hostname>.nix`)
+1. **User-specific overrides** (`home/users/user-configs/<user>-<host>.nix`)
+1. **Per-user extraConfig** (`sys.home.users.<name>.extraConfig`)
+1. **Host configuration** (`hosts/<hostname>/<hostname>.nix`)
+1. **Force overrides** (`lib.mkForce`)
 
 ## 15. Testing and Validation
 
@@ -532,6 +531,6 @@ nixos-rebuild dry-run --flake .          # Show what would change
 - **Test with `nix flake check`** before committing
 - **Document service dependencies** in module comments
 
----
+______________________________________________________________________
 
 *This blueprint reflects the architecture as of January 30, 2026. Review and update as the configuration evolves.*

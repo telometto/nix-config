@@ -81,18 +81,18 @@ in
 ### Adding a New Module
 
 1. Create `home/<category>/<name>.nix`
-2. Define options under `options.hm.<category>.<name>.*`
-3. Implement `config = lib.mkIf cfg.enable { ... };`
-4. Module auto-loads via `hm-loader.nix`
+1. Define options under `options.hm.<category>.<name>.*`
+1. Implement `config = lib.mkIf cfg.enable { ... };`
+1. Module auto-loads via `hm-loader.nix`
 
 ### Configuration Precedence (Low → High)
 
 1. Module defaults (`lib.mkDefault`)
-2. Base HM template (`sys.home.template`)
-3. Auto desktop config
-4. Host overrides (`overrides/host/<hostname>.nix`)
-5. User overrides (`overrides/user/<user>-<host>.nix`)
-6. Per-user extraConfig (`sys.home.users.<name>.extraConfig`)
+1. Base HM template (`sys.home.template`)
+1. Auto desktop config
+1. Host overrides (`overrides/host/<hostname>.nix`)
+1. User overrides (`overrides/user/<user>-<host>.nix`)
+1. Per-user extraConfig (`sys.home.users.<name>.extraConfig`)
 
 ### Related Documentation
 
