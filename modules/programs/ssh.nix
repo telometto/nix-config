@@ -7,7 +7,7 @@ in
     enable = lib.mkEnableOption "SSH client defaults";
 
     startAgent = lib.mkOption {
-      enable = lib.types.bool;
+      type = lib.types.bool;
       default = true;
       description = "Whether to enable ssh-agent for system (not user)";
     };
