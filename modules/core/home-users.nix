@@ -48,10 +48,10 @@ let
       override = lib.attrByPath [ username ] cfg.users { };
 
       # Path to host-specific override file
-      hostOverridePath = ../../home/users/host-overrides/${config.networking.hostName}.nix;
+      hostOverridePath = ../../home/overrides/host/${config.networking.hostName}.nix;
 
       # Path to user-specific config file
-      userConfigPath = ../../home/users/user-configs/${username}-${config.networking.hostName}.nix;
+      userConfigPath = ../../home/overrides/user/${username}-${config.networking.hostName}.nix;
     in
     lib.unique (
       [ ../../hm-loader.nix ]
