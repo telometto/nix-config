@@ -59,6 +59,13 @@ in
       type = lib.types.str;
       default = "20min";
     };
+
+    sshKeyPath = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = "/etc/ssh/ssh_host_ed25519_key";
+      description = "Path to SSH key for git operations (for private repos). Defaults to host key.";
+      example = "/root/.ssh/id_ed25519_deploy";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -75,6 +82,10 @@ in
         fixedRandomDelay
         randomizedDelaySec
         ;
+    };
+
+    systemd.services.nixos-upgrade = lib.mkIf (cfg.sshKeyPath != null) {
+      environment.GIT_SSH_COMMAND = "ssh -i ${cfg.sshKeyPath} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new";
     };
   };
 }
