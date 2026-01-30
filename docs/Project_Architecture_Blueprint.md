@@ -104,12 +104,14 @@ Each host in `hosts/<hostname>/` provides:
 │  ├── base.nix        ← Shared defaults for all users                    │
 │  ├── desktop/        ← Desktop: gnome, kde, hyprland, xdg               │
 │  ├── files/          ← Managed dotfiles and themes                      │
+│  ├── overrides/                                                         │
+│  │   ├── host/       ← Per-host HM overrides                            │
+│  │   │   └── <hostname>.nix                                             │
+│  │   └── user/       ← Per-user@host HM overrides                       │
+│  │       └── <user>-<host>.nix                                          │
 │  ├── programs/       ← User programs: browsers, terminal, media         │
 │  ├── security/       ← User secrets (sops)                              │
-│  ├── services/       ← User services: gpg-agent, ssh-agent              │
-│  └── overrides/                                                         │
-│      ├── host/<hostname>.nix    ← Per-host HM overrides                 │
-│      └── user/<user>-<host>.nix   ← Per-user@host overrides             │
+│  └── services/       ← User services: gpg-agent, ssh-agent              │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
