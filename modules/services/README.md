@@ -116,3 +116,8 @@ in
 
 - [Grafana dashboards library](../../lib/grafana-dashboards.nix)
 - [Custom dashboards](../../dashboards/)
+
+---
+
+*This documentation was generated with the assistance of LLMs and may require
+verification against current implementation.*
