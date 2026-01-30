@@ -36,4 +36,10 @@ Trade-offs:
 
 - Add modules under `modules/` and expose options under `sys.*`.
 - Prefer role additions when defaults suit classes of machines.
-- Keep sensitive data out of this repo; extend `nix-secrets` (`VARS`) when needed.
+- Keep sensitive data out of this repo; extend `nix-secrets` (`VARS`) when
+  needed.
+
+---
+
+*This documentation was generated with the assistance of LLMs and may require
+verification against current implementation.*
