@@ -71,7 +71,7 @@ sudo nixos-rebuild switch --flake .#<hostname>
 
 See [docs/README.md](docs/README.md) for the complete documentation index.
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*

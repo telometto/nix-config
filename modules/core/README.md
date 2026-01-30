@@ -89,7 +89,7 @@ Secrets are decrypted at activation and available at `/run/secrets/<path>`.
 - [hm-loader.nix](../../hm-loader.nix) — Home Manager module loading
 - [Home directory](../../home/) — Home Manager modules
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*

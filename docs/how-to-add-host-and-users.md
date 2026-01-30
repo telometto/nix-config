@@ -52,7 +52,7 @@ sudo nixos-rebuild switch --flake .#<hostname>
 - Service secrets: Enable the service option first; `modules/core/sops.nix`
   defines secrets only when the service is on.
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*

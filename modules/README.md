@@ -76,7 +76,7 @@ in
 - [How to Add Hosts and Users](../docs/how-to-add-host-and-users.md) —
   Practical guide
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*

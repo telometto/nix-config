@@ -90,7 +90,7 @@ custom = {
 - [Grafana service module](../modules/services/grafana.nix)
 - [Dashboard files](../dashboards/)
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*

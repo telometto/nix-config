@@ -137,7 +137,7 @@ microvm -k <vm-name>
 - [microvm.nix documentation](https://github.com/astro/microvm.nix)
 - [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*

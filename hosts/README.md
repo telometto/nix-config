@@ -107,7 +107,7 @@ head -c 4 /dev/urandom | od -A none -t x4 | tr -d ' '
 - [Role Desktop](../modules/role-desktop.nix) — Desktop role defaults
 - [Role Server](../modules/role-server.nix) — Server role defaults
 
----
+______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require
 verification against current implementation.*
