@@ -20,7 +20,7 @@ in
         # settings = {};
 
         vencord = {
-          useSystem = lib.mkDefault true;
+          useSystem = lib.mkDefault false;
 
           themes = {
             clearvision = ../files/vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;
@@ -33,6 +33,17 @@ in
               "clearvision.css"
               "glass.css"
             ];
+
+            plugins = {
+              FakeNitro.enabled = true;
+              ClearURLs.enabled = true;
+              DisableDeepLinks.enabled = true;
+              ExpressionCloner.enabled = true;
+              MessageLogger.enabled = true;
+              TypingIndicator.enabled = true;
+              Summaries.enabled = true;
+              ShowHiddenChannels.enabled = true;
+            };
           };
         };
       };
