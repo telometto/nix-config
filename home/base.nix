@@ -64,7 +64,7 @@ in
 
       services = {
         gpgAgent.enable = lib.mkDefault true;
-        sshAgent.enable = lib.mkDefault true;
+        sshAgent.enable = lib.mkDefault false;
       };
 
       security = {
