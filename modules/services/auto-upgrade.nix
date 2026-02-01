@@ -60,6 +60,17 @@ in
       default = "20min";
     };
 
+    upgrade = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
+
+    runGc = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to run garbage collection after a successful upgrade."
+    };
+
     sshKeyPath = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = "/etc/ssh/ssh_host_ed25519_key";
@@ -81,7 +92,10 @@ in
         allowReboot
         fixedRandomDelay
         randomizedDelaySec
+        upgrade
         ;
+
+        runGc = cfg.runGarbageCollection;
     };
 
     systemd.services.nixos-upgrade = lib.mkIf (cfg.sshKeyPath != null) {
