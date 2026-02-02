@@ -43,7 +43,7 @@ in
           hostName = "snowfall";
           systems = [ "x86_64-linux" ];
           sshUser = "zeno";
-          sshKey = "/home/zeno/.ssh/id_ed25519";
+          sshKey = "/home/zeno/.ssh/nix-build-blizzard";
           maxJobs = 16;
           speedFactor = 3;
           supportedFeatures = [

@@ -40,6 +40,26 @@ in
       frankie.enable = false;
     };
 
+    nix.distributedBuilds = {
+      enable = true;
+
+      buildMachines = [
+        {
+          hostName = "snowfall";
+          systems = [ "x86_64-linux" ];
+          sshUser = "zeno";
+          sshKey = "/home/gianluca/.ssh/nix-build-kaizer";
+          maxJobs = 16;
+          speedFactor = 3;
+          supportedFeatures = [
+            "kvm"
+            "big-parallel"
+            "benchmark"
+          ];
+        }
+      ];
+    };
+
     boot.lanzaboote.enable = lib.mkForce false;
 
     # overlays.fromInputs = {
