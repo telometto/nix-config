@@ -95,7 +95,7 @@ in
         upgrade
         ;
 
-        runGc = cfg.runGarbageCollection;
+      runGc = cfg.runGarbageCollection;
     };
 
     systemd.services.nixos-upgrade = lib.mkIf (cfg.sshKeyPath != null) {
