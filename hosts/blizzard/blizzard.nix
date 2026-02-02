@@ -35,6 +35,26 @@ in
 
     users.zeno.enable = true;
 
+    nix.distributedBuilds = {
+      enable = true;
+
+      buildMachines = [
+        {
+          hostName = "snowfall";
+          systems = [ "x86_64-linux" ];
+          sshUser = "zeno";
+          sshKey = "/home/zeno/.ssh/id_ed25519";
+          maxJobs = 16;
+          speedFactor = 3;
+          supportedFeatures = [
+            "kvm"
+            "big-parallel"
+            "benchmark"
+          ];
+        }
+      ];
+    };
+
     overlays.fromInputs = {
       #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
       nixpkgs-stable = [ "searxng" ]; # Issues on the unstable branch
