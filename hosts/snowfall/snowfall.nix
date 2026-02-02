@@ -46,7 +46,10 @@ in
       server = {
         enable = true;
         write = true;
-        keys = config.users.users.zeno.openssh.authorizedKeys.keys or [ ];
+        keys = [
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEQTcAYsH7h3NCcqoeivDFUQeVbxgLKwuyXL9zhgOYs6 nix-build-snowfall"
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7+oDYCwh1WRnSNBb9W3L1mJ6ym4IfoJhKu9+EFnIuf nix-build-blizzard"
+        ];
       };
 
       buildMachines = [
