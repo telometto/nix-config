@@ -62,9 +62,9 @@ in
 
     sshKeyPath = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = "/etc/ssh/ssh_host_ed25519_key";
-      description = "Path to SSH key for git operations (for private repos). Defaults to host key.";
-      example = "/root/.ssh/id_ed25519_deploy";
+      default = null;
+      description = "Path to SSH key for git operations (for private repos). Use a dedicated deploy key, not the host key.";
+      example = "/root/.ssh/deploy-key";
     };
   };
 
