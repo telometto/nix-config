@@ -68,7 +68,7 @@ in
     runGc = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Whether to run garbage collection after a successful upgrade."
+      description = "Whether to run garbage collection after a successful upgrade.";
     };
 
     sshKeyPath = lib.mkOption {
