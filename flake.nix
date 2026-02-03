@@ -99,7 +99,8 @@
         blizzard = mkHost "blizzard" [ ];
         avalanche = mkHost "avalanche" [ ];
         kaizer = mkHost "kaizer" [ ];
-      } // microvmConfigurations;
+      }
+      // microvmConfigurations;
 
       formatter.${system} = treefmtEval.config.build.wrapper;
       checks.${system}.formatting = treefmtEval.config.build.check inputs.self;
