@@ -132,7 +132,7 @@ in
         openFirewall = true;
 
         reverseProxy = {
-          enable = true;
+          enable = false;
           domain = "scrutiny.${VARS.domains.public}";
           cfTunnel.enable = true;
         };
@@ -414,7 +414,7 @@ in
       };
 
       ombi = {
-        enable = true;
+        enable = false;
 
         port = 11003;
         openFirewall = true;
@@ -433,7 +433,7 @@ in
       };
 
       tautulli = {
-        enable = true;
+        enable = false;
 
         port = 11004;
         openFirewall = true;
@@ -461,7 +461,7 @@ in
 
       # Git repository management (port 11015 HTTP, 2222 SSH)
       gitea = {
-        enable = true;
+        enable = false;
 
         port = 11015;
         openFirewall = true;
@@ -554,6 +554,10 @@ in
         ingress = {
           "requests.${VARS.domains.public}" = "http://localhost:80";
 
+          "ombi.${VARS.domains.public}" = "http://localhost:80";
+          "tautulli.${VARS.domains.public}" = "http://localhost:80";
+          "git.${VARS.domains.public}" = "http://localhost:80";
+
           "ff.${VARS.domains.public}" = "http://localhost:80";
           "sab.${VARS.domains.public}" = "http://localhost:80";
 
@@ -564,8 +568,7 @@ in
           "books.${VARS.domains.public}" = "http://localhost:80";
           "series.${VARS.domains.public}" = "http://localhost:80";
 
-          # Gitea HTTP is auto-configured by the Gitea module
-          "ssh-git.${VARS.domains.public}" = "ssh://localhost:2222";
+          "ssh-git.${VARS.domains.public}" = "ssh://10.100.0.16:2222";
         };
       };
 
@@ -598,6 +601,9 @@ in
           "adguard-vm"
           "actual-vm"
           "searx-vm"
+          "ombi-vm"
+          "tautulli-vm"
+          "gitea-vm"
         ];
         externalInterface = "enp8s0";
 
@@ -605,6 +611,9 @@ in
           adguard-vm.flake = self;
           actual-vm.flake = self;
           searx-vm.flake = self;
+          ombi-vm.flake = self;
+          tautulli-vm.flake = self;
+          gitea-vm.flake = self;
         };
 
         expose = {
@@ -977,6 +986,12 @@ in
               };
             };
 
+            gitea-xfp-https = {
+              headers.customRequestHeaders = {
+                X-Forwarded-Proto = "https";
+              };
+            };
+
             # Relaxed headers for Overseerr/Jellyseerr (requires Plex OAuth)
             overseerr-headers = {
               headers = {
@@ -996,6 +1011,20 @@ in
                 # stsSeconds = 31536000;  # 1 year
                 # stsIncludeSubdomains = true;
                 # stsPreload = true;
+              };
+            };
+
+            tautulli-headers = {
+              headers = {
+                customResponseHeaders = {
+                  X-Content-Type-Options = "nosniff";
+                  X-Frame-Options = "SAMEORIGIN";
+                  X-XSS-Protection = "1; mode=block";
+                  Referrer-Policy = "no-referrer-when-downgrade";
+                  Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+                };
+
+                contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
               };
             };
           };
@@ -1101,6 +1130,30 @@ in
                 "crowdsec"
               ];
             };
+
+            ombi = {
+              rule = "Host(`ombi.${VARS.domains.public}`)";
+              service = "ombi";
+              entryPoints = [ "web" ];
+              middlewares = [ "security-headers" ];
+            };
+
+            tautulli = {
+              rule = "Host(`tautulli.${VARS.domains.public}`)";
+              service = "tautulli";
+              entryPoints = [ "web" ];
+              middlewares = [ "tautulli-headers" ];
+            };
+
+            gitea = {
+              rule = "Host(`git.${VARS.domains.public}`)";
+              service = "gitea";
+              entryPoints = [ "web" ];
+              middlewares = [
+                "security-headers"
+                "gitea-xfp-https"
+              ];
+            };
           };
 
           services = {
@@ -1116,6 +1169,9 @@ in
             searx.loadBalancer.servers = [ { url = "http://10.100.0.12:11002"; } ];
             adguard.loadBalancer.servers = [ { url = "http://10.100.0.10:11016"; } ];
             actual.loadBalancer.servers = [ { url = "http://10.100.0.11:11005"; } ];
+            ombi.loadBalancer.servers = [ { url = "http://10.100.0.14:11003"; } ];
+            tautulli.loadBalancer.servers = [ { url = "http://10.100.0.15:11004"; } ];
+            gitea.loadBalancer.servers = [ { url = "http://10.100.0.16:11015"; } ];
           };
         };
       };
