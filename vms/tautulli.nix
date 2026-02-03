@@ -12,8 +12,6 @@
     ../modules/services/tautulli.nix
   ];
 
-  networking.hostName = "tautulli-vm";
-
   microvm = {
     hypervisor = "cloud-hypervisor";
 
@@ -54,6 +52,8 @@
   };
 
   networking = {
+    hostName = "tautulli-vm";
+
     useDHCP = false;
     useNetworkd = true;
 
@@ -63,14 +63,20 @@
     };
   };
 
-  systemd.network.networks."20-lan" = {
-    matchConfig.Type = "ether";
-    networkConfig = {
-      Address = [ "10.100.0.15/24" ];
-      Gateway = "10.100.0.1";
-      DNS = [ "1.1.1.1" ];
-      DHCP = "no";
+  systemd = {
+    network.networks."20-lan" = {
+      matchConfig.Type = "ether";
+      networkConfig = {
+        Address = [ "10.100.0.15/24" ];
+        Gateway = "10.100.0.1";
+        DNS = [ "1.1.1.1" ];
+        DHCP = "no";
+      };
     };
+
+    tmpfiles.rules = [
+      "d /persist/ssh 0700 root root -"
+    ];
   };
 
   sys.services.tautulli = {
@@ -80,10 +86,6 @@
     configFile = "/var/lib/tautulli/config.ini";
     reverseProxy.enable = false;
   };
-
-  systemd.tmpfiles.rules = [
-    "d /persist/ssh 0700 root root -"
-  ];
 
   services.openssh.hostKeys = [
     {

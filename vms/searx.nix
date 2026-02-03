@@ -15,8 +15,6 @@
   ];
 
   config = {
-    networking.hostName = "searx-vm";
-
     # sys.overlays.fromInputs = {
     #   nixpkgs-stable = [ "searxng" ];
     # };
@@ -63,6 +61,8 @@
     };
 
     networking = {
+      hostName = "searx-vm";
+
       useDHCP = false;
       useNetworkd = true;
 
@@ -72,48 +72,52 @@
       };
     };
 
-    systemd.network.networks."20-lan" = {
-      matchConfig.Type = "ether";
-      networkConfig = {
-        Address = [ "10.100.0.12/24" ];
-        Gateway = "10.100.0.1";
-        DNS = [ "1.1.1.1" ];
-        DHCP = "no";
+    systemd = {
+      network.networks."20-lan" = {
+        matchConfig.Type = "ether";
+        networkConfig = {
+          Address = [ "10.100.0.12/24" ];
+          Gateway = "10.100.0.1";
+          DNS = [ "1.1.1.1" ];
+          DHCP = "no";
+        };
+      };
+
+      tmpfiles.rules = [
+        "d /persist/ssh 0700 root root -"
+        "d /persist/searx 0700 root root -"
+      ];
+
+      services.searx-secret-key = {
+        description = "Generate SearxNG secret key";
+        before = [ "searx.service" ];
+        requiredBy = [ "searx.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          install -d -m 0700 /persist/searx
+          if [ ! -s /persist/searx/secret_key ]; then
+            umask 077
+            ${pkgs.openssl}/bin/openssl rand -hex 32 > /persist/searx/secret_key
+          fi
+        '';
       };
     };
 
-    sys.secrets.searxSecretKeyFile = "/persist/searx/secret_key";
+    sys = {
+      secrets.searxSecretKeyFile = "/persist/searx/secret_key";
 
-    sys.services.searx = {
-      enable = true;
-      port = 11002;
-      bind = "0.0.0.0";
+      services.searx = {
+        enable = true;
+        port = 11002;
+        bind = "0.0.0.0";
 
-      reverseProxy = {
-        enable = false;
+        reverseProxy = {
+          enable = false;
+        };
       };
-    };
-
-    systemd.tmpfiles.rules = [
-      "d /persist/ssh 0700 root root -"
-      "d /persist/searx 0700 root root -"
-    ];
-
-    systemd.services.searx-secret-key = {
-      description = "Generate SearxNG secret key";
-      before = [ "searx.service" ];
-      requiredBy = [ "searx.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-      };
-      script = ''
-        install -d -m 0700 /persist/searx
-        if [ ! -s /persist/searx/secret_key ]; then
-          umask 077
-          ${pkgs.openssl}/bin/openssl rand -hex 32 > /persist/searx/secret_key
-        fi
-      '';
     };
 
     services.openssh.hostKeys = [

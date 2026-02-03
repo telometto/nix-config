@@ -12,8 +12,6 @@
     ../modules/services/actual.nix
   ];
 
-  networking.hostName = "actual-vm";
-
   microvm = {
     hypervisor = "cloud-hypervisor";
 
@@ -61,6 +59,8 @@
 
   # Static IP on the MicroVM network (using systemd-networkd)
   networking = {
+    hostName = "actual-vm";
+
     useDHCP = false;
     useNetworkd = true;
 
@@ -70,14 +70,20 @@
     };
   };
 
-  systemd.network.networks."20-lan" = {
-    matchConfig.Type = "ether";
-    networkConfig = {
-      Address = [ "10.100.0.11/24" ];
-      Gateway = "10.100.0.1";
-      DNS = [ "1.1.1.1" ];
-      DHCP = "no";
+  systemd = {
+    network.networks."20-lan" = {
+      matchConfig.Type = "ether";
+      networkConfig = {
+        Address = [ "10.100.0.11/24" ];
+        Gateway = "10.100.0.1";
+        DNS = [ "1.1.1.1" ];
+        DHCP = "no";
+      };
     };
+
+    tmpfiles.rules = [
+      "d /persist/ssh 0700 root root -"
+    ];
   };
 
   # Enable Actual Budget
@@ -86,11 +92,6 @@
     port = 11005;
     dataDir = "/var/lib/actual";
   };
-
-  # SSH host keys on persistent storage for stable identity across rebuilds
-  systemd.tmpfiles.rules = [
-    "d /persist/ssh 0700 root root -"
-  ];
 
   services.openssh.hostKeys = [
     {
