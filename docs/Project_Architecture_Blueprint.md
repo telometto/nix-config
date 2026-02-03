@@ -27,7 +27,8 @@ This repository implements a modular NixOS configuration system using Nix Flakes
 │  └──────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 │  Outputs: nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}      │
-│           nixosConfigurations.{adguard-vm,actual-vm}                    │
+│           nixosConfigurations.{adguard-vm,actual-vm,searx-vm}            │
+│           (via vms/flake-microvms.nix)                                   │
 │           formatter, checks                                             │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -42,7 +43,7 @@ This repository implements a modular NixOS configuration system using Nix Flakes
 |-----------|---------|
 | `inputs` | Pinned external dependencies (nixpkgs, home-manager, sops-nix, lanzaboote, microvm, etc.) |
 | `mkHost` | Factory function creating NixOS system configurations |
-| `nixosConfigurations` | Host outputs for `snowfall`, `blizzard`, `avalanche`, `kaizer` |
+| `nixosConfigurations` | Host outputs for `snowfall`, `blizzard`, `avalanche`, `kaizer` (MicroVMs merged from [vms/flake-microvms.nix](../vms/flake-microvms.nix)) |
 | `formatter` | treefmt wrapper for consistent formatting |
 | `checks` | Flake validation and formatting checks |
 
@@ -324,10 +325,13 @@ The flake supports MicroVMs for isolated services:
 └─────────────────────────────────────────────────────────────────────────┘
          │
          ├── vms/adguard.nix (AdGuard Home VM)
-         └── vms/actual.nix (Actual Budget VM)
+         ├── vms/actual.nix (Actual Budget VM)
+         └── vms/searx.nix (SearXNG VM)
 ```
 
 MicroVMs do **not** use `system-loader.nix` to avoid importing host-only modules.
+Their outputs are defined in [vms/flake-microvms.nix](../vms/flake-microvms.nix) and merged into
+`nixosConfigurations` in [flake.nix](../flake.nix).
 
 ## 10. Library Architecture
 

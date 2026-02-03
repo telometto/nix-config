@@ -9,6 +9,7 @@ for lightweight virtualization.
 |----|--------|---------|
 | adguard-vm | [adguard.nix](adguard.nix) | AdGuard Home DNS filtering |
 | actual-vm | [actual.nix](actual.nix) | Actual Budget management |
+| searx-vm | [searx.nix](searx.nix) | SearXNG metasearch engine |
 
 ### Architecture
 
@@ -34,7 +35,8 @@ MicroVMs provide isolated environments for services that benefit from:
 └─────────────────────────────────────────┘
          │
          ├── adguard-vm
-         └── actual-vm
+         ├── actual-vm
+         └── searx-vm
 ```
 
 ### Base Configuration
@@ -51,17 +53,16 @@ MicroVMs provide isolated environments for services that benefit from:
 ### Key Differences from Hosts
 
 MicroVMs do **not** use `system-loader.nix` to avoid importing host-only
-modules:
+modules. Their outputs are centralized in [vms/flake-microvms.nix](flake-microvms.nix)
+and merged into `nixosConfigurations` from [flake.nix](../flake.nix):
 
 ```nix
 # In flake.nix
-adguard-vm = nixpkgs.lib.nixosSystem {
-  modules = [
-    inputs.microvm.nixosModules.microvm
-    ./vms/adguard.nix
-    inputs.sops-nix.nixosModules.sops
-  ];
-};
+microvmConfigurations = import ./vms/flake-microvms.nix { inherit inputs system VARS; };
+
+nixosConfigurations = {
+  # hosts...
+} // microvmConfigurations;
 ```
 
 ### Creating a New VM
