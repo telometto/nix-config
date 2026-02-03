@@ -12,8 +12,6 @@
     ../modules/services/ombi.nix
   ];
 
-  networking.hostName = "ombi-vm";
-
   microvm = {
     hypervisor = "cloud-hypervisor";
 
@@ -54,6 +52,8 @@
   };
 
   networking = {
+    hostName = "ombi-vm";
+
     useDHCP = false;
     useNetworkd = true;
 
@@ -63,14 +63,20 @@
     };
   };
 
-  systemd.network.networks."20-lan" = {
-    matchConfig.Type = "ether";
-    networkConfig = {
-      Address = [ "10.100.0.14/24" ];
-      Gateway = "10.100.0.1";
-      DNS = [ "1.1.1.1" ];
-      DHCP = "no";
+  systemd = {
+    network.networks."20-lan" = {
+      matchConfig.Type = "ether";
+      networkConfig = {
+        Address = [ "10.100.0.14/24" ];
+        Gateway = "10.100.0.1";
+        DNS = [ "1.1.1.1" ];
+        DHCP = "no";
+      };
     };
+
+    tmpfiles.rules = [
+      "d /persist/ssh 0700 root root -"
+    ];
   };
 
   sys.services.ombi = {
@@ -79,10 +85,6 @@
     dataDir = "/var/lib/ombi";
     reverseProxy.enable = false;
   };
-
-  systemd.tmpfiles.rules = [
-    "d /persist/ssh 0700 root root -"
-  ];
 
   services.openssh.hostKeys = [
     {

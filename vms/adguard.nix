@@ -39,8 +39,6 @@
   #   mode = "0400";
   # };
 
-  networking.hostName = "adguard-vm";
-
   # MicroVM-specific configuration
   microvm = {
     hypervisor = "cloud-hypervisor";
@@ -92,6 +90,8 @@
 
   # Static IP on the MicroVM network (using systemd-networkd)
   networking = {
+    hostName = "adguard-vm";
+
     useDHCP = false;
     useNetworkd = true;
 
@@ -105,23 +105,30 @@
         443 # DoH (DNS over HTTPS)
         853 # DoT (DNS over TLS)
       ];
+
       allowedUDPPorts = [
         53 # DNS
       ];
     };
   };
 
-  systemd.network.networks."20-lan" = {
-    matchConfig.Type = "ether";
-    networkConfig = {
-      Address = [
-        "10.100.0.10/24"
-        # "fd10:100::10/64"
-      ];
-      Gateway = "10.100.0.1";
-      DNS = [ "1.1.1.1" ];
-      DHCP = "no";
+  systemd = {
+    network.networks."20-lan" = {
+      matchConfig.Type = "ether";
+      networkConfig = {
+        Address = [
+          "10.100.0.10/24"
+          # "fd10:100::10/64"
+        ];
+        Gateway = "10.100.0.1";
+        DNS = [ "1.1.1.1" ];
+        DHCP = "no";
+      };
     };
+
+    tmpfiles.rules = [
+      "d /persist/ssh 0700 root root -"
+    ];
   };
 
   # Enable AdGuard Home
@@ -152,11 +159,6 @@
     #   private_key_path = config.sops.secrets."adguard/privkey".path;
     # };
   };
-
-  # SSH host keys on persistent storage for stable identity across rebuilds
-  systemd.tmpfiles.rules = [
-    "d /persist/ssh 0700 root root -"
-  ];
 
   services.openssh.hostKeys = [
     {

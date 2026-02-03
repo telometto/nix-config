@@ -12,8 +12,6 @@
     ../modules/services/gitea.nix
   ];
 
-  networking.hostName = "gitea-vm";
-
   microvm = {
     hypervisor = "cloud-hypervisor";
 
@@ -54,6 +52,8 @@
   };
 
   networking = {
+    hostName = "gitea-vm";
+
     useDHCP = false;
     useNetworkd = true;
 
@@ -66,14 +66,20 @@
     };
   };
 
-  systemd.network.networks."20-lan" = {
-    matchConfig.Type = "ether";
-    networkConfig = {
-      Address = [ "10.100.0.16/24" ];
-      Gateway = "10.100.0.1";
-      DNS = [ "1.1.1.1" ];
-      DHCP = "no";
+  systemd = {
+    network.networks."20-lan" = {
+      matchConfig.Type = "ether";
+      networkConfig = {
+        Address = [ "10.100.0.16/24" ];
+        Gateway = "10.100.0.1";
+        DNS = [ "1.1.1.1" ];
+        DHCP = "no";
+      };
     };
+
+    tmpfiles.rules = [
+      "d /persist/ssh 0700 root root -"
+    ];
   };
 
   sys.services.gitea = {
@@ -109,10 +115,6 @@
       session.COOKIE_SECURE = true;
     };
   };
-
-  systemd.tmpfiles.rules = [
-    "d /persist/ssh 0700 root root -"
-  ];
 
   services.openssh.hostKeys = [
     {
