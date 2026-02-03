@@ -289,6 +289,7 @@ in
         (
           cfg.reverseProxy.cfTunnel.enable
           && cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
           && config.sys.services.cloudflared.enable or false
         )
         {
