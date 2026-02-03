@@ -56,8 +56,8 @@ in
     };
 
     overlays.fromInputs = {
-      #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
-      nixpkgs-stable = [ "searxng" ]; # Issues on the unstable branch
+      # nixpkgs-unstable = [ "intel-graphics-compiler" ];
+      # nixpkgs-stable = [ "searxng" ];
     };
 
     services = {
@@ -399,25 +399,6 @@ in
 
       firefly.enable = false;
 
-      searx = {
-        enable = true;
-
-        port = 11002;
-        bind = "127.0.0.1";
-
-        reverseProxy = {
-          enable = true;
-          domain = "search.${VARS.domains.public}";
-          cfTunnel.enable = true;
-          extraMiddlewares = [ "crowdsec" ];
-        };
-
-        # Optional: Override default settings here if needed
-        # settings = {
-        #   engines = [ ... ];  # Override engine configuration
-        # };
-      };
-
       immich = {
         enable = false;
 
@@ -616,12 +597,14 @@ in
         autostart = [
           "adguard-vm"
           "actual-vm"
+          "searx-vm"
         ];
         externalInterface = "enp8s0";
 
         vms = {
           adguard-vm.flake = self;
           actual-vm.flake = self;
+          searx-vm.flake = self;
         };
 
         expose = {
@@ -675,6 +658,27 @@ in
               enable = true;
               ingress = {
                 "actual.${VARS.domains.public}" = "http://10.100.0.11:11005";
+              };
+            };
+          };
+
+          searx-vm = {
+            ip = "10.100.0.12";
+
+            portForward = {
+              enable = true;
+              ports = [
+                {
+                  proto = "tcp";
+                  sourcePort = 11002;
+                }
+              ];
+            };
+
+            cfTunnel = {
+              enable = true;
+              ingress = {
+                "search.${VARS.domains.public}" = "http://10.100.0.12:11002";
               };
             };
           };
