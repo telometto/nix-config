@@ -32,4 +32,24 @@ in
     microvmModule
     ./searx.nix
   ];
+
+  # scrutiny-vm = mkMicrovm [
+  #   microvmModule
+  #   ./scrutiny.nix
+  # ];
+
+  ombi-vm = mkMicrovm [
+    microvmModule
+    ./ombi.nix
+  ];
+
+  tautulli-vm = mkMicrovm [
+    microvmModule
+    ./tautulli.nix
+  ];
+
+  gitea-vm = mkMicrovm [
+    microvmModule
+    ./gitea.nix
+  ];
 }
