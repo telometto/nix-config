@@ -14,20 +14,12 @@
     ../modules/core/overlays.nix
   ];
 
-  # Stub cloudflared option for searx module compatibility
-  options.sys.services.cloudflared.ingress = lib.mkOption {
-    type = lib.types.attrsOf lib.types.str;
-    default = { };
-  };
-
   config = {
     networking.hostName = "searx-vm";
 
     # sys.overlays.fromInputs = {
     #   nixpkgs-stable = [ "searxng" ];
     # };
-
-    sys.services.cloudflared.ingress = { };
 
     microvm = {
       hypervisor = "cloud-hypervisor";
