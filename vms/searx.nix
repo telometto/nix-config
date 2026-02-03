@@ -20,6 +20,14 @@
   #   nixpkgs-stable = [ "searxng" ];
   # };
 
+  # Stub cloudflared option for searx module compatibility
+  options.sys.services.cloudflared.ingress = lib.mkOption {
+    type = lib.types.attrsOf lib.types.str;
+    default = { };
+  };
+
+  config.sys.services.cloudflared.ingress = { };
+
   microvm = {
     hypervisor = "cloud-hypervisor";
 
