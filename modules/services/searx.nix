@@ -170,8 +170,8 @@ in
             # This protects user privacy by proxying all image requests through SearXNG
             image_proxy = true;
 
-            # HTTP method for search requests (GET is standard)
-            method = "GET";
+            # HTTP method for search requests (POST for privacy)
+            method = "POST";
 
             # Public instance flag - enables public instance features when true
             public_instance = cfg.publicInstance;
