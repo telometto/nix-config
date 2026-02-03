@@ -666,19 +666,14 @@ in
             ip = "10.100.0.12";
 
             portForward = {
-              enable = true;
-              ports = [
-                {
-                  proto = "tcp";
-                  sourcePort = 11002;
-                }
-              ];
+              enable = false;
+              ports = [ ];
             };
 
             cfTunnel = {
               enable = true;
               ingress = {
-                "search.${VARS.domains.public}" = "http://10.100.0.12:11002";
+                "search.${VARS.domains.public}" = "http://localhost:80";
               };
             };
           };
@@ -1085,6 +1080,16 @@ in
               entryPoints = [ "web" ];
               middlewares = [ "security-headers" ];
             };
+
+            searx = {
+              rule = "Host(`search.${VARS.domains.public}`)";
+              service = "searx";
+              entryPoints = [ "web" ];
+              middlewares = [
+                "security-headers"
+                "crowdsec"
+              ];
+            };
           };
 
           services = {
@@ -1097,6 +1102,7 @@ in
             lingarr.loadBalancer.servers = [ { url = "http://localhost:10031"; } ];
             sabnzbd.loadBalancer.servers = [ { url = "http://localhost:10050"; } ];
             firefox.loadBalancer.servers = [ { url = "http://localhost:10060"; } ];
+            searx.loadBalancer.servers = [ { url = "http://10.100.0.12:11002"; } ];
           };
         };
       };
