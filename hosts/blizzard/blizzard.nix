@@ -620,10 +620,6 @@ in
                 }
                 {
                   proto = "tcp";
-                  sourcePort = 11016;
-                } # Web UI
-                {
-                  proto = "tcp";
                   sourcePort = 443;
                 } # DoH (DNS over HTTPS)
                 {
@@ -636,7 +632,7 @@ in
             cfTunnel = {
               enable = false; # Enable when ready for internet access
               ingress = {
-                "adguard.${VARS.domains.public}" = "http://10.100.0.10:11016";
+                "adguard.${VARS.domains.public}" = "http://localhost:80";
               };
             };
           };
@@ -645,19 +641,14 @@ in
             ip = "10.100.0.11";
 
             portForward = {
-              enable = true;
-              ports = [
-                {
-                  proto = "tcp";
-                  sourcePort = 11005;
-                }
-              ];
+              enable = false;
+              ports = [ ];
             };
 
             cfTunnel = {
               enable = true;
               ingress = {
-                "actual.${VARS.domains.public}" = "http://10.100.0.11:11005";
+                "actual.${VARS.domains.public}" = "http://localhost:80";
               };
             };
           };
@@ -1090,6 +1081,26 @@ in
                 "crowdsec"
               ];
             };
+
+            adguard = {
+              rule = "Host(`adguard.${VARS.domains.public}`)";
+              service = "adguard";
+              entryPoints = [ "web" ];
+              middlewares = [
+                "security-headers"
+                "crowdsec"
+              ];
+            };
+
+            actual = {
+              rule = "Host(`actual.${VARS.domains.public}`)";
+              service = "actual";
+              entryPoints = [ "web" ];
+              middlewares = [
+                "security-headers"
+                "crowdsec"
+              ];
+            };
           };
 
           services = {
@@ -1103,6 +1114,8 @@ in
             sabnzbd.loadBalancer.servers = [ { url = "http://localhost:10050"; } ];
             firefox.loadBalancer.servers = [ { url = "http://localhost:10060"; } ];
             searx.loadBalancer.servers = [ { url = "http://10.100.0.12:11002"; } ];
+            adguard.loadBalancer.servers = [ { url = "http://10.100.0.10:11016"; } ];
+            actual.loadBalancer.servers = [ { url = "http://10.100.0.11:11005"; } ];
           };
         };
       };
