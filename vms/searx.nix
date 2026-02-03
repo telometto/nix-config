@@ -14,19 +14,20 @@
     ../modules/core/overlays.nix
   ];
 
-  networking.hostName = "searx-vm";
-
-  # sys.overlays.fromInputs = {
-  #   nixpkgs-stable = [ "searxng" ];
-  # };
-
   # Stub cloudflared option for searx module compatibility
   options.sys.services.cloudflared.ingress = lib.mkOption {
     type = lib.types.attrsOf lib.types.str;
     default = { };
   };
 
-  config.sys.services.cloudflared.ingress = { };
+  config = {
+    networking.hostName = "searx-vm";
+
+    # sys.overlays.fromInputs = {
+    #   nixpkgs-stable = [ "searxng" ];
+    # };
+
+    sys.services.cloudflared.ingress = { };
 
   microvm = {
     hypervisor = "cloud-hypervisor";
@@ -135,13 +136,14 @@
     }
   ];
 
-  users.users.admin = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keys = [
-      VARS.users.zeno.sshPubKey
-    ];
-  };
+    users.users.admin = {
+      isNormalUser = true;
+      extraGroups = [ "wheel" ];
+      openssh.authorizedKeys.keys = [
+        VARS.users.zeno.sshPubKey
+      ];
+    };
 
-  system.stateVersion = "24.11";
+    system.stateVersion = "24.11";
+  };
 }
