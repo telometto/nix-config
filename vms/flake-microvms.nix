@@ -5,14 +5,14 @@
   ...
 }:
 let
-  nixpkgs = inputs.nixpkgs;
+  inherit (inputs) nixpkgs;
   microvmModule = inputs.microvm.nixosModules.microvm;
   sopsModule = inputs.sops-nix.nixosModules.sops;
   mkMicrovm =
     modules:
     nixpkgs.lib.nixosSystem {
-      inherit system;
-      modules = modules;
+      inherit system modules;
+
       specialArgs = { inherit inputs system VARS; };
     };
 in
