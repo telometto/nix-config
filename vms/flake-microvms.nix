@@ -8,7 +8,8 @@ let
   nixpkgs = inputs.nixpkgs;
   microvmModule = inputs.microvm.nixosModules.microvm;
   sopsModule = inputs.sops-nix.nixosModules.sops;
-  mkMicrovm = modules:
+  mkMicrovm =
+    modules:
     nixpkgs.lib.nixosSystem {
       inherit system;
       modules = modules;
