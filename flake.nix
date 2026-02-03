@@ -67,6 +67,9 @@
       system = "x86_64-linux";
       VARS = import nix-secrets.vars.varsFile;
       treefmtEval = inputs.treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} ./treefmt.nix;
+      microvmConfigurations = import ./vms/flake-microvms.nix {
+        inherit inputs system VARS;
+      };
       mkHost =
         hostname: extraModules:
         nixpkgs.lib.nixosSystem {
@@ -96,28 +99,7 @@
         blizzard = mkHost "blizzard" [ ];
         avalanche = mkHost "avalanche" [ ];
         kaizer = mkHost "kaizer" [ ];
-
-        # MicroVM definitions (for use with microvm.nix on a host)
-        # Note: MicroVMs don't use system-loader.nix to avoid importing host-only modules
-        adguard-vm = nixpkgs.lib.nixosSystem {
-          inherit system;
-          modules = [
-            inputs.microvm.nixosModules.microvm
-            ./vms/adguard.nix
-            inputs.sops-nix.nixosModules.sops
-          ];
-          specialArgs = { inherit inputs system VARS; };
-        };
-
-        actual-vm = nixpkgs.lib.nixosSystem {
-          inherit system;
-          modules = [
-            inputs.microvm.nixosModules.microvm
-            ./vms/actual.nix
-          ];
-          specialArgs = { inherit inputs system VARS; };
-        };
-      };
+      } // microvmConfigurations;
 
       formatter.${system} = treefmtEval.config.build.wrapper;
       checks.${system}.formatting = treefmtEval.config.build.check inputs.self;
