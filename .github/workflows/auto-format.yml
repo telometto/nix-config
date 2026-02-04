@@ -28,8 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     # Run on PRs from same repo, or on direct pushes to main/testing
     if: |
+      github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
-      github.event_name == 'push'
+      (github.event_name == 'push' && contains(fromJson('["main", "testing"]'), github.ref_name))
 
     steps:
       - name: Checkout repository
