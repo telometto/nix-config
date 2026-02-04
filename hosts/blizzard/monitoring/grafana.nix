@@ -1,4 +1,9 @@
-{ lib, pkgs, VARS, ... }:
+{
+  lib,
+  pkgs,
+  VARS,
+  ...
+}:
 let
   grafanaDashboards = import ../../../lib/grafana-dashboards.nix { inherit lib pkgs; };
 in

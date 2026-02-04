@@ -8,8 +8,7 @@
       builtins.attrNames (
         lib.attrsets.filterAttrs (
           name: type:
-          (type == "directory")
-          || ((name != "default.nix") && (lib.strings.hasSuffix ".nix" name))
+          (type == "directory") || ((name != "default.nix") && (lib.strings.hasSuffix ".nix" name))
         ) (builtins.readDir path)
       )
     );

@@ -10,7 +10,8 @@ in
   imports = [
     ./hardware-configuration.nix
     ./packages.nix
-  ] ++ (mylib.scanPaths ./.);
+  ]
+  ++ (mylib.scanPaths ./.);
 
   networking = {
     hostName = lib.mkForce "blizzard";
