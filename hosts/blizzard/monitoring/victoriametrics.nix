@@ -5,9 +5,7 @@
 
     listenAddress = "0.0.0.0";
     openFirewall = true;
-
     retentionPeriod = "1y";
-
     prometheusRemoteWrite.enable = true;
 
     dedup = {

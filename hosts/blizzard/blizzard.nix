@@ -53,7 +53,10 @@ in
       ];
     };
 
-    overlays.fromInputs = { };
+    overlays.fromInputs = {
+      # nixpkgs-unstable = [ "intel-graphics-compiler" ];
+      # nixpkgs-stable = [ "searxng" ];
+    };
 
     services = {
       k3s.enable = true;

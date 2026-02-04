@@ -8,10 +8,12 @@
 
     jellyfin = {
       enable = true;
+
       openFirewall = true;
 
       reverseProxy = {
         enable = true;
+
         pathPrefix = "/jellyfin";
         stripPrefix = false;
       };

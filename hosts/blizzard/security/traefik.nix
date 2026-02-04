@@ -6,10 +6,7 @@
     dataDir = "/var/lib/traefik";
 
     staticConfigOptions = {
-      accessLog = {
-        format = "json";
-      };
-
+      accessLog.format = "json";
       log.level = "WARN";
 
       experimental.plugins.bouncer = {
@@ -65,6 +62,7 @@
           crowdsec = {
             plugin.bouncer = {
               enabled = true;
+
               crowdsecMode = "stream";
               crowdsecLapiScheme = "http";
               crowdsecLapiHost = "127.0.0.1:8085";
