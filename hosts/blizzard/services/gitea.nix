@@ -16,6 +16,7 @@
 
     lfs = {
       enable = true;
+
       allowPureSSH = true;
 
       s3Backend = {

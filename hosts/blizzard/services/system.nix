@@ -3,6 +3,7 @@
   sys.services = {
     scrutiny = {
       enable = true;
+
       port = 11001;
       openFirewall = true;
 

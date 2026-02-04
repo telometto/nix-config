@@ -2,8 +2,8 @@
 {
   sys.services.prometheus = {
     enable = true;
-    port = 11009;
 
+    port = 11009;
     listenAddress = "127.0.0.1";
     openFirewall = false;
     scrapeInterval = "5s";

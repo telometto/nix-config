@@ -5,7 +5,10 @@
 
     microvm = {
       enable = true;
+
+      externalInterface = "enp8s0";
       stateDir = "/rpool/unenc/vms";
+
       autostart = [
         "adguard-vm"
         "actual-vm"
@@ -14,7 +17,6 @@
         "tautulli-vm"
         "gitea-vm"
       ];
-      externalInterface = "enp8s0";
 
       vms = {
         adguard-vm.flake = self;

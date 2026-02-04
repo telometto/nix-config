@@ -10,8 +10,8 @@ in
 {
   sys.services.grafana = {
     enable = true;
-    port = 11010;
 
+    port = 11010;
     addr = "127.0.0.1";
     openFirewall = false;
     domain = "metrics.${VARS.domains.public}";

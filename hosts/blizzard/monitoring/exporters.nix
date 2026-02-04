@@ -9,6 +9,7 @@
 
       zfs = {
         enable = true;
+
         port = 11013;
         pools = [
           "rpool"
@@ -19,6 +20,7 @@
 
     electricityPriceExporter = {
       enable = true;
+
       port = 11012;
       priceArea = "NO2";
     };
@@ -26,6 +28,7 @@
     # UPS monitoring (Eaton 9130)
     ups = {
       enable = true;
+
       mode = "standalone";
 
       devices.eaton9130 = {
@@ -40,10 +43,12 @@
       users.upsmon = {
         passwordFile = config.sys.secrets.upsmonPasswordFile;
         upsmon = "primary";
+
         actions = [
           "SET"
           "FSD"
         ];
+
         instcmds = [ "ALL" ];
       };
 
@@ -53,6 +58,7 @@
 
       prometheusExporter = {
         enable = true;
+
         port = 11014;
         variables = [
           "battery.charge"
