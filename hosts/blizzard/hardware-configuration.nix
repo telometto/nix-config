@@ -24,9 +24,12 @@
         "usbhid"
         "sd_mod"
       ];
+
       kernelModules = [ ];
     };
+
     kernelModules = [ "kvm-intel" ];
+
     extraModulePackages = [ ];
   };
 
