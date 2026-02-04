@@ -2,4 +2,6 @@
 let
   mylib = import ../../../lib { inherit lib; };
 in
-{ imports = mylib.scanPaths ./.; }
+{
+  imports = mylib.scanPaths ./.;
+}

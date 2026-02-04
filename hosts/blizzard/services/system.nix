@@ -1,20 +1,22 @@
 { VARS, ... }:
 {
-  sys.services = {scrutiny = {
-    enable = true;
-    port = 11001;
-    openFirewall = true;
+  sys.services = {
+    scrutiny = {
+      enable = true;
+      port = 11001;
+      openFirewall = true;
 
-    reverseProxy = {
+      reverseProxy = {
+        enable = false;
+        domain = "scrutiny.${VARS.domains.public}";
+        cfTunnel.enable = true;
+      };
+    };
+
+    cockpit = {
       enable = false;
-      domain = "scrutiny.${VARS.domains.public}";
-      cfTunnel.enable = true;
+      port = 11006;
+      openFirewall = true;
     };
   };
-
-  cockpit = {
-    enable = false;
-    port = 11006;
-    openFirewall = true;
-  };};
 }
