@@ -45,7 +45,7 @@
       {
         mountPoint = "/var/lib/gitea";
         image = "gitea-state.img";
-        size = 10240;
+        size = 102400;
       }
       {
         mountPoint = "/persist";
