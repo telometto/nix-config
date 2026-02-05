@@ -5,6 +5,10 @@
   ...
 }:
 {
+  imports = [
+    ../modules/security/secrets.nix
+  ];
+
   # Minimal hardened configuration for service VMs
   # Import this module for any MicroVM that should have minimal attack surface
   boot = {
