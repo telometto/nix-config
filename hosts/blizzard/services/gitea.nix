@@ -46,9 +46,9 @@
     };
 
     reverseProxy = {
-      enable = true;
+      enable = false;
       domain = "git.${VARS.domains.public}";
-      cfTunnel.enable = true;
+      cfTunnel.enable = false;
     };
   };
 }
