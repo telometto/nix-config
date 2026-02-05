@@ -55,9 +55,9 @@ sudo nixos-rebuild switch --flake .#<hostname>
 | Host | Role | Desktop |
 |------|------|---------|
 | snowfall | Desktop | KDE |
-| blizzard | Server | — |
-| avalanche | Desktop | — |
-| kaizer | — | — |
+| blizzard | Server | None |
+| avalanche | Laptop | GNOME |
+| kaizer | Desktop | KDE |
 
 ## Documentation
 
