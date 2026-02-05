@@ -461,7 +461,7 @@ in
 
       # Git repository management (port 11015 HTTP, 2222 SSH)
       gitea = {
-        enable = false;
+        enable = true;
 
         port = 11015;
         openFirewall = true;
