@@ -84,7 +84,9 @@
 
   sys.services.gitea = {
     enable = true;
+
     port = 11015;
+    openFirewall = true;
     stateDir = "/var/lib/gitea";
     repositoryRoot = "/var/lib/gitea/repositories";
 
@@ -95,8 +97,17 @@
 
     lfs = {
       enable = true;
+
       allowPureSSH = true;
-      s3Backend.enable = false;
+
+      s3Backend = {
+        enable = false;
+        endpoint = "${config.networking.hostName}.mole-delta.ts.net:${toString config.sys.services.seaweedfs.s3.port}";
+        bucket = "gitea-lfs";
+        accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;
+        secretAccessKeyFile = config.sys.secrets.seaweedfsSecretAccessKeyFile;
+        serveDirect = false;
+      };
     };
 
     disableRegistration = true;
@@ -107,8 +118,9 @@
       server = {
         ROOT_URL = "https://git.${VARS.domains.public}/";
         START_SSH_SERVER = true;
+
         SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
-        SSH_LISTEN_HOST = "0.0.0.0";
+        SSH_LISTEN_HOST = "127.0.0.1";
         SSH_LISTEN_PORT = 2222;
       };
 
