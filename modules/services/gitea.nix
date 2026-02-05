@@ -284,17 +284,6 @@ in
           };
         };
 
-    sys.services.cloudflared.ingress =
-      lib.mkIf
-        (
-          cfg.reverseProxy.cfTunnel.enable
-          && cfg.reverseProxy.enable
-          && config.sys.services.cloudflared.enable or false
-        )
-        {
-          "${cfg.reverseProxy.domain}" = "http://localhost:80";
-        };
-
     assertions = [
       {
         assertion = !cfg.reverseProxy.enable || cfg.reverseProxy.domain != null;
