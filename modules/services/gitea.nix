@@ -17,18 +17,19 @@ let
 
   envFile = "/run/gitea/lfs-secrets.env";
 
-  # Writes secrets from LoadCredential to environment file for Gitea
+  # Reads secrets directly from sops paths rather than using systemd LoadCredential,
+  # which fails in MicroVM environments (cloud-hypervisor) with "Protocol error"
   preStartScript = pkgs.writeShellScript "gitea-lfs-secrets" ''
     set -euo pipefail
     : > "${envFile}"
 
     ${lib.optionalString useS3Creds ''
-      echo "GITEA__LFS__MINIO_ACCESS_KEY_ID=$(cat "$CREDENTIALS_DIRECTORY/s3-access-key")" >> "${envFile}"
-      echo "GITEA__LFS__MINIO_SECRET_ACCESS_KEY=$(cat "$CREDENTIALS_DIRECTORY/s3-secret-key")" >> "${envFile}"
+      echo "GITEA__LFS__MINIO_ACCESS_KEY_ID=$(cat "${cfg.lfs.s3Backend.accessKeyFile}")" >> "${envFile}"
+      echo "GITEA__LFS__MINIO_SECRET_ACCESS_KEY=$(cat "${cfg.lfs.s3Backend.secretAccessKeyFile}")" >> "${envFile}"
     ''}
 
     ${lib.optionalString useLfsJwt ''
-      echo "GITEA__SECURITY__LFS_JWT_SECRET=$(cat "$CREDENTIALS_DIRECTORY/lfs-jwt")" >> "${envFile}"
+      echo "GITEA__SECURITY__LFS_JWT_SECRET=$(cat "${config.sys.secrets.giteaLfsJwtSecretFile}")" >> "${envFile}"
     ''}
 
     chmod 0400 "${envFile}"
@@ -244,13 +245,7 @@ in
     };
 
     systemd.services.gitea.serviceConfig = lib.mkIf (useS3Creds || useLfsJwt) {
-      LoadCredential =
-        lib.optionals useS3Creds [
-          "s3-access-key:${cfg.lfs.s3Backend.accessKeyFile}"
-          "s3-secret-key:${cfg.lfs.s3Backend.secretAccessKeyFile}"
-        ]
-        ++ lib.optional useLfsJwt "lfs-jwt:${config.sys.secrets.giteaLfsJwtSecretFile}";
-
+      RuntimeDirectory = "gitea";
       ExecStartPre = lib.mkAfter [ "${preStartScript}" ];
       EnvironmentFile = lib.mkAfter [ "-${envFile}" ];
     };
