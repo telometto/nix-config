@@ -48,6 +48,11 @@
         size = 102400;
       }
       {
+        mountPoint = "/var/lib/postgresql";
+        image = "postgresql-state.img";
+        size = 10240;
+      }
+      {
         mountPoint = "/persist";
         image = "persist.img";
         size = 64;
