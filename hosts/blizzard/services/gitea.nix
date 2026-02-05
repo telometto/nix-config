@@ -31,14 +31,18 @@
 
     disableRegistration = true;
 
-    settings.server = {
-      START_SSH_SERVER = true;
+    settings = {
+      server = {
+        START_SSH_SERVER = true;
 
-      SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
-      SSH_LISTEN_HOST = "127.0.0.1";
-      SSH_LISTEN_PORT = 2222;
+        SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
+        SSH_LISTEN_HOST = "127.0.0.1";
+        SSH_LISTEN_PORT = 2222;
 
-      PUBLIC_URL_DETECTION = "auto";
+        PUBLIC_URL_DETECTION = "auto";
+      };
+
+      session.COOKIE_SECURE = true;
     };
 
     reverseProxy = {
