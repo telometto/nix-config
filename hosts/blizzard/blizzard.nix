@@ -3,16 +3,7 @@
   VARS,
   ...
 }:
-let
-  mylib = import ../../lib { inherit lib; };
-in
 {
-  imports = [
-    ./hardware-configuration.nix
-    ./packages.nix
-  ]
-  ++ (mylib.scanPaths ./.);
-
   networking = {
     hostName = lib.mkForce "blizzard";
     hostId = lib.mkForce "86bc16e3";
