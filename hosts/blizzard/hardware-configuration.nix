@@ -4,15 +4,12 @@
 {
   config,
   lib,
-  pkgs,
   modulesPath,
   ...
 }:
 
 {
-  imports = [
-    (modulesPath + "/installer/scan/not-detected.nix")
-  ];
+  imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
 
   boot = {
     initrd = {
@@ -22,251 +19,37 @@
         "mpt3sas"
         "nvme"
         "usbhid"
+        "usb_storage"
         "sd_mod"
       ];
-
       kernelModules = [ ];
     };
-
     kernelModules = [ "kvm-intel" ];
-
     extraModulePackages = [ ];
   };
 
-  fileSystems = {
-    "/" = {
-      device = "/dev/disk/by-uuid/dbaaaf2a-1ba4-4091-92fb-1c198b4354d5";
-      fsType = "ext4";
-    };
-
-    "/boot" = {
-      device = "/dev/disk/by-uuid/3624-DACD";
-      fsType = "vfat";
-      options = [
-        "fmask=0077"
-        "dmask=0077"
-      ];
-    };
-
-    "/rpool" = {
-      device = "rpool";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc" = {
-      device = "rpool/unenc";
-      fsType = "zfs";
-    };
-
-    "/rpool/enc" = {
-      device = "rpool/enc";
-      fsType = "zfs";
-    };
-
-    "/tank" = {
-      device = "tank";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/dbs" = {
-      device = "rpool/unenc/dbs";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/apps" = {
-      device = "rpool/unenc/apps";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/vms" = {
-      device = "rpool/unenc/vms";
-      fsType = "zfs";
-    };
-
-    "/rpool/enc/backups" = {
-      device = "rpool/enc/backups";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/dbs/mysql" = {
-      device = "rpool/unenc/dbs/mysql";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/dbs/psql" = {
-      device = "rpool/unenc/dbs/psql";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/dbs/redis" = {
-      device = "rpool/unenc/dbs/redis";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/media" = {
-      device = "rpool/unenc/media";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/destroyme" = {
-      device = "rpool/unenc/destroyme";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup" = {
-      device = "tank/rpool-backup";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/apps/kubernetes" = {
-      device = "rpool/unenc/apps/kubernetes";
-      fsType = "zfs";
-    };
-
-    "/rpool/unenc/apps/nixos" = {
-      device = "rpool/unenc/apps/nixos";
-      fsType = "zfs";
-    };
-
-    "/tank/sorted" = {
-      device = "tank/sorted";
-      fsType = "zfs";
-    };
-
-    "/tank/transfer" = {
-      device = "tank/transfer";
-      fsType = "zfs";
-    };
-
-    "/rpool/enc/backups/flash_temp" = {
-      device = "rpool/enc/backups/flash_temp";
-      fsType = "zfs";
-    };
-
-    "/rpool/enc/sorted-backups" = {
-      device = "rpool/enc/sorted-backups";
-      fsType = "zfs";
-    };
-
-    "/rpool/enc/transfers" = {
-      device = "rpool/enc/transfers";
-      fsType = "zfs";
-    };
-
-    "/tank/apps" = {
-      device = "tank/apps";
-      fsType = "zfs";
-    };
-
-    "/tank/personal" = {
-      device = "tank/personal";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/unenc" = {
-      device = "tank/rpool-backup/unenc";
-      fsType = "zfs";
-    };
-
-    "/rpool/enc/backups/flash_temp/homeserver" = {
-      device = "rpool/enc/backups/flash_temp/homeserver";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/enc" = {
-      device = "tank/rpool-backup/enc";
-      fsType = "zfs";
-    };
-
-    "/rpool/enc/backups/flash_temp/vault" = {
-      device = "rpool/enc/backups/flash_temp/vault";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/unenc/redis" = {
-      device = "tank/rpool-backup/unenc/redis";
-      fsType = "zfs";
-    };
-
-    "/rpool/enc/backups/flash_temp/nfsshare" = {
-      device = "rpool/enc/backups/flash_temp/nfsshare";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/unenc/mysql" = {
-      device = "tank/rpool-backup/unenc/mysql";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/unenc/apps" = {
-      device = "tank/rpool-backup/unenc/apps";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/enc/backups" = {
-      device = "tank/rpool-backup/enc/backups";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/unenc/psql" = {
-      device = "tank/rpool-backup/unenc/psql";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/enc/personal" = {
-      device = "tank/rpool-backup/enc/personal";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/enc/transfers" = {
-      device = "tank/rpool-backup/enc/transfers";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/unenc/apps/nixos" = {
-      device = "tank/rpool-backup/unenc/apps/nixos";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/unenc/apps/kubernetes" = {
-      device = "tank/rpool-backup/unenc/apps/kubernetes";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/enc/personal/paperless-media" = {
-      device = "tank/rpool-backup/enc/personal/paperless-media";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/enc/backups/flash_temp" = {
-      device = "tank/rpool-backup/enc/backups/flash_temp";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/enc/personal/documents" = {
-      device = "tank/rpool-backup/enc/personal/documents";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/enc/backups/flash_temp/vault" = {
-      device = "tank/rpool-backup/enc/backups/flash_temp/vault";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/enc/backups/flash_temp/homeserver" = {
-      device = "tank/rpool-backup/enc/backups/flash_temp/homeserver";
-      fsType = "zfs";
-    };
-
-    "/tank/rpool-backup/enc/backups/flash_temp/nfsshare" = {
-      device = "tank/rpool-backup/enc/backups/flash_temp/nfsshare";
-      fsType = "zfs";
-    };
+  fileSystems."/" = {
+    device = "/dev/disk/by-uuid/dbaaaf2a-1ba4-4091-92fb-1c198b4354d5";
+    fsType = "ext4";
   };
 
-  swapDevices = [
-    { device = "/dev/disk/by-uuid/89af1f0a-cf2a-4b88-ae16-10ae213d9e79"; }
-  ];
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-uuid/3624-DACD";
+    fsType = "vfat";
+    options = [
+      "fmask=0077"
+      "dmask=0077"
+    ];
+  };
+
+  swapDevices = [ { device = "/dev/disk/by-uuid/89af1f0a-cf2a-4b88-ae16-10ae213d9e79"; } ];
+
+  # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+  # (the default) this is the recommended approach. When using systemd-networkd it's
+  # still possible to use this option, but it's recommended to use it in conjunction
+  # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
+  networking.useDHCP = lib.mkDefault true;
+  # networking.interfaces.enp8s0.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
