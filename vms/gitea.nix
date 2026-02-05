@@ -10,7 +10,28 @@
   imports = [
     ./base.nix
     ../modules/services/gitea.nix
+    inputs.sops-nix.nixosModules.sops
   ];
+
+  # SOPS configuration for this MicroVM
+  # After first boot, get the VM's age key with:
+  #   ssh admin@10.100.0.16 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
+  # Then add it to your .sops.yaml and re-encrypt secrets
+  sops = {
+    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
+    defaultSopsFormat = "yaml";
+    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
+
+    secrets = {
+      "gitea/lfs_jwt_secret" = {
+        mode = "0440";
+        owner = "gitea";
+        group = "gitea";
+      };
+    };
+  };
+
+  sys.secrets.giteaLfsJwtSecretFile = config.sops.secrets."gitea/lfs_jwt_secret".path;
 
   microvm = {
     hypervisor = "cloud-hypervisor";
