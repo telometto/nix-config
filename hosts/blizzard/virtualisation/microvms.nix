@@ -88,6 +88,23 @@
             };
           };
         };
+
+        gitea-vm = {
+          ip = "10.100.0.16";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "git.${VARS.domains.public}" = "http://localhost:80";
+              "ssh-git.${VARS.domains.public}" = "ssh://localhost:2222";
+            };
+          };
+        };
       };
     };
   };
