@@ -17,9 +17,58 @@ Each host directory contains:
 
 ```
 hosts/<hostname>/
-├── <hostname>.nix           # Main configuration
+├── <hostname>.nix              # Main configuration (imports + core settings)
 ├── hardware-configuration.nix  # Hardware-specific (from nixos-generate-config)
-└── packages.nix             # Host-specific packages
+├── packages.nix                # Host-specific packages
+└── [optional subdirectories]   # Domain-specific configs (for complex hosts)
+```
+
+For complex hosts like servers, you can organize configuration into subdirectories:
+
+```
+hosts/blizzard/
+├── blizzard.nix            # Main: imports, networking, role, users (~80 lines)
+├── hardware-configuration.nix
+├── packages.nix
+├── boot.nix                # ZFS, kernel, sysctl
+├── networking.nix          # systemd-networkd
+├── storage/                # Storage services
+│   ├── default.nix         # Auto-imports via scanPaths
+│   ├── zfs.nix
+│   ├── nfs.nix
+│   └── samba.nix
+├── monitoring/             # Observability stack
+│   ├── default.nix
+│   ├── prometheus.nix
+│   ├── grafana.nix
+│   └── exporters.nix
+├── services/               # Application services
+│   ├── default.nix
+│   ├── media.nix
+│   └── k3s.nix
+├── security/               # Security infrastructure
+│   ├── default.nix
+│   ├── crowdsec.nix
+│   └── traefik.nix
+└── virtualisation/         # VMs and containers
+    ├── default.nix
+    └── microvms.nix
+```
+
+Use `mylib.scanPaths` to auto-import all `.nix` files in subdirectories:
+
+```nix
+# hosts/blizzard/blizzard.nix
+let
+  mylib = import ../../lib { inherit lib; };
+in
+{
+  imports = [
+    ./hardware-configuration.nix
+    ./packages.nix
+  ] ++ (mylib.scanPaths ./.);  # Auto-imports boot.nix, networking.nix, + subdirs
+  # ...
+}
 ```
 
 ### Configuration Pattern
