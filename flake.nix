@@ -76,7 +76,7 @@
           inherit system;
           modules = [
             ./system-loader.nix
-            ./hosts/${hostname}/${hostname}.nix
+            ./host-loader.nix
             inputs.home-manager.nixosModules.home-manager
             inputs.sops-nix.nixosModules.sops
             inputs.lanzaboote.nixosModules.lanzaboote
@@ -89,6 +89,7 @@
               system
               VARS
               self
+              hostname
               ;
           };
         };
