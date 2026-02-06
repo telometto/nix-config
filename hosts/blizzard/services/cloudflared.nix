@@ -7,6 +7,8 @@
     credentialsFile = config.sys.secrets.cloudflaredCredentialsFile;
 
     ingress = {
+      "metrics.${VARS.domains.public}" = "http://localhost:80";
+
       "requests.${VARS.domains.public}" = "http://localhost:80";
 
       "ombi.${VARS.domains.public}" = "http://localhost:80";
