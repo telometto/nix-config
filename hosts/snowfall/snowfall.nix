@@ -192,8 +192,7 @@ in
         credentialsFile = config.sys.secrets.cloudflaredCredentialsFile;
 
         ingress = {
-          # Grafana is automatically added via cfTunnel.enable
-          # Additional services here if needed
+          "metrics2.${VARS.domains.public}" = "http://localhost:${toString config.sys.services.grafana.port}";
         };
       };
 
