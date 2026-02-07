@@ -75,7 +75,10 @@ in
       python-venv.enable = true;
 
       gaming = {
-        steam.openSteamLanPorts = true;
+        steam = {
+          enable = true;
+          openSteamLanPorts = true;
+        };
         openWc3Ports = true;
       };
     };
