@@ -73,6 +73,11 @@ in
     programs = {
       nix-ld.enable = true;
       python-venv.enable = true;
+
+      gaming = {
+        steam.openSteamLanPorts = true;
+        openWc3Ports = true;
+      };
     };
 
     # Pull specific packages from different nixpkgs inputs
