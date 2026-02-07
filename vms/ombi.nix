@@ -24,7 +24,7 @@
       {
         mountPoint = "/var/lib/ombi";
         image = "ombi-state.img";
-        size = 2048;
+        size = 1024;
       }
       {
         mountPoint = "/persist";
@@ -105,6 +105,8 @@
       VARS.users.zeno.sshPubKey
     ];
   };
+
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   system.stateVersion = "24.11";
 }
