@@ -38,7 +38,7 @@ in
       };
 
       steam = lib.mkIf cfg.steam.enable {
-        enable = lib.mkDefault true;
+        enable = true;
         extest.enable = lib.mkDefault true;
         protontricks.enable = lib.mkDefault true;
         gamescopeSession.enable = lib.mkDefault true;
