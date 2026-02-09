@@ -30,10 +30,15 @@ in
       };
 
       programs = {
-        gaming.enable = true;
         java.enable = true;
         ssh.enable = true;
         gnupg.enable = false;
+
+        gaming = {
+          enable = true;
+
+          steam.enable = true;
+        };
       };
 
       services = {
