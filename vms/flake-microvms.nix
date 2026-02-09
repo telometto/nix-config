@@ -52,4 +52,34 @@ in
     microvmModule
     ./gitea.nix
   ];
+
+  sonarr-vm = mkMicrovm [
+    microvmModule
+    ./sonarr.nix
+  ];
+
+  radarr-vm = mkMicrovm [
+    microvmModule
+    ./radarr.nix
+  ];
+
+  prowlarr-vm = mkMicrovm [
+    microvmModule
+    ./prowlarr.nix
+  ];
+
+  bazarr-vm = mkMicrovm [
+    microvmModule
+    ./bazarr.nix
+  ];
+
+  readarr-vm = mkMicrovm [
+    microvmModule
+    ./readarr.nix
+  ];
+
+  lidarr-vm = mkMicrovm [
+    microvmModule
+    ./lidarr.nix
+  ];
 }
