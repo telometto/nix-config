@@ -20,7 +20,7 @@
     };
 
     ombi = {
-      enable = true;
+      enable = false;
 
       port = 11003;
       openFirewall = true;
@@ -34,7 +34,7 @@
     };
 
     tautulli = {
-      enable = true;
+      enable = false;
 
       port = 11004;
       openFirewall = true;
