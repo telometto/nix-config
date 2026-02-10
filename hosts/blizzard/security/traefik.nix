@@ -267,11 +267,11 @@
 
         services = {
           overseerr.loadBalancer.servers = [ { url = "http://localhost:10001"; } ];
-          prowlarr.loadBalancer.servers = [ { url = "http://localhost:10010"; } ];
-          sonarr.loadBalancer.servers = [ { url = "http://localhost:10020"; } ];
-          radarr.loadBalancer.servers = [ { url = "http://localhost:10021"; } ];
-          readarr.loadBalancer.servers = [ { url = "http://localhost:10022"; } ];
-          bazarr.loadBalancer.servers = [ { url = "http://localhost:10030"; } ];
+          prowlarr.loadBalancer.servers = [ { url = "http://10.100.0.19:11025"; } ];
+          sonarr.loadBalancer.servers = [ { url = "http://10.100.0.17:11023"; } ];
+          radarr.loadBalancer.servers = [ { url = "http://10.100.0.18:11024"; } ];
+          readarr.loadBalancer.servers = [ { url = "http://10.100.0.21:11027"; } ];
+          bazarr.loadBalancer.servers = [ { url = "http://10.100.0.20:11026"; } ];
           lingarr.loadBalancer.servers = [ { url = "http://localhost:10031"; } ];
           sabnzbd.loadBalancer.servers = [ { url = "http://10.100.0.24:11050"; } ];
           firefox.loadBalancer.servers = [ { url = "http://10.100.0.25:11060"; } ];
