@@ -12,6 +12,8 @@
     ../modules/services/sabnzbd.nix
   ];
 
+  nixpkgs.config.allowUnfree = true;
+
   microvm = {
     hypervisor = "cloud-hypervisor";
 
