@@ -1,4 +1,9 @@
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.sys.services.qbittorrent;
   torrentPort = cfg.torrentPort or null;

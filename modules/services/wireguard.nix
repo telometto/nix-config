@@ -1,4 +1,9 @@
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.sys.services.wireguard;
   interfaceName = cfg.interface;
@@ -47,14 +52,22 @@ in
     };
 
     peers = lib.mkOption {
-      type = lib.types.listOf (lib.types.submodule {
-        options = {
-          publicKey = lib.mkOption { type = lib.types.str; };
-          allowedIPs = lib.mkOption { type = lib.types.listOf lib.types.str; };
-          endpoint = lib.mkOption { type = lib.types.nullOr lib.types.str; default = null; };
-          persistentKeepalive = lib.mkOption { type = lib.types.nullOr lib.types.int; default = null; };
-        };
-      });
+      type = lib.types.listOf (
+        lib.types.submodule {
+          options = {
+            publicKey = lib.mkOption { type = lib.types.str; };
+            allowedIPs = lib.mkOption { type = lib.types.listOf lib.types.str; };
+            endpoint = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+            };
+            persistentKeepalive = lib.mkOption {
+              type = lib.types.nullOr lib.types.int;
+              default = null;
+            };
+          };
+        }
+      );
       default = [ ];
     };
 
