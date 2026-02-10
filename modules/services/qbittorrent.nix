@@ -49,6 +49,20 @@ in
       type = lib.types.bool;
       default = false;
     };
+
+    alternativeWebUI = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Enable alternative web UI (VueTorrent).";
+      };
+
+      package = lib.mkOption {
+        type = lib.types.package;
+        default = pkgs.vuetorrent;
+        description = "Alternative web UI package to use.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -62,6 +76,10 @@ in
 
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0750 ${cfg.user} ${cfg.group} -"
+    ]
+    ++ lib.optionals cfg.alternativeWebUI.enable [
+      "d ${cfg.dataDir}/qBt_webui 0750 ${cfg.user} ${cfg.group} -"
+      "L+ ${cfg.dataDir}/qBt_webui/public - - - - ${cfg.alternativeWebUI.package}/share/vuetorrent"
     ];
 
     systemd.services.qbittorrent = {
