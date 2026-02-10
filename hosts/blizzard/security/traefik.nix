@@ -273,8 +273,8 @@
           readarr.loadBalancer.servers = [ { url = "http://localhost:10022"; } ];
           bazarr.loadBalancer.servers = [ { url = "http://localhost:10030"; } ];
           lingarr.loadBalancer.servers = [ { url = "http://localhost:10031"; } ];
-          sabnzbd.loadBalancer.servers = [ { url = "http://localhost:10050"; } ];
-          firefox.loadBalancer.servers = [ { url = "http://localhost:10060"; } ];
+          sabnzbd.loadBalancer.servers = [ { url = "http://10.100.0.24:11050"; } ];
+          firefox.loadBalancer.servers = [ { url = "http://10.100.0.25:11060"; } ];
           searx.loadBalancer.servers = [ { url = "http://10.100.0.12:11002"; } ];
           adguard.loadBalancer.servers = [ { url = "http://10.100.0.10:11016"; } ];
           actual.loadBalancer.servers = [ { url = "http://10.100.0.11:11005"; } ];
