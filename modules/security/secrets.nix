@@ -167,5 +167,11 @@
         Path to a file containing the SeaweedFS S3 secret access key. Mapped from SOPS in core/sops.nix.
       '';
     };
+
+    wireguardPrivateKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to a file containing the WireGuard private key. Mapped from SOPS in core/sops.nix.";
+    };
   };
 }
