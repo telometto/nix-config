@@ -120,23 +120,50 @@
           };
         };
 
-        sonarr-vm = {
-          ip = "10.100.0.17";
+        ombi-vm = {
+          ip = "10.100.0.14";
 
           portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11023;
-              }
-            ];
+            enable = false;
+            ports = [ ];
           };
 
           cfTunnel = {
             enable = true;
             ingress = {
-              "series.${VARS.domains.public}" = "http://10.100.0.17:11023";
+              "ombi.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        tautulli-vm = {
+          ip = "10.100.0.15";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "tautulli.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        sonarr-vm = {
+          ip = "10.100.0.17";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "series.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
@@ -145,19 +172,14 @@
           ip = "10.100.0.18";
 
           portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11024;
-              }
-            ];
+            enable = false;
+            ports = [ ];
           };
 
           cfTunnel = {
             enable = true;
             ingress = {
-              "movies.${VARS.domains.public}" = "http://10.100.0.18:11024";
+              "movies.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
@@ -166,19 +188,14 @@
           ip = "10.100.0.19";
 
           portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11025;
-              }
-            ];
+            enable = false;
+            ports = [ ];
           };
 
           cfTunnel = {
             enable = true;
             ingress = {
-              "indexer.${VARS.domains.public}" = "http://10.100.0.19:11025";
+              "indexer.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
@@ -187,19 +204,14 @@
           ip = "10.100.0.20";
 
           portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11026;
-              }
-            ];
+            enable = false;
+            ports = [ ];
           };
 
           cfTunnel = {
             enable = true;
             ingress = {
-              "subs.${VARS.domains.public}" = "http://10.100.0.20:11026";
+              "subs.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
@@ -208,19 +220,14 @@
           ip = "10.100.0.21";
 
           portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11027;
-              }
-            ];
+            enable = false;
+            ports = [ ];
           };
 
           cfTunnel = {
             enable = true;
             ingress = {
-              "books.${VARS.domains.public}" = "http://10.100.0.21:11027";
+              "books.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
