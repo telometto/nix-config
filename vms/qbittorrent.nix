@@ -100,6 +100,11 @@
     torrentPort = 50820;
     dataDir = "/var/lib/qbittorrent";
     openFirewall = false;
+
+    alternativeWebUI = {
+      enable = true;
+      package = pkgs.vuetorrent;
+    };
   };
 
   services.openssh.hostKeys = [
