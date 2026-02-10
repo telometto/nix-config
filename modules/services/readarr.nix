@@ -75,7 +75,8 @@ in
   config = lib.mkIf cfg.enable {
     services.readarr = {
       enable = true;
-      inherit (cfg) dataDir openFirewall port;
+      inherit (cfg) dataDir openFirewall;
+      settings.server.port = cfg.port;
     };
 
     services.traefik.dynamicConfigOptions =
