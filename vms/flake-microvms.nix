@@ -82,4 +82,24 @@ in
     microvmModule
     ./lidarr.nix
   ];
+
+  qbittorrent-vm = mkMicrovm [
+    microvmModule
+    ./qbittorrent.nix
+  ];
+
+  sabnzbd-vm = mkMicrovm [
+    microvmModule
+    ./sabnzbd.nix
+  ];
+
+  firefox-vm = mkMicrovm [
+    microvmModule
+    ./firefox.nix
+  ];
+
+  wireguard-vm = mkMicrovm [
+    microvmModule
+    ./wireguard.nix
+  ];
 }
