@@ -7,6 +7,7 @@
 {
   imports = [
     ../modules/security/secrets.nix
+    ../modules/services/nfs.nix
   ];
 
   # Minimal hardened configuration for service VMs
