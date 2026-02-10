@@ -77,6 +77,7 @@
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
       "d /data 0750 root root -"
+      "d /var/lib/bazarr 0700 bazarr bazarr -"
     ];
   };
 

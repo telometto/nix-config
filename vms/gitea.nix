@@ -105,6 +105,8 @@
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
+      "d /var/lib/gitea 0700 gitea gitea -"
+      "d /var/lib/postgresql 0700 postgres postgres -"
     ];
   };
 

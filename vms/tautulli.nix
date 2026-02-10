@@ -76,6 +76,7 @@
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
+      "d /var/lib/tautulli 0700 plexpy nogroup -"
     ];
   };
 
