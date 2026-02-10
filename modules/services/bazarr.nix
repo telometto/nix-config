@@ -75,7 +75,8 @@ in
   config = lib.mkIf cfg.enable {
     services.bazarr = {
       enable = true;
-      inherit (cfg) dataDir openFirewall port;
+      listenPort = cfg.port;
+      inherit (cfg) dataDir openFirewall;
     };
 
     services.traefik.dynamicConfigOptions =
