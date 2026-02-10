@@ -79,6 +79,12 @@ in
       settings.server.port = cfg.port;
     };
 
+    # Disable DynamicUser to prevent conflict with volume-mounted dataDir
+    systemd.services.lidarr.serviceConfig = {
+      DynamicUser = lib.mkForce false;
+      UMask = "002";
+    };
+
     services.traefik.dynamicConfigOptions =
       lib.mkIf
         (

@@ -79,6 +79,12 @@ in
       inherit (cfg) dataDir openFirewall;
     };
 
+    # Disable DynamicUser to prevent conflict with volume-mounted dataDir
+    systemd.services.bazarr.serviceConfig = {
+      DynamicUser = lib.mkForce false;
+      UMask = "002";
+    };
+
     services.traefik.dynamicConfigOptions =
       lib.mkIf
         (
