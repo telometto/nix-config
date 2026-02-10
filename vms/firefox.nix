@@ -74,7 +74,7 @@
       matchConfig.Type = "ether";
       networkConfig = {
         Address = [ "10.100.0.25/24" ];
-        Gateway = "10.100.0.1";
+        Gateway = "10.100.0.26"; # Route through Wireguard VM for VPN kill switch
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
       };
