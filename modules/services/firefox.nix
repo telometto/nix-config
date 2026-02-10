@@ -107,7 +107,10 @@ in
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
-      allowedTCPPorts = [ cfg.httpPort cfg.httpsPort ];
+      allowedTCPPorts = [
+        cfg.httpPort
+        cfg.httpsPort
+      ];
     };
   };
 }

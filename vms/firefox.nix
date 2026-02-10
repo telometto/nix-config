@@ -62,7 +62,10 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11060 11061 ];
+      allowedTCPPorts = [
+        11060
+        11061
+      ];
     };
   };
 
