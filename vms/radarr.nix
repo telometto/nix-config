@@ -76,7 +76,18 @@
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
+      "d /data 0750 root root -"
     ];
+  };
+
+  sys.services.nfs = {
+    enable = true;
+
+    mounts.media = {
+      server = "10.100.0.1";
+      export = "/rpool/unenc/media/data";
+      target = "/data";
+    };
   };
 
   sys.services.radarr = {
