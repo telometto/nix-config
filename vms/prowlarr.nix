@@ -76,6 +76,7 @@
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
+      "d /var/lib/prowlarr 0700 prowlarr prowlarr -"
     ];
   };
 
