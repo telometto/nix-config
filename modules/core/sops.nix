@@ -22,6 +22,7 @@ let
   hasUps = config.sys.services.ups.enable or false;
   hasGitea = config.sys.services.gitea.enable or false;
   hasSeaweedfs = config.sys.services.seaweedfs.enable or false;
+  hasWireguard = config.sys.services.wireguard.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -115,6 +116,14 @@ in
           owner = "root";
           group = "root";
         };
+      }
+      # WireGuard private key
+      // whenEnabled hasWireguard {
+        "wireguard/privatekey" = {
+          mode = "0400";
+          owner = "root";
+          group = "root";
+        };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -191,6 +200,10 @@ in
     // whenEnabled hasSeaweedfs {
       seaweedfsAccessKeyFile = toString config.sops.secrets."seaweedfs/access_key".path;
       seaweedfsSecretAccessKeyFile = toString config.sops.secrets."seaweedfs/secret_key".path;
+    }
+    # WireGuard private key
+    // whenEnabled hasWireguard {
+      wireguardPrivateKeyFile = toString config.sops.secrets."wireguard/privatekey".path;
     };
 
   environment.systemPackages = [
