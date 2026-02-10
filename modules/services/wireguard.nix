@@ -1,22 +1,23 @@
-{ lib, config, ... }:
+{ lib, config, pkgs, ... }:
 let
   cfg = config.sys.services.wireguard;
   interfaceName = cfg.interface;
   wgInterface = {
-    ips = cfg.addresses;
+    address = cfg.addresses;
     listenPort = cfg.listenPort;
     privateKeyFile = cfg.privateKeyFile;
     peers = cfg.peers;
   }
   // lib.optionalAttrs (cfg.mtu != null) { mtu = cfg.mtu; }
-  // lib.optionalAttrs (cfg.preUp != [ ]) { preUp = cfg.preUp; }
-  // lib.optionalAttrs (cfg.postUp != [ ]) { postUp = cfg.postUp; }
-  // lib.optionalAttrs (cfg.preDown != [ ]) { preDown = cfg.preDown; }
-  // lib.optionalAttrs (cfg.postDown != [ ]) { postDown = cfg.postDown; };
+  // lib.optionalAttrs (cfg.preUp != "") { preUp = cfg.preUp; }
+  // lib.optionalAttrs (cfg.postUp != "") { postUp = cfg.postUp; }
+  // lib.optionalAttrs (cfg.preDown != "") { preDown = cfg.preDown; }
+  // lib.optionalAttrs (cfg.postDown != "") { postDown = cfg.postDown; }
+  // lib.optionalAttrs (cfg.dns != [ ]) { dns = cfg.dns; };
 in
 {
   options.sys.services.wireguard = {
-    enable = lib.mkEnableOption "WireGuard";
+    enable = lib.mkEnableOption "WireGuard (wg-quick)";
 
     interface = lib.mkOption {
       type = lib.types.str;
@@ -58,23 +59,27 @@ in
     };
 
     preUp = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
+      type = lib.types.str;
+      default = "";
+      description = "Shell commands to run before bringing up the interface.";
     };
 
     postUp = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
+      type = lib.types.str;
+      default = "";
+      description = "Shell commands to run after bringing up the interface.";
     };
 
     preDown = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
+      type = lib.types.str;
+      default = "";
+      description = "Shell commands to run before bringing down the interface.";
     };
 
     postDown = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
+      type = lib.types.str;
+      default = "";
+      description = "Shell commands to run after bringing down the interface.";
     };
 
     dns = lib.mkOption {
@@ -96,9 +101,7 @@ in
       }
     ];
 
-    networking.wireguard.interfaces.${interfaceName} = wgInterface;
-
-    networking.nameservers = lib.mkIf (cfg.dns != [ ]) cfg.dns;
+    networking.wg-quick.interfaces.${interfaceName} = wgInterface;
 
     networking.firewall = lib.mkIf cfg.openFirewall {
       allowedUDPPorts = [ cfg.listenPort ];
