@@ -124,26 +124,32 @@
       HOMENET=192.168.0.0/16
       HOMENET2=10.0.0.0/8
       HOMENET3=172.16.0.0/12
-      ${pkgs.iproute2}/bin/ip route add $HOMENET3 via $DROUTE
-      ${pkgs.iproute2}/bin/ip route add $HOMENET2 via $DROUTE
-      ${pkgs.iproute2}/bin/ip route add $HOMENET via $DROUTE
+      ${pkgs.iproute2}/bin/ip route add $HOMENET3 via $DROUTE || true
+      ${pkgs.iproute2}/bin/ip route add $HOMENET2 via $DROUTE || true
+      ${pkgs.iproute2}/bin/ip route add $HOMENET via $DROUTE || true
       ${pkgs.iptables}/bin/iptables -I OUTPUT -d $HOMENET -j ACCEPT
       ${pkgs.iptables}/bin/iptables -A OUTPUT -d $HOMENET2 -j ACCEPT
       ${pkgs.iptables}/bin/iptables -A OUTPUT -d $HOMENET3 -j ACCEPT
-      ${pkgs.iptables}/bin/iptables -A OUTPUT ! -o %i -m mark ! --mark $(${pkgs.wireguard-tools}/bin/wg show %i fwmark) -m addrtype ! --dst-type LOCAL -j REJECT
+      FWMARK=$(${pkgs.wireguard-tools}/bin/wg show %i fwmark)
+      if [ -n "$FWMARK" ] && [ "$FWMARK" != "off" ]; then
+        ${pkgs.iptables}/bin/iptables -A OUTPUT ! -o %i -m mark ! --mark $FWMARK -m addrtype ! --dst-type LOCAL -j REJECT
+      fi
     '';
     preDown = ''
       DROUTE=$(${pkgs.iproute2}/bin/ip route | ${pkgs.gnugrep}/bin/grep default | ${pkgs.gawk}/bin/awk '{print $3}')
       HOMENET=192.168.0.0/16
       HOMENET2=10.0.0.0/8
       HOMENET3=172.16.0.0/12
-      ${pkgs.iproute2}/bin/ip route del $HOMENET3 via $DROUTE
-      ${pkgs.iproute2}/bin/ip route del $HOMENET2 via $DROUTE
-      ${pkgs.iproute2}/bin/ip route del $HOMENET via $DROUTE
-      ${pkgs.iptables}/bin/iptables -D OUTPUT ! -o %i -m mark ! --mark $(${pkgs.wireguard-tools}/bin/wg show %i fwmark) -m addrtype ! --dst-type LOCAL -j REJECT
-      ${pkgs.iptables}/bin/iptables -D OUTPUT -d $HOMENET -j ACCEPT
-      ${pkgs.iptables}/bin/iptables -D OUTPUT -d $HOMENET2 -j ACCEPT
-      ${pkgs.iptables}/bin/iptables -D OUTPUT -d $HOMENET3 -j ACCEPT
+      ${pkgs.iproute2}/bin/ip route del $HOMENET3 via $DROUTE || true
+      ${pkgs.iproute2}/bin/ip route del $HOMENET2 via $DROUTE || true
+      ${pkgs.iproute2}/bin/ip route del $HOMENET via $DROUTE || true
+      FWMARK=$(${pkgs.wireguard-tools}/bin/wg show %i fwmark 2>/dev/null || echo "")
+      if [ -n "$FWMARK" ] && [ "$FWMARK" != "off" ]; then
+        ${pkgs.iptables}/bin/iptables -D OUTPUT ! -o %i -m mark ! --mark $FWMARK -m addrtype ! --dst-type LOCAL -j REJECT || true
+      fi
+      ${pkgs.iptables}/bin/iptables -D OUTPUT -d $HOMENET -j ACCEPT || true
+      ${pkgs.iptables}/bin/iptables -D OUTPUT -d $HOMENET2 -j ACCEPT || true
+      ${pkgs.iptables}/bin/iptables -D OUTPUT -d $HOMENET3 -j ACCEPT || true
     '';
     peers = [
       {
