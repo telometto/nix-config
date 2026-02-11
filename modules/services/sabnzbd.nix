@@ -69,6 +69,7 @@ in
       serviceConfig = {
         User = cfg.user;
         Group = cfg.group;
+        SupplementaryGroups = [ "users" ];
         ExecStart = execStart;
         Restart = "on-failure";
         UMask = "002";
