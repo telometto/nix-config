@@ -80,7 +80,7 @@
         };
 
         actual-vm = {
-          ip = "10.100.0.11";
+          ip = "10.100.0.51";
 
           portForward = {
             enable = false;
@@ -112,7 +112,7 @@
         };
 
         overseerr-vm = {
-          ip = "10.100.0.13";
+          ip = "10.100.0.40";
 
           portForward = {
             enable = false;
@@ -128,7 +128,7 @@
         };
 
         gitea-vm = {
-          ip = "10.100.0.16";
+          ip = "10.100.0.50";
 
           portForward = {
             enable = false;
@@ -145,7 +145,7 @@
         };
 
         ombi-vm = {
-          ip = "10.100.0.14";
+          ip = "10.100.0.41";
 
           portForward = {
             enable = false;
@@ -161,7 +161,7 @@
         };
 
         tautulli-vm = {
-          ip = "10.100.0.15";
+          ip = "10.100.0.42";
 
           portForward = {
             enable = false;
@@ -177,7 +177,7 @@
         };
 
         sonarr-vm = {
-          ip = "10.100.0.17";
+          ip = "10.100.0.21";
 
           portForward = {
             enable = false;
@@ -193,7 +193,7 @@
         };
 
         radarr-vm = {
-          ip = "10.100.0.18";
+          ip = "10.100.0.22";
 
           portForward = {
             enable = false;
@@ -209,7 +209,7 @@
         };
 
         prowlarr-vm = {
-          ip = "10.100.0.19";
+          ip = "10.100.0.20";
 
           portForward = {
             enable = false;
@@ -225,7 +225,7 @@
         };
 
         bazarr-vm = {
-          ip = "10.100.0.20";
+          ip = "10.100.0.24";
 
           portForward = {
             enable = false;
@@ -241,7 +241,7 @@
         };
 
         readarr-vm = {
-          ip = "10.100.0.21";
+          ip = "10.100.0.23";
 
           portForward = {
             enable = false;
@@ -257,7 +257,7 @@
         };
 
         qbittorrent-vm = {
-          ip = "10.100.0.22";
+          ip = "10.100.0.30";
 
           portForward = {
             enable = true;
@@ -273,7 +273,7 @@
         };
 
         wireguard-vm = {
-          ip = "10.100.0.26";
+          ip = "10.100.0.11";
 
           portForward = {
             enable = true;
@@ -287,7 +287,7 @@
         };
 
         firefox-vm = {
-          ip = "10.100.0.25";
+          ip = "10.100.0.52";
 
           portForward = {
             enable = false;

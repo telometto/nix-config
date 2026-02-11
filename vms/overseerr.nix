@@ -59,7 +59,7 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11001 ];
+      allowedTCPPorts = [ 11040 ];
     };
   };
 
@@ -67,7 +67,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.13/24" ];
+        Address = [ "10.100.0.40/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -82,7 +82,7 @@
 
   sys.services.overseerr = {
     enable = true;
-    port = 11001;
+    port = 11040;
     openFirewall = false;
     reverseProxy.enable = false;
   };

@@ -59,7 +59,7 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11025 ];
+      allowedTCPPorts = [ 11020 ];
     };
   };
 
@@ -67,7 +67,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.19/24" ];
+        Address = [ "10.100.0.20/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -82,7 +82,7 @@
 
   sys.services.prowlarr = {
     enable = true;
-    port = 11025;
+    port = 11020;
     dataDir = "/var/lib/prowlarr";
     reverseProxy.enable = false;
   };

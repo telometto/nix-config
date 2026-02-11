@@ -65,7 +65,7 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11026 ];
+      allowedTCPPorts = [ 11023 ];
     };
   };
 
@@ -73,7 +73,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.20/24" ];
+        Address = [ "10.100.0.24/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -88,7 +88,7 @@
 
   sys.services.bazarr = {
     enable = true;
-    port = 11026;
+    port = 11023;
     dataDir = "/var/lib/bazarr";
     reverseProxy.enable = false;
   };

@@ -66,7 +66,7 @@
     firewall = {
       enable = true;
       allowedTCPPorts = [
-        11051
+        11030
         50820
       ];
       allowedUDPPorts = [ 50820 ];
@@ -77,8 +77,8 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.23/24" ];
-        Gateway = "10.100.0.26";
+        Address = [ "10.100.0.30/24" ];
+        Gateway = "10.100.0.11";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
       };
@@ -92,7 +92,7 @@
 
   sys.services.qbittorrent = {
     enable = true;
-    webPort = 11051;
+    webPort = 11030;
     torrentPort = 50820;
     dataDir = "/var/lib/qbittorrent";
     openFirewall = false;
