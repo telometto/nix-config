@@ -13,6 +13,7 @@
         "adguard-vm"
         "actual-vm"
         "searx-vm"
+        "overseerr-vm"
         "ombi-vm"
         "tautulli-vm"
         "gitea-vm"
@@ -21,12 +22,16 @@
         "prowlarr-vm"
         "bazarr-vm"
         "readarr-vm"
+        "qbittorrent-vm"
+        "wireguard-vm"
+        "firefox-vm"
       ];
 
       vms = {
         adguard-vm.flake = self;
         actual-vm.flake = self;
         searx-vm.flake = self;
+        overseerr-vm.flake = self;
         ombi-vm.flake = self;
         tautulli-vm.flake = self;
         gitea-vm.flake = self;
@@ -35,6 +40,9 @@
         prowlarr-vm.flake = self;
         bazarr-vm.flake = self;
         readarr-vm.flake = self;
+        qbittorrent-vm.flake = self;
+        wireguard-vm.flake = self;
+        firefox-vm.flake = self;
       };
 
       expose = {
@@ -99,6 +107,22 @@
             enable = true;
             ingress = {
               "search.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        overseerr-vm = {
+          ip = "10.100.0.13";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "requests.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
@@ -228,6 +252,52 @@
             enable = true;
             ingress = {
               "books.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        qbittorrent-vm = {
+          ip = "10.100.0.22";
+
+          portForward = {
+            enable = true;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "torrent.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        wireguard-vm = {
+          ip = "10.100.0.26";
+
+          portForward = {
+            enable = true;
+            ports = [
+              {
+                proto = "udp";
+                sourcePort = 51820;
+              }
+            ];
+          };
+        };
+
+        firefox-vm = {
+          ip = "10.100.0.25";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "browser.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
