@@ -10,28 +10,10 @@
   imports = [
     ./base.nix
     ../modules/services/wireguard.nix
-    inputs.sops-nix.nixosModules.sops
   ];
 
-  # SOPS configuration for this MicroVM
-  # After first boot, get the VM's age key with:
-  #   ssh admin@10.100.0.26 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
-  # Then add it to your .sops.yaml and re-encrypt secrets
-  sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-
-    secrets = {
-      "wireguard/privatekey" = {
-        mode = "0400";
-        owner = "root";
-        group = "root";
-      };
-    };
-  };
-
-  sys.secrets.wireguardPrivateKeyFile = config.sops.secrets."wireguard/privatekey".path;
+  # Note: WireGuard private key is stored in /persist/wireguard/privatekey
+  # This avoids sops-nix timing issues with SSH keys on MicroVM volumes
 
   microvm = {
     hypervisor = "cloud-hypervisor";
@@ -108,13 +90,14 @@
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
+      "d /persist/wireguard 0700 root root -"
     ];
   };
 
   sys.services.wireguard = {
     enable = true;
     openFirewall = true;
-    privateKeyFile = config.sops.secrets."wireguard/privatekey".path;
+    privateKeyFile = "/persist/wireguard/privatekey";
     listenPort = 56943;
     mtu = 1390;
     dns = [ "1.1.1.1" ];
