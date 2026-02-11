@@ -134,7 +134,7 @@
   # Enable AdGuard Home
   sys.services.adguardhome = {
     enable = true;
-    port = 11016;
+    port = 11010;
     mutableSettings = true;
     openFirewall = true;
 

@@ -67,7 +67,7 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11050 ];
+      allowedTCPPorts = [ 11031 ];
     };
   };
 
@@ -90,7 +90,7 @@
 
   sys.services.sabnzbd = {
     enable = true;
-    port = 11050;
+    port = 11031;
     dataDir = "/var/lib/sabnzbd";
     openFirewall = false;
   };

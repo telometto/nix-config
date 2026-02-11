@@ -300,21 +300,22 @@
         };
 
         services = {
-          overseerr.loadBalancer.servers = [ { url = "http://10.100.0.13:11001"; } ];
-          prowlarr.loadBalancer.servers = [ { url = "http://10.100.0.19:11025"; } ];
-          sonarr.loadBalancer.servers = [ { url = "http://10.100.0.17:11023"; } ];
-          radarr.loadBalancer.servers = [ { url = "http://10.100.0.18:11024"; } ];
-          readarr.loadBalancer.servers = [ { url = "http://10.100.0.21:11027"; } ];
-          bazarr.loadBalancer.servers = [ { url = "http://10.100.0.20:11026"; } ];
-          lingarr.loadBalancer.servers = [ { url = "http://localhost:10031"; } ];
-          sabnzbd.loadBalancer.servers = [ { url = "http://10.100.0.24:11050"; } ];
-          firefox.loadBalancer.servers = [ { url = "http://10.100.0.25:11060"; } ];
-          searx.loadBalancer.servers = [ { url = "http://10.100.0.12:11002"; } ];
-          adguard.loadBalancer.servers = [ { url = "http://10.100.0.10:11016"; } ];
-          actual.loadBalancer.servers = [ { url = "http://10.100.0.11:11005"; } ];
-          ombi.loadBalancer.servers = [ { url = "http://10.100.0.14:11003"; } ];
-          tautulli.loadBalancer.servers = [ { url = "http://10.100.0.15:11004"; } ];
-          gitea.loadBalancer.servers = [ { url = "http://10.100.0.16:11015"; } ];
+          adguard.loadBalancer.servers = [ { url = "http://10.100.0.10:11010"; } ];
+          searx.loadBalancer.servers = [ { url = "http://10.100.0.12:11012"; } ];
+          prowlarr.loadBalancer.servers = [ { url = "http://10.100.0.20:11020"; } ];
+          sonarr.loadBalancer.servers = [ { url = "http://10.100.0.21:11021"; } ];
+          radarr.loadBalancer.servers = [ { url = "http://10.100.0.22:11022"; } ];
+          bazarr.loadBalancer.servers = [ { url = "http://10.100.0.23:11023"; } ];
+          readarr.loadBalancer.servers = [ { url = "http://10.100.0.24:11024"; } ];
+          lingarr.loadBalancer.servers = [ { url = "http://localhost:11025"; } ];
+          qbittorrent.loadBalancer.servers = [ { url = "http://10.100.0.30:11030"; } ];
+          sabnzbd.loadBalancer.servers = [ { url = "http://10.100.0.31:11031"; } ];
+          overseerr.loadBalancer.servers = [ { url = "http://10.100.0.40:11040"; } ];
+          ombi.loadBalancer.servers = [ { url = "http://10.100.0.41:11041"; } ];
+          tautulli.loadBalancer.servers = [ { url = "http://10.100.0.42:11042"; } ];
+          gitea.loadBalancer.servers = [ { url = "http://10.100.0.50:11050"; } ];
+          actual.loadBalancer.servers = [ { url = "http://10.100.0.51:11051"; } ];
+          firefox.loadBalancer.servers = [ { url = "http://10.100.0.52:11052"; } ];
         };
       };
     };

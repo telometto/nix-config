@@ -63,8 +63,8 @@
     firewall = {
       enable = true;
       allowedTCPPorts = [
-        11060
-        11061
+        11052
+        11053
       ];
     };
   };
@@ -73,8 +73,8 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.25/24" ];
-        Gateway = "10.100.0.26"; # Route through Wireguard VM for VPN kill switch
+        Address = [ "10.100.0.52/24" ];
+        Gateway = "10.100.0.11"; # Route through Wireguard VM for VPN kill switch
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
       };
@@ -99,8 +99,8 @@
   sys.services.firefox = {
     enable = true;
     dataDir = "/var/lib/firefox";
-    httpPort = 11060;
-    httpsPort = 11061;
+    httpPort = 11052;
+    httpsPort = 11053;
     timeZone = "Europe/Oslo";
     title = "Firefox";
     openFirewall = false;

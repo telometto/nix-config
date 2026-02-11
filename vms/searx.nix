@@ -68,7 +68,7 @@
 
       firewall = {
         enable = true;
-        allowedTCPPorts = [ 11002 ];
+        allowedTCPPorts = [ 11012 ];
       };
     };
 
@@ -111,7 +111,7 @@
 
       services.searx = {
         enable = true;
-        port = 11002;
+        port = 11012;
         bind = "0.0.0.0";
 
         reverseProxy = {

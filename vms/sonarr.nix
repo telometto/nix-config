@@ -65,7 +65,7 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11023 ];
+      allowedTCPPorts = [ 11021 ];
     };
   };
 
@@ -73,7 +73,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.17/24" ];
+        Address = [ "10.100.0.21/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -88,7 +88,7 @@
 
   sys.services.sonarr = {
     enable = true;
-    port = 11023;
+    port = 11021;
     dataDir = "/var/lib/sonarr";
     reverseProxy.enable = false;
   };

@@ -86,7 +86,7 @@
     firewall = {
       enable = true;
       allowedTCPPorts = [
-        11015
+        11050
         2222
       ];
     };
@@ -96,7 +96,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.16/24" ];
+        Address = [ "10.100.0.50/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -113,7 +113,7 @@
   sys.services.gitea = {
     enable = true;
 
-    port = 11015;
+    port = 11050;
     openFirewall = true;
     stateDir = "/var/lib/gitea";
     repositoryRoot = "/var/lib/gitea/repositories";
@@ -130,6 +130,7 @@
 
       s3Backend = {
         enable = false;
+
         endpoint = "${config.networking.hostName}.mole-delta.ts.net:${toString config.sys.services.seaweedfs.s3.port}";
         bucket = "gitea-lfs";
         accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;

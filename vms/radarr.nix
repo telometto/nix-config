@@ -65,7 +65,7 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11024 ];
+      allowedTCPPorts = [ 11022 ];
     };
   };
 
@@ -73,7 +73,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.18/24" ];
+        Address = [ "10.100.0.22/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -88,7 +88,7 @@
 
   sys.services.radarr = {
     enable = true;
-    port = 11024;
+    port = 11022;
     dataDir = "/var/lib/radarr";
     reverseProxy.enable = false;
   };

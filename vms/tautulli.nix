@@ -59,7 +59,7 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11004 ];
+      allowedTCPPorts = [ 11042 ];
     };
   };
 
@@ -67,7 +67,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.15/24" ];
+        Address = [ "10.100.0.42/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -82,7 +82,7 @@
 
   sys.services.tautulli = {
     enable = true;
-    port = 11004;
+    port = 11042;
     dataDir = "/var/lib/tautulli";
     configFile = "/var/lib/tautulli/config.ini";
     reverseProxy.enable = false;

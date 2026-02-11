@@ -33,6 +33,11 @@ in
     ./searx.nix
   ];
 
+  overseerr-vm = mkMicrovm [
+    microvmModule
+    ./overseerr.nix
+  ];
+
   # scrutiny-vm = mkMicrovm [
   #   microvmModule
   #   ./scrutiny.nix
