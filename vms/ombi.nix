@@ -24,7 +24,7 @@
       {
         mountPoint = "/var/lib/ombi";
         image = "ombi-state.img";
-        size = 1024;
+        size = 10240;
       }
       {
         mountPoint = "/persist";

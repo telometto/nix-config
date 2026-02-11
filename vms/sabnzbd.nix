@@ -26,7 +26,7 @@
       {
         mountPoint = "/var/lib/sabnzbd";
         image = "sabnzbd-state.img";
-        size = 1024;
+        size = 10240;
       }
       {
         mountPoint = "/persist";

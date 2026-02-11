@@ -24,7 +24,7 @@
       {
         mountPoint = "/var/lib/overseerr";
         image = "overseerr-state.img";
-        size = 1024;
+        size = 10240;
       }
       {
         mountPoint = "/persist";
