@@ -261,7 +261,12 @@
 
           portForward = {
             enable = true;
-            ports = [ 11030 ];
+            ports = [
+              {
+                proto = "tcp";
+                sourcePort = 11030;
+              }
+            ];
           };
 
           cfTunnel = {
