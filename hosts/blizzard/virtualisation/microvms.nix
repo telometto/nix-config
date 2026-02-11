@@ -66,7 +66,7 @@
               }
               {
                 proto = "tcp";
-                sourcePort = 11016;
+                sourcePort = 11010;
               }
             ];
           };
@@ -225,7 +225,7 @@
         };
 
         bazarr-vm = {
-          ip = "10.100.0.24";
+          ip = "10.100.0.23";
 
           portForward = {
             enable = false;
@@ -241,7 +241,7 @@
         };
 
         readarr-vm = {
-          ip = "10.100.0.23";
+          ip = "10.100.0.24";
 
           portForward = {
             enable = false;
