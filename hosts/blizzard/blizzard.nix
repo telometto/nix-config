@@ -50,7 +50,7 @@
     };
 
     services = {
-      k3s.enable = true;
+      k3s.enable = false;
 
       resolved.DNS = [ "10.100.0.10" ];
 
