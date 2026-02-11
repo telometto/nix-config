@@ -297,7 +297,7 @@
           cfTunnel = {
             enable = true;
             ingress = {
-              "browser.${VARS.domains.public}" = "http://localhost:80";
+              "ff.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
