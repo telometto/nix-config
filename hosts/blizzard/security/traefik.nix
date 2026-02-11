@@ -151,63 +151,90 @@
             rule = "Host(`requests.${VARS.domains.public}`)";
             service = "overseerr";
             entryPoints = [ "web" ];
-            middlewares = [ "overseerr-headers" ];
+            middlewares = [
+              "overseerr-headers"
+              "crowdsec"
+            ];
           };
 
           firefox = {
             rule = "Host(`ff.${VARS.domains.public}`)";
             service = "firefox";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           sabnzbd = {
             rule = "Host(`sab.${VARS.domains.public}`)";
             service = "sabnzbd";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           bazarr = {
             rule = "Host(`subs.${VARS.domains.public}`)";
             service = "bazarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           lingarr = {
             rule = "Host(`lingarr.${VARS.domains.public}`)";
             service = "lingarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           prowlarr = {
             rule = "Host(`indexer.${VARS.domains.public}`)";
             service = "prowlarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           radarr = {
             rule = "Host(`movies.${VARS.domains.public}`)";
             service = "radarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           readarr = {
             rule = "Host(`books.${VARS.domains.public}`)";
             service = "readarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           sonarr = {
             rule = "Host(`series.${VARS.domains.public}`)";
             service = "sonarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           searx = {
@@ -244,14 +271,20 @@
             rule = "Host(`ombi.${VARS.domains.public}`)";
             service = "ombi";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           tautulli = {
             rule = "Host(`tautulli.${VARS.domains.public}`)";
             service = "tautulli";
             entryPoints = [ "web" ];
-            middlewares = [ "tautulli-headers" ];
+            middlewares = [
+              "tautulli-headers"
+              "crowdsec"
+            ];
           };
 
           gitea = {
@@ -261,12 +294,13 @@
             middlewares = [
               "security-headers"
               "gitea-xfp-https"
+              "crowdsec"
             ];
           };
         };
 
         services = {
-          overseerr.loadBalancer.servers = [ { url = "http://localhost:10001"; } ];
+          overseerr.loadBalancer.servers = [ { url = "http://10.100.0.13:11001"; } ];
           prowlarr.loadBalancer.servers = [ { url = "http://10.100.0.19:11025"; } ];
           sonarr.loadBalancer.servers = [ { url = "http://10.100.0.17:11023"; } ];
           radarr.loadBalancer.servers = [ { url = "http://10.100.0.18:11024"; } ];
