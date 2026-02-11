@@ -87,6 +87,12 @@
     reverseProxy.enable = false;
   };
 
+  systemd.services.overseerr = {
+    serviceConfig = {
+      DynamicUser = lib.mkForce false;
+    };
+  };
+
   services.openssh.hostKeys = [
     {
       path = "/persist/ssh/ssh_host_ed25519_key";
