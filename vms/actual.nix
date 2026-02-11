@@ -28,7 +28,7 @@
       {
         mountPoint = "/var/lib/private/actual";
         image = "actual-state.img";
-        size = 2048; # 2GiB for budget data
+        size = 10240; # 10GiB for budget data
       }
       {
         mountPoint = "/persist";

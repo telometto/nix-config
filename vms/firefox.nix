@@ -25,7 +25,7 @@
       {
         mountPoint = "/var/lib/firefox";
         image = "firefox-state.img";
-        size = 2048;
+        size = 10240;
       }
       {
         mountPoint = "/persist";
