@@ -82,6 +82,7 @@ in
     # Disable DynamicUser to prevent conflict with volume-mounted dataDir
     systemd.services.lidarr.serviceConfig = {
       DynamicUser = lib.mkForce false;
+      SupplementaryGroups = [ "users" ];
       UMask = "002";
     };
 
