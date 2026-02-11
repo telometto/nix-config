@@ -261,11 +261,11 @@
 
           portForward = {
             enable = true;
-            ports = [ ];
+            ports = [ 11030 ];
           };
 
           cfTunnel = {
-            enable = true;
+            enable = false;
             ingress = {
               "torrent.${VARS.domains.public}" = "http://localhost:80";
             };
