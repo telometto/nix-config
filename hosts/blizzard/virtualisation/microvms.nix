@@ -23,6 +23,7 @@
         "bazarr-vm"
         "readarr-vm"
         "qbittorrent-vm"
+        "sabnzbd-vm"
         "wireguard-vm"
         "firefox-vm"
       ];
@@ -41,6 +42,7 @@
         bazarr-vm.flake = self;
         readarr-vm.flake = self;
         qbittorrent-vm.flake = self;
+        sabnzbd-vm.flake = self;
         wireguard-vm.flake = self;
         firefox-vm.flake = self;
       };
@@ -273,6 +275,27 @@
             enable = false;
             ingress = {
               "torrent.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        sabnzbd-vm = {
+          ip = "10.100.0.31";
+
+          portForward = {
+            enable = true;
+            ports = [
+              {
+                proto = "tcp";
+                sourcePort = 11031;
+              }
+            ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "sab.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
