@@ -58,7 +58,7 @@
     nat = {
       enable = true;
       externalInterface = "wg0";
-      internalInterfaces = [ "eth0" ];
+      internalInterfaces = [ "ens3" ];
     };
 
     firewall = {
@@ -72,14 +72,14 @@
         }
       ];
       extraCommands = ''
-        ${pkgs.iptables}/bin/iptables -A FORWARD -i eth0 -o wg0 -j ACCEPT
-        ${pkgs.iptables}/bin/iptables -A FORWARD -i wg0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-        ${pkgs.iptables}/bin/iptables -A FORWARD -i eth0 ! -o wg0 -j REJECT
+        ${pkgs.iptables}/bin/iptables -A FORWARD -i ens3 -o wg0 -j ACCEPT
+        ${pkgs.iptables}/bin/iptables -A FORWARD -i wg0 -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT
+        ${pkgs.iptables}/bin/iptables -A FORWARD -i ens3 ! -o wg0 -j REJECT
       '';
       extraStopCommands = ''
-        ${pkgs.iptables}/bin/iptables -D FORWARD -i eth0 -o wg0 -j ACCEPT || true
-        ${pkgs.iptables}/bin/iptables -D FORWARD -i wg0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT || true
-        ${pkgs.iptables}/bin/iptables -D FORWARD -i eth0 ! -o wg0 -j REJECT || true
+        ${pkgs.iptables}/bin/iptables -D FORWARD -i ens3 -o wg0 -j ACCEPT || true
+        ${pkgs.iptables}/bin/iptables -D FORWARD -i wg0 -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT || true
+        ${pkgs.iptables}/bin/iptables -D FORWARD -i ens3 ! -o wg0 -j REJECT || true
       '';
     };
   };
@@ -87,7 +87,7 @@
   services.dnsmasq = {
     enable = true;
     settings = {
-      interface = "eth0";
+      interface = "ens3";
       bind-interfaces = true;
       listen-address = "10.100.0.11";
       server = [ "1.1.1.1" "1.0.0.1" ];
