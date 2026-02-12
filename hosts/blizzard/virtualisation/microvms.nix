@@ -13,6 +13,7 @@
         "adguard-vm"
         "actual-vm"
         "searx-vm"
+        "flaresolverr-vm"
         "overseerr-vm"
         "ombi-vm"
         "tautulli-vm"
@@ -32,6 +33,7 @@
         adguard-vm.flake = self;
         actual-vm.flake = self;
         searx-vm.flake = self;
+        flaresolverr-vm.flake = self;
         overseerr-vm.flake = self;
         ombi-vm.flake = self;
         tautulli-vm.flake = self;
@@ -109,6 +111,22 @@
             enable = true;
             ingress = {
               "search.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        flaresolverr-vm = {
+          ip = "10.100.0.13";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "flare.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
