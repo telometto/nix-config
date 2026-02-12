@@ -17,7 +17,7 @@
   microvm = {
     hypervisor = "cloud-hypervisor";
 
-    vsock.cid = 114;
+    vsock.cid = 117;
 
     mem = 1024;
     vcpu = 1;
@@ -39,7 +39,7 @@
       {
         type = "tap";
         id = "vm-sabnzbd";
-        mac = "02:00:00:00:00:0F";
+        mac = "02:00:00:00:00:12";
       }
     ];
 
@@ -75,11 +75,21 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.24/24" ];
-        Gateway = "10.100.0.26";
-        DNS = [ "1.1.1.1" ];
+        Address = [ "10.100.0.31/24" ];
+        Gateway = "10.100.0.11";
+        DNS = [ "10.100.0.11" ];
         DHCP = "no";
       };
+      routes = [
+        {
+          Gateway = "10.100.0.1";
+          Destination = "192.168.0.0/16";
+        }
+        {
+          Gateway = "10.100.0.1";
+          Destination = "10.100.0.0/24";
+        }
+      ];
     };
 
     tmpfiles.rules = [
