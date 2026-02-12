@@ -247,6 +247,16 @@
             ];
           };
 
+          flaresolverr = {
+            rule = "Host(`flare.${VARS.domains.public}`)";
+            service = "flaresolverr";
+            entryPoints = [ "web" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
+          };
+
           adguard = {
             rule = "Host(`adguard.${VARS.domains.public}`)";
             service = "adguard";
@@ -302,6 +312,7 @@
         services = {
           adguard.loadBalancer.servers = [ { url = "http://10.100.0.10:11010"; } ];
           searx.loadBalancer.servers = [ { url = "http://10.100.0.12:11012"; } ];
+          flaresolverr.loadBalancer.servers = [ { url = "http://10.100.0.13:11013"; } ];
           prowlarr.loadBalancer.servers = [ { url = "http://10.100.0.20:11020"; } ];
           sonarr.loadBalancer.servers = [ { url = "http://10.100.0.21:11021"; } ];
           radarr.loadBalancer.servers = [ { url = "http://10.100.0.22:11022"; } ];
