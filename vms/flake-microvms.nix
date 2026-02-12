@@ -33,6 +33,11 @@ in
     ./searx.nix
   ];
 
+  flaresolverr-vm = mkMicrovm [
+    microvmModule
+    ./flaresolverr.nix
+  ];
+
   overseerr-vm = mkMicrovm [
     microvmModule
     ./overseerr.nix
