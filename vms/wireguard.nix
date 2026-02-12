@@ -63,14 +63,9 @@
 
     firewall = {
       enable = true;
+      allowPing = true;
+      trustedInterfaces = [ "ens3" ];
       allowedUDPPorts = [ 56943 ];
-      allowedTCPPorts = [ 53 ];
-      allowedUDPPortRanges = [
-        {
-          from = 53;
-          to = 53;
-        }
-      ];
       extraCommands = ''
         ${pkgs.iptables}/bin/iptables -A FORWARD -i ens3 -o wg0 -j ACCEPT
         ${pkgs.iptables}/bin/iptables -A FORWARD -i wg0 -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT
