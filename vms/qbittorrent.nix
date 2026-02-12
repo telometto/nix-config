@@ -82,6 +82,16 @@
         DNS = [ "10.100.0.11" ];
         DHCP = "no";
       };
+      routes = [
+        {
+          Gateway = "10.100.0.1";
+          Destination = "192.168.0.0/16";
+        }
+        {
+          Gateway = "10.100.0.1";
+          Destination = "10.100.0.0/24";
+        }
+      ];
     };
 
     tmpfiles.rules = [
