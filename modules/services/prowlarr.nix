@@ -82,6 +82,8 @@ in
     # Disable DynamicUser to prevent conflict with volume-mounted dataDir
     systemd.services.prowlarr.serviceConfig = {
       DynamicUser = lib.mkForce false;
+      SupplementaryGroups = [ "users" ];
+      UMask = "002";
     };
 
     services.traefik.dynamic.files.prowlarr =
