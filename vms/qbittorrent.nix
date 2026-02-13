@@ -82,6 +82,8 @@
         DNS = [ "10.100.0.11" ];
         DHCP = "no";
       };
+      # Explicit routes to reach the LAN and microvm bridge via the host gateway,
+      # since the default gateway points to the WireGuard VM (10.100.0.11)
       routes = [
         {
           Gateway = "10.100.0.1";
@@ -96,7 +98,6 @@
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
-      "d /var/lib/qbittorrent 0700 qbittorrent qbittorrent -"
     ];
   };
 
