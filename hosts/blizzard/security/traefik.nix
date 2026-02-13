@@ -5,6 +5,10 @@
 
     dataDir = "/var/lib/traefik";
 
+    dynamic = {
+      dir = "/var/lib/traefik/dynamic";
+    };
+
     staticConfigOptions = {
       accessLog.format = "json";
       log.level = "WARN";
