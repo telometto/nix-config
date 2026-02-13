@@ -254,7 +254,7 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.gitea.settings =
       lib.mkIf (cfg.reverseProxy.enable && config.services.traefik.enable or false)
         {
           http = {

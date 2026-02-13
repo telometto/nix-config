@@ -78,7 +78,7 @@ in
       inherit (cfg) dataDir openFirewall port;
     };
 
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.ombi.settings =
       lib.mkIf
         (
           cfg.reverseProxy.enable

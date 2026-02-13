@@ -100,7 +100,7 @@ in
       };
     };
 
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.scrutiny.settings =
       lib.mkIf
         (
           cfg.reverseProxy.enable

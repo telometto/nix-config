@@ -80,7 +80,7 @@ in
         ;
     };
 
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.tautulli.settings =
       lib.mkIf (cfg.reverseProxy.enable && config.services.traefik.enable or false)
         {
           http = {

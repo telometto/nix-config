@@ -74,7 +74,7 @@ in
       openFirewall = cfg.openFirewall;
     };
 
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.overseerr.settings =
       lib.mkIf
         (
           cfg.reverseProxy.enable

@@ -86,7 +86,7 @@ in
       UMask = "002";
     };
 
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.radarr.settings =
       lib.mkIf
         (
           cfg.reverseProxy.enable
