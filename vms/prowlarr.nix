@@ -87,6 +87,11 @@
     reverseProxy.enable = false;
   };
 
+  services.flaresolverr = {
+    enable = true;
+    port = 8191;
+  };
+
   services.openssh.hostKeys = [
     {
       path = "/persist/ssh/ssh_host_ed25519_key";
