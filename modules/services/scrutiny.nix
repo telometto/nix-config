@@ -100,29 +100,30 @@ in
       };
     };
 
-    services.traefik.dynamic.files.scrutiny = lib.mkIf
-      (
-        cfg.reverseProxy.enable
-        && cfg.reverseProxy.domain != null
-        && config.services.traefik.enable or false
-      )
-      {
-        settings = {
-          http = {
-            routers.scrutiny = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "scrutiny";
-              entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ];
-            };
+    services.traefik.dynamic.files.scrutiny =
+      lib.mkIf
+        (
+          cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.services.traefik.enable or false
+        )
+        {
+          settings = {
+            http = {
+              routers.scrutiny = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "scrutiny";
+                entryPoints = [ "web" ];
+                middlewares = [ "security-headers" ];
+              };
 
-            services.scrutiny.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
+              services.scrutiny.loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };
-      };
 
     assertions = [
       {

@@ -86,29 +86,30 @@ in
       UMask = "002";
     };
 
-    services.traefik.dynamic.files.bazarr = lib.mkIf
-      (
-        cfg.reverseProxy.enable
-        && cfg.reverseProxy.domain != null
-        && config.services.traefik.enable or false
-      )
-      {
-        settings = {
-          http = {
-            routers.bazarr = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "bazarr";
-              entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
-            };
+    services.traefik.dynamic.files.bazarr =
+      lib.mkIf
+        (
+          cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.services.traefik.enable or false
+        )
+        {
+          settings = {
+            http = {
+              routers.bazarr = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "bazarr";
+                entryPoints = [ "web" ];
+                middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
+              };
 
-            services.bazarr.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
+              services.bazarr.loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };
-      };
 
     assertions = [
       {
