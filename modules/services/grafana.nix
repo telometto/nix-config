@@ -216,7 +216,7 @@ in
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.grafana.settings =
       lib.mkIf
         (
           cfg.reverseProxy.enable

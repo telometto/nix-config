@@ -84,7 +84,7 @@ in
       DynamicUser = lib.mkForce false;
     };
 
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.prowlarr.settings =
       lib.mkIf
         (
           cfg.reverseProxy.enable

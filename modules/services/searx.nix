@@ -147,7 +147,7 @@ in
           # Server configuration
           server = {
             # Use centralized secrets bridge; avoids direct SOPS references here
-            secret_key = config.sys.secrets.searxSecretKeyFile;
+            secret_key = config.sys.secrets.searxSecretKeyFile or "/run/secrets/searx-secret-key";
             inherit (cfg) port;
             bind_address = cfg.bind;
 
@@ -314,7 +314,7 @@ in
     };
 
     # Configure Traefik reverse proxy if enabled
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.searx.settings =
       lib.mkIf
         (
           cfg.reverseProxy.enable
