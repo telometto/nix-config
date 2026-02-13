@@ -100,7 +100,7 @@ in
       };
     };
 
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.scrutiny =
       lib.mkIf
         (
           cfg.reverseProxy.enable
@@ -108,17 +108,19 @@ in
           && config.services.traefik.enable or false
         )
         {
-          http = {
-            routers.scrutiny = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "scrutiny";
-              entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ];
-            };
+          settings = {
+            http = {
+              routers.scrutiny = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "scrutiny";
+                entryPoints = [ "web" ];
+                middlewares = [ "security-headers" ];
+              };
 
-            services.scrutiny.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
+              services.scrutiny.loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };

@@ -24,7 +24,7 @@
       {
         mountPoint = "/var/lib/ombi";
         image = "ombi-state.img";
-        size = 1024;
+        size = 10240;
       }
       {
         mountPoint = "/persist";
@@ -59,7 +59,7 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11003 ];
+      allowedTCPPorts = [ 11041 ];
     };
   };
 
@@ -67,7 +67,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.14/24" ];
+        Address = [ "10.100.0.41/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -76,12 +76,13 @@
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
+      "d /var/lib/ombi 0700 ombi ombi -"
     ];
   };
 
   sys.services.ombi = {
     enable = true;
-    port = 11003;
+    port = 11041;
     dataDir = "/var/lib/ombi";
     reverseProxy.enable = false;
   };

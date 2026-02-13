@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   sys.services.victoriametrics = {
     enable = true;
 

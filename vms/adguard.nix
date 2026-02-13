@@ -59,7 +59,7 @@
       {
         mountPoint = "/var/lib/private/AdGuardHome";
         image = "adguard-state.img";
-        size = 5120; # 5GiB for logs and config
+        size = 10240; # 10GiB for logs and config
       }
       {
         mountPoint = "/persist";
@@ -134,7 +134,7 @@
   # Enable AdGuard Home
   sys.services.adguardhome = {
     enable = true;
-    port = 11016;
+    port = 11010;
     mutableSettings = true;
     openFirewall = true;
 

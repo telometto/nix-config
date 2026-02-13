@@ -80,38 +80,45 @@ in
         ;
     };
 
-    services.traefik.dynamicConfigOptions =
-      lib.mkIf (cfg.reverseProxy.enable && config.services.traefik.enable or false)
+    services.traefik.dynamic.files.tautulli =
+      lib.mkIf
+        (
+          cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.services.traefik.enable or false
+        )
         {
-          http = {
-            middlewares = {
-              # Relaxed headers for Tautulli (requires Plex OAuth)
-              tautulli-headers = {
-                headers = {
-                  customResponseHeaders = {
-                    X-Content-Type-Options = "nosniff";
-                    X-Frame-Options = "SAMEORIGIN";
-                    X-XSS-Protection = "1; mode=block";
-                    Referrer-Policy = "no-referrer-when-downgrade";
-                    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-                  };
+          settings = {
+            http = {
+              middlewares = {
+                # Relaxed headers for Tautulli (requires Plex OAuth)
+                tautulli-headers = {
+                  headers = {
+                    customResponseHeaders = {
+                      X-Content-Type-Options = "nosniff";
+                      X-Frame-Options = "SAMEORIGIN";
+                      X-XSS-Protection = "1; mode=block";
+                      Referrer-Policy = "no-referrer-when-downgrade";
+                      Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+                    };
 
-                  # Relaxed CSP to allow Plex OAuth flow
-                  contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
+                    # Relaxed CSP to allow Plex OAuth flow
+                    contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
+                  };
                 };
               };
-            };
 
-            routers.tautulli = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "tautulli";
-              entryPoints = [ "web" ];
-              middlewares = [ "tautulli-headers" ];
-            };
+              routers.tautulli = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "tautulli";
+                entryPoints = [ "web" ];
+                middlewares = [ "tautulli-headers" ];
+              };
 
-            services.tautulli.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
+              services.tautulli.loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };

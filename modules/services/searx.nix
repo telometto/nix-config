@@ -147,7 +147,7 @@ in
           # Server configuration
           server = {
             # Use centralized secrets bridge; avoids direct SOPS references here
-            secret_key = config.sys.secrets.searxSecretKeyFile;
+            secret_key = config.sys.secrets.searxSecretKeyFile or "/run/secrets/searx-secret-key";
             inherit (cfg) port;
             bind_address = cfg.bind;
 
@@ -314,7 +314,7 @@ in
     };
 
     # Configure Traefik reverse proxy if enabled
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.searx =
       lib.mkIf
         (
           cfg.reverseProxy.enable
@@ -322,17 +322,19 @@ in
           && config.services.traefik.enable or false
         )
         {
-          http = {
-            routers.searx = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "searx";
-              entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
-            };
+          settings = {
+            http = {
+              routers.searx = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "searx";
+                entryPoints = [ "web" ];
+                middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
+              };
 
-            services.searx.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
+              services.searx.loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };

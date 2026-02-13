@@ -13,18 +13,40 @@
         "adguard-vm"
         "actual-vm"
         "searx-vm"
+        "overseerr-vm"
         "ombi-vm"
         "tautulli-vm"
         "gitea-vm"
+        "sonarr-vm"
+        "radarr-vm"
+        "prowlarr-vm"
+        "bazarr-vm"
+        "readarr-vm"
+        # "lidarr-vm" # disabled for now
+        "qbittorrent-vm"
+        "sabnzbd-vm"
+        "wireguard-vm"
+        "firefox-vm"
       ];
 
       vms = {
         adguard-vm.flake = self;
         actual-vm.flake = self;
         searx-vm.flake = self;
+        overseerr-vm.flake = self;
         ombi-vm.flake = self;
         tautulli-vm.flake = self;
         gitea-vm.flake = self;
+        sonarr-vm.flake = self;
+        radarr-vm.flake = self;
+        prowlarr-vm.flake = self;
+        bazarr-vm.flake = self;
+        readarr-vm.flake = self;
+        lidarr-vm.flake = self;
+        qbittorrent-vm.flake = self;
+        sabnzbd-vm.flake = self;
+        wireguard-vm.flake = self;
+        firefox-vm.flake = self;
       };
 
       expose = {
@@ -48,7 +70,7 @@
               }
               {
                 proto = "tcp";
-                sourcePort = 11016;
+                sourcePort = 11010;
               }
             ];
           };
@@ -62,7 +84,7 @@
         };
 
         actual-vm = {
-          ip = "10.100.0.11";
+          ip = "10.100.0.51";
 
           portForward = {
             enable = false;
@@ -93,8 +115,24 @@
           };
         };
 
+        overseerr-vm = {
+          ip = "10.100.0.40";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "requests.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
         gitea-vm = {
-          ip = "10.100.0.16";
+          ip = "10.100.0.50";
 
           portForward = {
             enable = false;
@@ -109,6 +147,209 @@
             };
           };
         };
+
+        ombi-vm = {
+          ip = "10.100.0.41";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "ombi.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        tautulli-vm = {
+          ip = "10.100.0.42";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "tautulli.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        sonarr-vm = {
+          ip = "10.100.0.21";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "series.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        radarr-vm = {
+          ip = "10.100.0.22";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "movies.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        prowlarr-vm = {
+          ip = "10.100.0.20";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "indexer.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        bazarr-vm = {
+          ip = "10.100.0.23";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "subs.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        readarr-vm = {
+          ip = "10.100.0.24";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "books.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        # lidarr is disabled for now
+        # lidarr-vm = {
+        #   ip = "10.100.0.26";
+
+        #   portForward = {
+        #     enable = false;
+        #     ports = [ ];
+        #   };
+
+        #   cfTunnel = {
+        #     enable = true;
+        #     ingress = {
+        #       "music.${VARS.domains.public}" = "http://localhost:80";
+        #     };
+        #   };
+        # };
+
+        qbittorrent-vm = {
+          ip = "10.100.0.30";
+
+          portForward = {
+            enable = true;
+            ports = [
+              {
+                proto = "tcp";
+                sourcePort = 11030;
+              }
+            ];
+          };
+
+          cfTunnel = {
+            enable = false;
+            ingress = {
+              "torrent.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        sabnzbd-vm = {
+          ip = "10.100.0.31";
+
+          portForward = {
+            enable = true;
+            ports = [
+              {
+                proto = "tcp";
+                sourcePort = 11031;
+              }
+            ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "sab.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        wireguard-vm = {
+          ip = "10.100.0.11";
+
+          portForward = {
+            enable = true;
+            ports = [
+              {
+                proto = "udp";
+                sourcePort = 51820;
+                destPort = 56943;
+              }
+            ];
+          };
+        };
+
+        firefox-vm = {
+          ip = "10.100.0.52";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "ff.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
       };
     };
   };

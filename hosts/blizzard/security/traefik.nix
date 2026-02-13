@@ -5,7 +5,11 @@
 
     dataDir = "/var/lib/traefik";
 
-    staticConfigOptions = {
+    dynamic = {
+      dir = "/var/lib/traefik/dynamic";
+    };
+
+    static.settings = {
       accessLog.format = "json";
       log.level = "WARN";
 
@@ -56,7 +60,7 @@
       };
     };
 
-    dynamicConfigOptions = {
+    dynamic.files.core.settings = {
       http = {
         middlewares = {
           crowdsec = {
@@ -151,63 +155,90 @@
             rule = "Host(`requests.${VARS.domains.public}`)";
             service = "overseerr";
             entryPoints = [ "web" ];
-            middlewares = [ "overseerr-headers" ];
+            middlewares = [
+              "overseerr-headers"
+              "crowdsec"
+            ];
           };
 
           firefox = {
             rule = "Host(`ff.${VARS.domains.public}`)";
             service = "firefox";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           sabnzbd = {
             rule = "Host(`sab.${VARS.domains.public}`)";
             service = "sabnzbd";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           bazarr = {
             rule = "Host(`subs.${VARS.domains.public}`)";
             service = "bazarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           lingarr = {
             rule = "Host(`lingarr.${VARS.domains.public}`)";
             service = "lingarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           prowlarr = {
             rule = "Host(`indexer.${VARS.domains.public}`)";
             service = "prowlarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           radarr = {
             rule = "Host(`movies.${VARS.domains.public}`)";
             service = "radarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           readarr = {
             rule = "Host(`books.${VARS.domains.public}`)";
             service = "readarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           sonarr = {
             rule = "Host(`series.${VARS.domains.public}`)";
             service = "sonarr";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           searx = {
@@ -244,14 +275,20 @@
             rule = "Host(`ombi.${VARS.domains.public}`)";
             service = "ombi";
             entryPoints = [ "web" ];
-            middlewares = [ "security-headers" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
           };
 
           tautulli = {
             rule = "Host(`tautulli.${VARS.domains.public}`)";
             service = "tautulli";
             entryPoints = [ "web" ];
-            middlewares = [ "tautulli-headers" ];
+            middlewares = [
+              "tautulli-headers"
+              "crowdsec"
+            ];
           };
 
           gitea = {
@@ -261,26 +298,28 @@
             middlewares = [
               "security-headers"
               "gitea-xfp-https"
+              "crowdsec"
             ];
           };
         };
 
         services = {
-          overseerr.loadBalancer.servers = [ { url = "http://localhost:10001"; } ];
-          prowlarr.loadBalancer.servers = [ { url = "http://localhost:10010"; } ];
-          sonarr.loadBalancer.servers = [ { url = "http://localhost:10020"; } ];
-          radarr.loadBalancer.servers = [ { url = "http://localhost:10021"; } ];
-          readarr.loadBalancer.servers = [ { url = "http://localhost:10022"; } ];
-          bazarr.loadBalancer.servers = [ { url = "http://localhost:10030"; } ];
-          lingarr.loadBalancer.servers = [ { url = "http://localhost:10031"; } ];
-          sabnzbd.loadBalancer.servers = [ { url = "http://localhost:10050"; } ];
-          firefox.loadBalancer.servers = [ { url = "http://localhost:10060"; } ];
-          searx.loadBalancer.servers = [ { url = "http://10.100.0.12:11002"; } ];
-          adguard.loadBalancer.servers = [ { url = "http://10.100.0.10:11016"; } ];
-          actual.loadBalancer.servers = [ { url = "http://10.100.0.11:11005"; } ];
-          ombi.loadBalancer.servers = [ { url = "http://10.100.0.14:11003"; } ];
-          tautulli.loadBalancer.servers = [ { url = "http://10.100.0.15:11004"; } ];
-          gitea.loadBalancer.servers = [ { url = "http://10.100.0.16:11015"; } ];
+          adguard.loadBalancer.servers = [ { url = "http://10.100.0.10:11010"; } ];
+          searx.loadBalancer.servers = [ { url = "http://10.100.0.12:11012"; } ];
+          prowlarr.loadBalancer.servers = [ { url = "http://10.100.0.20:11020"; } ];
+          sonarr.loadBalancer.servers = [ { url = "http://10.100.0.21:11021"; } ];
+          radarr.loadBalancer.servers = [ { url = "http://10.100.0.22:11022"; } ];
+          bazarr.loadBalancer.servers = [ { url = "http://10.100.0.23:11023"; } ];
+          readarr.loadBalancer.servers = [ { url = "http://10.100.0.24:11024"; } ];
+          lingarr.loadBalancer.servers = [ { url = "http://localhost:11025"; } ];
+          qbittorrent.loadBalancer.servers = [ { url = "http://10.100.0.30:11030"; } ];
+          sabnzbd.loadBalancer.servers = [ { url = "http://10.100.0.31:11031"; } ];
+          overseerr.loadBalancer.servers = [ { url = "http://10.100.0.40:11040"; } ];
+          ombi.loadBalancer.servers = [ { url = "http://10.100.0.41:11041"; } ];
+          tautulli.loadBalancer.servers = [ { url = "http://10.100.0.42:11042"; } ];
+          gitea.loadBalancer.servers = [ { url = "http://10.100.0.50:11050"; } ];
+          actual.loadBalancer.servers = [ { url = "http://10.100.0.51:11051"; } ];
+          firefox.loadBalancer.servers = [ { url = "http://10.100.0.52:11052"; } ];
         };
       };
     };

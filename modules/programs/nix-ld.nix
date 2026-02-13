@@ -48,26 +48,26 @@ in
         ]
         ++ lib.optionals cfg.includeDefaultLibraries [
           # X11 libraries
-          xorg.libXcomposite
-          xorg.libXtst
-          xorg.libXrandr
-          xorg.libXext
-          xorg.libX11
-          xorg.libXfixes
-          xorg.libxcb
-          xorg.libXdamage
-          xorg.libxshmfence
-          xorg.libXxf86vm
-          xorg.libXinerama
-          xorg.libXcursor
-          xorg.libXrender
-          xorg.libXScrnSaver
-          xorg.libXi
-          xorg.libSM
-          xorg.libICE
-          xorg.libXt
-          xorg.libXmu
-          xorg.libXft
+          libxcomposite
+          libxtst
+          libxrandr
+          libxext
+          libx11
+          libxfixes
+          libxcb
+          libxdamage
+          libxshmfence
+          libxxf86vm
+          libxinerama
+          libxcursor
+          libxrender
+          libxscrnsaver
+          libxi
+          libsm
+          libice
+          libxt
+          libxmu
+          libxft
 
           # Graphics libraries
           libGL
