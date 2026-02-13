@@ -153,6 +153,7 @@
     '';
     peers = [
       {
+        # none of these are private/sensitive
         publicKey = "8BJ51HLKISBwg5eWBeXOgAX3BUsoXc9hSpBjVnRUuWE=";
         allowedIPs = [ "0.0.0.0/0" ];
         endpoint = "37.120.238.130:1443";
