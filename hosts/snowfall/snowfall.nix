@@ -245,7 +245,11 @@ in
 
       dataDir = "/var/lib/traefik";
 
-      staticConfigOptions = {
+      dynamic = {
+        dir = "/var/lib/traefik/dynamic";
+      };
+
+      static.settings = {
         accessLog = {
           format = "json";
         };
@@ -294,7 +298,7 @@ in
         };
       };
 
-      dynamicConfigOptions = {
+      dynamic.files.core.settings = {
         http = {
           middlewares = {
             security-headers = {

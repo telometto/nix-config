@@ -216,7 +216,7 @@ in
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 
-    services.traefik.dynamicConfigOptions =
+    services.traefik.dynamic.files.grafana =
       lib.mkIf
         (
           cfg.reverseProxy.enable
@@ -225,17 +225,19 @@ in
         )
         {
           # Configure Traefik only when reverse proxying is explicitly enabled and a domain is present.
-          http = {
-            routers.grafana = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "grafana";
-              entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ];
-            };
+          settings = {
+            http = {
+              routers.grafana = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "grafana";
+                entryPoints = [ "web" ];
+                middlewares = [ "security-headers" ];
+              };
 
-            services.grafana.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
+              services.grafana.loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };

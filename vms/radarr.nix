@@ -9,21 +9,21 @@
 {
   imports = [
     ./base.nix
-    ../modules/services/ombi.nix
+    ../modules/services/radarr.nix
   ];
 
   microvm = {
     hypervisor = "cloud-hypervisor";
 
-    vsock.cid = 104;
+    vsock.cid = 108;
 
     mem = 1024;
     vcpu = 1;
 
     volumes = [
       {
-        mountPoint = "/var/lib/ombi";
-        image = "ombi-state.img";
+        mountPoint = "/var/lib/radarr";
+        image = "radarr-state.img";
         size = 10240;
       }
       {
@@ -36,8 +36,8 @@
     interfaces = [
       {
         type = "tap";
-        id = "vm-ombi";
-        mac = "02:00:00:00:00:05";
+        id = "vm-radarr";
+        mac = "02:00:00:00:00:09";
       }
     ];
 
@@ -48,18 +48,24 @@
         tag = "ro-store";
         proto = "virtiofs";
       }
+      {
+        source = "/rpool/unenc/media/data";
+        mountPoint = "/data";
+        tag = "media-data";
+        proto = "virtiofs";
+      }
     ];
   };
 
   networking = {
-    hostName = "ombi-vm";
+    hostName = "radarr-vm";
 
     useDHCP = false;
     useNetworkd = true;
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11041 ];
+      allowedTCPPorts = [ 11022 ];
     };
   };
 
@@ -67,7 +73,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.41/24" ];
+        Address = [ "10.100.0.22/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -76,14 +82,14 @@
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
-      "d /var/lib/ombi 0700 ombi ombi -"
+      "d /var/lib/radarr 0700 radarr radarr -"
     ];
   };
 
-  sys.services.ombi = {
+  sys.services.radarr = {
     enable = true;
-    port = 11041;
-    dataDir = "/var/lib/ombi";
+    port = 11022;
+    dataDir = "/var/lib/radarr";
     reverseProxy.enable = false;
   };
 

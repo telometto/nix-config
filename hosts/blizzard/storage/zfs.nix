@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   sys.services.zfs.enable = true;
 
   sys.services.sanoid = {

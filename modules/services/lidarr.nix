@@ -1,70 +1,55 @@
 { lib, config, ... }:
 let
-  cfg = config.sys.services.scrutiny or { };
+  cfg = config.sys.services.lidarr or { };
 in
 {
-  options.sys.services.scrutiny = {
-    enable = lib.mkEnableOption "Scrutiny SMART monitoring";
+  options.sys.services.lidarr = {
+    enable = lib.mkEnableOption "Lidarr";
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 8072;
-      description = "Port for Scrutiny web interface";
+      default = 8686;
+      description = "Port where Lidarr listens.";
+    };
+
+    dataDir = lib.mkOption {
+      type = lib.types.str;
+      default = "/var/lib/lidarr";
     };
 
     openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Open firewall for Scrutiny";
-    };
-
-    collectorSettings = lib.mkOption {
-      type = lib.types.attrs;
-      default = { };
-      description = ''
-        Additional collector settings for Scrutiny.
-        See https://github.com/AnalogJ/scrutiny/blob/master/example.collector.yaml
-      '';
-      example = lib.literalExpression ''
-        {
-          devices = [
-            {
-              device = "/dev/sda";
-              type = [ "sat" ];
-            }
-          ];
-        }
-      '';
     };
 
     reverseProxy = {
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Enable Traefik reverse proxy configuration for Scrutiny.";
+        description = "Enable Traefik reverse proxy configuration for Lidarr.";
       };
 
       domain = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
         description = ''
-          Optional domain for hostname-based routing (e.g., "scrutiny.example.com").
+          Optional domain for hostname-based routing (e.g., "lidarr.example.com").
           If set, creates a separate router for this domain with pathPrefix = "/".
           This is useful for Cloudflare Tunnel with dedicated subdomains.
         '';
-        example = "scrutiny.example.com";
+        example = "lidarr.example.com";
       };
 
       pathPrefix = lib.mkOption {
         type = lib.types.str;
-        default = "/scrutiny";
-        description = "URL path prefix for Scrutiny.";
+        default = "/lidarr";
+        description = "URL path prefix for Lidarr.";
       };
 
       stripPrefix = lib.mkOption {
         type = lib.types.bool;
         default = false;
-        description = "Whether to strip the path prefix before forwarding to Scrutiny.";
+        description = "Whether to strip the path prefix before forwarding to Lidarr.";
       };
 
       extraMiddlewares = lib.mkOption {
@@ -88,19 +73,20 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    services.scrutiny = {
-      enable = lib.mkDefault true;
-
-      inherit (cfg) openFirewall;
-
-      settings.web.listen.port = cfg.port;
-
-      collector = lib.mkIf (cfg.collectorSettings != { }) {
-        settings = cfg.collectorSettings;
-      };
+    services.lidarr = {
+      enable = true;
+      inherit (cfg) dataDir openFirewall;
+      settings.server.port = cfg.port;
     };
 
-    services.traefik.dynamic.files.scrutiny =
+    # Disable DynamicUser to prevent conflict with volume-mounted dataDir
+    systemd.services.lidarr.serviceConfig = {
+      DynamicUser = lib.mkForce false;
+      SupplementaryGroups = [ "users" ];
+      UMask = "002";
+    };
+
+    services.traefik.dynamic.files.lidarr =
       lib.mkIf
         (
           cfg.reverseProxy.enable
@@ -110,14 +96,14 @@ in
         {
           settings = {
             http = {
-              routers.scrutiny = {
+              routers.lidarr = {
                 rule = "Host(`${cfg.reverseProxy.domain}`)";
-                service = "scrutiny";
+                service = "lidarr";
                 entryPoints = [ "web" ];
-                middlewares = [ "security-headers" ];
+                middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
               };
 
-              services.scrutiny.loadBalancer = {
+              services.lidarr.loadBalancer = {
                 servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
                 passHostHeader = true;
               };
@@ -128,7 +114,7 @@ in
     assertions = [
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "sys.services.scrutiny.reverseProxy.domain must be set when cfTunnel.enable is true";
+        message = "sys.services.lidarr.reverseProxy.domain must be set when cfTunnel.enable is true";
       }
     ];
   };

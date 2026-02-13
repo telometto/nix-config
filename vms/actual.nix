@@ -28,7 +28,7 @@
       {
         mountPoint = "/var/lib/private/actual";
         image = "actual-state.img";
-        size = 2048; # 2GiB for budget data
+        size = 10240; # 10GiB for budget data
       }
       {
         mountPoint = "/persist";
@@ -66,7 +66,7 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11005 ];
+      allowedTCPPorts = [ 11051 ];
     };
   };
 
@@ -74,7 +74,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.11/24" ];
+        Address = [ "10.100.0.51/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -89,7 +89,7 @@
   # Enable Actual Budget
   sys.services.actual = {
     enable = true;
-    port = 11005;
+    port = 11051;
     dataDir = "/var/lib/actual";
   };
 

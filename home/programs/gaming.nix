@@ -86,9 +86,9 @@ in
         defaultWinePackage = pkgs.proton-ge-bin;
 
         winePackages = with pkgs; [
-          wineWowPackages.stagingFull
-          wineWowPackages.waylandFull
-          wineWowPackages.fonts
+          wineWow64Packages.stagingFull
+          wineWow64Packages.waylandFull
+          wineWow64Packages.fonts
         ];
 
         protonPackages = [ pkgs.proton-ge-bin ];

@@ -9,21 +9,23 @@
 {
   imports = [
     ./base.nix
-    ../modules/services/ombi.nix
+    ../modules/services/sabnzbd.nix
   ];
+
+  nixpkgs.config.allowUnfree = true;
 
   microvm = {
     hypervisor = "cloud-hypervisor";
 
-    vsock.cid = 104;
+    vsock.cid = 117;
 
     mem = 1024;
     vcpu = 1;
 
     volumes = [
       {
-        mountPoint = "/var/lib/ombi";
-        image = "ombi-state.img";
+        mountPoint = "/var/lib/sabnzbd";
+        image = "sabnzbd-state.img";
         size = 10240;
       }
       {
@@ -36,8 +38,8 @@
     interfaces = [
       {
         type = "tap";
-        id = "vm-ombi";
-        mac = "02:00:00:00:00:05";
+        id = "vm-sabnzbd";
+        mac = "02:00:00:00:00:12";
       }
     ];
 
@@ -48,18 +50,24 @@
         tag = "ro-store";
         proto = "virtiofs";
       }
+      {
+        source = "/rpool/unenc/media/data";
+        mountPoint = "/data";
+        tag = "media-data";
+        proto = "virtiofs";
+      }
     ];
   };
 
   networking = {
-    hostName = "ombi-vm";
+    hostName = "sabnzbd-vm";
 
     useDHCP = false;
     useNetworkd = true;
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11041 ];
+      allowedTCPPorts = [ 11031 ];
     };
   };
 
@@ -67,24 +75,35 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.41/24" ];
-        Gateway = "10.100.0.1";
-        DNS = [ "1.1.1.1" ];
+        Address = [ "10.100.0.31/24" ];
+        Gateway = "10.100.0.11";
+        DNS = [ "10.100.0.11" ];
         DHCP = "no";
       };
+      # Explicit routes to reach the LAN and microvm bridge via the host gateway,
+      # since the default gateway points to the WireGuard VM (10.100.0.11)
+      routes = [
+        {
+          Gateway = "10.100.0.1";
+          Destination = "192.168.0.0/16";
+        }
+        {
+          Gateway = "10.100.0.1";
+          Destination = "10.100.0.0/24";
+        }
+      ];
     };
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
-      "d /var/lib/ombi 0700 ombi ombi -"
     ];
   };
 
-  sys.services.ombi = {
+  sys.services.sabnzbd = {
     enable = true;
-    port = 11041;
-    dataDir = "/var/lib/ombi";
-    reverseProxy.enable = false;
+    port = 11031;
+    dataDir = "/var/lib/sabnzbd";
+    openFirewall = false;
   };
 
   services.openssh.hostKeys = [

@@ -9,23 +9,18 @@
 {
   imports = [
     ./base.nix
-    ../modules/services/ombi.nix
+    ../modules/services/flaresolverr.nix
   ];
 
   microvm = {
     hypervisor = "cloud-hypervisor";
 
-    vsock.cid = 104;
+    vsock.cid = 118;
 
-    mem = 1024;
+    mem = 512;
     vcpu = 1;
 
     volumes = [
-      {
-        mountPoint = "/var/lib/ombi";
-        image = "ombi-state.img";
-        size = 10240;
-      }
       {
         mountPoint = "/persist";
         image = "persist.img";
@@ -36,8 +31,8 @@
     interfaces = [
       {
         type = "tap";
-        id = "vm-ombi";
-        mac = "02:00:00:00:00:05";
+        id = "vm-flaresolverr";
+        mac = "02:00:00:00:00:13";
       }
     ];
 
@@ -52,14 +47,14 @@
   };
 
   networking = {
-    hostName = "ombi-vm";
+    hostName = "flaresolverr-vm";
 
     useDHCP = false;
     useNetworkd = true;
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11041 ];
+      allowedTCPPorts = [ 11013 ];
     };
   };
 
@@ -67,7 +62,7 @@
     network.networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [ "10.100.0.41/24" ];
+        Address = [ "10.100.0.13/24" ];
         Gateway = "10.100.0.1";
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
@@ -76,15 +71,13 @@
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
-      "d /var/lib/ombi 0700 ombi ombi -"
     ];
   };
 
-  sys.services.ombi = {
+  sys.services.flaresolverr = {
     enable = true;
-    port = 11041;
-    dataDir = "/var/lib/ombi";
-    reverseProxy.enable = false;
+    port = 11013;
+    openFirewall = false;
   };
 
   services.openssh.hostKeys = [

@@ -33,6 +33,11 @@ in
     ./searx.nix
   ];
 
+  overseerr-vm = mkMicrovm [
+    microvmModule
+    ./overseerr.nix
+  ];
+
   # scrutiny-vm = mkMicrovm [
   #   microvmModule
   #   ./scrutiny.nix
@@ -51,5 +56,55 @@ in
   gitea-vm = mkMicrovm [
     microvmModule
     ./gitea.nix
+  ];
+
+  sonarr-vm = mkMicrovm [
+    microvmModule
+    ./sonarr.nix
+  ];
+
+  radarr-vm = mkMicrovm [
+    microvmModule
+    ./radarr.nix
+  ];
+
+  prowlarr-vm = mkMicrovm [
+    microvmModule
+    ./prowlarr.nix
+  ];
+
+  bazarr-vm = mkMicrovm [
+    microvmModule
+    ./bazarr.nix
+  ];
+
+  readarr-vm = mkMicrovm [
+    microvmModule
+    ./readarr.nix
+  ];
+
+  lidarr-vm = mkMicrovm [
+    microvmModule
+    ./lidarr.nix
+  ];
+
+  qbittorrent-vm = mkMicrovm [
+    microvmModule
+    ./qbittorrent.nix
+  ];
+
+  sabnzbd-vm = mkMicrovm [
+    microvmModule
+    ./sabnzbd.nix
+  ];
+
+  firefox-vm = mkMicrovm [
+    microvmModule
+    ./firefox.nix
+  ];
+
+  wireguard-vm = mkMicrovm [
+    microvmModule
+    ./wireguard.nix
   ];
 }

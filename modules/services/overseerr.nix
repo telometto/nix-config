@@ -1,70 +1,50 @@
 { lib, config, ... }:
 let
-  cfg = config.sys.services.scrutiny or { };
+  cfg = config.sys.services.overseerr or { };
 in
 {
-  options.sys.services.scrutiny = {
-    enable = lib.mkEnableOption "Scrutiny SMART monitoring";
+  options.sys.services.overseerr = {
+    enable = lib.mkEnableOption "Overseerr";
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 8072;
-      description = "Port for Scrutiny web interface";
+      default = 5055;
+      description = "Port where Overseerr listens.";
     };
 
     openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Open firewall for Scrutiny";
-    };
-
-    collectorSettings = lib.mkOption {
-      type = lib.types.attrs;
-      default = { };
-      description = ''
-        Additional collector settings for Scrutiny.
-        See https://github.com/AnalogJ/scrutiny/blob/master/example.collector.yaml
-      '';
-      example = lib.literalExpression ''
-        {
-          devices = [
-            {
-              device = "/dev/sda";
-              type = [ "sat" ];
-            }
-          ];
-        }
-      '';
     };
 
     reverseProxy = {
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Enable Traefik reverse proxy configuration for Scrutiny.";
+        description = "Enable Traefik reverse proxy configuration for Overseerr.";
       };
 
       domain = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
         description = ''
-          Optional domain for hostname-based routing (e.g., "scrutiny.example.com").
+          Optional domain for hostname-based routing (e.g., "overseerr.example.com").
           If set, creates a separate router for this domain with pathPrefix = "/".
           This is useful for Cloudflare Tunnel with dedicated subdomains.
         '';
-        example = "scrutiny.example.com";
+        example = "overseerr.example.com";
       };
 
       pathPrefix = lib.mkOption {
         type = lib.types.str;
-        default = "/scrutiny";
-        description = "URL path prefix for Scrutiny.";
+        default = "/overseerr";
+        description = "URL path prefix for Overseerr.";
       };
 
       stripPrefix = lib.mkOption {
         type = lib.types.bool;
         default = false;
-        description = "Whether to strip the path prefix before forwarding to Scrutiny.";
+        description = "Whether to strip the path prefix before forwarding to Overseerr.";
       };
 
       extraMiddlewares = lib.mkOption {
@@ -88,19 +68,12 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    services.scrutiny = {
-      enable = lib.mkDefault true;
-
-      inherit (cfg) openFirewall;
-
-      settings.web.listen.port = cfg.port;
-
-      collector = lib.mkIf (cfg.collectorSettings != { }) {
-        settings = cfg.collectorSettings;
-      };
+    services.overseerr = {
+      enable = true;
+      inherit (cfg) port openFirewall;
     };
 
-    services.traefik.dynamic.files.scrutiny =
+    services.traefik.dynamic.files.overseerr =
       lib.mkIf
         (
           cfg.reverseProxy.enable
@@ -110,14 +83,14 @@ in
         {
           settings = {
             http = {
-              routers.scrutiny = {
+              routers.overseerr = {
                 rule = "Host(`${cfg.reverseProxy.domain}`)";
-                service = "scrutiny";
+                service = "overseerr";
                 entryPoints = [ "web" ];
-                middlewares = [ "security-headers" ];
+                middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
               };
 
-              services.scrutiny.loadBalancer = {
+              services.overseerr.loadBalancer = {
                 servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
                 passHostHeader = true;
               };
@@ -128,7 +101,7 @@ in
     assertions = [
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "sys.services.scrutiny.reverseProxy.domain must be set when cfTunnel.enable is true";
+        message = "sys.services.overseerr.reverseProxy.domain must be set when cfTunnel.enable is true";
       }
     ];
   };

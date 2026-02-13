@@ -254,27 +254,34 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
-    services.traefik.dynamicConfigOptions =
-      lib.mkIf (cfg.reverseProxy.enable && config.services.traefik.enable or false)
+    services.traefik.dynamic.files.gitea =
+      lib.mkIf
+        (
+          cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.services.traefik.enable or false
+        )
         {
-          http = {
-            routers.gitea = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "gitea";
-              entryPoints = [ "web" ];
-              middlewares = [
-                "security-headers"
-                "gitea-xfp-https"
-              ];
-            };
+          settings = {
+            http = {
+              routers.gitea = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "gitea";
+                entryPoints = [ "web" ];
+                middlewares = [
+                  "security-headers"
+                  "gitea-xfp-https"
+                ];
+              };
 
-            services.gitea.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
-            };
+              services.gitea.loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+                passHostHeader = true;
+              };
 
-            middlewares."gitea-xfp-https".headers.customRequestHeaders = {
-              "X-Forwarded-Proto" = "https";
+              middlewares."gitea-xfp-https".headers.customRequestHeaders = {
+                "X-Forwarded-Proto" = "https";
+              };
             };
           };
         };
