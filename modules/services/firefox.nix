@@ -100,10 +100,7 @@ in
     virtualisation.oci-containers.containers.firefox = {
       inherit (cfg) image;
       autoStart = true;
-      environment = environment;
-      ports = ports;
-      volumes = volumes;
-      extraOptions = extraOptions;
+      inherit environment ports volumes extraOptions;
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {

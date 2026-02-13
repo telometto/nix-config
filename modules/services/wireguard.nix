@@ -9,16 +9,14 @@ let
   interfaceName = cfg.interface;
   wgInterface = {
     address = cfg.addresses;
-    listenPort = cfg.listenPort;
-    privateKeyFile = cfg.privateKeyFile;
-    peers = cfg.peers;
+    inherit (cfg) listenPort privateKeyFile peers;
   }
-  // lib.optionalAttrs (cfg.mtu != null) { mtu = cfg.mtu; }
-  // lib.optionalAttrs (cfg.preUp != "") { preUp = cfg.preUp; }
-  // lib.optionalAttrs (cfg.postUp != "") { postUp = cfg.postUp; }
-  // lib.optionalAttrs (cfg.preDown != "") { preDown = cfg.preDown; }
-  // lib.optionalAttrs (cfg.postDown != "") { postDown = cfg.postDown; }
-  // lib.optionalAttrs (cfg.dns != [ ]) { dns = cfg.dns; };
+  // lib.optionalAttrs (cfg.mtu != null) { inherit (cfg) mtu; }
+  // lib.optionalAttrs (cfg.preUp != "") { inherit (cfg) preUp; }
+  // lib.optionalAttrs (cfg.postUp != "") { inherit (cfg) postUp; }
+  // lib.optionalAttrs (cfg.preDown != "") { inherit (cfg) preDown; }
+  // lib.optionalAttrs (cfg.postDown != "") { inherit (cfg) postDown; }
+  // lib.optionalAttrs (cfg.dns != [ ]) { inherit (cfg) dns; };
 in
 {
   options.sys.services.wireguard = {
