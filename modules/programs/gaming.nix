@@ -58,7 +58,7 @@ in
     };
 
     networking.firewall = lib.mkMerge [
-      (lib.mkIf cfg.steam.openSteamLanPorts (rec {
+      (lib.mkIf cfg.steam.openSteamLanPorts rec {
         allowedTCPPorts = [ 27040 ];
         allowedUDPPorts = allowedTCPPorts;
 
@@ -69,9 +69,9 @@ in
           }
         ];
         allowedUDPPortRanges = allowedTCPPortRanges;
-      }))
+      })
 
-      (lib.mkIf cfg.openWc3Ports (rec {
+      (lib.mkIf cfg.openWc3Ports rec {
         allowedTCPPortRanges = [
           {
             from = 6112;
@@ -79,7 +79,7 @@ in
           }
         ];
         allowedUDPPortRanges = allowedTCPPortRanges;
-      }))
+      })
     ];
   };
 }
