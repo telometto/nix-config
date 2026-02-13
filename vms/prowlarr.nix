@@ -59,7 +59,10 @@
 
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 11020 ];
+      allowedTCPPorts = [
+        11020 # prowlarr
+        11013 # flaresolverr
+      ];
     };
   };
 
@@ -89,7 +92,7 @@
 
   services.flaresolverr = {
     enable = true;
-    port = 8191;
+    port = 11013;
   };
 
   services.openssh.hostKeys = [
