@@ -100,6 +100,18 @@
         DNS = [ "1.1.1.1" ];
         DHCP = "no";
       };
+      # Explicit routes to reach the LAN and microvm bridge via the host gateway,
+      # since the default gateway points to the WireGuard VM (10.100.0.11)
+      routes = [
+        {
+          Gateway = "10.100.0.1";
+          Destination = "192.168.0.0/16";
+        }
+        {
+          Gateway = "10.100.0.1";
+          Destination = "10.100.0.0/24";
+        }
+      ];
     };
 
     tmpfiles.rules = [
