@@ -249,7 +249,7 @@ in
         dir = "/var/lib/traefik/dynamic";
       };
 
-      staticConfigOptions = {
+      static.settings = {
         accessLog = {
           format = "json";
         };
@@ -298,7 +298,7 @@ in
         };
       };
 
-      dynamicConfigOptions = {
+      dynamic.files.core.settings = {
         http = {
           middlewares = {
             security-headers = {
