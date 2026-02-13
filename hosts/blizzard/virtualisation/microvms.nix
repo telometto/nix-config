@@ -309,6 +309,7 @@
               {
                 proto = "udp";
                 sourcePort = 51820;
+                destPort = 56943;
               }
             ];
           };
