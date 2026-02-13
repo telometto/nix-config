@@ -52,7 +52,29 @@
     ];
   };
 
-  sys.virtualisation.enable = true;
+  sys = {
+    virtualisation.enable = true;
+
+    services.nfs = {
+      enable = true;
+
+      mounts.media = {
+        server = "10.100.0.1";
+        export = "/rpool/unenc/media/data";
+        target = "/data";
+      };
+    };
+
+    services.firefox = {
+      enable = true;
+      dataDir = "/var/lib/firefox";
+      httpPort = 11052;
+      httpsPort = 11053;
+      timeZone = "Europe/Oslo";
+      title = "Firefox";
+      openFirewall = false;
+    };
+  };
 
   networking = {
     hostName = "firefox-vm";
@@ -84,26 +106,6 @@
       "d /persist/ssh 0700 root root -"
       "d /data 0750 root root -"
     ];
-  };
-
-  sys.services.nfs = {
-    enable = true;
-
-    mounts.media = {
-      server = "10.100.0.1";
-      export = "/rpool/unenc/media/data";
-      target = "/data";
-    };
-  };
-
-  sys.services.firefox = {
-    enable = true;
-    dataDir = "/var/lib/firefox";
-    httpPort = 11052;
-    httpsPort = 11053;
-    timeZone = "Europe/Oslo";
-    title = "Firefox";
-    openFirewall = false;
   };
 
   services.openssh.hostKeys = [

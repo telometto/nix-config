@@ -70,8 +70,7 @@ in
   config = lib.mkIf cfg.enable {
     services.overseerr = {
       enable = true;
-      port = cfg.port;
-      openFirewall = cfg.openFirewall;
+      inherit (cfg) port openFirewall;
     };
 
     services.traefik.dynamic.files.overseerr =

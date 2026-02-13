@@ -6,7 +6,7 @@
 }:
 let
   cfg = config.sys.services.sabnzbd;
-  configFile = cfg.configFile;
+  inherit (cfg) configFile;
   port = toString cfg.port;
   execStart = "${pkgs.sabnzbd}/bin/sabnzbd -f ${configFile} -s 0.0.0.0:${port}";
 in
@@ -53,7 +53,7 @@ in
 
     users.users.${cfg.user} = {
       isSystemUser = true;
-      group = cfg.group;
+      inherit (cfg) group;
       home = cfg.dataDir;
     };
 
