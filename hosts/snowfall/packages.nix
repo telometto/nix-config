@@ -24,8 +24,8 @@ let
   desktop = [ pkgs.baobab ];
 
   wine = [
-    # pkgs.wineWowPackages.stable
-    # pkgs.wineWowPackages.waylandFull
+    # pkgs.wineWow64Packages.stable
+    # pkgs.wineWow64Packages.waylandFull
     # pkgs.winetricks
   ];
 
