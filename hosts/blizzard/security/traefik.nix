@@ -9,7 +9,7 @@
       dir = "/var/lib/traefik/dynamic";
     };
 
-    staticConfigOptions = {
+    static.settings = {
       accessLog.format = "json";
       log.level = "WARN";
 
@@ -60,7 +60,7 @@
       };
     };
 
-    dynamicConfigOptions = {
+    dynamic.files.core.settings = {
       http = {
         middlewares = {
           crowdsec = {
