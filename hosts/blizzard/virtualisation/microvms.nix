@@ -22,6 +22,7 @@
         "prowlarr-vm"
         "bazarr-vm"
         "readarr-vm"
+        # "lidarr-vm" # disabled for now
         "qbittorrent-vm"
         "sabnzbd-vm"
         "wireguard-vm"
@@ -41,6 +42,7 @@
         prowlarr-vm.flake = self;
         bazarr-vm.flake = self;
         readarr-vm.flake = self;
+        lidarr-vm.flake = self;
         qbittorrent-vm.flake = self;
         sabnzbd-vm.flake = self;
         wireguard-vm.flake = self;
@@ -257,6 +259,23 @@
             };
           };
         };
+
+        # lidarr is disabled for now
+        # lidarr-vm = {
+        #   ip = "10.100.0.26";
+
+        #   portForward = {
+        #     enable = false;
+        #     ports = [ ];
+        #   };
+
+        #   cfTunnel = {
+        #     enable = true;
+        #     ingress = {
+        #       "music.${VARS.domains.public}" = "http://localhost:80";
+        #     };
+        #   };
+        # };
 
         qbittorrent-vm = {
           ip = "10.100.0.30";
