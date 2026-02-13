@@ -26,8 +26,8 @@ in
     };
 
     passwordFile = lib.mkOption {
-      type = lib.types.path;
-      default = config.sys.secrets.paperlessKeyFile;
+      type = lib.types.nullOr lib.types.path;
+      default = config.sys.secrets.paperlessKeyFile or null;
     };
 
     consumptionDirIsPublic = lib.mkOption {

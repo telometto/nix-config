@@ -80,9 +80,10 @@ in
         ;
     };
 
-    services.traefik.dynamic.files.tautulli.settings =
-      lib.mkIf (cfg.reverseProxy.enable && config.services.traefik.enable or false)
-        {
+    services.traefik.dynamic.files.tautulli = lib.mkIf
+      (cfg.reverseProxy.enable && config.services.traefik.enable or false)
+      {
+        settings = {
           http = {
             middlewares = {
               # Relaxed headers for Tautulli (requires Plex OAuth)
@@ -115,6 +116,7 @@ in
             };
           };
         };
+      };
 
     assertions = [
       {

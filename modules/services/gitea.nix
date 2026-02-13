@@ -254,9 +254,10 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
-    services.traefik.dynamic.files.gitea.settings =
-      lib.mkIf (cfg.reverseProxy.enable && config.services.traefik.enable or false)
-        {
+    services.traefik.dynamic.files.gitea = lib.mkIf
+      (cfg.reverseProxy.enable && config.services.traefik.enable or false)
+      {
+        settings = {
           http = {
             routers.gitea = {
               rule = "Host(`${cfg.reverseProxy.domain}`)";
@@ -278,6 +279,7 @@ in
             };
           };
         };
+      };
 
     assertions = [
       {
