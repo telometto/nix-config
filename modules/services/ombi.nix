@@ -78,29 +78,30 @@ in
       inherit (cfg) dataDir openFirewall port;
     };
 
-    services.traefik.dynamic.files.ombi = lib.mkIf
-      (
-        cfg.reverseProxy.enable
-        && cfg.reverseProxy.domain != null
-        && config.services.traefik.enable or false
-      )
-      {
-        settings = {
-          http = {
-            routers.ombi = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "ombi";
-              entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ];
-            };
+    services.traefik.dynamic.files.ombi =
+      lib.mkIf
+        (
+          cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.services.traefik.enable or false
+        )
+        {
+          settings = {
+            http = {
+              routers.ombi = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "ombi";
+                entryPoints = [ "web" ];
+                middlewares = [ "security-headers" ];
+              };
 
-            services.ombi.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
+              services.ombi.loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };
-      };
 
     assertions = [
       {

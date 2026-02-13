@@ -74,29 +74,30 @@ in
       openFirewall = cfg.openFirewall;
     };
 
-    services.traefik.dynamic.files.overseerr = lib.mkIf
-      (
-        cfg.reverseProxy.enable
-        && cfg.reverseProxy.domain != null
-        && config.services.traefik.enable or false
-      )
-      {
-        settings = {
-          http = {
-            routers.overseerr = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "overseerr";
-              entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
-            };
+    services.traefik.dynamic.files.overseerr =
+      lib.mkIf
+        (
+          cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.services.traefik.enable or false
+        )
+        {
+          settings = {
+            http = {
+              routers.overseerr = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "overseerr";
+                entryPoints = [ "web" ];
+                middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
+              };
 
-            services.overseerr.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
+              services.overseerr.loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };
-      };
 
     assertions = [
       {

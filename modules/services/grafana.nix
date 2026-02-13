@@ -216,30 +216,31 @@ in
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 
-    services.traefik.dynamic.files.grafana = lib.mkIf
-      (
-        cfg.reverseProxy.enable
-        && cfg.reverseProxy.domain != null
-        && config.services.traefik.enable or false
-      )
-      {
-        # Configure Traefik only when reverse proxying is explicitly enabled and a domain is present.
-        settings = {
-          http = {
-            routers.grafana = {
-              rule = "Host(`${cfg.reverseProxy.domain}`)";
-              service = "grafana";
-              entryPoints = [ "web" ];
-              middlewares = [ "security-headers" ];
-            };
+    services.traefik.dynamic.files.grafana =
+      lib.mkIf
+        (
+          cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.services.traefik.enable or false
+        )
+        {
+          # Configure Traefik only when reverse proxying is explicitly enabled and a domain is present.
+          settings = {
+            http = {
+              routers.grafana = {
+                rule = "Host(`${cfg.reverseProxy.domain}`)";
+                service = "grafana";
+                entryPoints = [ "web" ];
+                middlewares = [ "security-headers" ];
+              };
 
-            services.grafana.loadBalancer = {
-              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-              passHostHeader = true;
+              services.grafana.loadBalancer = {
+                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+                passHostHeader = true;
+              };
             };
           };
         };
-      };
 
     assertions = [
       {

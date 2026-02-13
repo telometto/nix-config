@@ -85,7 +85,10 @@
       interface = "ens3";
       bind-interfaces = true;
       listen-address = "10.100.0.11";
-      server = [ "1.1.1.1" "1.0.0.1" ];
+      server = [
+        "1.1.1.1"
+        "1.0.0.1"
+      ];
       no-resolv = true;
       cache-size = 1000;
     };
