@@ -74,14 +74,14 @@ in
       openFirewall = cfg.openFirewall;
     };
 
-    services.traefik.dynamic.files.overseerr.settings =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
+    services.traefik.dynamic.files.overseerr = lib.mkIf
+      (
+        cfg.reverseProxy.enable
+        && cfg.reverseProxy.domain != null
+        && config.services.traefik.enable or false
+      )
+      {
+        settings = {
           http = {
             routers.overseerr = {
               rule = "Host(`${cfg.reverseProxy.domain}`)";
@@ -96,6 +96,7 @@ in
             };
           };
         };
+      };
 
     assertions = [
       {

@@ -314,14 +314,14 @@ in
     };
 
     # Configure Traefik reverse proxy if enabled
-    services.traefik.dynamic.files.searx.settings =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
+    services.traefik.dynamic.files.searx = lib.mkIf
+      (
+        cfg.reverseProxy.enable
+        && cfg.reverseProxy.domain != null
+        && config.services.traefik.enable or false
+      )
+      {
+        settings = {
           http = {
             routers.searx = {
               rule = "Host(`${cfg.reverseProxy.domain}`)";
@@ -336,6 +336,7 @@ in
             };
           };
         };
+      };
 
     # Validate configuration
     assertions = [

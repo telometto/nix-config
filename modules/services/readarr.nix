@@ -86,14 +86,14 @@ in
       UMask = "002";
     };
 
-    services.traefik.dynamic.files.readarr.settings =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
+    services.traefik.dynamic.files.readarr = lib.mkIf
+      (
+        cfg.reverseProxy.enable
+        && cfg.reverseProxy.domain != null
+        && config.services.traefik.enable or false
+      )
+      {
+        settings = {
           http = {
             routers.readarr = {
               rule = "Host(`${cfg.reverseProxy.domain}`)";
@@ -108,6 +108,7 @@ in
             };
           };
         };
+      };
 
     assertions = [
       {

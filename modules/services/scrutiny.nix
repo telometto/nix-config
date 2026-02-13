@@ -100,14 +100,14 @@ in
       };
     };
 
-    services.traefik.dynamic.files.scrutiny.settings =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
+    services.traefik.dynamic.files.scrutiny = lib.mkIf
+      (
+        cfg.reverseProxy.enable
+        && cfg.reverseProxy.domain != null
+        && config.services.traefik.enable or false
+      )
+      {
+        settings = {
           http = {
             routers.scrutiny = {
               rule = "Host(`${cfg.reverseProxy.domain}`)";
@@ -122,6 +122,7 @@ in
             };
           };
         };
+      };
 
     assertions = [
       {
