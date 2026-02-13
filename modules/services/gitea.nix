@@ -255,7 +255,12 @@ in
     };
 
     services.traefik.dynamic.files.gitea =
-      lib.mkIf (cfg.reverseProxy.enable && cfg.reverseProxy.domain != null && config.services.traefik.enable or false)
+      lib.mkIf
+        (
+          cfg.reverseProxy.enable
+          && cfg.reverseProxy.domain != null
+          && config.services.traefik.enable or false
+        )
         {
           settings = {
             http = {
