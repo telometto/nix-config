@@ -1,5 +1,4 @@
-_:
-{
+_: {
   sys.services.samba = {
     enable = false;
     openFirewall = true;
