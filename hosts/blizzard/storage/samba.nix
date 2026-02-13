@@ -1,4 +1,4 @@
-{ ... }:
+_:
 {
   sys.services.samba = {
     enable = false;
