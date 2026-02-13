@@ -77,7 +77,6 @@
   sys.services.flaresolverr = {
     enable = true;
     port = 11013;
-    bind = "0.0.0.0";
     openFirewall = false;
   };
 
