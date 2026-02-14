@@ -338,8 +338,17 @@
           ip = "10.100.0.52";
 
           portForward = {
-            enable = false;
-            ports = [ ];
+            enable = true;
+            ports = [
+              {
+                proto = "tcp";
+                sourcePort = 11052;
+              }
+              {
+                proto = "tcp";
+                sourcePort = 11053;
+              }
+            ];
           };
 
           cfTunnel = {
