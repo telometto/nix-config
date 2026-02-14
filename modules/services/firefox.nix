@@ -1,27 +1,35 @@
 { lib, config, ... }:
 let
   cfg = config.sys.services.firefox;
+
   envBase = {
     TZ = cfg.timeZone;
     TITLE = cfg.title;
   };
+
   envUser = lib.optionalAttrs (cfg.customUser != null) {
     CUSTOM_USER = cfg.customUser;
   };
+
   envPassword = lib.optionalAttrs (cfg.password != null) {
     PASSWORD = cfg.password;
   };
+
   envDri = lib.optionalAttrs (cfg.driNode != null) {
     DRINODE = cfg.driNode;
   };
+
   environment = envBase // envUser // envPassword // envDri;
+
   ports = [
     "${toString cfg.httpPort}:3000"
     "${toString cfg.httpsPort}:3001"
   ];
+
   volumes = [
     "${cfg.dataDir}:/config"
   ];
+
   extraOptions = [ "--shm-size=4g" ] ++ lib.optional cfg.enableDri "--device=/dev/dri";
 in
 {
