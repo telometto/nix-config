@@ -34,11 +34,11 @@ let
 in
 {
   options.sys.services.firefox = {
-    enable = lib.mkEnableOption "Firefox (LinuxServer Kasm)";
+    enable = lib.mkEnableOption "Firefox";
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "linuxserver/firefox:kasm";
+      default = "linuxserver/firefox:latest";
       description = "Container image to run.";
     };
 
