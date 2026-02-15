@@ -64,10 +64,10 @@ in
     };
 
     # Pull specific packages from different nixpkgs inputs
-    # overlays.fromInputs = {
-    #   nixpkgs-unstable = [ "intel-graphics-compiler" ];
+    overlays.fromInputs = {
+      nixpkgs-unstable = [ "vscode" ];
     #   nixpkgs-stable = [ "vesktop" ];
-    # };
+    };
 
     services = {
       resolved.DNS = [ "192.168.2.100" ];
