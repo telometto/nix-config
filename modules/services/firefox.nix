@@ -1,36 +1,30 @@
 { lib, config, ... }:
 let
   cfg = config.sys.services.firefox;
+  isHost = cfg.networkMode == "host";
 
-  envBase = {
+  environment = {
     TZ = cfg.timeZone;
     TITLE = cfg.title;
+  }
+  // lib.optionalAttrs (cfg.customUser != null) { CUSTOM_USER = cfg.customUser; }
+  // lib.optionalAttrs (cfg.password != null) { PASSWORD = cfg.password; }
+  // lib.optionalAttrs (cfg.driNode != null) { DRINODE = cfg.driNode; }
+  // lib.optionalAttrs isHost {
+    CUSTOM_PORT = toString cfg.httpPort;
+    CUSTOM_HTTPS_PORT = toString cfg.httpsPort;
   };
 
-  envUser = lib.optionalAttrs (cfg.customUser != null) {
-    CUSTOM_USER = cfg.customUser;
-  };
-
-  envPassword = lib.optionalAttrs (cfg.password != null) {
-    PASSWORD = cfg.password;
-  };
-
-  envDri = lib.optionalAttrs (cfg.driNode != null) {
-    DRINODE = cfg.driNode;
-  };
-
-  environment = envBase // envUser // envPassword // envDri;
-
-  ports = [
+  ports = lib.optionals (!isHost) [
     "${toString cfg.httpPort}:3000"
     "${toString cfg.httpsPort}:3001"
   ];
 
-  volumes = [
-    "${cfg.dataDir}:/config"
-  ];
-
-  extraOptions = [ "--shm-size=4g" ] ++ lib.optional cfg.enableDri "--device=/dev/dri";
+  extraOptions = [
+    "--shm-size=4g"
+  ]
+  ++ lib.optional cfg.enableDri "--device=/dev/dri"
+  ++ lib.optional isHost "--network=host";
 in
 {
   options.sys.services.firefox = {
@@ -58,6 +52,21 @@ in
       type = lib.types.port;
       default = 3001;
       description = "HTTPS port exposed by the container.";
+    };
+
+    # Host mode is recommended for single-purpose MicroVMs:
+    # - Bridge mode fails because systemd-networkd manages Podman veth
+    #   interfaces (microvm-nix#203); fixable via Unmanaged = true.
+    # - Host mode is safe here: VM-to-host isolation is enforced by the
+    #   hypervisor, not by container networking. Both modes are equivalent
+    #   for preventing escape to the physical network.
+    networkMode = lib.mkOption {
+      type = lib.types.enum [
+        "bridge"
+        "host"
+      ];
+      default = "host";
+      description = "Container network mode.";
     };
 
     timeZone = lib.mkOption {
@@ -108,12 +117,8 @@ in
     virtualisation.oci-containers.containers.firefox = {
       inherit (cfg) image;
       autoStart = true;
-      inherit
-        environment
-        ports
-        volumes
-        extraOptions
-        ;
+      inherit environment ports extraOptions;
+      volumes = [ "${cfg.dataDir}:/config" ];
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
