@@ -13,6 +13,8 @@
     ../modules/virtualisation/virtualisation.nix
   ];
 
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
+
   microvm = {
     hypervisor = "cloud-hypervisor";
 
@@ -26,6 +28,11 @@
         mountPoint = "/var/lib/firefox";
         image = "firefox-state.img";
         size = 10240;
+      }
+      {
+        mountPoint = "/var/lib/containers";
+        image = "containers-storage.img";
+        size = 4096;
       }
       {
         mountPoint = "/persist";
@@ -52,27 +59,33 @@
     ];
   };
 
+  # boot.kernelModules = [ "overlay" ];
+
   sys = {
     virtualisation.enable = true;
 
-    services.nfs = {
-      enable = true;
+    services = {
+      nfs = {
+        enable = true;
 
-      mounts.media = {
-        server = "10.100.0.1";
-        export = "/rpool/unenc/media/data";
-        target = "/data";
+        mounts.media = {
+          server = "10.100.0.1";
+          export = "/rpool/unenc/media/data";
+          target = "/data";
+        };
       };
-    };
 
-    services.firefox = {
-      enable = true;
-      dataDir = "/var/lib/firefox";
-      httpPort = 11052;
-      httpsPort = 11053;
-      timeZone = "Europe/Oslo";
-      title = "Firefox";
-      openFirewall = false;
+      firefox = {
+        enable = true;
+
+        dataDir = "/var/lib/firefox";
+        httpPort = 11052;
+        httpsPort = 11053;
+        networkMode = "host";
+        timeZone = "Europe/Oslo";
+        title = "Firefox";
+        openFirewall = false;
+      };
     };
   };
 
@@ -92,32 +105,43 @@
   };
 
   systemd = {
-    network.networks."20-lan" = {
-      matchConfig.Type = "ether";
-      networkConfig = {
-        Address = [ "10.100.0.52/24" ];
-        Gateway = "10.100.0.11"; # Route through Wireguard VM for VPN kill switch
-        DNS = [ "1.1.1.1" ];
-        DHCP = "no";
+    network.networks = {
+      "19-podman" = {
+        matchConfig.Name = "veth*";
+        linkConfig.Unmanaged = true;
       };
-      # Explicit routes to reach the LAN and microvm bridge via the host gateway,
-      # since the default gateway points to the WireGuard VM (10.100.0.11)
-      routes = [
-        {
-          Gateway = "10.100.0.1";
-          Destination = "192.168.0.0/16";
-        }
-        {
-          Gateway = "10.100.0.1";
-          Destination = "10.100.0.0/24";
-        }
-      ];
+
+      "20-lan" = {
+        matchConfig.Type = "ether";
+        networkConfig = {
+          Address = [ "10.100.0.52/24" ];
+          Gateway = "10.100.0.11"; # Route through Wireguard VM for VPN kill switch
+          DNS = [ "1.1.1.1" ];
+          DHCP = "no";
+        };
+        # Explicit routes to reach the LAN and microvm bridge via the host gateway,
+        # since the default gateway points to the WireGuard VM (10.100.0.11)
+        routes = [
+          {
+            Gateway = "10.100.0.1";
+            Destination = "192.168.0.0/16";
+          }
+          {
+            Gateway = "10.100.0.1";
+            Destination = "10.100.0.0/24";
+          }
+        ];
+      };
     };
 
     tmpfiles.rules = [
       "d /persist/ssh 0700 root root -"
       "d /data 0750 root root -"
+      "d /var/lib/containers/tmp 0750 root root -"
     ];
+
+    # Use persistent storage for image pull temp files instead of tmpfs
+    services.podman-firefox.environment.TMPDIR = "/var/lib/containers/tmp";
   };
 
   services.openssh.hostKeys = [
@@ -140,7 +164,7 @@
     ];
   };
 
-  # security.sudo.wheelNeedsPassword = lib.mkForce false;
+  security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   system.stateVersion = "24.11";
 }
