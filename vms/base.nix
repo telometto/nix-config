@@ -55,6 +55,18 @@
     ];
   };
 
+  microvm = {
+    # balloon = lib.mkDefault true;
+    # deflateOnOOM = lib.mkDefault true;
+
+    # Alternative to balloon: virtio-mem hot-pluggable memory (Linux 5.8+)
+    # Adds/removes contiguous memory blocks instead of page-level ballooning.
+    # Better for large VMs that need elastic scaling (e.g. 4 GB → 32 GB),
+    # but coarser granularity (128 MB blocks) makes it less suited for small VMs.
+    hotplugMem = 5120;    # max additional memory in MB
+    hotpluggedMem = 0;    # how much of hotplugMem is active at boot
+  };
+
   services = {
     udisks2.enable = false;
 
