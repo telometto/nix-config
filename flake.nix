@@ -77,6 +77,7 @@
           modules = [
             ./system-loader.nix
             ./host-loader.nix
+            inputs.disko.nixosModules.disko
             inputs.home-manager.nixosModules.home-manager
             inputs.sops-nix.nixosModules.sops
             inputs.lanzaboote.nixosModules.lanzaboote
