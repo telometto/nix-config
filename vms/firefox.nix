@@ -59,8 +59,6 @@
     ];
   };
 
-  # boot.kernelModules = [ "overlay" ];
-
   sys = {
     virtualisation.enable = true;
 
