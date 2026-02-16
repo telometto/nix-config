@@ -20,8 +20,8 @@
 
     vsock.cid = 115;
 
-    mem = 2048;
-    vcpu = 2;
+    mem = 4096;
+    vcpu = 4;
 
     volumes = [
       {
