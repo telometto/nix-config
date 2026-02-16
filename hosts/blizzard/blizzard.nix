@@ -61,7 +61,7 @@
         extraUpFlags = [
           "--reset"
           "--ssh"
-          "--advertise-routes=192.168.2.0/24,192.168.3.0/24"
+          "--advertise-routes=192.168.2.0/24,10.100.0.0/24"
         ];
       };
     };
