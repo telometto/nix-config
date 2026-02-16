@@ -113,6 +113,19 @@
             };
           };
 
+          firefox-headers = {
+            headers = {
+              customResponseHeaders = {
+                X-Content-Type-Options = "nosniff";
+                X-XSS-Protection = "1; mode=block";
+                Referrer-Policy = "no-referrer";
+                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+              };
+
+              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:;";
+            };
+          };
+
           overseerr-headers = {
             headers = {
               customResponseHeaders = {
@@ -166,7 +179,7 @@
             service = "firefox";
             entryPoints = [ "web" ];
             middlewares = [
-              "security-headers"
+              "firefox-headers"
               "crowdsec"
             ];
           };
