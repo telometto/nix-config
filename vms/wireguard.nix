@@ -70,11 +70,22 @@
         ${pkgs.iptables}/bin/iptables -A FORWARD -i ens3 -o wg0 -j ACCEPT
         ${pkgs.iptables}/bin/iptables -A FORWARD -i wg0 -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT
         ${pkgs.iptables}/bin/iptables -A FORWARD -i ens3 ! -o wg0 -j REJECT
+
+        # Port forward incoming VPN traffic to qBittorrent VM
+        ${pkgs.iptables}/bin/iptables -t nat -A PREROUTING -i wg0 -p tcp --dport 50820 -j DNAT --to-destination 10.100.0.30:50820
+        ${pkgs.iptables}/bin/iptables -t nat -A PREROUTING -i wg0 -p udp --dport 50820 -j DNAT --to-destination 10.100.0.30:50820
+        ${pkgs.iptables}/bin/iptables -A FORWARD -i wg0 -o ens3 -p tcp --dport 50820 -j ACCEPT
+        ${pkgs.iptables}/bin/iptables -A FORWARD -i wg0 -o ens3 -p udp --dport 50820 -j ACCEPT
       '';
       extraStopCommands = ''
         ${pkgs.iptables}/bin/iptables -D FORWARD -i ens3 -o wg0 -j ACCEPT || true
         ${pkgs.iptables}/bin/iptables -D FORWARD -i wg0 -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT || true
         ${pkgs.iptables}/bin/iptables -D FORWARD -i ens3 ! -o wg0 -j REJECT || true
+
+        ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i wg0 -p tcp --dport 50820 -j DNAT --to-destination 10.100.0.30:50820 || true
+        ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i wg0 -p udp --dport 50820 -j DNAT --to-destination 10.100.0.30:50820 || true
+        ${pkgs.iptables}/bin/iptables -D FORWARD -i wg0 -o ens3 -p tcp --dport 50820 -j ACCEPT || true
+        ${pkgs.iptables}/bin/iptables -D FORWARD -i wg0 -o ens3 -p udp --dport 50820 -j ACCEPT || true
       '';
     };
   };
