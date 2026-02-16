@@ -215,12 +215,7 @@ in
         enable = true;
 
         mounts = {
-          personal = {
-            device = "76177a35-e3a1-489f-9b21-88a38a0c1d3e";
-            mountPoint = "personal";
-            options = [ "defaults" ];
-          };
-
+          # The Kingston NVMe data disk (personal) is managed by disko (see disko.nix)
           samsung = {
             device = "e7e653c3-361c-4fb2-a65e-13fdcb1e6e25";
             mountPoint = "samsung";
