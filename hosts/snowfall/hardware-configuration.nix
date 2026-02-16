@@ -32,7 +32,25 @@
     extraModulePackages = [ ];
   };
 
-  # fileSystems and swapDevices are managed by disko (see disko.nix)
+  fileSystems = {
+    "/boot" = {
+      device = "/dev/disk/by-uuid/17CB-3713";
+      fsType = "vfat";
+      options = [
+        "fmask=0077"
+        "dmask=0077"
+      ];
+    };
+
+    "/" = {
+      device = "/dev/disk/by-uuid/b2764093-ebe4-4f38-a455-841297be70b9";
+      fsType = "ext4";
+    };
+  };
+
+  swapDevices = [
+    { device = "/dev/disk/by-uuid/90e67159-a24b-4481-9cfd-f643990812b7"; }
+  ];
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
