@@ -121,13 +121,7 @@
     useDHCP = false;
     useNetworkd = true;
 
-    firewall = {
-      enable = true;
-      allowedTCPPorts = [
-        11054
-        11055
-      ];
-    };
+    firewall.enable = true;
   };
 
   systemd = {
