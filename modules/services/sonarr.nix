@@ -43,7 +43,7 @@ in
     services.traefik.dynamic.files.sonarr = traefikLib.mkTraefikDynamicConfig {
       name = "sonarr";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
     };
 
     assertions = [

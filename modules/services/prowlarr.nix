@@ -43,7 +43,7 @@ in
     services.traefik.dynamic.files.prowlarr = traefikLib.mkTraefikDynamicConfig {
       name = "prowlarr";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
     };
 
     assertions = [

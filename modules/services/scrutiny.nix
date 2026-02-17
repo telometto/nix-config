@@ -57,7 +57,7 @@ in
     services.traefik.dynamic.files.scrutiny = traefikLib.mkTraefikDynamicConfig {
       name = "scrutiny";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
     };
 
     assertions = [
