@@ -35,10 +35,10 @@ let
   preStartScript = pkgs.writeShellScript "firefox-credentials" ''
     set -euo pipefail
     mkdir -p /run/firefox
-    : > "${credentialsEnvFile}"
-    echo "CUSTOM_USER=$(cat "${cfg.customUserFile}")" >> "${credentialsEnvFile}"
-    echo "PASSWORD=$(cat "${cfg.passwordFile}")" >> "${credentialsEnvFile}"
-    chmod 0400 "${credentialsEnvFile}"
+    : > ${credentialsEnvFile}
+    printf 'CUSTOM_USER=%s\n' "$(cat '${cfg.customUserFile}')" >> ${credentialsEnvFile}
+    printf 'PASSWORD=%s\n' "$(cat '${cfg.passwordFile}')" >> ${credentialsEnvFile}
+    chmod 0400 ${credentialsEnvFile}
   '';
 in
 {
