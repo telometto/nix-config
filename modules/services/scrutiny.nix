@@ -1,6 +1,7 @@
 { lib, config, ... }:
 let
   cfg = config.sys.services.scrutiny or { };
+  traefikLib = import ../../lib/traefik.nix { inherit lib; };
 in
 {
   options.sys.services.scrutiny = {
@@ -37,54 +38,7 @@ in
       '';
     };
 
-    reverseProxy = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Enable Traefik reverse proxy configuration for Scrutiny.";
-      };
-
-      domain = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = ''
-          Optional domain for hostname-based routing (e.g., "scrutiny.example.com").
-          If set, creates a separate router for this domain with pathPrefix = "/".
-          This is useful for Cloudflare Tunnel with dedicated subdomains.
-        '';
-        example = "scrutiny.example.com";
-      };
-
-      pathPrefix = lib.mkOption {
-        type = lib.types.str;
-        default = "/scrutiny";
-        description = "URL path prefix for Scrutiny.";
-      };
-
-      stripPrefix = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to strip the path prefix before forwarding to Scrutiny.";
-      };
-
-      extraMiddlewares = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Additional Traefik middlewares to apply.";
-      };
-
-      cfTunnel = {
-        enable = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = ''
-            Enable Cloudflare Tunnel ingress for this service.
-            When enabled, automatically adds this service to the Cloudflare Tunnel ingress configuration.
-            Requires reverseProxy.enable = true and reverseProxy.domain to be set.
-          '';
-        };
-      };
-    };
+    reverseProxy = traefikLib.mkReverseProxyOptions { name = "scrutiny"; };
   };
 
   config = lib.mkIf cfg.enable {
@@ -100,36 +54,14 @@ in
       };
     };
 
-    services.traefik.dynamic.files.scrutiny =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
-          settings = {
-            http = {
-              routers.scrutiny = {
-                rule = "Host(`${cfg.reverseProxy.domain}`)";
-                service = "scrutiny";
-                entryPoints = [ "web" ];
-                middlewares = [ "security-headers" ];
-              };
-
-              services.scrutiny.loadBalancer = {
-                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-                passHostHeader = true;
-              };
-            };
-          };
-        };
+    services.traefik.dynamic.files.scrutiny = traefikLib.mkTraefikDynamicConfig {
+      name = "scrutiny";
+      inherit cfg config;
+      port = cfg.port;
+    };
 
     assertions = [
-      {
-        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "sys.services.scrutiny.reverseProxy.domain must be set when cfTunnel.enable is true";
-      }
+      (traefikLib.mkCfTunnelAssertion { name = "scrutiny"; inherit cfg; })
     ];
   };
 }

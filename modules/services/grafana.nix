@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.sys.services.grafana;
+  traefikLib = import ../../lib/traefik.nix { inherit lib; };
 in
 {
   options.sys.services.grafana = {
@@ -106,54 +107,7 @@ in
       '';
     };
 
-    reverseProxy = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Enable Traefik reverse proxy configuration for Grafana.";
-      };
-
-      domain = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = ''
-          Optional domain for hostname-based routing (e.g., "grafana.example.com").
-          If set, creates a separate router for this domain with pathPrefix = "/".
-          This is useful for Cloudflare Tunnel with dedicated subdomains.
-        '';
-        example = "grafana.example.com";
-      };
-
-      pathPrefix = lib.mkOption {
-        type = lib.types.str;
-        default = "/grafana";
-        description = "URL path prefix for Grafana.";
-      };
-
-      stripPrefix = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to strip the path prefix before forwarding to Grafana.";
-      };
-
-      extraMiddlewares = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Additional Traefik middlewares to apply.";
-      };
-
-      cfTunnel = {
-        enable = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = ''
-            Enable Cloudflare Tunnel ingress for this service.
-            When enabled, automatically adds this service to the Cloudflare Tunnel ingress configuration.
-            Requires reverseProxy.enable = true and reverseProxy.domain to be set.
-          '';
-        };
-      };
-    };
+    reverseProxy = traefikLib.mkReverseProxyOptions { name = "grafana"; };
   };
 
   config = lib.mkIf cfg.enable {
@@ -216,37 +170,14 @@ in
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 
-    services.traefik.dynamic.files.grafana =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
-          # Configure Traefik only when reverse proxying is explicitly enabled and a domain is present.
-          settings = {
-            http = {
-              routers.grafana = {
-                rule = "Host(`${cfg.reverseProxy.domain}`)";
-                service = "grafana";
-                entryPoints = [ "web" ];
-                middlewares = [ "security-headers" ];
-              };
-
-              services.grafana.loadBalancer = {
-                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-                passHostHeader = true;
-              };
-            };
-          };
-        };
+    services.traefik.dynamic.files.grafana = traefikLib.mkTraefikDynamicConfig {
+      name = "grafana";
+      inherit cfg config;
+      port = cfg.port;
+    };
 
     assertions = [
-      {
-        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "sys.services.grafana.reverseProxy.domain must be set when cfTunnel.enable is true";
-      }
+      (traefikLib.mkCfTunnelAssertion { name = "grafana"; inherit cfg; })
     ];
   };
 }

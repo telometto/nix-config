@@ -1,6 +1,7 @@
 { lib, config, ... }:
 let
   cfg = config.sys.services.sonarr or { };
+  traefikLib = import ../../lib/traefik.nix { inherit lib; };
 in
 {
   options.sys.services.sonarr = {
@@ -22,54 +23,7 @@ in
       default = false;
     };
 
-    reverseProxy = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Enable Traefik reverse proxy configuration for Sonarr.";
-      };
-
-      domain = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = ''
-          Optional domain for hostname-based routing (e.g., "sonarr.example.com").
-          If set, creates a separate router for this domain with pathPrefix = "/".
-          This is useful for Cloudflare Tunnel with dedicated subdomains.
-        '';
-        example = "sonarr.example.com";
-      };
-
-      pathPrefix = lib.mkOption {
-        type = lib.types.str;
-        default = "/sonarr";
-        description = "URL path prefix for Sonarr.";
-      };
-
-      stripPrefix = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to strip the path prefix before forwarding to Sonarr.";
-      };
-
-      extraMiddlewares = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Additional Traefik middlewares to apply.";
-      };
-
-      cfTunnel = {
-        enable = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = ''
-            Enable Cloudflare Tunnel ingress for this service.
-            When enabled, automatically adds this service to the Cloudflare Tunnel ingress configuration.
-            Requires reverseProxy.enable = true and reverseProxy.domain to be set.
-          '';
-        };
-      };
-    };
+    reverseProxy = traefikLib.mkReverseProxyOptions { name = "sonarr"; };
   };
 
   config = lib.mkIf cfg.enable {
@@ -86,36 +40,14 @@ in
       UMask = "002";
     };
 
-    services.traefik.dynamic.files.sonarr =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
-          settings = {
-            http = {
-              routers.sonarr = {
-                rule = "Host(`${cfg.reverseProxy.domain}`)";
-                service = "sonarr";
-                entryPoints = [ "web" ];
-                middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
-              };
-
-              services.sonarr.loadBalancer = {
-                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-                passHostHeader = true;
-              };
-            };
-          };
-        };
+    services.traefik.dynamic.files.sonarr = traefikLib.mkTraefikDynamicConfig {
+      name = "sonarr";
+      inherit cfg config;
+      port = cfg.port;
+    };
 
     assertions = [
-      {
-        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "sys.services.sonarr.reverseProxy.domain must be set when cfTunnel.enable is true";
-      }
+      (traefikLib.mkCfTunnelAssertion { name = "sonarr"; inherit cfg; })
     ];
   };
 }
