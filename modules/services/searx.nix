@@ -298,7 +298,10 @@ in
         assertion = !cfg.publicInstance || cfg.reverseProxy.enable;
         message = "sys.services.searx.reverseProxy.enable must be true when publicInstance = true (security requirement)";
       }
-      (traefikLib.mkCfTunnelAssertion { name = "searx"; inherit cfg; })
+      (traefikLib.mkCfTunnelAssertion {
+        name = "searx";
+        inherit cfg;
+      })
     ];
   };
 }

@@ -34,7 +34,10 @@ in
     };
 
     assertions = [
-      (traefikLib.mkCfTunnelAssertion { name = "overseerr"; inherit cfg; })
+      (traefikLib.mkCfTunnelAssertion {
+        name = "overseerr";
+        inherit cfg;
+      })
     ];
   };
 }

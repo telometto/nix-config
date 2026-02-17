@@ -266,7 +266,10 @@ in
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
         message = "sys.services.gitea.reverseProxy.enable must be true when cfTunnel.enable is true";
       }
-      (traefikLib.mkCfTunnelAssertion { name = "gitea"; inherit cfg; })
+      (traefikLib.mkCfTunnelAssertion {
+        name = "gitea";
+        inherit cfg;
+      })
       {
         assertion = !cfg.lfs.s3Backend.enable || cfg.lfs.s3Backend.endpoint != null;
         message = "sys.services.gitea.lfs.s3Backend.endpoint must be set when s3Backend.enable is true";
