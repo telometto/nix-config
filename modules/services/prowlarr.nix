@@ -1,6 +1,7 @@
 { lib, config, ... }:
 let
   cfg = config.sys.services.prowlarr or { };
+  traefikLib = import ../../lib/traefik.nix { inherit lib; };
 in
 {
   options.sys.services.prowlarr = {
@@ -22,54 +23,7 @@ in
       default = false;
     };
 
-    reverseProxy = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Enable Traefik reverse proxy configuration for Prowlarr.";
-      };
-
-      domain = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = ''
-          Optional domain for hostname-based routing (e.g., "prowlarr.example.com").
-          If set, creates a separate router for this domain with pathPrefix = "/".
-          This is useful for Cloudflare Tunnel with dedicated subdomains.
-        '';
-        example = "prowlarr.example.com";
-      };
-
-      pathPrefix = lib.mkOption {
-        type = lib.types.str;
-        default = "/prowlarr";
-        description = "URL path prefix for Prowlarr.";
-      };
-
-      stripPrefix = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to strip the path prefix before forwarding to Prowlarr.";
-      };
-
-      extraMiddlewares = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Additional Traefik middlewares to apply.";
-      };
-
-      cfTunnel = {
-        enable = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = ''
-            Enable Cloudflare Tunnel ingress for this service.
-            When enabled, automatically adds this service to the Cloudflare Tunnel ingress configuration.
-            Requires reverseProxy.enable = true and reverseProxy.domain to be set.
-          '';
-        };
-      };
-    };
+    reverseProxy = traefikLib.mkReverseProxyOptions { name = "prowlarr"; };
   };
 
   config = lib.mkIf cfg.enable {
@@ -86,36 +40,17 @@ in
       UMask = "002";
     };
 
-    services.traefik.dynamic.files.prowlarr =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
-          settings = {
-            http = {
-              routers.prowlarr = {
-                rule = "Host(`${cfg.reverseProxy.domain}`)";
-                service = "prowlarr";
-                entryPoints = [ "web" ];
-                middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
-              };
-
-              services.prowlarr.loadBalancer = {
-                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-                passHostHeader = true;
-              };
-            };
-          };
-        };
+    services.traefik.dynamic.files.prowlarr = traefikLib.mkTraefikDynamicConfig {
+      name = "prowlarr";
+      inherit cfg config;
+      inherit (cfg) port;
+    };
 
     assertions = [
-      {
-        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "sys.services.prowlarr.reverseProxy.domain must be set when cfTunnel.enable is true";
-      }
+      (traefikLib.mkCfTunnelAssertion {
+        name = "prowlarr";
+        inherit cfg;
+      })
     ];
   };
 }
