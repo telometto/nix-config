@@ -11,7 +11,28 @@
     ./base.nix
     ../modules/services/firefox.nix
     ../modules/virtualisation/virtualisation.nix
+    inputs.sops-nix.nixosModules.sops
   ];
+
+  # SOPS configuration for this MicroVM
+  # After first boot, get the VM's age key with:
+  #   ssh admin@10.100.0.52 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
+  # Then add it to your .sops.yaml and re-encrypt secrets
+  sops = {
+    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
+    defaultSopsFormat = "yaml";
+    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
+
+    secrets = {
+      "firefox/user" = { };
+      "firefox/password" = { };
+    };
+  };
+
+  sys.secrets = {
+    firefoxUser = config.sops.secrets."firefox/user".path;
+    firefoxPassword = config.sops.secrets."firefox/password".path;
+  };
 
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
@@ -83,6 +104,9 @@
         timeZone = "Europe/Oslo";
         title = "Firefox";
         openFirewall = false;
+
+        customUserFile = config.sys.secrets.firefoxUser;
+        passwordFile = config.sys.secrets.firefoxPassword;
       };
     };
   };

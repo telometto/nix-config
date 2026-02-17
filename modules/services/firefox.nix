@@ -1,14 +1,20 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.sys.services.firefox;
   isHost = cfg.networkMode == "host";
+
+  hasCredentials = cfg.customUserFile != null && cfg.passwordFile != null;
+  credentialsEnvFile = "/run/firefox/credentials.env";
 
   environment = {
     TZ = cfg.timeZone;
     TITLE = cfg.title;
   }
-  // lib.optionalAttrs (cfg.customUser != null) { CUSTOM_USER = cfg.customUser; }
-  // lib.optionalAttrs (cfg.password != null) { PASSWORD = cfg.password; }
   // lib.optionalAttrs (cfg.driNode != null) { DRINODE = cfg.driNode; }
   // lib.optionalAttrs isHost {
     CUSTOM_PORT = toString cfg.httpPort;
@@ -25,6 +31,15 @@ let
   ]
   ++ lib.optional cfg.enableDri "--device=/dev/dri"
   ++ lib.optional isHost "--network=host";
+
+  preStartScript = pkgs.writeShellScript "firefox-credentials" ''
+    set -euo pipefail
+    mkdir -p /run/firefox
+    : > "${credentialsEnvFile}"
+    echo "CUSTOM_USER=$(cat "${cfg.customUserFile}")" >> "${credentialsEnvFile}"
+    echo "PASSWORD=$(cat "${cfg.passwordFile}")" >> "${credentialsEnvFile}"
+    chmod 0400 "${credentialsEnvFile}"
+  '';
 in
 {
   options.sys.services.firefox = {
@@ -79,16 +94,16 @@ in
       default = "Firefox";
     };
 
-    customUser = lib.mkOption {
+    customUserFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Optional basic auth username for the web UI.";
+      description = "Path to a file containing the basic-auth username for the web UI.";
     };
 
-    password = lib.mkOption {
+    passwordFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Optional basic auth password for the web UI.";
+      description = "Path to a file containing the basic-auth password for the web UI.";
     };
 
     driNode = lib.mkOption {
@@ -114,11 +129,16 @@ in
       "d ${cfg.dataDir} 0750 root root -"
     ];
 
+    systemd.services.podman-firefox = lib.mkIf hasCredentials {
+      serviceConfig.ExecStartPre = [ "+${preStartScript}" ];
+    };
+
     virtualisation.oci-containers.containers.firefox = {
       inherit (cfg) image;
       autoStart = true;
       inherit environment ports extraOptions;
       volumes = [ "${cfg.dataDir}:/config" ];
+      environmentFiles = lib.optionals hasCredentials [ credentialsEnvFile ];
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
