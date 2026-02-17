@@ -82,7 +82,7 @@
         networkMode = "host";
         timeZone = "Europe/Oslo";
         title = "Brave";
-        openFirewall = false;
+        openFirewall = true;
       };
     };
   };
@@ -93,13 +93,7 @@
     useDHCP = false;
     useNetworkd = true;
 
-    firewall = {
-      enable = true;
-      allowedTCPPorts = [
-        11054
-        11055
-      ];
-    };
+    firewall.enable = true;
   };
 
   systemd = {
