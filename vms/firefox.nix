@@ -23,6 +23,10 @@
     defaultSopsFormat = "yaml";
     age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
 
+    # Run sops-install-secrets as a systemd service (after local-fs.target)
+    # instead of activation script, since /persist isn't mounted during activation
+    useSystemdActivation = true;
+
     secrets = {
       "firefox/user" = { };
       "firefox/password" = { };
