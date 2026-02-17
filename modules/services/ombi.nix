@@ -1,6 +1,7 @@
 { lib, config, ... }:
 let
   cfg = config.sys.services.ombi or { };
+  traefikLib = import ../../lib/traefik.nix { inherit lib; };
 in
 {
   options.sys.services.ombi = {
@@ -22,54 +23,7 @@ in
       default = false;
     };
 
-    reverseProxy = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Enable Traefik reverse proxy configuration for Ombi.";
-      };
-
-      domain = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = ''
-          Optional domain for hostname-based routing (e.g., "ombi.example.com").
-          If set, creates a separate router for this domain with pathPrefix = "/".
-          This is useful for Cloudflare Tunnel with dedicated subdomains.
-        '';
-        example = "ombi.example.com";
-      };
-
-      pathPrefix = lib.mkOption {
-        type = lib.types.str;
-        default = "/ombi";
-        description = "URL path prefix for Ombi.";
-      };
-
-      stripPrefix = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to strip the path prefix before forwarding to Ombi.";
-      };
-
-      extraMiddlewares = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Additional Traefik middlewares to apply.";
-      };
-
-      cfTunnel = {
-        enable = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = ''
-            Enable Cloudflare Tunnel ingress for this service.
-            When enabled, automatically adds this service to the Cloudflare Tunnel ingress configuration.
-            Requires reverseProxy.enable = true and reverseProxy.domain to be set.
-          '';
-        };
-      };
-    };
+    reverseProxy = traefikLib.mkReverseProxyOptions { name = "ombi"; };
   };
 
   config = lib.mkIf cfg.enable {
@@ -78,36 +32,14 @@ in
       inherit (cfg) dataDir openFirewall port;
     };
 
-    services.traefik.dynamic.files.ombi =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
-          settings = {
-            http = {
-              routers.ombi = {
-                rule = "Host(`${cfg.reverseProxy.domain}`)";
-                service = "ombi";
-                entryPoints = [ "web" ];
-                middlewares = [ "security-headers" ];
-              };
-
-              services.ombi.loadBalancer = {
-                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-                passHostHeader = true;
-              };
-            };
-          };
-        };
+    services.traefik.dynamic.files.ombi = traefikLib.mkTraefikDynamicConfig {
+      name = "ombi";
+      inherit cfg config;
+      port = cfg.port;
+    };
 
     assertions = [
-      {
-        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "sys.services.ombi.reverseProxy.domain must be set when cfTunnel.enable is true";
-      }
+      (traefikLib.mkCfTunnelAssertion { name = "ombi"; inherit cfg; })
     ];
   };
 }

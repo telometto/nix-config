@@ -1,6 +1,7 @@
 { lib, config, ... }:
 let
   cfg = config.sys.services.searx or { };
+  traefikLib = import ../../lib/traefik.nix { inherit lib; };
 in
 {
   options.sys.services.searx = {
@@ -59,42 +60,7 @@ in
       description = "Owner/extension point merged into services.searx.settings.";
     };
 
-    reverseProxy = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Enable Traefik reverse proxy configuration for Searx.";
-      };
-
-      domain = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = ''
-          Optional domain for hostname-based routing (e.g., "searx.example.com").
-          If set, creates a separate router for this domain with pathPrefix = "/".
-          This is useful for Cloudflare Tunnel with dedicated subdomains.
-        '';
-        example = "searx.example.com";
-      };
-
-      pathPrefix = lib.mkOption {
-        type = lib.types.str;
-        default = "/searx";
-        description = "URL path prefix for Searx.";
-      };
-
-      stripPrefix = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to strip the path prefix before forwarding to Searx.";
-      };
-
-      extraMiddlewares = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Additional Traefik middlewares to apply.";
-      };
-    };
+    reverseProxy = traefikLib.mkReverseProxyOptions { name = "searx"; };
   };
 
   config = lib.mkIf cfg.enable {
@@ -313,33 +279,12 @@ in
       ];
     };
 
-    # Configure Traefik reverse proxy if enabled
-    services.traefik.dynamic.files.searx =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
-          settings = {
-            http = {
-              routers.searx = {
-                rule = "Host(`${cfg.reverseProxy.domain}`)";
-                service = "searx";
-                entryPoints = [ "web" ];
-                middlewares = [ "security-headers" ] ++ cfg.reverseProxy.extraMiddlewares;
-              };
+    services.traefik.dynamic.files.searx = traefikLib.mkTraefikDynamicConfig {
+      name = "searx";
+      inherit cfg config;
+      port = cfg.port;
+    };
 
-              services.searx.loadBalancer = {
-                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-                passHostHeader = true;
-              };
-            };
-          };
-        };
-
-    # Validate configuration
     assertions = [
       {
         assertion = !cfg.publicInstance || cfg.contactUrl != null;
@@ -353,6 +298,7 @@ in
         assertion = !cfg.publicInstance || cfg.reverseProxy.enable;
         message = "sys.services.searx.reverseProxy.enable must be true when publicInstance = true (security requirement)";
       }
+      (traefikLib.mkCfTunnelAssertion { name = "searx"; inherit cfg; })
     ];
   };
 }

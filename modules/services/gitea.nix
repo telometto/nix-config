@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.sys.services.gitea;
+  traefikLib = import ../../lib/traefik.nix { inherit lib; };
 
   useS3Creds =
     cfg.lfs.enable
@@ -165,22 +166,9 @@ in
       default = true;
     };
 
-    reverseProxy = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-      };
-
-      domain = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        example = "git.example.com";
-      };
-
-      cfTunnel.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-      };
+    reverseProxy = traefikLib.mkReverseProxyOptions {
+      name = "gitea";
+      defaults.enable = false;
     };
 
     settings = lib.mkOption {
@@ -254,37 +242,20 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
-    services.traefik.dynamic.files.gitea =
-      lib.mkIf
-        (
-          cfg.reverseProxy.enable
-          && cfg.reverseProxy.domain != null
-          && config.services.traefik.enable or false
-        )
-        {
-          settings = {
-            http = {
-              routers.gitea = {
-                rule = "Host(`${cfg.reverseProxy.domain}`)";
-                service = "gitea";
-                entryPoints = [ "web" ];
-                middlewares = [
-                  "security-headers"
-                  "gitea-xfp-https"
-                ];
-              };
-
-              services.gitea.loadBalancer = {
-                servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
-                passHostHeader = true;
-              };
-
-              middlewares."gitea-xfp-https".headers.customRequestHeaders = {
-                "X-Forwarded-Proto" = "https";
-              };
-            };
-          };
+    services.traefik.dynamic.files.gitea = traefikLib.mkTraefikDynamicConfig {
+      name = "gitea";
+      inherit cfg config;
+      port = cfg.port;
+      defaultMiddlewares = [
+        "security-headers"
+        "gitea-xfp-https"
+      ];
+      extraDynamicConfig = {
+        middlewares."gitea-xfp-https".headers.customRequestHeaders = {
+          "X-Forwarded-Proto" = "https";
         };
+      };
+    };
 
     assertions = [
       {
@@ -295,10 +266,7 @@ in
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
         message = "sys.services.gitea.reverseProxy.enable must be true when cfTunnel.enable is true";
       }
-      {
-        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
-        message = "sys.services.gitea.reverseProxy.domain must be set when cfTunnel.enable is true";
-      }
+      (traefikLib.mkCfTunnelAssertion { name = "gitea"; inherit cfg; })
       {
         assertion = !cfg.lfs.s3Backend.enable || cfg.lfs.s3Backend.endpoint != null;
         message = "sys.services.gitea.lfs.s3Backend.endpoint must be set when s3Backend.enable is true";
