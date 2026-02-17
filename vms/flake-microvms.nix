@@ -103,6 +103,11 @@ in
     ./firefox.nix
   ];
 
+  brave-vm = mkMicrovm [
+    microvmModule
+    ./brave.nix
+  ];
+
   wireguard-vm = mkMicrovm [
     microvmModule
     ./wireguard.nix
