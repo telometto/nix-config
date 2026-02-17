@@ -39,7 +39,10 @@ in
     };
 
     assertions = [
-      (traefikLib.mkCfTunnelAssertion { name = "ombi"; inherit cfg; })
+      (traefikLib.mkCfTunnelAssertion {
+        name = "ombi";
+        inherit cfg;
+      })
     ];
   };
 }

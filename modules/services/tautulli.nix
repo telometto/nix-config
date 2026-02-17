@@ -75,7 +75,10 @@ in
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
         message = "sys.services.tautulli.reverseProxy.enable must be true when cfTunnel.enable is true";
       }
-      (traefikLib.mkCfTunnelAssertion { name = "tautulli"; inherit cfg; })
+      (traefikLib.mkCfTunnelAssertion {
+        name = "tautulli";
+        inherit cfg;
+      })
     ];
   };
 }

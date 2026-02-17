@@ -133,16 +133,15 @@ in
         };
 
         routers = lib.optionalAttrs cfg.dashboard.enable {
-          traefik-dashboard =
-            {
-              rule = "Host(`${cfg.dashboard.domain}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
-              service = "api@internal";
-              entryPoints = [ "websecure" ];
-              middlewares = [ "security-headers" ];
-            }
-            // lib.optionalAttrs (cfg.certResolvers != { }) {
-              tls.certResolver = builtins.head (builtins.attrNames cfg.certResolvers);
-            };
+          traefik-dashboard = {
+            rule = "Host(`${cfg.dashboard.domain}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
+            service = "api@internal";
+            entryPoints = [ "websecure" ];
+            middlewares = [ "security-headers" ];
+          }
+          // lib.optionalAttrs (cfg.certResolvers != { }) {
+            tls.certResolver = builtins.head (builtins.attrNames cfg.certResolvers);
+          };
         };
       };
     };

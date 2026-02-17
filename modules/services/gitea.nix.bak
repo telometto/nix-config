@@ -6,7 +6,6 @@
 }:
 let
   cfg = config.sys.services.gitea;
-  traefikLib = import ../../lib/traefik.nix { inherit lib; };
 
   useS3Creds =
     cfg.lfs.enable
@@ -18,19 +17,19 @@ let
 
   envFile = "/run/gitea/lfs-secrets.env";
 
-  # Reads secrets directly from sops paths rather than using systemd LoadCredential,
-  # which fails in MicroVM environments (cloud-hypervisor) with "Protocol error"
+  # Reads secrets from file paths passed via systemd environment variables,
+  # avoiding LoadCredential which fails in MicroVM environments (cloud-hypervisor)
   preStartScript = pkgs.writeShellScript "gitea-lfs-secrets" ''
     set -euo pipefail
     : > "${envFile}"
 
     ${lib.optionalString useS3Creds ''
-      echo "GITEA__LFS__MINIO_ACCESS_KEY_ID=$(cat "${cfg.lfs.s3Backend.accessKeyFile}")" >> "${envFile}"
-      echo "GITEA__LFS__MINIO_SECRET_ACCESS_KEY=$(cat "${cfg.lfs.s3Backend.secretAccessKeyFile}")" >> "${envFile}"
+      echo "GITEA__LFS__MINIO_ACCESS_KEY_ID=$(cat "$_GITEA_S3_ACCESS_KEY_FILE")" >> "${envFile}"
+      echo "GITEA__LFS__MINIO_SECRET_ACCESS_KEY=$(cat "$_GITEA_S3_SECRET_KEY_FILE")" >> "${envFile}"
     ''}
 
     ${lib.optionalString useLfsJwt ''
-      echo "GITEA__SECURITY__LFS_JWT_SECRET=$(cat "${config.sys.secrets.giteaLfsJwtSecretFile}")" >> "${envFile}"
+      echo "GITEA__SECURITY__LFS_JWT_SECRET=$(cat "$_GITEA_LFS_JWT_FILE")" >> "${envFile}"
     ''}
 
     chmod 0400 "${envFile}"
@@ -166,9 +165,22 @@ in
       default = true;
     };
 
-    reverseProxy = traefikLib.mkReverseProxyOptions {
-      name = "gitea";
-      defaults.enable = false;
+    reverseProxy = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+      };
+
+      domain = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "git.example.com";
+      };
+
+      cfTunnel.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+      };
     };
 
     settings = lib.mkOption {
@@ -232,30 +244,50 @@ in
       ];
     };
 
-    systemd.services.gitea.serviceConfig = lib.mkIf (useS3Creds || useLfsJwt) {
-      RuntimeDirectory = "gitea";
-      ExecStartPre = lib.mkAfter [ "${preStartScript}" ];
-      EnvironmentFile = lib.mkAfter [ "-${envFile}" ];
+    systemd.services.gitea = lib.mkIf (useS3Creds || useLfsJwt) {
+      environment =
+        lib.optionalAttrs useS3Creds {
+          _GITEA_S3_ACCESS_KEY_FILE = cfg.lfs.s3Backend.accessKeyFile;
+          _GITEA_S3_SECRET_KEY_FILE = cfg.lfs.s3Backend.secretAccessKeyFile;
+        }
+        // lib.optionalAttrs useLfsJwt {
+          _GITEA_LFS_JWT_FILE = config.sys.secrets.giteaLfsJwtSecretFile;
+        };
+
+      serviceConfig = {
+        ExecStartPre = lib.mkAfter [ "${preStartScript}" ];
+        EnvironmentFile = lib.mkAfter [ "-${envFile}" ];
+      };
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
       allowedTCPPorts = [ cfg.port ];
     };
 
-    services.traefik.dynamic.files.gitea = traefikLib.mkTraefikDynamicConfig {
-      name = "gitea";
-      inherit cfg config;
-      inherit (cfg) port;
-      defaultMiddlewares = [
-        "security-headers"
-        "gitea-xfp-https"
-      ];
-      extraDynamicConfig = {
-        middlewares."gitea-xfp-https".headers.customRequestHeaders = {
-          "X-Forwarded-Proto" = "https";
+    services.traefik.dynamicConfigOptions =
+      lib.mkIf (cfg.reverseProxy.enable && config.services.traefik.enable or false)
+        {
+          http = {
+            routers.gitea = {
+              rule = "Host(`${cfg.reverseProxy.domain}`)";
+              service = "gitea";
+              entryPoints = [ "web" ];
+              middlewares = [
+                "security-headers"
+                "gitea-xfp-https"
+              ];
+            };
+
+            services.gitea.loadBalancer = {
+              servers = [ { url = "http://localhost:${toString cfg.port}"; } ];
+              passHostHeader = true;
+            };
+
+            middlewares."gitea-xfp-https".headers.customRequestHeaders = {
+              "X-Forwarded-Proto" = "https";
+            };
+          };
         };
-      };
-    };
 
     assertions = [
       {
@@ -266,10 +298,10 @@ in
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
         message = "sys.services.gitea.reverseProxy.enable must be true when cfTunnel.enable is true";
       }
-      (traefikLib.mkCfTunnelAssertion {
-        name = "gitea";
-        inherit cfg;
-      })
+      {
+        assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.domain != null;
+        message = "sys.services.gitea.reverseProxy.domain must be set when cfTunnel.enable is true";
+      }
       {
         assertion = !cfg.lfs.s3Backend.enable || cfg.lfs.s3Backend.endpoint != null;
         message = "sys.services.gitea.lfs.s3Backend.endpoint must be set when s3Backend.enable is true";

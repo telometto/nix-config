@@ -177,7 +177,10 @@ in
     };
 
     assertions = [
-      (traefikLib.mkCfTunnelAssertion { name = "grafana"; inherit cfg; })
+      (traefikLib.mkCfTunnelAssertion {
+        name = "grafana";
+        inherit cfg;
+      })
     ];
   };
 }

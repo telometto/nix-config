@@ -61,7 +61,10 @@ in
     };
 
     assertions = [
-      (traefikLib.mkCfTunnelAssertion { name = "scrutiny"; inherit cfg; })
+      (traefikLib.mkCfTunnelAssertion {
+        name = "scrutiny";
+        inherit cfg;
+      })
     ];
   };
 }
