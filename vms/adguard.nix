@@ -22,22 +22,26 @@
     defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
     defaultSopsFormat = "yaml";
     age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
+
+    # Run sops-install-secrets as a systemd service (after local-fs.target)
+    # instead of activation script, since /persist isn't mounted during activation
+    useSystemdActivation = true;
+
+    secrets = {
+      "adguard/password_hash" = {
+        mode = "0400";
+        owner = "root";
+      };
+
+      "adguard/fullchain" = {
+        mode = "0444";
+      };
+
+      "adguard/privkey" = {
+        mode = "0400";
+      };
+    };
   };
-
-  # SOPS secrets - disabled since SOPS runs before /persist is mounted in MicroVMs
-  # Set password via web UI instead (persists with mutableSettings = true)
-  # sops.secrets."adguard/password_hash" = {
-  #   mode = "0400";
-  #   owner = "root";
-  # };
-
-  # sops.secrets."adguard/fullchain" = {
-  #   mode = "0444";
-  # };
-
-  # sops.secrets."adguard/privkey" = {
-  #   mode = "0400";
-  # };
 
   # MicroVM-specific configuration
   microvm = {
