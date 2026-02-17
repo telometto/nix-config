@@ -34,10 +34,9 @@ let
 
   preStartScript = pkgs.writeShellScript "firefox-credentials" ''
     set -euo pipefail
-    mkdir -p /run/firefox
     : > ${credentialsEnvFile}
-    printf 'CUSTOM_USER=%s\n' "$(cat '${cfg.customUserFile}')" >> ${credentialsEnvFile}
-    printf 'PASSWORD=%s\n' "$(cat '${cfg.passwordFile}')" >> ${credentialsEnvFile}
+    printf 'CUSTOM_USER=%s\n' "$(cat "${cfg.customUserFile}")" >> ${credentialsEnvFile}
+    printf 'PASSWORD=%s\n' "$(cat "${cfg.passwordFile}")" >> ${credentialsEnvFile}
     chmod 0400 ${credentialsEnvFile}
   '';
 in
@@ -130,7 +129,12 @@ in
     ];
 
     systemd.services.podman-firefox = lib.mkIf hasCredentials {
-      serviceConfig.ExecStartPre = [ "+${preStartScript}" ];
+      after = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
+      serviceConfig = {
+        RuntimeDirectory = "firefox";
+        ExecStartPre = [ "+${preStartScript}" ];
+      };
     };
 
     virtualisation.oci-containers.containers.firefox = {
