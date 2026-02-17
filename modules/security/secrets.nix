@@ -77,18 +77,38 @@
     };
 
     firefoxUser = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
+      type = lib.types.nullOr lib.types.str; # runtime path string (do not coerce into store)
       default = null;
       description = ''
-        Firefox username for Kubernetes deployment. Resolved from SOPS in core/sops.nix.
+        Path to a file containing the Firefox container basic-auth username.
+        Mapped from SOPS in core/sops.nix or the VM's own SOPS block.
       '';
     };
 
     firefoxPassword = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
+      type = lib.types.nullOr lib.types.str; # runtime path string (do not coerce into store)
       default = null;
       description = ''
-        Firefox password for Kubernetes deployment. Resolved from SOPS in core/sops.nix.
+        Path to a file containing the Firefox container basic-auth password.
+        Mapped from SOPS in core/sops.nix or the VM's own SOPS block.
+      '';
+    };
+
+    braveUser = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string (do not coerce into store)
+      default = null;
+      description = ''
+        Path to a file containing the Brave container basic-auth username.
+        Mapped from SOPS in core/sops.nix or the VM's own SOPS block.
+      '';
+    };
+
+    bravePassword = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string (do not coerce into store)
+      default = null;
+      description = ''
+        Path to a file containing the Brave container basic-auth password.
+        Mapped from SOPS in core/sops.nix or the VM's own SOPS block.
       '';
     };
 
