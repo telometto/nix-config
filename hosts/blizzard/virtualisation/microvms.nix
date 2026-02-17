@@ -27,6 +27,7 @@
         "sabnzbd-vm"
         "wireguard-vm"
         "firefox-vm"
+        "brave-vm"
       ];
 
       vms = {
@@ -47,6 +48,7 @@
         sabnzbd-vm.flake = self;
         wireguard-vm.flake = self;
         firefox-vm.flake = self;
+        brave-vm.flake = self;
       };
 
       expose = {
@@ -355,6 +357,31 @@
             enable = true;
             ingress = {
               "ff.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        brave-vm = {
+          ip = "10.100.0.53";
+
+          portForward = {
+            enable = true;
+            ports = [
+              {
+                proto = "tcp";
+                sourcePort = 11054;
+              }
+              {
+                proto = "tcp";
+                sourcePort = 11055;
+              }
+            ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "brave.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
