@@ -173,7 +173,7 @@ in
     services.traefik.dynamic.files.grafana = traefikLib.mkTraefikDynamicConfig {
       name = "grafana";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
     };
 
     assertions = [

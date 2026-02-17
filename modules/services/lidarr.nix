@@ -43,7 +43,7 @@ in
     services.traefik.dynamic.files.lidarr = traefikLib.mkTraefikDynamicConfig {
       name = "lidarr";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
     };
 
     assertions = [

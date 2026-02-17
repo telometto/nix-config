@@ -245,7 +245,7 @@ in
     services.traefik.dynamic.files.gitea = traefikLib.mkTraefikDynamicConfig {
       name = "gitea";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
       defaultMiddlewares = [
         "security-headers"
         "gitea-xfp-https"

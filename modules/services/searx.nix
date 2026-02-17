@@ -282,7 +282,7 @@ in
     services.traefik.dynamic.files.searx = traefikLib.mkTraefikDynamicConfig {
       name = "searx";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
     };
 
     assertions = [

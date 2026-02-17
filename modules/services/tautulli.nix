@@ -49,7 +49,7 @@ in
     services.traefik.dynamic.files.tautulli = traefikLib.mkTraefikDynamicConfig {
       name = "tautulli";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
       defaultMiddlewares = [ "tautulli-headers" ];
       extraDynamicConfig = {
         middlewares.tautulli-headers.headers = {

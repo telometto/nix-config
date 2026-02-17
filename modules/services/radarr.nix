@@ -43,7 +43,7 @@ in
     services.traefik.dynamic.files.radarr = traefikLib.mkTraefikDynamicConfig {
       name = "radarr";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
     };
 
     assertions = [

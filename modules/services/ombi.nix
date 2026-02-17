@@ -35,7 +35,7 @@ in
     services.traefik.dynamic.files.ombi = traefikLib.mkTraefikDynamicConfig {
       name = "ombi";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
     };
 
     assertions = [

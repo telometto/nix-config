@@ -43,7 +43,7 @@ in
     services.traefik.dynamic.files.readarr = traefikLib.mkTraefikDynamicConfig {
       name = "readarr";
       inherit cfg config;
-      port = cfg.port;
+      inherit (cfg) port;
     };
 
     assertions = [

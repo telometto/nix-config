@@ -87,14 +87,14 @@ in
   config = lib.mkIf cfg.enable {
     services.traefik = {
       enable = true;
-      dataDir = cfg.dataDir;
+      inherit (cfg) dataDir;
 
       dynamic.dir = "${cfg.dataDir}/dynamic";
 
       static.settings = lib.recursiveUpdate (
         {
           log.level = cfg.logLevel;
-          entryPoints = cfg.entryPoints;
+          inherit (cfg) entryPoints;
         }
         // lib.optionalAttrs (cfg.certResolvers != { }) {
           certificatesResolvers = cfg.certResolvers;
