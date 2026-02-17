@@ -121,8 +121,17 @@
                 Referrer-Policy = "no-referrer";
                 Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
               };
+            };
+          };
 
-              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:;";
+          brave-headers = {
+            headers = {
+              customResponseHeaders = {
+                X-Content-Type-Options = "nosniff";
+                X-XSS-Protection = "1; mode=block";
+                Referrer-Policy = "no-referrer";
+                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+              };
             };
           };
 
@@ -180,6 +189,16 @@
             entryPoints = [ "web" ];
             middlewares = [
               "firefox-headers"
+              "crowdsec"
+            ];
+          };
+
+          brave = {
+            rule = "Host(`brave.${VARS.domains.public}`)";
+            service = "brave";
+            entryPoints = [ "web" ];
+            middlewares = [
+              "brave-headers"
               "crowdsec"
             ];
           };
@@ -333,6 +352,7 @@
           gitea.loadBalancer.servers = [ { url = "http://10.100.0.50:11050"; } ];
           actual.loadBalancer.servers = [ { url = "http://10.100.0.51:11051"; } ];
           firefox.loadBalancer.servers = [ { url = "http://10.100.0.52:11052"; } ];
+          brave.loadBalancer.servers = [ { url = "http://10.100.0.53:11054"; } ];
         };
       };
     };
