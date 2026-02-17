@@ -352,7 +352,8 @@
           gitea.loadBalancer.servers = [ { url = "http://10.100.0.50:11050"; } ];
           actual.loadBalancer.servers = [ { url = "http://10.100.0.51:11051"; } ];
           firefox.loadBalancer.servers = [ { url = "http://10.100.0.52:11052"; } ];
-          brave.loadBalancer.servers = [ { url = "http://10.100.0.53:11054"; } ];
+          # firefox occupies port 11053; no .53 IP shall be assigned
+          brave.loadBalancer.servers = [ { url = "http://10.100.0.54:11054"; } ];
         };
       };
     };
