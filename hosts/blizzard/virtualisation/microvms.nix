@@ -362,7 +362,7 @@
         };
 
         brave-vm = {
-          ip = "10.100.0.53";
+          ip = "10.100.0.54";
 
           portForward = {
             enable = true;
