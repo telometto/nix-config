@@ -151,5 +151,12 @@ in
         cfg.httpsPort
       ];
     };
+
+    assertions = [
+      {
+        assertion = (cfg.customUserFile == null) == (cfg.passwordFile == null);
+        message = "sys.services.firefox: customUserFile and passwordFile must both be set or both be null";
+      }
+    ];
   };
 }
