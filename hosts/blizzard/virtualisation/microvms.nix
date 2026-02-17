@@ -43,7 +43,7 @@
         prowlarr-vm.flake = self;
         bazarr-vm.flake = self;
         readarr-vm.flake = self;
-        lidarr-vm.flake = self;
+        # lidarr-vm.flake = self;
         qbittorrent-vm.flake = self;
         sabnzbd-vm.flake = self;
         wireguard-vm.flake = self;
