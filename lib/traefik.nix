@@ -67,10 +67,7 @@
             routers.${name} = {
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = name;
-              entryPoints = [
-                "web"
-                "websecure"
-              ];
+              entryPoints = [ "web" ];
               middlewares = defaultMiddlewares ++ cfg.reverseProxy.extraMiddlewares;
             };
 
