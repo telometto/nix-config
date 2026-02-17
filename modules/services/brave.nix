@@ -3,12 +3,13 @@ let
   cfg = config.sys.services.brave;
   isHost = cfg.networkMode == "host";
 
+  passwordEnvFile = "/run/brave/password.env";
+
   environment = {
     TZ = cfg.timeZone;
     TITLE = cfg.title;
   }
   // lib.optionalAttrs (cfg.customUser != null) { CUSTOM_USER = cfg.customUser; }
-  // lib.optionalAttrs (cfg.password != null) { PASSWORD = cfg.password; }
   // lib.optionalAttrs (cfg.driNode != null) { DRINODE = cfg.driNode; }
   // lib.optionalAttrs isHost {
     CUSTOM_PORT = toString cfg.httpPort;
@@ -79,10 +80,10 @@ in
       description = "Optional basic auth username for the web UI.";
     };
 
-    password = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
+    passwordFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
       default = null;
-      description = "Optional basic auth password for the web UI.";
+      description = "Path to a file containing the basic auth password for the web UI.";
     };
 
     driNode = lib.mkOption {
@@ -113,6 +114,15 @@ in
       autoStart = true;
       inherit environment ports extraOptions;
       volumes = [ "${cfg.dataDir}:/config" ];
+      environmentFiles = lib.optional (cfg.passwordFile != null) passwordEnvFile;
+    };
+
+    systemd.services.podman-brave = lib.mkIf (cfg.passwordFile != null) {
+      preStart = lib.mkBefore ''
+        install -d -m 0700 /run/brave
+        printf 'PASSWORD=%s\n' "$(cat ${cfg.passwordFile})" > ${passwordEnvFile}
+        chmod 0600 ${passwordEnvFile}
+      '';
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
