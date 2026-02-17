@@ -11,7 +11,32 @@
     ./base.nix
     ../modules/services/brave.nix
     ../modules/virtualisation/virtualisation.nix
+    inputs.sops-nix.nixosModules.sops
   ];
+
+  # SOPS configuration for this MicroVM
+  # After first boot, derive the VM's age public key without copying the private key:
+  #   ssh admin@10.100.0.54 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
+  # Then add the resulting age public key to your .sops.yaml and re-encrypt secrets
+  sops = {
+    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
+    defaultSopsFormat = "yaml";
+    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
+
+    # Run sops-install-secrets as a systemd service (after local-fs.target)
+    # instead of activation script, since /persist isn't mounted during activation
+    useSystemdActivation = true;
+
+    secrets = {
+      "brave/user" = { };
+      "brave/password" = { };
+    };
+  };
+
+  sys.secrets = {
+    braveUser = config.sops.secrets."brave/user".path;
+    bravePassword = config.sops.secrets."brave/password".path;
+  };
 
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
@@ -79,10 +104,13 @@
         dataDir = "/var/lib/brave";
         httpPort = 11054;
         httpsPort = 11055;
-        networkMode = "host";
+        networkMode = "bridge";
         timeZone = "Europe/Oslo";
         title = "Brave";
-        openFirewall = true;
+        openFirewall = false;
+
+        customUserFile = config.sys.secrets.braveUser;
+        passwordFile = config.sys.secrets.bravePassword;
       };
     };
   };
@@ -93,7 +121,13 @@
     useDHCP = false;
     useNetworkd = true;
 
-    firewall.enable = true;
+    firewall = {
+      enable = true;
+      allowedTCPPorts = [
+        11054
+        11055
+      ];
+    };
   };
 
   systemd = {
@@ -106,7 +140,7 @@
       "20-lan" = {
         matchConfig.Type = "ether";
         networkConfig = {
-          Address = [ "10.100.0.53/24" ];
+          Address = [ "10.100.0.54/24" ];
           Gateway = "10.100.0.11";
           DNS = [ "1.1.1.1" ];
           DHCP = "no";
@@ -153,7 +187,7 @@
     ];
   };
 
-  security.sudo.wheelNeedsPassword = lib.mkForce false;
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   system.stateVersion = "24.11";
 }

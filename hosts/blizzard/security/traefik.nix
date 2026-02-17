@@ -124,16 +124,16 @@
             };
           };
 
-          brave-headers = {
-            headers = {
-              customResponseHeaders = {
-                X-Content-Type-Options = "nosniff";
-                X-XSS-Protection = "1; mode=block";
-                Referrer-Policy = "no-referrer";
-                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-              };
-            };
-          };
+          # brave-headers = {
+          #   headers = {
+          #     customResponseHeaders = {
+          #       X-Content-Type-Options = "nosniff";
+          #       X-XSS-Protection = "1; mode=block";
+          #       Referrer-Policy = "no-referrer";
+          #       Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+          #     };
+          #   };
+          # };
 
           overseerr-headers = {
             headers = {
@@ -193,15 +193,15 @@
             ];
           };
 
-          brave = {
-            rule = "Host(`brave.${VARS.domains.public}`)";
-            service = "brave";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "brave-headers"
-              "crowdsec"
-            ];
-          };
+          # brave = {
+          #   rule = "Host(`brave.${VARS.domains.public}`)";
+          #   service = "brave";
+          #   entryPoints = [ "web" ];
+          #   middlewares = [
+          #     "brave-headers"
+          #     "crowdsec"
+          #   ];
+          # };
 
           sabnzbd = {
             rule = "Host(`sab.${VARS.domains.public}`)";
@@ -352,7 +352,8 @@
           gitea.loadBalancer.servers = [ { url = "http://10.100.0.50:11050"; } ];
           actual.loadBalancer.servers = [ { url = "http://10.100.0.51:11051"; } ];
           firefox.loadBalancer.servers = [ { url = "http://10.100.0.52:11052"; } ];
-          brave.loadBalancer.servers = [ { url = "http://10.100.0.53:11054"; } ];
+          # firefox occupies port 11053; no .53 IP shall be assigned
+          # brave.loadBalancer.servers = [ { url = "http://10.100.0.54:11054"; } ]; # doesn't work
         };
       };
     };

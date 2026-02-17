@@ -11,7 +11,32 @@
     ./base.nix
     ../modules/services/firefox.nix
     ../modules/virtualisation/virtualisation.nix
+    inputs.sops-nix.nixosModules.sops
   ];
+
+  # SOPS configuration for this MicroVM
+  # After first boot, derive the VM's age public key without copying the private key:
+  #   ssh admin@10.100.0.52 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
+  # Then add the resulting age public key to your .sops.yaml and re-encrypt secrets
+  sops = {
+    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
+    defaultSopsFormat = "yaml";
+    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
+
+    # Run sops-install-secrets as a systemd service (after local-fs.target)
+    # instead of activation script, since /persist isn't mounted during activation
+    useSystemdActivation = true;
+
+    secrets = {
+      "firefox/user" = { };
+      "firefox/password" = { };
+    };
+  };
+
+  sys.secrets = {
+    firefoxUser = config.sops.secrets."firefox/user".path;
+    firefoxPassword = config.sops.secrets."firefox/password".path;
+  };
 
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
@@ -79,10 +104,13 @@
         dataDir = "/var/lib/firefox";
         httpPort = 11052;
         httpsPort = 11053;
-        networkMode = "host";
+        networkMode = "bridge";
         timeZone = "Europe/Oslo";
         title = "Firefox";
         openFirewall = false;
+
+        customUserFile = config.sys.secrets.firefoxUser;
+        passwordFile = config.sys.secrets.firefoxPassword;
       };
     };
   };
@@ -162,7 +190,7 @@
     ];
   };
 
-  security.sudo.wheelNeedsPassword = lib.mkForce false;
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   system.stateVersion = "24.11";
 }
