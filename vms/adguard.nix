@@ -15,29 +15,33 @@
   ];
 
   # SOPS configuration for this MicroVM
-  # After first boot, get the VM's age key with:
-  #   ssh admin@10.100.0.10 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
-  # Then add it to your .sops.yaml and re-encrypt secrets
+  # After first boot, derive the VM's age public key without copying the private key:
+  #   ssh admin@10.100.0.10 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
+  # Then add the resulting age public key to your .sops.yaml and re-encrypt secrets
   sops = {
     defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
     defaultSopsFormat = "yaml";
     age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
+
+    # Run sops-install-secrets as a systemd service (after local-fs.target)
+    # instead of activation script, since /persist isn't mounted during activation
+    useSystemdActivation = true;
+
+    secrets = {
+      "adguard/password_hash" = {
+        mode = "0400";
+        owner = "root";
+      };
+
+      "adguard/fullchain" = {
+        mode = "0444";
+      };
+
+      "adguard/privkey" = {
+        mode = "0400";
+      };
+    };
   };
-
-  # SOPS secrets - disabled since SOPS runs before /persist is mounted in MicroVMs
-  # Set password via web UI instead (persists with mutableSettings = true)
-  # sops.secrets."adguard/password_hash" = {
-  #   mode = "0400";
-  #   owner = "root";
-  # };
-
-  # sops.secrets."adguard/fullchain" = {
-  #   mode = "0444";
-  # };
-
-  # sops.secrets."adguard/privkey" = {
-  #   mode = "0400";
-  # };
 
   # MicroVM-specific configuration
   microvm = {

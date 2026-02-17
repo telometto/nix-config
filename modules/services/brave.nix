@@ -1,15 +1,20 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.sys.services.brave;
   isHost = cfg.networkMode == "host";
 
-  passwordEnvFile = "/run/brave/password.env";
+  hasCredentials = cfg.customUserFile != null && cfg.passwordFile != null;
+  credentialsEnvFile = "/run/brave/credentials.env";
 
   environment = {
     TZ = cfg.timeZone;
     TITLE = cfg.title;
   }
-  // lib.optionalAttrs (cfg.customUser != null) { CUSTOM_USER = cfg.customUser; }
   // lib.optionalAttrs (cfg.driNode != null) { DRINODE = cfg.driNode; }
   // lib.optionalAttrs isHost {
     CUSTOM_PORT = toString cfg.httpPort;
@@ -26,6 +31,15 @@ let
   ]
   ++ lib.optional cfg.enableDri "--device=/dev/dri"
   ++ lib.optional isHost "--network=host";
+
+  preStartScript = pkgs.writeShellScript "brave-credentials" ''
+    set -euo pipefail
+    umask 0077
+    : > ${credentialsEnvFile}
+    printf 'CUSTOM_USER=%s\n' "$(cat "${cfg.customUserFile}")" >> ${credentialsEnvFile}
+    printf 'PASSWORD=%s\n' "$(cat "${cfg.passwordFile}")" >> ${credentialsEnvFile}
+    chmod 0400 ${credentialsEnvFile}
+  '';
 in
 {
   options.sys.services.brave = {
@@ -74,16 +88,16 @@ in
       default = "Brave";
     };
 
-    customUser = lib.mkOption {
+    customUserFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Optional basic auth username for the web UI.";
+      description = "Path to a file containing the basic-auth username for the web UI.";
     };
 
     passwordFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.path;
+      type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Path to a file containing the basic auth password for the web UI.";
+      description = "Path to a file containing the basic-auth password for the web UI.";
     };
 
     driNode = lib.mkOption {
@@ -109,20 +123,22 @@ in
       "d ${cfg.dataDir} 0750 root root -"
     ];
 
+    systemd.services.podman-brave = lib.mkIf hasCredentials {
+      after = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
+      serviceConfig = {
+        RuntimeDirectory = "brave";
+        RuntimeDirectoryMode = "0700";
+        ExecStartPre = [ "+${preStartScript}" ];
+      };
+    };
+
     virtualisation.oci-containers.containers.brave = {
       inherit (cfg) image;
       autoStart = true;
       inherit environment ports extraOptions;
       volumes = [ "${cfg.dataDir}:/config" ];
-      environmentFiles = lib.optional (cfg.passwordFile != null) passwordEnvFile;
-    };
-
-    systemd.services.podman-brave = lib.mkIf (cfg.passwordFile != null) {
-      preStart = lib.mkBefore ''
-        install -d -m 0700 /run/brave
-        printf 'PASSWORD=%s\n' "$(cat ${cfg.passwordFile})" > ${passwordEnvFile}
-        chmod 0600 ${passwordEnvFile}
-      '';
+      environmentFiles = lib.optionals hasCredentials [ credentialsEnvFile ];
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
@@ -131,5 +147,12 @@ in
         cfg.httpsPort
       ];
     };
+
+    assertions = [
+      {
+        assertion = (cfg.customUserFile == null) == (cfg.passwordFile == null);
+        message = "sys.services.brave: customUserFile and passwordFile must both be set or both be null";
+      }
+    ];
   };
 }
