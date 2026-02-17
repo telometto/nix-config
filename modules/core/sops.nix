@@ -23,6 +23,8 @@ let
   hasGitea = config.sys.services.gitea.enable or false;
   hasSeaweedfs = config.sys.services.seaweedfs.enable or false;
   hasWireguard = config.sys.services.wireguard.enable or false;
+  hasFirefox = config.sys.services.firefox.enable or false;
+  hasBrave = config.sys.services.brave.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -124,6 +126,16 @@ in
           owner = "root";
           group = "root";
         };
+      }
+      # Firefox container credentials
+      // whenEnabled hasFirefox {
+        "firefox/user" = { };
+        "firefox/password" = { };
+      }
+      # Brave container credentials
+      // whenEnabled hasBrave {
+        "brave/user" = { };
+        "brave/password" = { };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -204,6 +216,16 @@ in
     # WireGuard private key
     // whenEnabled hasWireguard {
       wireguardPrivateKeyFile = toString config.sops.secrets."wireguard/privatekey".path;
+    }
+    # Firefox container credentials
+    // whenEnabled hasFirefox {
+      firefoxUser = toString config.sops.secrets."firefox/user".path;
+      firefoxPassword = toString config.sops.secrets."firefox/password".path;
+    }
+    # Brave container credentials
+    // whenEnabled hasBrave {
+      braveUser = toString config.sops.secrets."brave/user".path;
+      bravePassword = toString config.sops.secrets."brave/password".path;
     };
 
   environment.systemPackages = [
