@@ -100,7 +100,7 @@
         dataDir = "/var/lib/firefox";
         httpPort = 11052;
         httpsPort = 11053;
-        networkMode = "host";
+        networkMode = "bridge";
         timeZone = "Europe/Oslo";
         title = "Firefox";
         openFirewall = false;
