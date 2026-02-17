@@ -100,7 +100,7 @@
         dataDir = "/var/lib/brave";
         httpPort = 11054;
         httpsPort = 11055;
-        networkMode = "host";
+        networkMode = "bridge";
         timeZone = "Europe/Oslo";
         title = "Brave";
         openFirewall = false;
