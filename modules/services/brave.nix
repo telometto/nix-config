@@ -34,6 +34,7 @@ let
 
   preStartScript = pkgs.writeShellScript "brave-credentials" ''
     set -euo pipefail
+    umask 0077
     : > ${credentialsEnvFile}
     printf 'CUSTOM_USER=%s\n' "$(cat "${cfg.customUserFile}")" >> ${credentialsEnvFile}
     printf 'PASSWORD=%s\n' "$(cat "${cfg.passwordFile}")" >> ${credentialsEnvFile}
@@ -127,6 +128,7 @@ in
       requires = [ "sops-install-secrets.service" ];
       serviceConfig = {
         RuntimeDirectory = "brave";
+        RuntimeDirectoryMode = "0700";
         ExecStartPre = [ "+${preStartScript}" ];
       };
     };
