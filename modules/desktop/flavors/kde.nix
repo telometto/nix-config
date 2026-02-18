@@ -7,6 +7,7 @@
 let
   flavor = config.sys.desktop.flavor or "none";
   is = v: flavor == v;
+  SDDM_THEME = "hyprland_kath"
 in
 {
   config = lib.mkIf (is "kde") {
@@ -52,7 +53,7 @@ in
         pkgs.kdePackages.qtwebengine
         pkgs.xwayland
         (pkgs.sddm-astronaut.override {
-          embeddedTheme = "jake_the_dog";
+          embeddedTheme = SDDM_THEME;
         })
       ];
 
