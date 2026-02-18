@@ -6,7 +6,7 @@
 }:
 let
   cfg = config.sys.role.desktop;
-  THEME = "dna";
+  THEME = "green_blocks";
 in
 {
   config = lib.mkIf cfg.enable {
