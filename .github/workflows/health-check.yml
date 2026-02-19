@@ -18,7 +18,7 @@ jobs:
       - name: Access private repository
         uses: webfactory/ssh-agent@master
         with:
-          ssh-private-key: ${{ secrets.GH_ACTIONS }}
+          ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
       - name: Checkout main repository
         uses: actions/checkout@main
@@ -102,7 +102,7 @@ jobs:
       - name: Access private repository
         uses: webfactory/ssh-agent@master
         with:
-          ssh-private-key: ${{ secrets.GH_ACTIONS }}
+          ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
       - name: Checkout main repository
         uses: actions/checkout@main
