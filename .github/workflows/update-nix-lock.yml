@@ -19,10 +19,10 @@ jobs:
       - name: Setup SSH for private repositories
         uses: webfactory/ssh-agent@master
         with:
-          ssh-private-key: ${{ secrets.GH_ACTIONS }}
+          ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
       # Checkout using a PAT for write access (to push changes later)
-      # Note: GH_ACTIONS should be a PAT, not an SSH key
+      # Note: SSH_DEPLOY_KEY should be a PAT, not an SSH key
       # If you have a separate SSH key for nix-secrets, use a different secret name
       - name: Checkout main repository
         uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
             ```
           pr-title: "🧹 chore(flake.lock): update"
           pr-labels: auto-merge
-          nix-options: "--access-tokens github.com=${{ secrets.BOT_PAT }}"
+          nix-options: "--access-tokens github.com=${{ secrets.SECRETS_PAT }}"
           token: ${{ secrets.GITHUB_TOKEN }} # Use built-in token for GitHub API operations
 
       - name: Get commit message for compare URLs
