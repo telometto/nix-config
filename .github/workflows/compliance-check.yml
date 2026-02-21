@@ -7,7 +7,11 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "0 9 * * 1" # Weekly on Mondays
+    - cron: "0 9 * * 1"
+
+concurrency:
+  group: compliance-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -18,15 +22,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@main
+        uses: actions/checkout@v6.0.2
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@v21
 
-      - name: Install compliance tools
-        run: |
-          nix profile add nixpkgs#deadnix
-          nix profile add nixpkgs#statix
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v13
 
       - name: Run dead code detection
         id: deadnix
@@ -35,7 +37,7 @@ jobs:
           echo "" >> compliance-report.md
 
           # Capture deadnix output
-          if deadnix_output=$(deadnix --no-lambda-arg --no-lambda-pattern-names . 2>&1); then
+          if deadnix_output=$(nix run nixpkgs#deadnix -- --no-lambda-arg --no-lambda-pattern-names . 2>&1); then
             echo "✅ No dead code found" >> compliance-report.md
             echo "dead_code=clean" >> $GITHUB_OUTPUT
           else
@@ -55,7 +57,7 @@ jobs:
           echo "" >> compliance-report.md
 
           # Capture statix output
-          if statix_output=$(statix check . 2>&1); then
+          if statix_output=$(nix run nixpkgs#statix -- check . 2>&1); then
             echo "✅ No static analysis issues found" >> compliance-report.md
             echo "static_analysis=clean" >> $GITHUB_OUTPUT
           else
@@ -101,7 +103,8 @@ jobs:
           for module_dir in modules/*/; do
             if [ -d "$module_dir" ]; then
               module_name=$(basename "$module_dir")
-              if ! find "$module_dir" -name "*.nix" -exec grep -l "enable.*mkEnableOption\|enable.*mkOption.*bool" {} \; | head -1 > /dev/null; then
+              has_enable=$(grep -rl "mkEnableOption\|enable.*mkOption.*bool" "$module_dir" --include="*.nix" 2>/dev/null | head -1)
+              if [ -z "$has_enable" ]; then
                 echo "⚠️ Module \`$module_name\` may be missing enable option" >> compliance-report.md
                 module_issues=1
               fi
@@ -166,7 +169,7 @@ jobs:
           echo "## 🎯 Configuration Completeness" >> compliance-report.md
           echo "" >> compliance-report.md
 
-          for host in snowfall blizzard avalanche kaizer; do
+          for host in $(grep -oP '^\s+\K\w+(?=\s*=\s*mkHost)' flake.nix); do
             echo "### Host: $host" >> compliance-report.md
             
             # Check required files exist (files are named after the host)
@@ -208,7 +211,7 @@ jobs:
                 echo "⚠️ Missing timezone configuration" >> compliance-report.md
               fi
               
-              if ! grep -q "services.openssh" "$config_file" && ! find modules -name "*.nix" -exec grep -l "services.openssh" {} \; > /dev/null 2>&1; then
+              if ! grep -q "services.openssh" "$config_file" && ! grep -rq "services.openssh" modules/ hosts/ 2>/dev/null; then
                 echo "ℹ️ No SSH configuration found (may be intentional)" >> compliance-report.md
               fi
             fi
@@ -253,45 +256,21 @@ jobs:
           fi
 
       - name: Upload compliance report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: compliance-report
           path: compliance-report.md
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
+            const comment = require('.github/scripts/comment');
             const report = fs.readFileSync('compliance-report.md', 'utf8');
 
-            // Find existing comment or create new one
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
+            const header = '## 📋 Configuration Compliance Check';
+            const body = report;
 
-            const botComment = comments.data.find(comment => 
-              comment.user.type === 'Bot' && 
-              comment.body.includes('Configuration Compliance Check')
-            );
-
-            const body = `## 📋 Configuration Compliance Check\n\n${report}`;
-
-            if (botComment) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: body
-              });
-            }
+            await comment({ github, context, header, body });
