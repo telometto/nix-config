@@ -1,0 +1,82 @@
+name: Documentation Drift Check
+on:
+    pull_request:
+        paths:
+            - "hosts/**"
+            - "modules/**"
+            - "home/**"
+            - "vms/**"
+            - "lib/**"
+            - "flake.nix"
+
+concurrency:
+    group: doc-drift-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    pull-requests: write
+    contents: read
+
+jobs:
+    check-doc-drift:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 0
+
+            - name: Check for documentation updates
+              id: drift
+              run: |
+                  BASE_REF="${{ github.base_ref }}"
+                  changed_files=$(git diff --name-only "origin/${BASE_REF}...HEAD")
+
+                  code_changed=false
+                  docs_changed=false
+                  areas=()
+
+                  while IFS= read -r file; do
+                    case "$file" in
+                      docs/*|*.md) docs_changed=true ;;
+                      hosts/*) code_changed=true; areas+=("hosts") ;;
+                      modules/*) code_changed=true; areas+=("modules") ;;
+                      home/*) code_changed=true; areas+=("home") ;;
+                      vms/*) code_changed=true; areas+=("vms") ;;
+                      lib/*) code_changed=true; areas+=("lib") ;;
+                      flake.nix) code_changed=true; areas+=("flake") ;;
+                    esac
+                  done <<< "$changed_files"
+
+                  if [ ${#areas[@]} -eq 0 ]; then
+                    unique_areas=""
+                  else
+                    unique_areas=$(printf '%s\n' "${areas[@]}" | sort -u | tr '\n' ',' | sed 's/,$//')
+                  fi
+
+                  if [ "$code_changed" = true ] && [ "$docs_changed" = false ]; then
+                    echo "drift_detected=true" >> "$GITHUB_OUTPUT"
+                    echo "areas=$unique_areas" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "drift_detected=false" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Comment on PR
+              if: steps.drift.outputs.drift_detected == 'true'
+              uses: actions/github-script@v8
+              with:
+                  script: |
+                      const comment = require('.github/scripts/comment');
+                      const areas = '${{ steps.drift.outputs.areas }}'
+                        .split(',')
+                        .map(a => `\`${a}\``)
+                        .join(', ');
+
+                      const header = '## 📝 Documentation Drift Check';
+                      const body = [
+                        `Code changes detected in ${areas} without corresponding documentation updates.`,
+                        '',
+                        'Please verify whether documentation in `docs/` or relevant `README.md` files needs updating.',
+                      ].join('\n');
+
+                      await comment({ github, context, header, body });

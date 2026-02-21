@@ -5,9 +5,15 @@ on:
     paths:
       - "hosts/**"
       - "modules/**"
-      - "common/**"
+      - "home/**"
+      - "vms/**"
+      - "lib/**"
       - "flake.nix"
       - "flake.lock"
+
+concurrency:
+  group: impact-analysis-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -18,12 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@main
+        uses: actions/checkout@v6.0.2
         with:
-          fetch-depth: 0 # Full history for comparison
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+          fetch-depth: 0
 
       - name: Analyze changed files
         id: changes
@@ -52,7 +55,8 @@ jobs:
           # Categorize changes
           host_changes=()
           module_changes=()
-          common_changes=()
+          home_changes=()
+          vm_changes=()
           flake_changes=false
 
           while IFS= read -r file; do
@@ -66,20 +70,25 @@ jobs:
               if [[ ! " ${module_changes[@]} " =~ " ${module} " ]]; then
                 module_changes+=("$module")
               fi
-            elif [[ "$file" =~ ^common/ ]]; then
-              common_area=$(echo "$file" | cut -d/ -f2)
-              if [[ ! " ${common_changes[@]} " =~ " ${common_area} " ]]; then
-                common_changes+=("$common_area")
+            elif [[ "$file" =~ ^home/ ]]; then
+              area=$(echo "$file" | cut -d/ -f2)
+              if [[ ! " ${home_changes[@]} " =~ " ${area} " ]]; then
+                home_changes+=("$area")
+              fi
+            elif [[ "$file" =~ ^vms/ ]]; then
+              vm=$(basename "$file" .nix)
+              if [[ ! " ${vm_changes[@]} " =~ " ${vm} " ]]; then
+                vm_changes+=("$vm")
               fi
             elif [[ "$file" =~ ^flake\.(nix|lock)$ ]]; then
               flake_changes=true
             fi
           done < changed_files.txt
 
-          # Export for later steps
           printf '%s\n' "${host_changes[@]}" > affected_hosts.txt
           printf '%s\n' "${module_changes[@]}" > affected_modules.txt
-          printf '%s\n' "${common_changes[@]}" > affected_common.txt
+          printf '%s\n' "${home_changes[@]}" > affected_home.txt
+          printf '%s\n' "${vm_changes[@]}" > affected_vms.txt
           echo "$flake_changes" > flake_changed.txt
 
       - name: Analyze host impacts
@@ -124,10 +133,10 @@ jobs:
             echo "" >> impact-report.md
           fi
 
-          # Check if common/module changes affect all hosts
-          if [ -s affected_common.txt ] || [ -s affected_modules.txt ]; then
-            echo "**Potentially affected hosts (via common/modules):**" >> impact-report.md
-            for host in snowfall blizzard avalanche kaizer; do
+          if [ -s affected_home.txt ] || [ -s affected_modules.txt ]; then
+            echo "**Potentially affected hosts (via home/modules):**" >> impact-report.md
+            all_hosts=$(grep -oP '^\s+\K\w+(?=\s*=\s*mkHost)' flake.nix)
+            for host in $all_hosts; do
               echo "- **$host** (indirect impact)" >> impact-report.md
             done
             echo "" >> impact-report.md
@@ -285,7 +294,8 @@ jobs:
             done < affected_hosts.txt
           else
             echo "**Build test all hosts:**" >> impact-report.md
-            for host in snowfall blizzard avalanche kaizer; do
+            all_hosts=$(grep -oP '^\s+\K\w+(?=\s*=\s*mkHost)' flake.nix)
+            for host in $all_hosts; do
               echo "- \`nix build .#nixosConfigurations.$host.config.system.build.toplevel\`" >> impact-report.md
             done
           fi
@@ -297,13 +307,20 @@ jobs:
           echo "- Test critical functionality" >> impact-report.md
 
       - name: Upload impact report
-        uses: actions/upload-artifact@v4
+        if: always()
+        uses: actions/upload-artifact@v6
         with:
           name: impact-analysis-report
           path: impact-report.md
 
+      - name: Output report for non-PR runs
+        if: github.event_name != 'pull_request'
+        run: |
+          cat impact-report.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Comment on PR
-        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');

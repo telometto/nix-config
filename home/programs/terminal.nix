@@ -104,7 +104,7 @@ in
 
       zellij = {
         enable = lib.mkDefault true;
-        enableBashIntegration = lib.mkDefault true;
+        enableBashIntegration = lib.mkDefault false;
         enableZshIntegration = lib.mkDefault true;
         attachExistingSession = cfg.zellij.attachToExisting;
         inherit (cfg.zellij) exitShellOnExit;

@@ -19,6 +19,10 @@ on:
       - "**.md"
       - "**.json"
 
+concurrency:
+  group: auto-format-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
   pull-requests: write
@@ -26,7 +30,6 @@ permissions:
 jobs:
   format:
     runs-on: ubuntu-latest
-    # Run on PRs from same repo, or on direct pushes to main/testing
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
@@ -34,25 +37,29 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@main
+        uses: actions/checkout@v6.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # For PRs, checkout the PR branch; for pushes, use default ref
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
           fetch-depth: 0
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@v21
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v13
 
       - name: Check and format files
         id: check-formatting
-        continue-on-error: true
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PUSH_REF_NAME: ${{ github.ref_name }}
         run: |
-          # Run formatter and check if any files were changed
-          if nix fmt; then
-            echo "Formatting completed successfully"
-          else
-            echo "Warning: Formatting encountered issues but continuing..."
+          if ! nix fmt; then
+            echo "nix fmt failed; skipping auto-format but continuing workflow"
+            echo "formatted=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
           if [ -n "$(git status --porcelain)" ]; then
@@ -62,14 +69,13 @@ jobs:
             git add .
             formatted_files=$(git diff --cached --name-only)
             git commit -m "style: automatic formatting by treefmt [skip ci]"
-            
-            # Push to appropriate branch based on event type
-            if [ "${{ github.event_name }}" = "pull_request" ]; then
-              git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
+            if [ "$EVENT_NAME" = "pull_request" ]; then
+              git push origin "HEAD:$PR_HEAD_REF"
             else
-              git push origin HEAD:${{ github.ref_name }}
+              git push origin "HEAD:$PUSH_REF_NAME"
             fi
-            
+
             echo "formatted=true" >> "$GITHUB_OUTPUT"
             {
               echo "formatted-files<<EOF"
@@ -83,14 +89,13 @@ jobs:
 
       - name: Comment on PR if formatted
         if: steps.check-formatting.outputs.formatted == 'true' && github.event_name == 'pull_request'
-        uses: actions/github-script@main
+        uses: actions/github-script@v8
         env:
           FORMATTED_FILES: ${{ steps.check-formatting.outputs.formatted-files }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { owner, repo } = context.repo;
-            const issue_number = context.payload.pull_request.number;
+            const comment = require('.github/scripts/comment');
             const formattedFiles = (process.env.FORMATTED_FILES || '')
               .split(/\r?\n/)
               .map((file) => file.trim())
@@ -100,12 +105,10 @@ jobs:
               ? '\n\n**Files formatted:**\n' + formattedFiles.map((file) => `- \`${file}\``).join('\n')
               : '';
 
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number,
-              body: `🎨 **Auto-formatted**: Files have been automatically formatted with treefmt to maintain code consistency.${formattedList}`
-            });
+            const header = '🎨 **Auto-formatted**';
+            const body = `Files have been automatically formatted with treefmt to maintain code consistency.${formattedList}`;
+
+            await comment({ github, context, header, body });
 
       - name: Enable auto-merge for formatted PR
         if: steps.check-formatting.outputs.formatted == 'true' && github.event_name == 'pull_request'
