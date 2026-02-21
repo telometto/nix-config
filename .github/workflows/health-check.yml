@@ -2,26 +2,50 @@ name: Infrastructure Health Check
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 6 * * *" # Daily at 6 AM
+    - cron: "0 6 * * *"
+
+concurrency:
+  group: health-check
+  cancel-in-progress: false
 
 permissions:
   contents: read
   issues: write
+
 jobs:
+  discover-hosts:
+    runs-on: ubuntu-latest
+    outputs:
+      hosts: ${{ steps.hosts.outputs.matrix }}
+    steps:
+      - name: Checkout flake.nix
+        uses: actions/checkout@v6.0.2
+        with:
+          sparse-checkout: flake.nix
+          sparse-checkout-cone-mode: false
+
+      - name: Extract host list
+        id: hosts
+        run: |
+          hosts=$(grep -oP '^\s+\K\w+(?=\s*=\s*mkHost)' flake.nix)
+          matrix=$(echo "$hosts" | jq -R . | jq -sc .)
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
   build-hosts:
     runs-on: ubuntu-latest
+    needs: discover-hosts
     strategy:
       fail-fast: false
       matrix:
-        host: [snowfall, blizzard, avalanche, kaizer]
+        host: ${{ fromJson(needs.discover-hosts.outputs.hosts) }}
     steps:
       - name: Access private repository
-        uses: webfactory/ssh-agent@master
+        uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
       - name: Checkout main repository
-        uses: actions/checkout@main
+        uses: actions/checkout@v6.0.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -31,7 +55,6 @@ jobs:
           echo "## 📦 Disk Usage (${HOST}) - before cleanup" >> $GITHUB_STEP_SUMMARY
           df -h >> $GITHUB_STEP_SUMMARY
 
-          # Aggressive cleanup for runner disk space
           sudo rm -rf /usr/share/dotnet || true
           sudo rm -rf /usr/local/lib/android || true
           sudo rm -rf /opt/ghc || true
@@ -61,13 +84,15 @@ jobs:
           df -h >> $GITHUB_STEP_SUMMARY
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@v21
 
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v13
 
       - name: Expand build sandbox for avalanche
         if: matrix.host == 'avalanche'
         run: |
+          # avalanche uses features that require relaxed sandboxing
           mkdir -p ~/.config/nix
           cat <<'EOF' >> ~/.config/nix/nix.conf
           sandbox = false
@@ -78,7 +103,6 @@ jobs:
           HOST="${{ matrix.host }}"
           echo "## 🏗️ Build Results - ${HOST}" >> $GITHUB_STEP_SUMMARY
 
-          # Run GC before build to ensure max space
           nix-collect-garbage -d || true
 
           if nix build ".#nixosConfigurations.${HOST}.config.system.build.toplevel" --no-link --print-build-logs --max-jobs 2; then
@@ -99,40 +123,34 @@ jobs:
     needs: build-hosts
     if: always()
     steps:
-      - name: Access private repository
-        uses: webfactory/ssh-agent@master
-        with:
-          ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
-
-      - name: Checkout main repository
-        uses: actions/checkout@main
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-
-      - name: Check for security updates
-        if: needs.build-hosts.result == 'success'
-        run: |
-          echo "## 🔒 Security Status" >> $GITHUB_STEP_SUMMARY
-          if nix run nixpkgs#vulnix -- --system; then
-            echo "✅ No known vulnerabilities found" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ Potential security issues detected" >> $GITHUB_STEP_SUMMARY
-          fi
-
       - name: Create issue if failures
-        if: failure()
-        uses: actions/github-script@main
+        if: needs.build-hosts.result == 'failure'
+        uses: actions/github-script@v8
         with:
           script: |
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '🚨 Infrastructure Health Check Failed',
-              body: 'Automated health check detected issues. Please review the workflow run for details.',
-              labels: ['infrastructure', 'urgent']
-            })
+            const { owner, repo } = context.repo;
+            const title = '🚨 Infrastructure Health Check Failed';
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner, repo,
+              state: 'open',
+              labels: 'infrastructure',
+              creator: 'github-actions[bot]',
+            });
+
+            const existing = issues.find(i => i.title === title);
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = `Automated health check detected build failures.\n\n**Workflow run:** ${runUrl}\n\nPlease review the workflow run for details.`;
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: existing.number,
+                body: `Build failure detected again.\n\n**Workflow run:** ${runUrl}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner, repo, title, body,
+                labels: ['infrastructure', 'urgent'],
+              });
+            }

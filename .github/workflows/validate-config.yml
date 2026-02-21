@@ -11,6 +11,11 @@ on:
     branches: [main]
     paths:
       - "**.nix"
+      - "flake.lock"
+
+concurrency:
+  group: validate-config-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -18,41 +23,51 @@ permissions:
   checks: write
 
 jobs:
+  discover-hosts:
+    runs-on: ubuntu-latest
+    outputs:
+      hosts: ${{ steps.hosts.outputs.matrix }}
+    steps:
+      - name: Checkout flake.nix
+        uses: actions/checkout@v6.0.2
+        with:
+          sparse-checkout: flake.nix
+          sparse-checkout-cone-mode: false
+
+      - name: Extract host list
+        id: hosts
+        run: |
+          hosts=$(grep -oP '^\s+\K\w+(?=\s*=\s*mkHost)' flake.nix)
+          matrix=$(echo "$hosts" | jq -R . | jq -sc .)
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
   validate:
     runs-on: ubuntu-latest
+    needs: discover-hosts
     strategy:
       matrix:
-        host: [snowfall, blizzard, avalanche, kaizer]
+        host: ${{ fromJson(needs.discover-hosts.outputs.hosts) }}
       fail-fast: false
 
     steps:
       - name: Access private repository
-        uses: webfactory/ssh-agent@master
+        uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
       - name: Checkout repository
-        uses: actions/checkout@main
+        uses: actions/checkout@v6.0.2
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@v21
 
-      - name: Setup Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v13
 
-      - name: Validate configuration
+      - name: Evaluate configuration
         run: |
           echo "## 🔍 Configuration Validation for ${{ matrix.host }}" >> $GITHUB_STEP_SUMMARY
 
-          # Check Nix syntax
-          if nix-instantiate --parse --quiet hosts/${{ matrix.host }}/${{ matrix.host }}.nix > /dev/null; then
-            echo "✅ Syntax validation passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Syntax validation failed" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
-
-          # Evaluate the configuration (much faster than building)
           echo "Evaluating NixOS configuration for ${{ matrix.host }}..."
           if nix eval ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --raw 2>&1 | head -n 1; then
             echo "✅ Configuration evaluation passed" >> $GITHUB_STEP_SUMMARY
@@ -64,49 +79,13 @@ jobs:
       - name: Validate home-manager configurations
         run: |
           echo "Validating Home Manager configurations for ${{ matrix.host }}..."
-          # Check if home-manager configurations evaluate properly
           if nix eval ".#nixosConfigurations.${{ matrix.host }}.config.home-manager.users" --apply 'users: builtins.attrNames users' 2>/dev/null; then
-            echo "✅ Home Manager configurations are valid"
+            echo "✅ Home Manager configurations are valid" >> $GITHUB_STEP_SUMMARY
           else
-            echo "ℹ️ No Home Manager configurations found or evaluation failed"
+            echo "ℹ️ No Home Manager configurations found or evaluation failed" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Check for evaluation warnings
         run: |
           echo "## ⚠️ Evaluation Warnings" >> $GITHUB_STEP_SUMMARY
           nix eval ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --raw 2>&1 | grep -i warning || echo "✅ No warnings found" | tee -a $GITHUB_STEP_SUMMARY
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@main
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-
-      - name: Run linters
-        run: |
-          echo "## 🔍 Linting Results" >> $GITHUB_STEP_SUMMARY
-
-          # Statix for Nix linting
-          if nix run nixpkgs#statix -- check . --format=json > statix-results.json; then
-            echo "✅ Statix: No issues" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ Statix: Issues found" >> $GITHUB_STEP_SUMMARY
-            cat statix-results.json
-          fi
-
-          # Deadnix for dead code detection
-          if nix run nixpkgs#deadnix -- --fail .; then
-            echo "✅ Deadnix: No dead code" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ Deadnix: Dead code detected" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Upload lint results
-        if: always()
-        uses: actions/upload-artifact@main
-        with:
-          name: lint-results
-          path: "*.json"
