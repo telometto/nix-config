@@ -128,7 +128,9 @@ in
           serve_from_sub_path = true;
         };
 
-        security.secret_key = "$__file{${config.sys.secrets.grafanaSecretKeyFile or "/run/secrets/grafana-secret-key"}}";
+        security.secret_key = "$__file{${
+          config.sys.secrets.grafanaSecretKeyFile or "/run/secrets/grafana-secret-key"
+        }}";
 
         analytics.reporting_enabled = !cfg.disableTelemetry;
       } cfg.extraSettings;
