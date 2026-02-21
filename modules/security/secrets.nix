@@ -52,6 +52,12 @@
       '';
     };
 
+    grafanaSecretKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to a file containing the Grafana internal signing key. Mapped from SOPS in core/sops.nix.";
+    };
+
     grafanaCloudApiKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
