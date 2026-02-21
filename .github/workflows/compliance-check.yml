@@ -103,7 +103,7 @@ jobs:
           for module_dir in modules/*/; do
             if [ -d "$module_dir" ]; then
               module_name=$(basename "$module_dir")
-              has_enable=$(grep -rl "mkEnableOption\|enable.*mkOption.*bool" "$module_dir" --include="*.nix" 2>/dev/null | head -1)
+              has_enable=$(grep -Erl "mkEnableOption|enable.*mkOption.*bool" "$module_dir" --include="*.nix" 2>/dev/null | head -1)
               if [ -z "$has_enable" ]; then
                 echo "⚠️ Module \`$module_name\` may be missing enable option" >> compliance-report.md
                 module_issues=1
