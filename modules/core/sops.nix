@@ -15,6 +15,7 @@ let
   hasBorg = config.services.borgbackup.jobs != { };
   hasPaperless = config.services.paperless.enable or false;
   hasSearx = config.services.searx.enable or false;
+  hasGrafana = config.sys.services.grafana.enable or false;
   hasGrafanaCloud = config.sys.services.grafanaCloud.enable or false;
   hasCloudflared = config.sys.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
@@ -68,6 +69,13 @@ in
       }
       // whenEnabled hasSearx {
         "general/searxSecretKey" = { };
+      }
+      // whenEnabled hasGrafana {
+        "grafana/secret_key" = {
+          owner = "grafana";
+          group = "grafana";
+          mode = "0440";
+        };
       }
       // whenEnabled hasGrafanaCloud {
         "grafana/cloud/api_key" = { };
@@ -174,6 +182,9 @@ in
     // whenEnabled hasBorg {
       borgKeyFile = toString config.sops.secrets."general/borgKeyFilePath".path;
       borgRepo = toString config.sops.secrets."general/borgRepo".path;
+    }
+    // whenEnabled hasGrafana {
+      grafanaSecretKeyFile = toString config.sops.secrets."grafana/secret_key".path;
     }
     // whenEnabled hasGrafanaCloud {
       grafanaCloudApiKeyFile = toString config.sops.secrets."grafana/cloud/api_key".path;
