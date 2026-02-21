@@ -13,8 +13,6 @@
       browsers.chromium.enable = lib.mkForce false;
 
       gaming.lutris.enable = true;
-
-      terminal.zellij.attachToExisting = false;
     };
   };
 
