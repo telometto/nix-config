@@ -9,8 +9,34 @@ let
     "192.168.0.0/16"
     "100.64.0.0/10"
   ];
+
+  dynamicFileType = lib.types.submodule {
+    options.settings = lib.mkOption {
+      type = lib.types.attrs;
+      default = { };
+    };
+  };
 in
 {
+  options.services.traefik = {
+    static.settings = lib.mkOption {
+      type = lib.types.attrs;
+      default = { };
+    };
+
+    dynamic = {
+      dir = lib.mkOption {
+        type = lib.types.str;
+        default = "${config.services.traefik.dataDir}/dynamic";
+      };
+
+      files = lib.mkOption {
+        type = lib.types.attrsOf dynamicFileType;
+        default = { };
+      };
+    };
+  };
+
   options.sys.services.traefik = {
     enable = lib.mkEnableOption "Traefik reverse proxy";
 
@@ -88,6 +114,12 @@ in
     services.traefik = {
       enable = true;
       inherit (cfg) dataDir;
+
+      staticConfigOptions = config.services.traefik.static.settings;
+
+      dynamicConfigOptions = lib.mkMerge (
+        lib.mapAttrsToList (_: fileCfg: fileCfg.settings) config.services.traefik.dynamic.files
+      );
 
       dynamic.dir = "${cfg.dataDir}/dynamic";
 
