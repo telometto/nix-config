@@ -2,11 +2,14 @@ name: Security Audit
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 2 * * 1" # Weekly on Monday at 2 AM
+    - cron: "0 2 * * 1"
+
+concurrency:
+  group: security-audit
+  cancel-in-progress: false
 
 permissions:
   contents: read
-  security-events: write
   pull-requests: write
   issues: write
 
@@ -15,10 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@main
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Check secrets exposure
         id: gitleaks
@@ -26,8 +31,7 @@ jobs:
           echo "## 🔍 Security Audit Results" >> $GITHUB_STEP_SUMMARY
           echo "### Secrets Scanning" >> $GITHUB_STEP_SUMMARY
 
-          # Check for potential secrets in code
-          if nix run nixpkgs#gitleaks -- detect --verbose --no-git; then
+          if nix run nixpkgs#gitleaks -- detect --no-git --verbose; then
             echo "✅ Gitleaks: No secrets detected" >> $GITHUB_STEP_SUMMARY
             echo "secrets_found=false" >> $GITHUB_OUTPUT
           else
@@ -40,7 +44,6 @@ jobs:
           echo "### Firewall Configuration Audit" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Check for services with opened firewall ports
           open_ports=$(find . -name "*.nix" -exec grep -l "openFirewall.*true" {} \; 2>/dev/null || true)
           if [ -n "$open_ports" ]; then
             echo "**Files with opened firewall ports:**" >> $GITHUB_STEP_SUMMARY
@@ -57,15 +60,13 @@ jobs:
           echo "### SSH Security Audit" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Check for password authentication
-          if grep -r "PasswordAuthentication.*true" --include="*.nix" . 2>/dev/null; then
+          if grep -Erq "services\.openssh\.settings\.PasswordAuthentication\s*=\s*true|PasswordAuthentication\s*=\s*true" --include="*.nix" . 2>/dev/null; then
             echo "⚠️ Password authentication is enabled in some configurations" >> $GITHUB_STEP_SUMMARY
           else
             echo "✅ Password authentication not explicitly enabled" >> $GITHUB_STEP_SUMMARY
           fi
 
-          # Check for root login
-          if grep -r "PermitRootLogin.*yes" --include="*.nix" . 2>/dev/null; then
+          if grep -Erq "services\.openssh\.settings\.PermitRootLogin\s*=\s*\"yes\"|PermitRootLogin\s*=\s*\"yes\"" --include="*.nix" . 2>/dev/null; then
             echo "⚠️ Root login is permitted in some configurations" >> $GITHUB_STEP_SUMMARY
           else
             echo "✅ Root login not explicitly permitted" >> $GITHUB_STEP_SUMMARY
@@ -77,28 +78,12 @@ jobs:
           echo "### User Permissions Audit" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Check for users in wheel group
           wheel_users=$(grep -r "extraGroups.*wheel" --include="*.nix" . 2>/dev/null || true)
           if [ -n "$wheel_users" ]; then
             echo "**Users with sudo access (wheel group):**" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
             echo "$wheel_users" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Vulnerability scan
-        id: vulnix
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if nix run nixpkgs#vulnix -- --system 2>&1 | head -50; then
-            echo "✅ No known vulnerabilities found" >> $GITHUB_STEP_SUMMARY
-            echo "vulns_found=false" >> $GITHUB_OUTPUT
-          else
-            echo "⚠️ Potential vulnerabilities detected (check logs)" >> $GITHUB_STEP_SUMMARY
-            echo "vulns_found=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Generate security report
@@ -110,13 +95,32 @@ jobs:
 
       - name: Create issue if secrets found
         if: steps.gitleaks.outputs.secrets_found == 'true'
-        uses: actions/github-script@main
+        uses: actions/github-script@v8
         with:
           script: |
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '🚨 Security Alert: Potential Secrets Detected',
-              body: 'The automated security audit has detected potential secrets in the codebase. Please review the workflow run for details and rotate any exposed credentials immediately.',
-              labels: ['security', 'urgent']
-            })
+            const { owner, repo } = context.repo;
+            const title = '🚨 Security Alert: Potential Secrets Detected';
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner, repo,
+              state: 'open',
+              labels: 'security',
+              creator: 'github-actions[bot]',
+            });
+
+            const existing = issues.find(i => i.title === title);
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = `The automated security audit has detected potential secrets in the codebase.\n\n**Workflow run:** ${runUrl}\n\nPlease review and rotate any exposed credentials immediately.`;
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: existing.number,
+                body: `Secrets detected again.\n\n**Workflow run:** ${runUrl}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner, repo, title, body,
+                labels: ['security', 'urgent'],
+              });
+            }

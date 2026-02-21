@@ -1,0 +1,52 @@
+name: Flake Check
+on:
+    workflow_dispatch:
+    pull_request:
+        paths:
+            - "**.nix"
+            - "flake.lock"
+            - "treefmt.nix"
+    push:
+        branches: [main]
+        paths:
+            - "**.nix"
+            - "flake.lock"
+
+concurrency:
+    group: flake-check-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
+jobs:
+    flake-check:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Access private repository
+              uses: webfactory/ssh-agent@v0.9.1
+              with:
+                  ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
+
+            - name: Checkout repository
+              uses: actions/checkout@v6.0.2
+
+            - name: Install Nix
+              uses: DeterminateSystems/nix-installer-action@v21
+
+            - name: Setup Nix cache
+              uses: DeterminateSystems/magic-nix-cache-action@v13
+
+            - name: Run flake check
+              run: |
+                  echo "## 🔍 Flake Check Results" >> $GITHUB_STEP_SUMMARY
+
+                  if nix flake check --no-build 2>&1 | tee /tmp/flake-check-output.txt; then
+                    echo "✅ All flake outputs evaluate successfully" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "❌ Flake check failed" >> $GITHUB_STEP_SUMMARY
+                    echo '```' >> $GITHUB_STEP_SUMMARY
+                    cat /tmp/flake-check-output.txt >> $GITHUB_STEP_SUMMARY
+                    echo '```' >> $GITHUB_STEP_SUMMARY
+                    exit 1
+                  fi
