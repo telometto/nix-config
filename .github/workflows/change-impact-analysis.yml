@@ -313,6 +313,11 @@ jobs:
           name: impact-analysis-report
           path: impact-report.md
 
+      - name: Output report for non-PR runs
+        if: github.event_name != 'pull_request'
+        run: |
+          cat impact-report.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Comment on PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v8
