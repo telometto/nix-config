@@ -31,7 +31,7 @@ jobs:
           echo "## 🔍 Security Audit Results" >> $GITHUB_STEP_SUMMARY
           echo "### Secrets Scanning" >> $GITHUB_STEP_SUMMARY
 
-          if nix run nixpkgs#gitleaks -- detect --verbose; then
+          if nix run nixpkgs#gitleaks -- detect --no-git --verbose; then
             echo "✅ Gitleaks: No secrets detected" >> $GITHUB_STEP_SUMMARY
             echo "secrets_found=false" >> $GITHUB_OUTPUT
           else
