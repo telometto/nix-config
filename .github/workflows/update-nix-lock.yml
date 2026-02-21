@@ -98,6 +98,12 @@ jobs:
         run: |
           if [ -n "$PR_URL" ]; then
             gh pr merge --auto --merge "$PR_URL"
+          else
+            {
+              echo "### Warning: Auto-merge skipped"
+              echo
+              echo "The update-flake-lock step reported a pull-request URL, but PR_URL was empty when attempting to auto-merge."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
         env:
           PR_URL: ${{ steps.update-flake-lock.outputs.pull-request-url }}

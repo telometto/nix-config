@@ -12,6 +12,7 @@ on:
     paths:
       - "**.nix"
       - "flake.lock"
+      - "treefmt.nix"
 
 concurrency:
   group: validate-config-${{ github.ref }}

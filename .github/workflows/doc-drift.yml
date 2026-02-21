@@ -48,7 +48,11 @@ jobs:
                     esac
                   done <<< "$changed_files"
 
-                  unique_areas=$(printf '%s\n' "${areas[@]}" | sort -u | tr '\n' ',' | sed 's/,$//')
+                  if [ ${#areas[@]} -eq 0 ]; then
+                    unique_areas=""
+                  else
+                    unique_areas=$(printf '%s\n' "${areas[@]}" | sort -u | tr '\n' ',' | sed 's/,$//')
+                  fi
 
                   if [ "$code_changed" = true ] && [ "$docs_changed" = false ]; then
                     echo "drift_detected=true" >> "$GITHUB_OUTPUT"

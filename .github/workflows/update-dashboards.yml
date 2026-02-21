@@ -66,7 +66,7 @@ jobs:
               UPDATE_INFO="${UPDATE_INFO}- **New hash**: ${hash}\n"
               UPDATE_INFO="${UPDATE_INFO}- **Dashboard URL**: https://grafana.com/grafana/dashboards/${gnetId}\n\n"
               
-              # Update the file (hash without sha256- prefix)
+              # Update the file (SRI format: sha256-...)
               sed -i "/gnetId = ${gnetId};/,/^ *}/ s|revision = [0-9]*;|revision = ${latest_revision};|" lib/grafana-dashboards.nix
               sed -i "/gnetId = ${gnetId};/,/^ *}/ s|hash = \"[^\"]*\";|hash = \"${hash}\";|" lib/grafana-dashboards.nix
             else

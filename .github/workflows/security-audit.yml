@@ -60,13 +60,13 @@ jobs:
           echo "### SSH Security Audit" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if grep -rq "services\.openssh\.settings\.PasswordAuthentication\s*=\s*true\|PasswordAuthentication\s*=\s*true" --include="*.nix" . 2>/dev/null; then
+          if grep -Erq "services\.openssh\.settings\.PasswordAuthentication\s*=\s*true|PasswordAuthentication\s*=\s*true" --include="*.nix" . 2>/dev/null; then
             echo "⚠️ Password authentication is enabled in some configurations" >> $GITHUB_STEP_SUMMARY
           else
             echo "✅ Password authentication not explicitly enabled" >> $GITHUB_STEP_SUMMARY
           fi
 
-          if grep -rq "services\.openssh\.settings\.PermitRootLogin\s*=\s*\"yes\"\|PermitRootLogin\s*=\s*\"yes\"" --include="*.nix" . 2>/dev/null; then
+          if grep -Erq "services\.openssh\.settings\.PermitRootLogin\s*=\s*\"yes\"|PermitRootLogin\s*=\s*\"yes\"" --include="*.nix" . 2>/dev/null; then
             echo "⚠️ Root login is permitted in some configurations" >> $GITHUB_STEP_SUMMARY
           else
             echo "✅ Root login not explicitly permitted" >> $GITHUB_STEP_SUMMARY
