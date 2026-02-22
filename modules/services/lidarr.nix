@@ -27,23 +27,25 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    services.lidarr = {
-      enable = true;
-      inherit (cfg) dataDir openFirewall;
-      settings.server.port = cfg.port;
+    services = {
+      lidarr = {
+        enable = true;
+        inherit (cfg) dataDir openFirewall;
+        settings.server.port = cfg.port;
+      };
+
+      traefik.dynamic.files.lidarr = traefikLib.mkTraefikDynamicConfig {
+        name = "lidarr";
+        inherit cfg config;
+        inherit (cfg) port;
+      };
     };
 
     # Disable DynamicUser to prevent conflict with volume-mounted dataDir
     systemd.services.lidarr.serviceConfig = {
       DynamicUser = lib.mkForce false;
       SupplementaryGroups = [ "users" ];
-      UMask = "002";
-    };
-
-    services.traefik.dynamic.files.lidarr = traefikLib.mkTraefikDynamicConfig {
-      name = "lidarr";
-      inherit cfg config;
-      inherit (cfg) port;
+      UMask = lib.mkForce "002";
     };
 
     assertions = [
