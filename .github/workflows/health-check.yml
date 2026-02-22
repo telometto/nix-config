@@ -88,6 +88,8 @@ jobs:
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@v13
+        with:
+          use-flakehub: false
 
       - name: Expand build sandbox for avalanche
         if: matrix.host == 'avalanche'
