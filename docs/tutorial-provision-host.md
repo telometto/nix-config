@@ -26,22 +26,21 @@ cd nix-config
 3. Define basics in `<hostname>.nix`:
 
 ```nix
-{ lib, inputs, ... }:
+{ lib, ... }:
 {
-  imports = [
-    ./hardware-configuration.nix
-    ./packages.nix
-  ];
-
   networking.hostName = lib.mkForce "<hostname>";
 
   sys.role.desktop.enable = true;      # or server
   sys.desktop.flavor = "gnome";       # kde | gnome | hyprland | omit for servers
 
-  # Enable users from VARS on this host
   sys.users.zeno.enable = true;
 }
 ```
+
+All `.nix` files in the host directory (including `hardware-configuration.nix`
+and `packages.nix`) are auto-imported by
+[host-loader.nix](../host-loader.nix) — no explicit `imports` needed for local
+files.
 
 4. Switch to the configuration:
 

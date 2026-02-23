@@ -9,7 +9,7 @@ Self-hosted service configurations with consistent option interfaces.
 | **Monitoring** |
 | Grafana | [grafana.nix](grafana.nix) | Visualization and dashboarding | 3000 |
 | Prometheus | [prometheus.nix](prometheus.nix) | Metrics collection | 9090 |
-| VictoriaMetrics | [victoriametrics.nix](victoriametrics.nix) | Time-series database | 8428 |
+| VictoriaMetrics | [victoriametrics.nix](victoriametrics.nix) | Time-series database | 11008 |
 | Prometheus Exporters | [prometheus-exporters.nix](prometheus-exporters.nix) | System metrics exporters | Various |
 | **Media** |
 | Jellyfin | [jellyfin.nix](jellyfin.nix) | Media server | 8096 |

@@ -6,7 +6,7 @@ Information reference for this repo’s moving parts, options, and commands.
 
 - Hosts are defined via `mkHost` in [flake.nix](../flake.nix). Each host includes:
   - [system-loader.nix](../system-loader.nix)
-  - Host file: `./hosts/<hostname>/<hostname>.nix`
+  - [host-loader.nix](../host-loader.nix) (auto-imports all `.nix` files under `hosts/<hostname>/`)
   - External modules: home-manager, sops-nix, lanzaboote, microvm
 
 Outputs:
@@ -52,7 +52,7 @@ Outputs:
   - `sys.role.server.enable`
 - Config: [modules/role-desktop.nix](../modules/role-desktop.nix), [modules/role-server.nix](../modules/role-server.nix)
   - Desktop role enables networking, pipewire, printing, maintenance, tailscale, HM
-  - Server role enables networkingd, maintenance, auto-upgrade, HM, tailscale
+  - Server role enables networkd, maintenance, auto-upgrade, HM, tailscale
 
 ## Secrets (sops-nix)
 
