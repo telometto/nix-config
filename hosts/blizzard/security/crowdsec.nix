@@ -5,7 +5,9 @@
   ...
 }:
 {
-  # Upstream module sets `path = lib.mkForce []`, but journalctl acquisition needs systemd in PATH
+  # Upstream module clears PATH entirely (`path = lib.mkForce []`).
+  # Without this, CrowdSec starts but silently skips the journalctl acquisition
+  # (CanRun → exec.LookPath fails → DataSourceUnavailableError → logged and skipped).
   systemd.services.crowdsec.path = lib.mkForce [ pkgs.systemd ];
 
   services.crowdsec = {
