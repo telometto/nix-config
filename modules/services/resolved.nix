@@ -1,7 +1,6 @@
-# OK
 { lib, config, ... }:
 let
-  cfg = config.sys.services.resolved or { };
+  cfg = config.sys.services.resolved;
 in
 {
   options.sys.services.resolved.enable = (lib.mkEnableOption "systemd-resolved") // {

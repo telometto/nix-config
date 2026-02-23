@@ -1,4 +1,3 @@
-# OK
 { lib, config, ... }:
 let
   cfg = config.sys.services.timesyncd;
