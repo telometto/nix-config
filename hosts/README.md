@@ -8,8 +8,8 @@ Per-machine NixOS configurations defining hardware, roles, users, and services.
 |------|------|---------|-------------|
 | [snowfall/](snowfall/) | Desktop | KDE | Primary workstation, distributed builds client |
 | [blizzard/](blizzard/) | Server | None | Home server: Grafana, NFS, Samba, Tailscale router |
-| [avalanche/](avalanche/) | Desktop | — | Secondary workstation |
-| [kaizer/](kaizer/) | — | — | External access machine |
+| [avalanche/](avalanche/) | Desktop | GNOME | Secondary workstation (ThinkPad P51) |
+| [kaizer/](kaizer/) | Desktop | KDE | External access machine |
 
 ### Host Structure
 
@@ -27,81 +27,71 @@ For complex hosts like servers, you can organize configuration into subdirectori
 
 ```
 hosts/blizzard/
-├── blizzard.nix            # Main: imports, networking, role, users (~80 lines)
+├── blizzard.nix            # Main: networking, role, users (~80 lines)
 ├── hardware-configuration.nix
 ├── packages.nix
 ├── boot.nix                # ZFS, kernel, sysctl
 ├── networking.nix          # systemd-networkd
 ├── storage/                # Storage services
-│   ├── default.nix         # Auto-imports via scanPaths
 │   ├── zfs.nix
 │   ├── nfs.nix
 │   └── samba.nix
 ├── monitoring/             # Observability stack
-│   ├── default.nix
 │   ├── prometheus.nix
 │   ├── grafana.nix
 │   └── exporters.nix
 ├── services/               # Application services
-│   ├── default.nix
 │   ├── media.nix
 │   └── k3s.nix
 ├── security/               # Security infrastructure
-│   ├── default.nix
 │   ├── crowdsec.nix
 │   └── traefik.nix
 └── virtualisation/         # VMs and containers
-    ├── default.nix
     └── microvms.nix
 ```
 
-Use `mylib.scanPaths` to auto-import all `.nix` files in subdirectories:
-
-```nix
-# hosts/blizzard/blizzard.nix
-let
-  mylib = import ../../lib { inherit lib; };
-in
-{
-  imports = [
-    ./hardware-configuration.nix
-    ./packages.nix
-  ] ++ (mylib.scanPaths ./.);  # Auto-imports boot.nix, networking.nix, + subdirs
-  # ...
-}
-```
+All `.nix` files are auto-imported recursively by [host-loader.nix](../host-loader.nix) — no explicit
+`imports` list needed for local files. External modules (e.g. `nixos-hardware`) still
+require an `imports` block.
 
 ### Configuration Pattern
+
+All `.nix` files under `hosts/<hostname>/` are auto-imported by
+[host-loader.nix](../host-loader.nix). The main `<hostname>.nix` only needs to
+set host-specific configuration — no imports block for local files:
 
 ```nix
 # hosts/<hostname>/<hostname>.nix
 {
-  imports = [
-    ./hardware-configuration.nix
-    ./packages.nix
-  ];
-
   networking = {
     hostName = lib.mkForce "<hostname>";
     hostId = lib.mkForce "<unique-8-char-hex>";
   };
 
   sys = {
-    # Choose a role
     role.desktop.enable = true;  # or role.server.enable
 
-    # Select desktop flavor (for desktop role)
     desktop.flavor = "kde";  # or "gnome", "hyprland", "cosmic"
 
-    # Enable users for this host
     users.zeno.enable = true;
 
-    # Configure services
     services = {
       tailscale.enable = true;
       grafana.enable = true;
     };
   };
+}
+```
+
+External modules (e.g. `nixos-hardware`) still require an `imports` block:
+
+```nix
+{
+  imports = [
+    inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p51
+  ];
+
+  # ... rest of config
 }
 ```
 

@@ -21,13 +21,13 @@ This repository implements a modular NixOS configuration system using Nix Flakes
 │  ┌──────────────────────────────────────────────────────────────────┐   │
 │  │  mkHost(hostname) → nixpkgs.lib.nixosSystem                      │   │
 │  │    • system-loader.nix (auto-imports modules/)                   │   │
-│  │    • hosts/<hostname>/<hostname>.nix                             │   │
+│  │    • host-loader.nix (auto-imports hosts/<hostname>/**/*.nix)    │   │
 │  │    • home-manager.nixosModules.home-manager                      │   │
 │  │    • sops-nix, lanzaboote, microvm                               │   │
 │  └──────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 │  Outputs: nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}      │
-│           nixosConfigurations.{adguard-vm,actual-vm,searx-vm}            │
+│           nixosConfigurations.{adguard-vm,actual-vm,searx-vm,...}     │
 │           (via vms/flake-microvms.nix)                                   │
 │           formatter, checks                                             │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -326,7 +326,15 @@ The flake supports MicroVMs for isolated services:
          │
          ├── vms/adguard.nix (AdGuard Home VM)
          ├── vms/actual.nix (Actual Budget VM)
-         └── vms/searx.nix (SearXNG VM)
+         ├── vms/searx.nix (SearXNG VM)
+         ├── vms/overseerr.nix (Overseerr VM)
+         ├── vms/ombi.nix (Ombi VM)
+         ├── vms/tautulli.nix (Tautulli VM)
+         ├── vms/gitea.nix (Gitea VM)
+         ├── vms/sonarr.nix, radarr.nix, prowlarr.nix, bazarr.nix, ...
+         ├── vms/qbittorrent.nix, sabnzbd.nix
+         ├── vms/firefox.nix, brave.nix (Browser VMs)
+         └── vms/wireguard.nix (WireGuard VM)
 ```
 
 MicroVMs do **not** use `system-loader.nix` to avoid importing host-only modules.
@@ -363,19 +371,18 @@ Custom library functions in `lib/`:
 |------|------|---------|--------------|
 | `snowfall` | Desktop | KDE | Distributed builds client |
 | `blizzard` | Server | None | Grafana, NFS, Samba, Tailscale router |
-| `avalanche` | Desktop | — | — |
-| `kaizer` | — | — | External access |
+| `avalanche` | Desktop | GNOME | Secondary workstation |
+| `kaizer` | Desktop | KDE | External access |
 
 ### Host Configuration Pattern
+
+All `.nix` files under a host directory are auto-imported by
+[host-loader.nix](../host-loader.nix). No explicit `imports` needed for local
+files:
 
 ```nix
 # hosts/<hostname>/<hostname>.nix
 {
-  imports = [
-    ./hardware-configuration.nix
-    ./packages.nix
-  ];
-
   networking = {
     hostName = lib.mkForce "<hostname>";
     hostId = lib.mkForce "<unique-id>";
@@ -387,7 +394,6 @@ Custom library functions in `lib/`:
 
     services = {
       tailscale.enable = true;
-      # Host-specific services
     };
   };
 }
@@ -421,11 +427,11 @@ Custom library functions in `lib/`:
 
 1. Add user to `nix-secrets` (VARS.users)
 1. Enable per-host: `sys.users.<username>.enable = true;`
-1. Optionally add `home/users/user-configs/<user>-<host>.nix`
+1. Optionally add `home/overrides/user/<user>-<host>.nix`
 
 ### Adding Host-Wide HM Overrides
 
-1. Create `home/users/host-overrides/<hostname>.nix`
+1. Create `home/overrides/host/<hostname>.nix`
 1. Configure HM options that apply to all users on that host
 
 ## 13. Dependency Graph
@@ -463,8 +469,8 @@ Options merge with the following precedence (lowest to highest):
 1. **Role defaults** (role-desktop.nix, role-server.nix)
 1. **Base HM template** (`sys.home.template`)
 1. **Auto desktop config** (hm.desktop.\<flavor>.enable)
-1. **Host overrides** (`home/users/host-overrides/<hostname>.nix`)
-1. **User-specific overrides** (`home/users/user-configs/<user>-<host>.nix`)
+1. **Host overrides** (`home/overrides/host/<hostname>.nix`)
+1. **User-specific overrides** (`home/overrides/user/<user>-<host>.nix`)
 1. **Per-user extraConfig** (`sys.home.users.<name>.extraConfig`)
 1. **Host configuration** (`hosts/<hostname>/<hostname>.nix`)
 1. **Force overrides** (`lib.mkForce`)

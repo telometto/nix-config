@@ -10,6 +10,21 @@ for lightweight virtualization.
 | adguard-vm | [adguard.nix](adguard.nix) | AdGuard Home DNS filtering |
 | actual-vm | [actual.nix](actual.nix) | Actual Budget management |
 | searx-vm | [searx.nix](searx.nix) | SearXNG metasearch engine |
+| overseerr-vm | [overseerr.nix](overseerr.nix) | Media request management |
+| ombi-vm | [ombi.nix](ombi.nix) | Media requests |
+| tautulli-vm | [tautulli.nix](tautulli.nix) | Plex monitoring |
+| gitea-vm | [gitea.nix](gitea.nix) | Git hosting |
+| sonarr-vm | [sonarr.nix](sonarr.nix) | TV show management |
+| radarr-vm | [radarr.nix](radarr.nix) | Movie management |
+| prowlarr-vm | [prowlarr.nix](prowlarr.nix) | Indexer management |
+| bazarr-vm | [bazarr.nix](bazarr.nix) | Subtitle management |
+| readarr-vm | [readarr.nix](readarr.nix) | Book management |
+| lidarr-vm | [lidarr.nix](lidarr.nix) | Music management |
+| qbittorrent-vm | [qbittorrent.nix](qbittorrent.nix) | BitTorrent client |
+| sabnzbd-vm | [sabnzbd.nix](sabnzbd.nix) | Usenet downloader |
+| firefox-vm | [firefox.nix](firefox.nix) | Isolated Firefox browser |
+| brave-vm | [brave.nix](brave.nix) | Isolated Brave browser |
+| wireguard-vm | [wireguard.nix](wireguard.nix) | WireGuard VPN |
 
 ### Architecture
 
@@ -36,7 +51,13 @@ MicroVMs provide isolated environments for services that benefit from:
          │
          ├── adguard-vm
          ├── actual-vm
-         └── searx-vm
+         ├── searx-vm
+         ├── overseerr-vm, ombi-vm, tautulli-vm
+         ├── gitea-vm
+         ├── sonarr-vm, radarr-vm, prowlarr-vm, bazarr-vm, ...
+         ├── qbittorrent-vm, sabnzbd-vm
+         ├── firefox-vm, brave-vm
+         └── wireguard-vm
 ```
 
 ### Base Configuration
