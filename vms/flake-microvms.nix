@@ -112,4 +112,10 @@ in
     microvmModule
     ./wireguard.nix
   ];
+
+  matrix-synapse-vm = mkMicrovm [
+    microvmModule
+    sopsModule
+    ./matrix-synapse.nix
+  ];
 }
