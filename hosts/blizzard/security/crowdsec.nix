@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 {
   # Upstream module sets `path = lib.mkForce []`, but journalctl acquisition needs systemd in PATH
   systemd.services.crowdsec.path = lib.mkForce [ pkgs.systemd ];
