@@ -1,11 +1,13 @@
 {
   lib,
   config,
+  osConfig,
   inputs,
   ...
 }:
 let
   cfg = config.hm.security.sops;
+  uid = builtins.toString osConfig.users.users.${config.home.username}.uid;
 in
 {
   options.hm.security.sops = {
@@ -13,7 +15,7 @@ in
 
     defaultSymlinkPath = lib.mkOption {
       type = lib.types.str;
-      default = "/run/user/1000/secrets";
+      default = "/run/user/${uid}/secrets";
       description = "Default path for SOPS secret symlinks";
     };
 
@@ -35,7 +37,7 @@ in
       defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
       defaultSopsFormat = "yaml";
       inherit (cfg) defaultSymlinkPath;
-      defaultSecretsMountPoint = "/run/user/1000/secrets.d";
+      defaultSecretsMountPoint = "/run/user/${uid}/secrets.d";
       inherit (cfg) secrets;
 
       age = {
