@@ -3,12 +3,6 @@
   services.traefik = {
     enable = true;
 
-    dataDir = "/var/lib/traefik";
-
-    dynamic = {
-      dir = "/var/lib/traefik/dynamic";
-    };
-
     static.settings = {
       accessLog.format = "json";
       log.level = "WARN";
@@ -18,10 +12,7 @@
         version = "v1.4.5";
       };
 
-      api = {
-        dashboard = true;
-        insecure = false;
-      };
+      api.dashboard = true;
 
       entryPoints = {
         web = {
@@ -124,17 +115,6 @@
             };
           };
 
-          # brave-headers = {
-          #   headers = {
-          #     customResponseHeaders = {
-          #       X-Content-Type-Options = "nosniff";
-          #       X-XSS-Protection = "1; mode=block";
-          #       Referrer-Policy = "no-referrer";
-          #       Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-          #     };
-          #   };
-          # };
-
           overseerr-headers = {
             headers = {
               customResponseHeaders = {
@@ -192,16 +172,6 @@
               "crowdsec"
             ];
           };
-
-          # brave = {
-          #   rule = "Host(`brave.${VARS.domains.public}`)";
-          #   service = "brave";
-          #   entryPoints = [ "web" ];
-          #   middlewares = [
-          #     "brave-headers"
-          #     "crowdsec"
-          #   ];
-          # };
 
           sabnzbd = {
             rule = "Host(`sab.${VARS.domains.public}`)";
@@ -353,7 +323,6 @@
           actual.loadBalancer.servers = [ { url = "http://10.100.0.51:11051"; } ];
           firefox.loadBalancer.servers = [ { url = "http://10.100.0.52:11052"; } ];
           # firefox occupies port 11053; no .53 IP shall be assigned
-          # brave.loadBalancer.servers = [ { url = "http://10.100.0.54:11054"; } ]; # doesn't work
         };
       };
     };
