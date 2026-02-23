@@ -6,7 +6,7 @@ let
   # Gaming and emulation
   gaming = [
     # pkgs.retroarch
-    pkgs.melonDS
+    pkgs.melonds
   ];
 
   # System tools (some already in base packages)
