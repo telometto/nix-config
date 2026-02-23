@@ -9,11 +9,6 @@ let
   grafanaDashboards = import ../../lib/grafana-dashboards.nix { inherit lib pkgs; };
 in
 {
-  imports = [
-    ./hardware-configuration.nix
-    ./packages.nix
-  ];
-
   networking = {
     hostName = lib.mkForce "snowfall";
     hostId = lib.mkForce "131b6b39";
@@ -76,10 +71,10 @@ in
     };
 
     # Pull specific packages from different nixpkgs inputs
-    # overlays.fromInputs = {
-    #  nixpkgs-unstable = [ "vscode" ];
-    #  nixpkgs-stable = [ "vesktop" ];
-    # };
+    overlays.fromInputs = {
+      nixpkgs-unstable = [ "lutris" ];
+      #  nixpkgs-stable = [ "vesktop" ];
+    };
     #
     # Add custom overlays
     # overlays.custom = [
