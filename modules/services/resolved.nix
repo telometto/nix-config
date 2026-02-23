@@ -23,6 +23,12 @@ in
       description = "Fallback DNS servers to use (can be overridden per-host).";
     };
 
+    DNSSEC = lib.mkOption {
+      type = lib.types.str;
+      default = "allow-downgrade";
+      description = "DNSSEC validation mode. Set to 'false' when using a DNS proxy that strips DNSSEC signatures (e.g. AdGuard Home).";
+    };
+
     extraSettings = lib.mkOption {
       type = lib.types.attrsOf lib.types.anything;
       default = { };
@@ -38,7 +44,7 @@ in
         settings = {
           Resolve = {
             DNSOverTLS = "opportunistic";
-            DNSSEC = "allow-downgrade";
+            inherit (cfg) DNSSEC;
             LLMNR = "true";
 
             inherit (cfg) DNS FallbackDNS;

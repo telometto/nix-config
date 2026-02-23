@@ -52,7 +52,10 @@
     services = {
       k3s.enable = false;
 
-      resolved.DNS = [ "10.100.0.10" ];
+      resolved = {
+        DNS = [ "10.100.0.10" ];
+        DNSSEC = "false";
+      };
 
       tailscale = {
         interface = "enp8s0";
