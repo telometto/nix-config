@@ -40,7 +40,7 @@ in
 
     retentionPeriod = lib.mkOption {
       type = lib.types.str;
-      default = "10y"; # 12 months by default
+      default = "10y";
       description = ''
         How long to retain samples in storage.
         The minimum retentionPeriod is 24h or 1d.

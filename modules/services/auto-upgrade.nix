@@ -1,6 +1,6 @@
 { lib, config, ... }:
 let
-  cfg = config.sys.services.autoUpgrade or { };
+  cfg = config.sys.services.autoUpgrade;
 in
 {
   options.sys.services.autoUpgrade = {

@@ -51,7 +51,7 @@ in
         ║   │  Welcome back to the Matrix!                                │     ║
         ║   │                                                             │     ║
         ║   │    • All connections are monitored and logged               │     ║
-        ║   │    • Unauthorized access attempts will be prostituted       │     ║
+        ║   │    • Unauthorized access attempts will be prosecuted        │     ║
         ║   │    • This system is protected by AppArmor MAC               │     ║
         ║   └─────────────────────────────────────────────────────────────┘     ║
         ║                                                                       ║
