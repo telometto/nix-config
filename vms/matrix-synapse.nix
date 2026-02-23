@@ -23,7 +23,7 @@
     useSystemdActivation = true;
 
     secrets = {
-      "matrix-synapse/registration-shared-secret" = {
+      "matrix-synapse/registration_shared_secret" = {
         mode = "0440";
         owner = "matrix-synapse";
         group = "matrix-synapse";
@@ -116,7 +116,7 @@
     urlPreview.enable = true;
 
     extraConfigFiles = [
-      config.sops.secrets."matrix-synapse/registration-shared-secret".path
+      config.sops.secrets."matrix-synapse/registration_shared_secret".path
     ];
 
     reverseProxy.enable = false;
