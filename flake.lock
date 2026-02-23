@@ -588,11 +588,11 @@
     },
     "nix-secrets": {
       "locked": {
-        "lastModified": 1771840279,
-        "narHash": "sha256-1dCWV8O5h2qw+eLHYaf+cn2VWQXoabs1x+ruP5fRP9k=",
+        "lastModified": 1771845984,
+        "narHash": "sha256-XYiBMdmS9Rgu7ZpA1i8HeThSWEJTaGrbju8B9buQwfo=",
         "ref": "refs/heads/master",
-        "rev": "04817e188d5c07a43fc3bc6f7dedcc218391757a",
-        "revCount": 84,
+        "rev": "877941033aa9b01722d10dc53684eea717eb6876",
+        "revCount": 86,
         "type": "git",
         "url": "ssh://git@github.com/telometto/nix-secrets.git"
       },
@@ -720,11 +720,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1771839045,
-        "narHash": "sha256-4VDD48PJn6AKC3/Lx/Q2hcNkHh7/tOfvQm9fNUB26rA=",
+        "lastModified": 1771843891,
+        "narHash": "sha256-nHfAWsc24hIqJkmwMV6TqCDsRfvErcLZqOEdqdK+f18=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "bf84520fe386f2be089ca39e07049d745de09102",
+        "rev": "97fdbc00e241d5f97c0602afacf07dbc505e8a59",
         "type": "github"
       },
       "original": {
