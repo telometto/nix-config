@@ -12,8 +12,6 @@ in
 {
   imports = [
     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p51
-    ./hardware-configuration.nix
-    ./packages.nix
   ];
 
   networking = {

@@ -10,11 +10,6 @@ let
   LOCALE = "it_IT.UTF-8";
 in
 {
-  imports = [
-    ./hardware-configuration.nix
-    ./packages.nix
-  ];
-
   networking = {
     hostName = lib.mkForce "kaizer";
     hostId = lib.mkForce "632f97e1";
