@@ -103,6 +103,11 @@
       "d /var/lib/matrix-synapse 0700 matrix-synapse matrix-synapse -"
       "d /var/lib/postgresql 0700 postgres postgres -"
     ];
+
+    services.matrix-synapse = {
+      after = [ "sops-install-secrets.service" ];
+      wants = [ "sops-install-secrets.service" ];
+    };
   };
 
   sys.services.matrix-synapse = {
