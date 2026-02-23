@@ -110,81 +110,87 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    services.traefik = {
-      enable = true;
-      inherit (cfg) dataDir;
+  config = lib.mkMerge [
+    (lib.mkIf config.services.traefik.enable {
+      services.traefik = {
+        staticConfigOptions = config.services.traefik.static.settings;
 
-      staticConfigOptions = config.services.traefik.static.settings;
+        dynamicConfigOptions = lib.mkMerge (
+          lib.mapAttrsToList (_: fileCfg: fileCfg.settings) config.services.traefik.dynamic.files
+        );
+      };
+    })
 
-      dynamicConfigOptions = lib.mkMerge (
-        lib.mapAttrsToList (_: fileCfg: fileCfg.settings) config.services.traefik.dynamic.files
-      );
+    (lib.mkIf cfg.enable {
+      services.traefik = {
+        enable = true;
+        inherit (cfg) dataDir;
 
-      dynamic.dir = "${cfg.dataDir}/dynamic";
+        dynamic.dir = "${cfg.dataDir}/dynamic";
 
-      static.settings = lib.recursiveUpdate (
-        {
-          log.level = cfg.logLevel;
-          inherit (cfg) entryPoints;
-        }
-        // lib.optionalAttrs (cfg.certResolvers != { }) {
-          certificatesResolvers = cfg.certResolvers;
-        }
-        // lib.optionalAttrs cfg.dashboard.enable {
-          api = {
-            dashboard = true;
-            insecure = false;
-          };
-        }
-        // lib.optionalAttrs cfg.accessLog {
-          accessLog.format = "json";
-        }
-        // lib.optionalAttrs cfg.metrics {
-          metrics.prometheus = {
-            addEntryPointsLabels = true;
-            addRoutersLabels = true;
-            addServicesLabels = true;
-          };
-        }
-      ) cfg.staticConfigOverrides;
-
-      dynamic.files.core.settings.http = {
-        middlewares = lib.optionalAttrs cfg.securityHeaders {
-          security-headers.headers = {
-            customResponseHeaders = {
-              X-Content-Type-Options = "nosniff";
-              X-Frame-Options = "SAMEORIGIN";
-              X-XSS-Protection = "1; mode=block";
-              Referrer-Policy = "no-referrer";
-              Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-            };
-
-            contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
-          };
-        };
-
-        routers = lib.optionalAttrs cfg.dashboard.enable {
-          traefik-dashboard = {
-            rule = "Host(`${cfg.dashboard.domain}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
-            service = "api@internal";
-            entryPoints = [ "websecure" ];
-            middlewares = [ "security-headers" ];
+        static.settings = lib.recursiveUpdate (
+          {
+            log.level = cfg.logLevel;
+            inherit (cfg) entryPoints;
           }
           // lib.optionalAttrs (cfg.certResolvers != { }) {
-            tls.certResolver = builtins.head (builtins.attrNames cfg.certResolvers);
+            certificatesResolvers = cfg.certResolvers;
+          }
+          // lib.optionalAttrs cfg.dashboard.enable {
+            api = {
+              dashboard = true;
+              insecure = false;
+            };
+          }
+          // lib.optionalAttrs cfg.accessLog {
+            accessLog.format = "json";
+          }
+          // lib.optionalAttrs cfg.metrics {
+            metrics.prometheus = {
+              addEntryPointsLabels = true;
+              addRoutersLabels = true;
+              addServicesLabels = true;
+            };
+          }
+        ) cfg.staticConfigOverrides;
+
+        dynamic.files.core.settings.http = {
+          middlewares = lib.optionalAttrs cfg.securityHeaders {
+            security-headers.headers = {
+              customResponseHeaders = {
+                X-Content-Type-Options = "nosniff";
+                X-Frame-Options = "SAMEORIGIN";
+                X-XSS-Protection = "1; mode=block";
+                Referrer-Policy = "no-referrer";
+                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+              };
+
+              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
+            };
+          };
+
+          routers = lib.optionalAttrs cfg.dashboard.enable {
+            traefik-dashboard = {
+              rule = "Host(`${cfg.dashboard.domain}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
+              service = "api@internal";
+              entryPoints = [ "websecure" ];
+              middlewares = [ "security-headers" ];
+            }
+            // lib.optionalAttrs (cfg.certResolvers != { }) {
+              tls.certResolver = builtins.head (builtins.attrNames cfg.certResolvers);
+            };
           };
         };
       };
-    };
 
-    services.tailscale.permitCertUid = "traefik";
+      services.tailscale.permitCertUid = "traefik";
 
-    assertions = [
-      {
-        assertion = !cfg.dashboard.enable || cfg.dashboard.domain != null;
-        message = "sys.services.traefik.dashboard.domain must be set when dashboard is enabled";
-      }
-    ];
-  };
+      assertions = [
+        {
+          assertion = !cfg.dashboard.enable || cfg.dashboard.domain != null;
+          message = "sys.services.traefik.dashboard.domain must be set when dashboard is enabled";
+        }
+      ];
+    })
+  ];
 }
