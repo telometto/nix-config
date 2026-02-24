@@ -8,10 +8,24 @@ let
   inherit (inputs) nixpkgs;
   microvmModule = inputs.microvm.nixosModules.microvm;
   sopsModule = inputs.sops-nix.nixosModules.sops;
+
+  # TODO: Remove once microvm.nix adds format=raw to cloud-hypervisor disk args
+  # cloud-hypervisor v51.0 blocks sector-0 writes for autodetected raw images
+  # (security fix PR #7728), breaking all MicroVM volume mounts
+  stablePkgs = import inputs.nixpkgs-stable-latest { inherit system; };
+  pinnedOverlays = {
+    nixpkgs.overlays = [
+      (_final: _prev: {
+        cloud-hypervisor = stablePkgs.cloud-hypervisor;
+      })
+    ];
+  };
+
   mkMicrovm =
     modules:
     nixpkgs.lib.nixosSystem {
-      inherit system modules;
+      inherit system;
+      modules = [ pinnedOverlays ] ++ modules;
 
       specialArgs = { inherit inputs system VARS; };
     };
