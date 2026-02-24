@@ -88,6 +88,7 @@ in
 
     home.packages = [
       pkgs.gnome-tweaks
+      pkgs.wl-clipboard
 
       # GNOME extensions
       pkgs.gnomeExtensions.appindicator
