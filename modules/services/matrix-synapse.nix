@@ -72,113 +72,115 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    services.postgresql = lib.mkIf cfg.database.createLocally {
-      enable = true;
+    services = {
+      postgresql = lib.mkIf cfg.database.createLocally {
+        enable = true;
 
-      initialScript = pkgs.writeText "synapse-init.sql" ''
-        CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-        CREATE DATABASE "matrix-synapse"
-          WITH OWNER "matrix-synapse"
-               TEMPLATE template0
-               LC_COLLATE = "C"
-               LC_CTYPE = "C";
-      '';
-    };
+        initialScript = pkgs.writeText "synapse-init.sql" ''
+          CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+          CREATE DATABASE "matrix-synapse"
+            WITH OWNER "matrix-synapse"
+                 TEMPLATE template0
+                 LC_COLLATE = "C"
+                 LC_CTYPE = "C";
+        '';
+      };
 
-    services.matrix-synapse = {
-      enable = true;
-      inherit (cfg) dataDir;
+      matrix-synapse = {
+        enable = true;
+        inherit (cfg) dataDir;
 
-      extras = [ "postgres" ];
+        extras = [ "postgres" ];
 
-      inherit (cfg) extraConfigFiles;
+        inherit (cfg) extraConfigFiles;
 
-      settings = lib.mkMerge [
-        {
-          server_name = cfg.serverName;
+        settings = lib.mkMerge [
+          {
+            server_name = cfg.serverName;
 
-          public_baseurl =
-            if cfg.publicBaseUrl != null then
-              cfg.publicBaseUrl
-            else if cfg.reverseProxy.enable && cfg.reverseProxy.domain != null then
-              "https://${cfg.reverseProxy.domain}"
-            else
-              null;
+            public_baseurl =
+              if cfg.publicBaseUrl != null then
+                cfg.publicBaseUrl
+              else if cfg.reverseProxy.enable && cfg.reverseProxy.domain != null then
+                "https://${cfg.reverseProxy.domain}"
+              else
+                null;
 
-          listeners = [
-            {
-              inherit (cfg) port;
-              bind_addresses = [ "0.0.0.0" ];
-              type = "http";
-              tls = false;
-              x_forwarded = true;
-              resources = [
-                {
-                  names = [
-                    "client"
-                    "federation"
-                  ];
-                  compress = false;
-                }
-              ];
-            }
-          ];
+            listeners = [
+              {
+                inherit (cfg) port;
+                bind_addresses = [ "0.0.0.0" ];
+                type = "http";
+                tls = false;
+                x_forwarded = true;
+                resources = [
+                  {
+                    names = [
+                      "client"
+                      "federation"
+                    ];
+                    compress = false;
+                  }
+                ];
+              }
+            ];
 
-          database = lib.mkIf cfg.database.createLocally {
-            name = "psycopg2";
-            args = {
-              user = "matrix-synapse";
-              database = "matrix-synapse";
-              host = "/run/postgresql";
-              cp_min = 5;
-              cp_max = 10;
+            database = lib.mkIf cfg.database.createLocally {
+              name = "psycopg2";
+              args = {
+                user = "matrix-synapse";
+                database = "matrix-synapse";
+                host = "/run/postgresql";
+                cp_min = 5;
+                cp_max = 10;
+              };
             };
-          };
 
-          url_preview_enabled = cfg.urlPreview.enable;
+            url_preview_enabled = cfg.urlPreview.enable;
 
-          url_preview_ip_range_blacklist = lib.mkIf cfg.urlPreview.enable [
-            "127.0.0.0/8"
-            "10.0.0.0/8"
-            "172.16.0.0/12"
-            "192.168.0.0/16"
-            "100.64.0.0/10"
-            "192.0.0.0/24"
-            "169.254.0.0/16"
-            "192.88.99.0/24"
-            "198.18.0.0/15"
-            "192.0.2.0/24"
-            "198.51.100.0/24"
-            "203.0.113.0/24"
-            "224.0.0.0/4"
-            "::1/128"
-            "fe80::/10"
-            "fc00::/7"
-            "2001:db8::/32"
-            "ff00::/8"
-            "fec0::/10"
-          ];
+            url_preview_ip_range_blacklist = lib.mkIf cfg.urlPreview.enable [
+              "127.0.0.0/8"
+              "10.0.0.0/8"
+              "172.16.0.0/12"
+              "192.168.0.0/16"
+              "100.64.0.0/10"
+              "192.0.0.0/24"
+              "169.254.0.0/16"
+              "192.88.99.0/24"
+              "198.18.0.0/15"
+              "192.0.2.0/24"
+              "198.51.100.0/24"
+              "203.0.113.0/24"
+              "224.0.0.0/4"
+              "::1/128"
+              "fe80::/10"
+              "fc00::/7"
+              "2001:db8::/32"
+              "ff00::/8"
+              "fec0::/10"
+            ];
 
-          enable_registration = false;
-          report_stats = false;
+            enable_registration = false;
+            report_stats = false;
 
-          # Handles /.well-known/matrix/server so federation works without
-          # external web server config on the bare domain
-          serve_server_wellknown = true;
-        }
-        cfg.settings
-      ];
+            # Handles /.well-known/matrix/server so federation works without
+            # external web server config on the bare domain
+            serve_server_wellknown = true;
+          }
+          cfg.settings
+        ];
+      };
+
+      traefik.dynamic.files.matrix-synapse = traefikLib.mkTraefikDynamicConfig {
+        name = "matrix-synapse";
+        inherit cfg config;
+        inherit (cfg) port;
+        defaultMiddlewares = [ "security-headers" ];
+      };
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
       allowedTCPPorts = [ cfg.port ];
-    };
-
-    services.traefik.dynamic.files.matrix-synapse = traefikLib.mkTraefikDynamicConfig {
-      name = "matrix-synapse";
-      inherit cfg config;
-      inherit (cfg) port;
-      defaultMiddlewares = [ "security-headers" ];
     };
 
     assertions = [
