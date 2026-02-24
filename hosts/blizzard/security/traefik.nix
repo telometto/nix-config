@@ -303,6 +303,17 @@
               "crowdsec"
             ];
           };
+
+          matrix-synapse = {
+            rule = "Host(`matrix.${VARS.domains.public}`)";
+            service = "matrix-synapse";
+            entryPoints = [ "web" ];
+            # No crowdsec middleware: federation requires accepting traffic
+            # from external Matrix servers that may be flagged by CrowdSec
+            middlewares = [
+              "security-headers"
+            ];
+          };
         };
 
         services = {
@@ -320,6 +331,7 @@
           ombi.loadBalancer.servers = [ { url = "http://10.100.0.41:11041"; } ];
           tautulli.loadBalancer.servers = [ { url = "http://10.100.0.42:11042"; } ];
           gitea.loadBalancer.servers = [ { url = "http://10.100.0.50:11050"; } ];
+          matrix-synapse.loadBalancer.servers = [ { url = "http://10.100.0.60:11060"; } ];
           actual.loadBalancer.servers = [ { url = "http://10.100.0.51:11051"; } ];
           firefox.loadBalancer.servers = [ { url = "http://10.100.0.52:11052"; } ];
           # firefox occupies port 11053; no .53 IP shall be assigned
