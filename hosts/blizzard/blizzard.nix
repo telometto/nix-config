@@ -47,6 +47,11 @@
     overlays.fromInputs = {
       # nixpkgs-unstable = [ "intel-graphics-compiler" ];
       # nixpkgs-stable = [ "searxng" ];
+
+      # TODO: Remove once microvm.nix adds format=raw to cloud-hypervisor disk args
+      # cloud-hypervisor v51.0 blocks sector-0 writes for autodetected raw images
+      # (security fix PR #7728), breaking all MicroVM volume mounts
+      nixpkgs-stable-latest = [ "cloud-hypervisor" ];
     };
 
     services = {
