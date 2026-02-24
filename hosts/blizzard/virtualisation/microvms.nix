@@ -28,6 +28,7 @@
         "wireguard-vm"
         "firefox-vm"
         # "brave-vm"
+        "matrix-synapse-vm"
       ];
 
       vms = {
@@ -49,6 +50,7 @@
         wireguard-vm.flake = self;
         firefox-vm.flake = self;
         # brave-vm.flake = self;
+        matrix-synapse-vm.flake = self;
       };
 
       expose = {
@@ -357,6 +359,22 @@
             enable = true;
             ingress = {
               "ff.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        matrix-synapse-vm = {
+          ip = "10.100.0.60";
+
+          portForward = {
+            enable = false;
+            ports = [ ];
+          };
+
+          cfTunnel = {
+            enable = false;
+            ingress = {
+              "matrix.${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
