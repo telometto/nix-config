@@ -20,6 +20,8 @@
     defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
     defaultSopsFormat = "yaml";
     age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
+    # Run sops-install-secrets as a systemd service (after local-fs.target)  
+    # instead of activation script, since /persist isn't mounted during activation
     useSystemdActivation = true;
 
     secrets = {
@@ -81,10 +83,7 @@
     useDHCP = false;
     useNetworkd = true;
 
-    firewall = {
-      enable = true;
-      allowedTCPPorts = [ 11060 ];
-    };
+    firewall.enable = true;
   };
 
   systemd = {
@@ -106,7 +105,7 @@
 
     services.matrix-synapse = {
       after = [ "sops-install-secrets.service" ];
-      wants = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
     };
   };
 
