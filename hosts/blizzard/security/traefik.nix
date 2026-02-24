@@ -338,6 +338,8 @@
             rule = "Host(`matrix.${VARS.domains.public}`)";
             service = "matrix-synapse";
             entryPoints = [ "web" ];
+            # No crowdsec middleware: federation requires accepting traffic
+            # from external Matrix servers that may be flagged by CrowdSec
             middlewares = [
               "security-headers"
             ];
