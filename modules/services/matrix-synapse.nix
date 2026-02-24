@@ -77,7 +77,7 @@ in
         enable = true;
 
         initialScript = pkgs.writeText "synapse-init.sql" ''
-          CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+          CREATE ROLE "matrix-synapse" WITH LOGIN;
           CREATE DATABASE "matrix-synapse"
             WITH OWNER "matrix-synapse"
                  TEMPLATE template0
@@ -125,7 +125,17 @@ in
               }
             ];
 
-            database = lib.mkIf cfg.database.createLocally {
+            url_preview_enabled = cfg.urlPreview.enable;
+
+            enable_registration = false;
+            report_stats = false;
+
+            # Handles /.well-known/matrix/server so federation works without
+            # external web server config on the bare domain
+            serve_server_wellknown = true;
+          }
+          (lib.optionalAttrs cfg.database.createLocally {
+            database = {
               name = "psycopg2";
               args = {
                 user = "matrix-synapse";
@@ -135,10 +145,9 @@ in
                 cp_max = 10;
               };
             };
-
-            url_preview_enabled = cfg.urlPreview.enable;
-
-            url_preview_ip_range_blacklist = lib.mkIf cfg.urlPreview.enable [
+          })
+          (lib.optionalAttrs cfg.urlPreview.enable {
+            url_preview_ip_range_blacklist = [
               "127.0.0.0/8"
               "10.0.0.0/8"
               "172.16.0.0/12"
@@ -159,14 +168,7 @@ in
               "ff00::/8"
               "fec0::/10"
             ];
-
-            enable_registration = false;
-            report_stats = false;
-
-            # Handles /.well-known/matrix/server so federation works without
-            # external web server config on the bare domain
-            serve_server_wellknown = true;
-          }
+          })
           cfg.settings
         ];
       };
