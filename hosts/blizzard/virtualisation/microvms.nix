@@ -10,7 +10,7 @@
       stateDir = "/rpool/unenc/vms";
 
       autostart = [
-        "adguard-vm"
+        # "adguard-vm"
         "actual-vm"
         "searx-vm"
         "overseerr-vm"
@@ -32,7 +32,7 @@
       ];
 
       vms = {
-        adguard-vm.flake = self;
+        # adguard-vm.flake = self;
         actual-vm.flake = self;
         searx-vm.flake = self;
         overseerr-vm.flake = self;
@@ -54,38 +54,38 @@
       };
 
       expose = {
-        adguard-vm = {
-          ip = "10.100.0.10";
-
-          portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "both";
-                sourcePort = 53;
-              }
-              {
-                proto = "tcp";
-                sourcePort = 443;
-              }
-              {
-                proto = "tcp";
-                sourcePort = 853;
-              }
-              {
-                proto = "tcp";
-                sourcePort = 11010;
-              }
-            ];
-          };
-
-          cfTunnel = {
-            enable = false;
-            ingress = {
-              "adguard.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
+        # adguard-vm = {
+        #   ip = "10.100.0.10";
+        #
+        #   portForward = {
+        #     enable = true;
+        #     ports = [
+        #       {
+        #         proto = "both";
+        #         sourcePort = 53;
+        #       }
+        #       {
+        #         proto = "tcp";
+        #         sourcePort = 443;
+        #       }
+        #       {
+        #         proto = "tcp";
+        #         sourcePort = 853;
+        #       }
+        #       {
+        #         proto = "tcp";
+        #         sourcePort = 11010;
+        #       }
+        #     ];
+        #   };
+        #
+        #   cfTunnel = {
+        #     enable = false;
+        #     ingress = {
+        #       "adguard.${VARS.domains.public}" = "http://localhost:80";
+        #     };
+        #   };
+        # };
 
         actual-vm = {
           ip = "10.100.0.51";

@@ -31,11 +31,11 @@ let
     };
 in
 {
-  adguard-vm = mkMicrovm [
-    microvmModule
-    ./adguard.nix
-    sopsModule
-  ];
+  # adguard-vm = mkMicrovm [
+  #   microvmModule
+  #   ./adguard.nix
+  #   sopsModule
+  # ];
 
   actual-vm = mkMicrovm [
     microvmModule
