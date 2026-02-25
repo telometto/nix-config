@@ -119,7 +119,7 @@
           Type = "oneshot";
           RemainAfterExit = true;
           RuntimeDirectory = "matrix-synapse-secret";
-          RuntimeDirectoryMode = "0750";
+          RuntimeDirectoryMode = "0755";
         };
 
         script = ''
