@@ -285,8 +285,13 @@
           ip = "10.100.0.30";
 
           portForward = {
-            enable = false;
-            ports = [ ];
+            enable = true;
+            ports = [
+              {
+                proto = "tcp";
+                sourcePort = 11030;
+              }
+            ];
           };
 
           cfTunnel = {
@@ -362,8 +367,13 @@
           ip = "10.100.0.60";
 
           portForward = {
-            enable = false;
-            ports = [ ];
+            enable = true;
+            ports = [
+              {
+                proto = "tcp";
+                sourcePort = 11060;
+              }
+            ];
           };
 
           cfTunnel = {
