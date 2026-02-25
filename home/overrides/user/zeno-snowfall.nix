@@ -15,7 +15,7 @@
     pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
     pkgs.vorta # Borg backup GUI
     pkgs.hugo # static website engine
-    pkgs.signal-desktop
+    pkgs.signal-desktop-bin
     pkgs.logseq
     pkgs.kdePackages.krdc
     pkgs.teams-for-linux
