@@ -103,9 +103,32 @@
       "d /var/lib/postgresql 0700 postgres postgres -"
     ];
 
-    services.matrix-synapse = {
-      after = [ "sops-install-secrets.service" ];
-      requires = [ "sops-install-secrets.service" ];
+    services = {
+      matrix-synapse = {
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+      };
+
+      matrix-synapse-secret = {
+        description = "Generate Matrix Synapse shared secret config";
+        before = [ "matrix-synapse.service" ];
+        requiredBy = [ "matrix-synapse.service" ];
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          RuntimeDirectory = "matrix-synapse-secret";
+          RuntimeDirectoryMode = "0750";
+        };
+        
+        script = ''
+          secret=$(cat ${config.sops.secrets."matrix-synapse/registration_shared_secret".path})
+          echo "registration_shared_secret: \"$secret\"" > /run/matrix-synapse-secret/shared-secret.yaml
+          chown matrix-synapse:matrix-synapse /run/matrix-synapse-secret/shared-secret.yaml
+          chmod 0440 /run/matrix-synapse-secret/shared-secret.yaml
+        '';
+      };
     };
   };
 
@@ -120,7 +143,7 @@
     urlPreview.enable = true;
 
     extraConfigFiles = [
-      config.sops.secrets."matrix-synapse/registration_shared_secret".path
+      "/run/matrix-synapse-secret/shared-secret.yaml"
     ];
 
     reverseProxy.enable = false;
