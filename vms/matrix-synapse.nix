@@ -146,7 +146,29 @@
       "/run/matrix-synapse-secret/shared-secret.yaml"
     ];
 
+    publicBaseUrl = "https://matrix.zzxyz.no";
+
     reverseProxy.enable = false;
+
+    settings = {
+      # Let users browse other servers' public room directories
+      allow_public_rooms_over_federation = true;
+
+      # Suppress warning about trusting the default matrix.org key server
+      suppress_key_server_warning = true;
+
+      # Auto-purge cached remote media after 90 days to save disk
+      media_retention.remote_media_lifetime = "90d";
+
+      # Allow uploads up to 100 MB
+      max_upload_size_mb = 90;
+
+      # Disable presence (online/offline tracking) to reduce resource usage
+      presence.enabled = false;
+
+      # Auto-join new users into a welcome room (create this room first)
+      # auto_join_rooms = [ "#welcome:zzxyz.no" ];
+    };
   };
 
   services.openssh.hostKeys = [
