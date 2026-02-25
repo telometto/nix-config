@@ -87,8 +87,13 @@ in
 
     services = {
       resolved = {
-        DNS = [ "192.168.2.100" ];
-        FallbackDNS = [ ];
+        enableDNS = false;
+        enableFallbackDNS = true;
+
+        enableDNSSEC = true;
+        enableDNSOverTLS = true;
+        enableLLMNR = true;
+        LLMNR = "resolve";
       };
 
       tailscale = {

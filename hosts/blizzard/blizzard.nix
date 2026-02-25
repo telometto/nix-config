@@ -58,8 +58,13 @@
       k3s.enable = false;
 
       resolved = {
-        DNS = [ "10.100.0.10" ];
-        DNSSEC = "false";
+        enableDNS = false;
+        enableFallbackDNS = true;
+
+        enableDNSSEC = true;
+        enableDNSOverTLS = true;
+        enableLLMNR = true;
+        LLMNR = "resolve";
       };
 
       tailscale = {
