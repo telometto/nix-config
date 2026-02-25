@@ -121,7 +121,7 @@
           RuntimeDirectory = "matrix-synapse-secret";
           RuntimeDirectoryMode = "0750";
         };
-        
+
         script = ''
           secret=$(cat ${config.sops.secrets."matrix-synapse/registration_shared_secret".path})
           echo "registration_shared_secret: \"$secret\"" > /run/matrix-synapse-secret/shared-secret.yaml
