@@ -147,7 +147,7 @@
             enable = true;
             ingress = {
               "git.${VARS.domains.public}" = "http://localhost:80";
-              "ssh-git.${VARS.domains.public}" = "ssh://localhost:2222";
+              "ssh-git.${VARS.domains.public}" = "ssh://10.100.0.50:2222";
             };
           };
         };
@@ -285,13 +285,8 @@
           ip = "10.100.0.30";
 
           portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11030;
-              }
-            ];
+            enable = false;
+            ports = [ ];
           };
 
           cfTunnel = {
@@ -372,7 +367,7 @@
           };
 
           cfTunnel = {
-            enable = false;
+            enable = true;
             ingress = {
               "matrix.${VARS.domains.public}" = "http://localhost:80";
             };
