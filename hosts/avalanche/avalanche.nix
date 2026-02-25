@@ -68,7 +68,15 @@ in
     # };
 
     services = {
-      resolved.DNS = [ "192.168.2.100" ];
+      resolved = {
+        enableDNS = false;
+        enableFallbackDNS = true;
+
+        enableDNSSEC = true;
+        enableDNSOverTLS = true;
+        enableLLMNR = true;
+        LLMNR = "resolve";
+      };
 
       tailscale = {
         interface = "wlp4s0";

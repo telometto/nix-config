@@ -98,7 +98,17 @@ in
     # ];
 
     services = {
-      resolved.DNS = [ "9.9.9.9" ];
+      resolved = {
+        enableDNS = true;
+        DNS = [ "9.9.9.9" ];
+
+        enableFallbackDNS = true;
+
+        enableDNSSEC = true;
+        enableDNSOverTLS = true;
+        enableLLMNR = true;
+        LLMNR = "resolve";
+      };
 
       tailscale = {
         interface = "enp42s0";
