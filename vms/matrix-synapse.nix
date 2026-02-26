@@ -135,9 +135,9 @@
   sys.services.matrix-synapse = {
     enable = true;
 
-    port = 11060;
-    serverName = "zzxyz.no";
-    openFirewall = true;
+    port = 8008;
+    serverName = VARS.domains.public;
+    openFirewall = false;
 
     database.createLocally = true;
     urlPreview.enable = true;
@@ -146,7 +146,7 @@
       "/run/matrix-synapse-secret/shared-secret.yaml"
     ];
 
-    publicBaseUrl = "https://matrix.zzxyz.no";
+    publicBaseUrl = "https://matrix.${VARS.domains.public}";
 
     reverseProxy.enable = false;
 
@@ -166,12 +166,13 @@
       # Disable presence (online/offline tracking) to reduce resource usage
       presence.enabled = false;
 
-      # Serve /.well-known/matrix/client so Element and other clients
-      # auto-discover that the homeserver API is at public_baseurl
-      serve_client_wellknown = true;
+      # Disable Synapse's built-in well-known — it generates m.server from
+      # server_name (zzxyz.no:443) instead of the delegated matrix.zzxyz.no.
+      # Nginx in front of Synapse serves the correct responses instead.
+      serve_server_wellknown = false;
 
       # Auto-join new users into a welcome room (create this room first)
-      # auto_join_rooms = [ "#welcome:zzxyz.no" ];
+      # auto_join_rooms = [ "#welcome:${VARS.domains.public}" ];
 
       # --- Access control ---
 
@@ -194,7 +195,7 @@
       request_token_inhibit_3pid_errors = true;
 
       # Admin contact shown to users on resource-limit errors
-      admin_contact = "mailto:matrix@zzxyz.no";
+      admin_contact = "mailto:matrix@${VARS.domains.public}";
 
       # --- Federation hardening ---
 
@@ -266,11 +267,14 @@
 
       password_config = {
         enabled = true;
-        minimum_length = 12;
-        require_digit = true;
-        require_symbol = true;
-        require_lowercase = true;
-        require_uppercase = true;
+        policy = {
+          enabled = true;
+          minimum_length = 12;
+          require_digit = true;
+          require_symbol = true;
+          require_lowercase = true;
+          require_uppercase = true;
+        };
       };
 
       # --- Performance ---
@@ -279,6 +283,55 @@
       caches.global_factor = 1.0;
     };
   };
+
+  # Nginx sits in front of Synapse on the externally-exposed port (11060).
+  # It serves correct /.well-known/matrix/* responses for federation and
+  # client auto-discovery, and proxies everything else to Synapse (8008).
+  services.nginx = {
+    enable = true;
+
+    recommendedProxySettings = true;
+    recommendedOptimisation = true;
+    recommendedGzipSettings = true;
+
+    virtualHosts."matrix" = {
+      listen = [
+        {
+          addr = "0.0.0.0";
+          port = 11060;
+        }
+      ];
+
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:8008";
+        proxyWebsockets = true;
+        extraConfig = ''
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_read_timeout 600s;
+          client_max_body_size 90M;
+        '';
+      };
+
+      locations."= /.well-known/matrix/server" = {
+        return = "200 '{\"m.server\":\"matrix.${VARS.domains.public}:443\"}'";
+        extraConfig = ''
+          default_type application/json;
+          add_header Access-Control-Allow-Origin *;
+        '';
+      };
+
+      locations."= /.well-known/matrix/client" = {
+        return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"}}'";
+        extraConfig = ''
+          default_type application/json;
+          add_header Access-Control-Allow-Origin *;
+        '';
+      };
+    };
+  };
+
+  # Nginx takes over the external port; Synapse listens on 8008 (localhost only)
+  networking.firewall.allowedTCPPorts = [ 11060 ];
 
   services.openssh.hostKeys = [
     {
