@@ -380,6 +380,8 @@
             enable = true;
             ingress = {
               "matrix.${VARS.domains.public}" = "http://localhost:80";
+              # Bare domain for /.well-known/matrix/* federation/client discovery
+              "${VARS.domains.public}" = "http://localhost:80";
             };
           };
         };
