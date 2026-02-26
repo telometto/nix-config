@@ -115,6 +115,20 @@
             };
           };
 
+          # Matrix needs relaxed headers: no CSP (Element/clients make
+          # cross-origin requests) and DENY framing to prevent click-jacking
+          matrix-headers = {
+            headers = {
+              customResponseHeaders = {
+                X-Content-Type-Options = "nosniff";
+                X-Frame-Options = "DENY";
+                X-XSS-Protection = "0";
+                Referrer-Policy = "strict-origin-when-cross-origin";
+                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()";
+              };
+            };
+          };
+
           overseerr-headers = {
             headers = {
               customResponseHeaders = {
@@ -309,9 +323,21 @@
             service = "matrix-synapse";
             entryPoints = [ "web" ];
             # No crowdsec middleware: federation requires accepting traffic
-            # from external Matrix servers that may be flagged by CrowdSec
+            # from external Matrix servers that may be flagged by CrowdSec.
+            # Uses matrix-headers (no CSP) instead of security-headers.
             middlewares = [
-              "security-headers"
+              "matrix-headers"
+            ];
+          };
+
+          # Route /.well-known/matrix/* on the bare domain to Synapse so
+          # federation and client auto-discovery work for server_name zzxyz.no
+          matrix-well-known = {
+            rule = "Host(`${VARS.domains.public}`) && PathPrefix(`/.well-known/matrix/`)";
+            service = "matrix-synapse";
+            entryPoints = [ "web" ];
+            middlewares = [
+              "matrix-headers"
             ];
           };
         };
