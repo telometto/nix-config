@@ -38,8 +38,8 @@
 
     vsock.cid = 119;
 
-    mem = 2048;
-    vcpu = 2;
+    mem = 4096;
+    vcpu = 4;
 
     volumes = [
       {
@@ -160,14 +160,119 @@
       # Auto-purge cached remote media after 90 days to save disk
       media_retention.remote_media_lifetime = "90d";
 
-      # Allow uploads up to 100 MB
-      max_upload_size_mb = 90;
+      # Allow uploads up to 90 MB
+      max_upload_size = "90M";
 
       # Disable presence (online/offline tracking) to reduce resource usage
       presence.enabled = false;
 
       # Auto-join new users into a welcome room (create this room first)
       # auto_join_rooms = [ "#welcome:zzxyz.no" ];
+
+      # --- Access control ---
+
+      # Disable guest access entirely
+      allow_guest_access = false;
+
+      # Require authentication to browse the public room directory
+      allow_public_rooms_without_auth = false;
+
+      # Require auth for profile lookups
+      require_auth_for_profile_requests = true;
+
+      # Only show profiles of users who share a room with the requester
+      limit_profile_requests_to_users_who_share_rooms = true;
+
+      # Even though registration is disabled, require a token as extra safety
+      registration_requires_token = true;
+
+      # Don't reveal whether a 3PID (email/phone) is registered
+      request_token_inhibit_3pid_errors = true;
+
+      # Admin contact shown to users on resource-limit errors
+      admin_contact = "mailto:matrix@zzxyz.no";
+
+      # --- Federation hardening ---
+
+      # Require TLS 1.2+ for outbound federation connections
+      federation_client_minimum_tls_version = "1.2";
+
+      # Don't leak device display names over federation
+      allow_device_name_lookup_over_federation = false;
+
+      # Limit complexity of remote rooms users can join
+      limit_remote_rooms = {
+        enabled = true;
+        complexity = 3.0;
+      };
+
+      # --- Rate limiting ---
+
+      rc_message = {
+        per_second = 0.5;
+        burst_count = 15;
+      };
+
+      rc_registration = {
+        per_second = 0.05;
+        burst_count = 3;
+      };
+
+      rc_login = {
+        address = {
+          per_second = 0.1;
+          burst_count = 5;
+        };
+        account = {
+          per_second = 0.1;
+          burst_count = 5;
+        };
+        failed_attempts = {
+          per_second = 0.05;
+          burst_count = 3;
+        };
+      };
+
+      rc_joins = {
+        local = {
+          per_second = 0.2;
+          burst_count = 10;
+        };
+        remote = {
+          per_second = 0.03;
+          burst_count = 5;
+        };
+      };
+
+      # --- Session management ---
+
+      # Absolute session lifetime (30 days)
+      session_lifetime = "720h";
+
+      # Access tokens without refresh support expire after 7 days
+      nonrefreshable_access_token_lifetime = "168h";
+
+      # Purge devices with no activity after 180 days
+      delete_stale_devices_after = "180d";
+
+      # Auto-remove rooms from local state when a user leaves
+      forget_rooms_on_leave = true;
+
+      # --- Password policy ---
+
+      password_config = {
+        enabled = true;
+        minimum_length = 12;
+        require_digit = true;
+        require_symbol = true;
+        require_lowercase = true;
+        require_uppercase = true;
+      };
+
+      # --- Performance ---
+
+      # Tuned for a small deployment (2-10 users)
+      caches.global_factor = 1.0;
     };
   };
 
