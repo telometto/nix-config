@@ -153,7 +153,7 @@
         START_SSH_SERVER = true;
 
         SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
-        SSH_LISTEN_HOST = "127.0.0.1";
+        SSH_LISTEN_HOST = "0.0.0.0";
         SSH_LISTEN_PORT = 2222;
       };
 
