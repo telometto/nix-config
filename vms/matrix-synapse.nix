@@ -166,6 +166,10 @@
       # Disable presence (online/offline tracking) to reduce resource usage
       presence.enabled = false;
 
+      # Serve /.well-known/matrix/client so Element and other clients
+      # auto-discover that the homeserver API is at public_baseurl
+      serve_client_wellknown = true;
+
       # Auto-join new users into a welcome room (create this room first)
       # auto_join_rooms = [ "#welcome:zzxyz.no" ];
 
