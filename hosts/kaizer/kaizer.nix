@@ -105,7 +105,6 @@ in
         enableFallbackDNS = true;
 
         enableDNSSEC = true;
-        enableDNSOverTLS = true;
         enableLLMNR = true;
         LLMNR = "resolve";
       };

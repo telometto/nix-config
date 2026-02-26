@@ -72,8 +72,6 @@ in
         enableDNS = false;
         enableFallbackDNS = true;
 
-        enableDNSSEC = true;
-        enableDNSOverTLS = true;
         enableLLMNR = true;
         LLMNR = "resolve";
       };
