@@ -130,9 +130,8 @@ in
             enable_registration = false;
             report_stats = false;
 
-            # Handles /.well-known/matrix/server so federation works without
-            # external web server config on the bare domain
-            serve_server_wellknown = true;
+            # Allow VMs to override this when they handle well-known via Nginx
+            serve_server_wellknown = lib.mkDefault true;
           }
           (lib.optionalAttrs cfg.database.createLocally {
             database = {
