@@ -35,8 +35,8 @@ in
     enableDNSSEC = lib.mkEnableOption "explicit DNSSEC configuration";
     DNSSEC = lib.mkOption {
       type = lib.types.str;
-      default = "allow-downgrade";
-      description = "DNSSEC validation mode (e.g. 'true', 'false', 'allow-downgrade'). Only applied when enableDNSSEC is true.";
+      default = "false";
+      description = "DNSSEC validation mode (e.g. 'true', 'false'). Only applied when enableDNSSEC is true.";
     };
 
     enableDNSOverTLS = lib.mkEnableOption "explicit DNS-over-TLS configuration";
