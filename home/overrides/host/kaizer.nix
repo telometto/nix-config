@@ -2,7 +2,10 @@
 # These settings will be applied to all users on kaizer host
 { lib, pkgs, ... }:
 {
-  home.packages = [ pkgs.variety ];
+  home.packages = [
+    pkgs.variety
+    pkgs.rustdesk-flutter
+  ];
 
   hm = {
     programs = {
