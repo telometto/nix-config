@@ -31,4 +31,6 @@ in
       cfTunnel.enable = true;
     };
   };
+
+  sys.services.grafanaPushover.enable = true;
 }
