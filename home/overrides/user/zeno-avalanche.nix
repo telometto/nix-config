@@ -13,6 +13,7 @@
     pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
     pkgs.vorta # Borg backup GUI
     pkgs.logseq
+    pkgs.rustdesk-flutter
     # (pkgs.jellyfin-media-player.override {
     #   qtwebengine = pkgs.kdePackages.qtwebengine; # overridden due to CVEs
     # }) # disabled due to version mismatch; kept as reference

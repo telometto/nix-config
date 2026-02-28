@@ -20,6 +20,7 @@
     pkgs.kdePackages.krdc
     pkgs.teams-for-linux
     pkgs.meld
+    pkgs.rustdesk-flutter
   ];
 
   hm = {
