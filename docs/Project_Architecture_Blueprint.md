@@ -303,6 +303,9 @@ Services follow a consistent pattern under `modules/services/`:
 | CrowdSec | `crowdsec.nix` | Security automation |
 | Gitea | `gitea.nix` | Git hosting |
 | AdGuard Home | `adguardhome.nix` | DNS filtering |
+| Paperless-ngx | `paperless.nix` | Document management |
+| Firefly III | `firefly.nix` | Personal finance manager |
+| Grafana Pushover | `grafana-pushover.nix` | Pushover alert notifications |
 
 ## 9. MicroVM Architecture
 
@@ -324,16 +327,19 @@ The flake supports MicroVMs for isolated services:
 │  └── Restricted services                                                │
 └─────────────────────────────────────────────────────────────────────────┘
          │
-         ├── vms/adguard.nix (AdGuard Home VM)
          ├── vms/actual.nix (Actual Budget VM)
-         ├── vms/searx.nix (SearXNG VM)
-         ├── vms/overseerr.nix (Overseerr VM)
-         ├── vms/ombi.nix (Ombi VM)
-         ├── vms/tautulli.nix (Tautulli VM)
-         ├── vms/gitea.nix (Gitea VM)
-         ├── vms/sonarr.nix, radarr.nix, prowlarr.nix, bazarr.nix, ...
-         ├── vms/qbittorrent.nix, sabnzbd.nix
+         ├── vms/adguard.nix (AdGuard Home VM)
          ├── vms/firefox.nix, brave.nix (Browser VMs)
+         ├── vms/firefly.nix (Firefly III VM)
+         ├── vms/gitea.nix (Gitea VM)
+         ├── vms/matrix-synapse.nix (Matrix Synapse VM)
+         ├── vms/ombi.nix (Ombi VM)
+         ├── vms/overseerr.nix (Overseerr VM)
+         ├── vms/paperless.nix (Paperless-ngx VM)
+         ├── vms/qbittorrent.nix, sabnzbd.nix
+         ├── vms/searx.nix (SearXNG VM)
+         ├── vms/sonarr.nix, radarr.nix, prowlarr.nix, bazarr.nix, ...
+         ├── vms/tautulli.nix (Tautulli VM)
          └── vms/wireguard.nix (WireGuard VM)
 ```
 
