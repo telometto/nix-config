@@ -118,7 +118,17 @@ in
     };
   };
 
-  services.tailscale.authKeyFile = lib.mkForce config.sys.secrets.kaizerTsKey;
+  services = {
+    tailscale.authKeyFile = lib.mkForce config.sys.secrets.kaizerTsKey;
+
+    rustdesk-server = {
+      enable = true;
+      openFirewall = true;
+      signal.relayHosts = [
+        "${config.networking.hostName}.boreal-ruler.ts.net"
+      ];
+    };
+  };
 
   i18n.extraLocaleSettings = lib.mkForce (
     lib.genAttrs [
