@@ -57,6 +57,14 @@
     services = {
       k3s.enable = false;
 
+      rustdesk-server = {
+        enable = true;
+        openFirewall = true;
+        signal.relayHosts = [
+          "${config.networking.hostName}.mole-delta.ts.net"
+        ];
+      };
+
       resolved = {
         enableDNS = false;
         enableFallbackDNS = true;
