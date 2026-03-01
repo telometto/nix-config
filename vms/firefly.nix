@@ -145,7 +145,7 @@
     ];
   };
 
-  security.sudo.wheelNeedsPassword = lib.mkForce false;
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   system.stateVersion = "24.11";
 }
