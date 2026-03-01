@@ -61,7 +61,7 @@
       {
         mountPoint = "/var/lib/protonmail-bridge";
         image = "protonmail-bridge-state.img";
-        size = 256;
+        size = 51200;
       }
       {
         mountPoint = "/persist";
