@@ -11,10 +11,6 @@
         enable = true;
 
         port = 11013;
-        pools = [
-          "rpool"
-          "tank"
-        ];
       };
     };
 
