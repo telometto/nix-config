@@ -6,6 +6,30 @@
 }:
 let
   cfg = config.sys.services.protonmail-bridge;
+
+  # Auto-initialize GPG key and pass store if they don't exist yet.
+  # The bridge needs pass as its keychain backend in headless environments.
+  initScript = pkgs.writeShellScript "protonmail-bridge-init" ''
+    export GNUPGHOME="${cfg.stateDir}/.gnupg"
+    export PASSWORD_STORE_DIR="${cfg.stateDir}/.password-store"
+
+    if [ ! -d "$GNUPGHOME" ] || [ -z "$(${pkgs.gnupg}/bin/gpg --list-keys 2>/dev/null)" ]; then
+      echo "Generating GPG key for pass keychain..."
+      ${pkgs.gnupg}/bin/gpg --batch --gen-key <<EOF
+    %no-protection
+    Key-Type: RSA
+    Key-Length: 2048
+    Name-Real: Proton Bridge
+    %commit
+    EOF
+    fi
+
+    if [ ! -d "$PASSWORD_STORE_DIR" ]; then
+      KEY_ID=$(${pkgs.gnupg}/bin/gpg --list-keys --with-colons 2>/dev/null | ${pkgs.gawk}/bin/awk -F: '/^pub/{found=1} found && /^fpr/{print $10; exit}')
+      echo "Initializing pass store with key $KEY_ID..."
+      ${pkgs.pass}/bin/pass init "$KEY_ID"
+    fi
+  '';
 in
 {
   options.sys.services.protonmail-bridge = {
@@ -53,10 +77,12 @@ in
       path = with pkgs; [
         pass
         gnupg
+        pinentry-curses
       ];
 
       serviceConfig = {
         Type = "simple";
+        ExecStartPre = "${initScript}";
         ExecStart = "${lib.getExe cfg.package} --noninteractive --log-level ${cfg.logLevel}";
         Restart = "always";
         RestartSec = 10;
@@ -83,6 +109,7 @@ in
         group = "protonmail-bridge";
         home = cfg.stateDir;
         createHome = true;
+        shell = pkgs.bashInteractive;
       };
       groups.protonmail-bridge = { };
     };
