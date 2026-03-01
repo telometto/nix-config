@@ -43,19 +43,19 @@
 
     vsock.cid = 120;
 
-    mem = 4096;
+    mem = 8192;
     vcpu = 4;
 
     volumes = [
       {
         mountPoint = "/var/lib/paperless";
         image = "paperless-state.img";
-        size = 20480;
+        size = 307200;
       }
       {
         mountPoint = "/var/lib/postgresql";
         image = "postgresql-state.img";
-        size = 10240;
+        size = 30720;
       }
       {
         mountPoint = "/persist";
@@ -80,7 +80,7 @@
         proto = "virtiofs";
       }
       {
-        source = "/rpool/enc/personal/documents";
+        source = "/rpool/enc/personal/paperless-consumption";
         mountPoint = "/var/lib/paperless/consume";
         tag = "paperless-consume";
         proto = "virtiofs";
