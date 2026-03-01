@@ -133,6 +133,7 @@
 
     settings = {
       PAPERLESS_URL = "https://docs.${VARS.domains.public}";
+      PAPERLESS_CSRF_TRUSTED_ORIGINS = "https://docs.${VARS.domains.public}";
       PAPERLESS_DBHOST = "/run/postgresql";
       PAPERLESS_CONSUMER_RECURSIVE = "true";
       PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS = "true";
@@ -159,7 +160,7 @@
         proxyPass = "http://127.0.0.1:28981";
         proxyWebsockets = true;
         extraConfig = ''
-          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
           client_max_body_size 100M;
         '';
       };
