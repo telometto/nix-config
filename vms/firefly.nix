@@ -102,6 +102,11 @@
       "d /var/lib/firefly-iii 0700 firefly-iii firefly-iii -"
       "d /var/lib/postgresql 0700 postgres postgres -"
     ];
+
+    services.firefly-iii-setup = {
+      after = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
+    };
   };
 
   sys.services.firefly = {
