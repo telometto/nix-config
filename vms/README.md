@@ -25,6 +25,9 @@ for lightweight virtualization.
 | firefox-vm | [firefox.nix](firefox.nix) | Isolated Firefox browser |
 | brave-vm | [brave.nix](brave.nix) | Isolated Brave browser |
 | wireguard-vm | [wireguard.nix](wireguard.nix) | WireGuard VPN |
+| matrix-synapse-vm | [matrix-synapse.nix](matrix-synapse.nix) | Matrix Synapse homeserver |
+| paperless-vm | [paperless.nix](paperless.nix) | Paperless-ngx document management |
+| firefly-vm | [firefly.nix](firefly.nix) | Firefly III personal finance |
 
 ### Architecture
 
@@ -49,14 +52,17 @@ MicroVMs provide isolated environments for services that benefit from:
 │  └── Minimal services                   │
 └─────────────────────────────────────────┘
          │
-         ├── adguard-vm
          ├── actual-vm
-         ├── searx-vm
-         ├── overseerr-vm, ombi-vm, tautulli-vm
+         ├── adguard-vm
+         ├── firefox-vm
+         ├── firefly-vm
          ├── gitea-vm
-         ├── sonarr-vm, radarr-vm, prowlarr-vm, bazarr-vm, ...
+         ├── matrix-synapse-vm
+         ├── overseerr-vm, ombi-vm, tautulli-vm
+         ├── paperless-vm
          ├── qbittorrent-vm, sabnzbd-vm
-         ├── firefox-vm, brave-vm
+         ├── searx-vm
+         ├── sonarr-vm, radarr-vm, prowlarr-vm, bazarr-vm, ...
          └── wireguard-vm
 ```
 
