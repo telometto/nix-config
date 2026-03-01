@@ -132,6 +132,7 @@
     reverseProxy.enable = false;
 
     settings = {
+      PAPERLESS_URL = "https://docs.${VARS.domains.public}";
       PAPERLESS_DBHOST = "/run/postgresql";
       PAPERLESS_CONSUMER_RECURSIVE = "true";
       PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS = "true";
