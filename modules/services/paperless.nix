@@ -87,7 +87,14 @@ in
         inherit (cfg) configureTika;
 
         settings = {
-          PAPERLESS_OCR_LANGUAGE = lib.mkDefault "eng";
+          PAPERLESS_OCR_LANGUAGE = lib.mkDefault "eng+nor+ita";
+          PAPERLESS_OCR_MODE = lib.mkDefault "skip";
+          PAPERLESS_OCR_OUTPUT_TYPE = lib.mkDefault "pdfa";
+          PAPERLESS_OCR_SKIP_ARCHIVE_FILE = lib.mkDefault "never";
+
+          PAPERLESS_DATE_PARSER_LANGUAGES = lib.mkDefault "en+no+it";
+          PAPERLESS_DATE_ORDER = lib.mkDefault "YMD";
+
           PAPERLESS_TIME_ZONE = lib.mkDefault (config.time.timeZone or "UTC");
         }
         // lib.optionalAttrs (cfg.reverseProxy.enable && cfg.reverseProxy.domain != null) {
