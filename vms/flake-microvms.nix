@@ -119,4 +119,16 @@ in
     sopsModule
     ./matrix-synapse.nix
   ];
+
+  paperless-vm = mkMicrovm [
+    microvmModule
+    sopsModule
+    ./paperless.nix
+  ];
+
+  firefly-vm = mkMicrovm [
+    microvmModule
+    sopsModule
+    ./firefly.nix
+  ];
 }

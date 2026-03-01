@@ -29,6 +29,8 @@
         "firefox-vm"
         # "brave-vm"
         "matrix-synapse-vm"
+        "paperless-vm"
+        "firefly-vm"
       ];
 
       vms = {
@@ -51,6 +53,8 @@
         firefox-vm.flake = self;
         # brave-vm.flake = self;
         matrix-synapse-vm.flake = self;
+        paperless-vm.flake = self;
+        firefly-vm.flake = self;
       };
 
       expose = {
@@ -410,6 +414,48 @@
         #     };
         #   };
         # };
+
+        paperless-vm = {
+          ip = "10.100.0.61";
+
+          portForward = {
+            enable = true;
+            ports = [
+              {
+                proto = "tcp";
+                sourcePort = 11061;
+              }
+            ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "docs.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
+
+        firefly-vm = {
+          ip = "10.100.0.62";
+
+          portForward = {
+            enable = true;
+            ports = [
+              {
+                proto = "tcp";
+                sourcePort = 11062;
+              }
+            ];
+          };
+
+          cfTunnel = {
+            enable = true;
+            ingress = {
+              "finance.${VARS.domains.public}" = "http://localhost:80";
+            };
+          };
+        };
 
       };
     };
