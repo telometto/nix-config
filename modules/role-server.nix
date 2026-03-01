@@ -5,6 +5,8 @@ in
 {
   config = lib.mkIf cfg.enable {
     sys = {
+      home.enable = true;
+
       boot = {
         lanzaboote.enable = true;
         plymouth.enable = false;
@@ -37,8 +39,6 @@ in
         tailscale.enable = true;
       };
     };
-
-    sys.home.enable = true;
 
     networking.firewall.enable = true;
   };
