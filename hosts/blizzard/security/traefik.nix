@@ -340,6 +340,26 @@
               "matrix-headers"
             ];
           };
+
+          paperless = {
+            rule = "Host(`docs.${VARS.domains.public}`)";
+            service = "paperless";
+            entryPoints = [ "web" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
+          };
+
+          firefly = {
+            rule = "Host(`finance.${VARS.domains.public}`)";
+            service = "firefly";
+            entryPoints = [ "web" ];
+            middlewares = [
+              "security-headers"
+              "crowdsec"
+            ];
+          };
         };
 
         services = {
@@ -361,6 +381,8 @@
           actual.loadBalancer.servers = [ { url = "http://10.100.0.51:11051"; } ];
           firefox.loadBalancer.servers = [ { url = "http://10.100.0.52:11052"; } ];
           # firefox occupies port 11053; no .53 IP shall be assigned
+          paperless.loadBalancer.servers = [ { url = "http://10.100.0.61:11061"; } ];
+          firefly.loadBalancer.servers = [ { url = "http://10.100.0.62:11062"; } ];
         };
       };
     };
