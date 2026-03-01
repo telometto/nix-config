@@ -104,6 +104,26 @@
             };
           };
 
+          # Django CSRF requires the Referer header, which "no-referrer" strips.
+          # See: https://github.com/paperless-ngx/paperless-ngx/discussions/5684
+          csrf-safe-headers = {
+            headers = {
+              customResponseHeaders = {
+                X-Content-Type-Options = "nosniff";
+                X-Frame-Options = "SAMEORIGIN";
+                X-XSS-Protection = "1; mode=block";
+                Referrer-Policy = "same-origin";
+                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+              };
+
+              customRequestHeaders = {
+                X-Forwarded-Proto = "https";
+              };
+
+              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
+            };
+          };
+
           firefox-headers = {
             headers = {
               customResponseHeaders = {
@@ -346,7 +366,7 @@
             service = "paperless";
             entryPoints = [ "web" ];
             middlewares = [
-              "security-headers"
+              "csrf-safe-headers"
               "crowdsec"
             ];
           };
@@ -356,7 +376,7 @@
             service = "firefly";
             entryPoints = [ "web" ];
             middlewares = [
-              "security-headers"
+              "csrf-safe-headers"
               "crowdsec"
             ];
           };
