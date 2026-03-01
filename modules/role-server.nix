@@ -30,6 +30,7 @@ in
         autoUpgrade = {
           enable = true;
           dates = "monthly";
+          sshKeyPath = "/root/.ssh/nix-config-deploy";
         };
 
         nfs.server.openFirewall = false;
