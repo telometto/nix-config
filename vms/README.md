@@ -159,6 +159,7 @@ microvm -k <vm-name>
 - Network access controlled via tap interfaces
 - Filesystem shares use virtiofs for performance
 - Each VM has isolated secrets via sops-nix
+- Services that read `/run/secrets/*` at startup should declare `after` and `requires` on `sops-install-secrets.service` to avoid boot-order race/failure
 
 ### Related Documentation
 
