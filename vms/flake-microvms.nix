@@ -9,10 +9,23 @@ let
   microvmModule = inputs.microvm.nixosModules.microvm;
   sopsModule = inputs.sops-nix.nixosModules.sops;
 
+  fromInputsOverlays = {
+    imports = [ ../modules/core/overlays.nix ];
+
+    sys.overlays.fromInputs = {
+      nixpkgs-unstable = [
+        "libreoffice"
+        "libreoffice-still"
+      ];
+      # nixpkgs-stable = [ "cloud-hypervisor" ];
+    };
+  };
+
   mkMicrovm =
     modules:
     nixpkgs.lib.nixosSystem {
-      inherit system modules;
+      inherit system;
+      modules = [ fromInputsOverlays ] ++ modules;
 
       specialArgs = { inherit inputs system VARS; };
     };
