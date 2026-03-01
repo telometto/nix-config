@@ -199,5 +199,29 @@
       default = null;
       description = "Path to a file containing the WireGuard private key. Mapped from SOPS in core/sops.nix.";
     };
+
+    paperlessSecretKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to a file containing the Paperless-ngx secret key for session tokens. Mapped from SOPS in core/sops.nix.";
+    };
+
+    fireflyAppKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to a file containing the Firefly III APP_KEY. Mapped from SOPS in core/sops.nix.";
+    };
+
+    pushoverApiTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to a file containing the Pushover application API token. Mapped from SOPS in core/sops.nix.";
+    };
+
+    pushoverUserKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to a file containing the Pushover user/group key. Mapped from SOPS in core/sops.nix.";
+    };
   };
 }
