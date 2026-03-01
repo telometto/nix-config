@@ -308,30 +308,32 @@
         }
       ];
 
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:8008";
-        proxyWebsockets = true;
-        extraConfig = ''
-          proxy_set_header X-Forwarded-Proto $scheme;
-          proxy_read_timeout 600s;
-          client_max_body_size 90M;
-        '';
-      };
+      locations = {
+        "/" = {
+          proxyPass = "http://127.0.0.1:8008";
+          proxyWebsockets = true;
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 600s;
+            client_max_body_size 90M;
+          '';
+        };
 
-      locations."= /.well-known/matrix/server" = {
-        return = "200 '{\"m.server\":\"matrix.${VARS.domains.public}:443\"}'";
-        extraConfig = ''
-          default_type application/json;
-          add_header Access-Control-Allow-Origin *;
-        '';
-      };
+        "= /.well-known/matrix/server" = {
+          return = "200 '{\"m.server\":\"matrix.${VARS.domains.public}:443\"}'";
+          extraConfig = ''
+            default_type application/json;
+            add_header Access-Control-Allow-Origin *;
+          '';
+        };
 
-      locations."= /.well-known/matrix/client" = {
-        return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"}}'";
-        extraConfig = ''
-          default_type application/json;
-          add_header Access-Control-Allow-Origin *;
-        '';
+        "= /.well-known/matrix/client" = {
+          return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"}}'";
+          extraConfig = ''
+            default_type application/json;
+            add_header Access-Control-Allow-Origin *;
+          '';
+        };
       };
     };
   };
