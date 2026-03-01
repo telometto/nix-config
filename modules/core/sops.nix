@@ -26,6 +26,7 @@ let
   hasWireguard = config.sys.services.wireguard.enable or false;
   hasFirefox = config.sys.services.firefox.enable or false;
   hasBrave = config.sys.services.brave.enable or false;
+  hasPushover = config.sys.services.grafanaPushover.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -144,6 +145,19 @@ in
       // whenEnabled hasBrave {
         "brave/user" = { };
         "brave/password" = { };
+      }
+      # Pushover notification credentials (owned by Grafana)
+      // whenEnabled hasPushover {
+        "pushover/api_token" = {
+          owner = "grafana";
+          group = "grafana";
+          mode = "0440";
+        };
+        "pushover/user_key" = {
+          owner = "grafana";
+          group = "grafana";
+          mode = "0440";
+        };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -237,6 +251,11 @@ in
     // whenEnabled hasBrave {
       braveUser = toString config.sops.secrets."brave/user".path;
       bravePassword = toString config.sops.secrets."brave/password".path;
+    }
+    # Pushover notification credentials
+    // whenEnabled hasPushover {
+      pushoverApiTokenFile = toString config.sops.secrets."pushover/api_token".path;
+      pushoverUserKeyFile = toString config.sops.secrets."pushover/user_key".path;
     };
 
   environment.systemPackages = [
