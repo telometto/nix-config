@@ -14,6 +14,7 @@
       extraPools = [
         "tank"
         "rpool"
+        "flash"
       ];
     };
 
