@@ -10,6 +10,7 @@
   imports = [
     ./base.nix
     ../modules/services/paperless.nix
+    ../modules/services/protonmail-bridge.nix
     inputs.sops-nix.nixosModules.sops
   ];
 
@@ -56,6 +57,11 @@
         mountPoint = "/var/lib/postgresql";
         image = "postgresql-state.img";
         size = 30720;
+      }
+      {
+        mountPoint = "/var/lib/protonmail-bridge";
+        image = "protonmail-bridge-state.img";
+        size = 256;
       }
       {
         mountPoint = "/persist";
@@ -115,6 +121,7 @@
       "d /persist/ssh 0700 root root -"
       "d /var/lib/paperless 0700 paperless paperless -"
       "d /var/lib/postgresql 0700 postgres postgres -"
+      "d /var/lib/protonmail-bridge 0700 protonmail-bridge protonmail-bridge -"
     ];
 
     services.paperless-scheduler = {
@@ -122,6 +129,8 @@
       requires = [ "sops-install-secrets.service" ];
     };
   };
+
+  sys.services.protonmail-bridge.enable = true;
 
   sys.services.paperless = {
     enable = true;
