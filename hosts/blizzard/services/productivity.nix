@@ -1,13 +1,7 @@
 { VARS, ... }:
 {
   sys.services = {
-    paperless = {
-      enable = false;
-
-      consumptionDirIsPublic = true;
-      consumptionDir = "/rpool/enc/personal/documents";
-      mediaDir = "/rpool/enc/personal/paperless-media";
-    };
+    paperless.enable = false;
 
     actual = {
       enable = false;
