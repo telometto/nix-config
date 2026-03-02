@@ -30,7 +30,7 @@
         # "brave-vm"
         "matrix-synapse-vm"
         "paperless-vm"
-        "firefly-vm"
+        # "firefly-vm"
       ];
 
       vms = {
@@ -54,7 +54,7 @@
         # brave-vm.flake = self;
         matrix-synapse-vm.flake = self;
         paperless-vm.flake = self;
-        firefly-vm.flake = self;
+        # firefly-vm.flake = self;
       };
 
       expose = {
@@ -436,6 +436,7 @@
           };
         };
 
+        /*
         firefly-vm = {
           ip = "10.100.0.62";
 
@@ -456,6 +457,7 @@
             };
           };
         };
+        */
 
       };
     };
