@@ -135,6 +135,14 @@
           server = "10.100.0.1";
           export = "/rpool/enc/personal/paperless-consumption";
           target = "/var/lib/paperless/consume";
+          # nolock avoids NFS lock contention; soft returns errors instead of hanging
+          options = [
+            "rw"
+            "noatime"
+            "nofail"
+            "nolock"
+            "soft"
+          ];
         };
       };
 
@@ -152,6 +160,8 @@
           PAPERLESS_DBHOST = "/run/postgresql";
           PAPERLESS_CONSUMER_RECURSIVE = "true";
           PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS = "true";
+          # inotify doesn't work over NFS — poll every 30 seconds instead
+          PAPERLESS_CONSUMER_POLLING = "30";
         };
       };
     };
