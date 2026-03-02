@@ -72,8 +72,8 @@ in
 
     ## Pull specific packages from different nixpkgs inputs
     # overlays.fromInputs = {
-      # nixpkgs-unstable = [ "lutris" ];
-      #  nixpkgs-stable = [ "vesktop" ];
+    # nixpkgs-unstable = [ "lutris" ];
+    #  nixpkgs-stable = [ "vesktop" ];
     # };
     #
     ## Add custom overlays
