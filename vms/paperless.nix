@@ -85,12 +85,6 @@
         tag = "ro-store";
         proto = "virtiofs";
       }
-      {
-        source = "/rpool/enc/personal/paperless-consumption";
-        mountPoint = "/var/lib/paperless/consume";
-        tag = "paperless-consume";
-        proto = "virtiofs";
-      }
     ];
   };
 
@@ -127,6 +121,16 @@
     services.paperless-scheduler = {
       after = [ "sops-install-secrets.service" ];
       requires = [ "sops-install-secrets.service" ];
+    };
+  };
+
+  sys.services.nfs = {
+    enable = true;
+
+    mounts.paperless-consume = {
+      server = "10.100.0.1";
+      export = "/rpool/enc/personal/paperless-consumption";
+      target = "/var/lib/paperless/consume";
     };
   };
 
