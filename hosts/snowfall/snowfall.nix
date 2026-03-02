@@ -70,13 +70,13 @@ in
       python-venv.enable = true;
     };
 
-    # Pull specific packages from different nixpkgs inputs
-    overlays.fromInputs = {
-      nixpkgs-unstable = [ "lutris" ];
+    ## Pull specific packages from different nixpkgs inputs
+    # overlays.fromInputs = {
+      # nixpkgs-unstable = [ "lutris" ];
       #  nixpkgs-stable = [ "vesktop" ];
-    };
+    # };
     #
-    # Add custom overlays
+    ## Add custom overlays
     # overlays.custom = [
     #   (final: prev: {
     #     firefox = prev.firefox.override {
