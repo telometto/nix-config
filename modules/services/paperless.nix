@@ -92,7 +92,7 @@ in
           PAPERLESS_OCR_OUTPUT_TYPE = lib.mkDefault "pdfa";
           PAPERLESS_OCR_SKIP_ARCHIVE_FILE = lib.mkDefault "never";
 
-          PAPERLESS_DATE_PARSER_LANGUAGES = lib.mkDefault "en+no+it";
+          PAPERLESS_DATE_PARSER_LANGUAGES = lib.mkDefault "en+nb+it";
           PAPERLESS_DATE_ORDER = lib.mkDefault "YMD";
 
           PAPERLESS_TIME_ZONE = lib.mkDefault (config.time.timeZone or "UTC");
