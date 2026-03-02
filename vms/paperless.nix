@@ -124,32 +124,36 @@
     };
   };
 
-  sys.services.nfs = {
-    enable = true;
+  sys = {
+    services = {
+      protonmail-bridge.enable = true;
 
-    mounts.paperless-consume = {
-      server = "10.100.0.1";
-      export = "/rpool/enc/personal/paperless-consumption";
-      target = "/var/lib/paperless/consume";
-    };
-  };
+      nfs = {
+        enable = true;
 
-  sys.services.protonmail-bridge.enable = true;
+        mounts.paperless-consume = {
+          server = "10.100.0.1";
+          export = "/rpool/enc/personal/paperless-consumption";
+          target = "/var/lib/paperless/consume";
+        };
+      };
 
-  sys.services.paperless = {
-    enable = true;
+      paperless = {
+        enable = true;
 
-    database.createLocally = true;
-    configureTika = true;
+        database.createLocally = true;
+        configureTika = true;
 
-    reverseProxy.enable = false;
+        reverseProxy.enable = false;
 
-    settings = {
-      PAPERLESS_URL = "https://docs.${VARS.domains.public}";
-      PAPERLESS_CSRF_TRUSTED_ORIGINS = "https://docs.${VARS.domains.public}";
-      PAPERLESS_DBHOST = "/run/postgresql";
-      PAPERLESS_CONSUMER_RECURSIVE = "true";
-      PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS = "true";
+        settings = {
+          PAPERLESS_URL = "https://docs.${VARS.domains.public}";
+          PAPERLESS_CSRF_TRUSTED_ORIGINS = "https://docs.${VARS.domains.public}";
+          PAPERLESS_DBHOST = "/run/postgresql";
+          PAPERLESS_CONSUMER_RECURSIVE = "true";
+          PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS = "true";
+        };
+      };
     };
   };
 
