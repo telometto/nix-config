@@ -437,26 +437,26 @@
         };
 
         /*
-        firefly-vm = {
-          ip = "10.100.0.62";
+          firefly-vm = {
+            ip = "10.100.0.62";
 
-          portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11062;
-              }
-            ];
-          };
+            portForward = {
+              enable = true;
+              ports = [
+                {
+                  proto = "tcp";
+                  sourcePort = 11062;
+                }
+              ];
+            };
 
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "finance.${VARS.domains.public}" = "http://localhost:80";
+            cfTunnel = {
+              enable = true;
+              ingress = {
+                "finance.${VARS.domains.public}" = "http://localhost:80";
+              };
             };
           };
-        };
         */
 
       };
