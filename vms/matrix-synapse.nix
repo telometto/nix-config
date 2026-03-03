@@ -205,12 +205,6 @@
       # Don't leak device display names over federation
       allow_device_name_lookup_over_federation = false;
 
-      # Limit complexity of remote rooms users can join
-      limit_remote_rooms = {
-        enabled = true;
-        complexity = 3.0;
-      };
-
       # --- Rate limiting ---
 
       rc_message = {
