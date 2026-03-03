@@ -176,6 +176,9 @@
 
       # --- Access control ---
 
+      # Token-gated registration — set to false when done inviting users
+      enable_registration = true;
+
       # Disable guest access entirely
       allow_guest_access = false;
 
@@ -188,7 +191,7 @@
       # Only show profiles of users who share a room with the requester
       limit_profile_requests_to_users_who_share_rooms = true;
 
-      # Even though registration is disabled, require a token as extra safety
+      # Users must present a valid token to register
       registration_requires_token = true;
 
       # Don't reveal whether a 3PID (email/phone) is registered
