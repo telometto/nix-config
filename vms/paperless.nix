@@ -161,7 +161,9 @@
           PAPERLESS_CONSUMER_RECURSIVE = "true";
           PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS = "true";
           # inotify doesn't work over NFS — poll every 30 seconds instead
-          PAPERLESS_CONSUMER_POLLING = "30";
+          # PAPERLESS_CONSUMER_POLLING = "30";
+          # Automatically delete duplicate documents from the consumption folder
+          PAPERLESS_CONSUMER_DELETE_DUPLICATES = "true";
         };
       };
     };
