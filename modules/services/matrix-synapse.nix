@@ -127,7 +127,7 @@ in
 
             url_preview_enabled = cfg.urlPreview.enable;
 
-            enable_registration = false;
+            enable_registration = lib.mkDefault false;
             report_stats = false;
 
             # Allow VMs to override this when they handle well-known via Nginx
