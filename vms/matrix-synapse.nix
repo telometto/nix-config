@@ -10,6 +10,7 @@
   imports = [
     ./base.nix
     ../modules/services/matrix-synapse.nix
+    ../modules/services/matrix-authentication-service.nix
     inputs.sops-nix.nixosModules.sops
   ];
 
@@ -32,8 +33,49 @@
       };
       "protonmail/smtp_token" = {
         mode = "0440";
-        owner = "matrix-synapse";
-        group = "matrix-synapse";
+        owner = "root";
+        group = "matrix-shared";
+      };
+
+      # --- MAS secrets ---
+      # Generate once with: mas-cli config generate
+      # Then extract and add to nix-secrets YAML.
+      "matrix-authentication-service/encryption_key" = {
+        mode = "0440";
+        owner = "mas";
+        group = "mas";
+      };
+      "matrix-authentication-service/signing_key_rsa" = {
+        mode = "0440";
+        owner = "mas";
+        group = "mas";
+      };
+      "matrix-authentication-service/signing_key_ec_p256" = {
+        mode = "0440";
+        owner = "mas";
+        group = "mas";
+      };
+      "matrix-authentication-service/signing_key_ec_p384" = {
+        mode = "0440";
+        owner = "mas";
+        group = "mas";
+      };
+      "matrix-authentication-service/signing_key_ec_secp256k1" = {
+        mode = "0440";
+        owner = "mas";
+        group = "mas";
+      };
+      # Shared secret for MAS ↔ Synapse admin API calls
+      "matrix-authentication-service/synapse_secret" = {
+        mode = "0440";
+        owner = "root";
+        group = "matrix-shared";
+      };
+      # OIDC client secret — same value in MAS clients[] and Synapse msc3861
+      "matrix-authentication-service/client_secret" = {
+        mode = "0440";
+        owner = "root";
+        group = "matrix-shared";
       };
     };
   };
@@ -56,6 +98,11 @@
         mountPoint = "/var/lib/postgresql";
         image = "postgresql-state.img";
         size = 10240;
+      }
+      {
+        mountPoint = "/var/lib/mas";
+        image = "mas-state.img";
+        size = 1024;
       }
       {
         mountPoint = "/persist";
@@ -106,6 +153,7 @@
       "d /persist/ssh 0700 root root -"
       "d /var/lib/matrix-synapse 0700 matrix-synapse matrix-synapse -"
       "d /var/lib/postgresql 0700 postgres postgres -"
+      "d /var/lib/mas 0700 mas mas -"
     ];
 
     services = {
@@ -114,8 +162,10 @@
         requires = [ "sops-install-secrets.service" ];
       };
 
+      # Assembles Synapse's runtime config with secrets + MSC3861 auth
+      # delegation block. Shallow-merged by Synapse on top of the main config.
       matrix-synapse-secret = {
-        description = "Generate Matrix Synapse shared secret config";
+        description = "Generate Matrix Synapse secret + auth delegation config";
         before = [ "matrix-synapse.service" ];
         requiredBy = [ "matrix-synapse.service" ];
         after = [ "sops-install-secrets.service" ];
@@ -130,37 +180,182 @@
           RuntimeDirectoryMode = "0750";
         };
 
+        script =
+          let
+            authCfg = config.sys.services.matrix-synapse.authDelegation;
+            masArgs = lib.optionalString authCfg.enable ''
+              --rawfile client_secret ${config.sops.secrets."matrix-authentication-service/client_secret".path} \
+              --rawfile admin_token ${config.sops.secrets."matrix-authentication-service/synapse_secret".path} \
+              --arg issuer "${authCfg.issuer}" \
+              --arg client_id "${authCfg.clientId}" \
+              --arg client_auth_method "${authCfg.clientAuthMethod}" \
+              ${lib.optionalString (
+                authCfg.accountManagementUrl != null
+              ) ''--arg account_url "${authCfg.accountManagementUrl}" \''}
+            '';
+            masJqExpr = lib.optionalString authCfg.enable ''
+              * {
+                experimental_features: {
+                  msc3861: {
+                    enabled: true,
+                    issuer: $issuer,
+                    client_id: $client_id,
+                    client_auth_method: $client_auth_method,
+                    client_secret: ($client_secret | rtrimstr("\n")),
+                    admin_token: ($admin_token | rtrimstr("\n"))${
+                      lib.optionalString (authCfg.accountManagementUrl != null) ''
+                        ,
+                                            account_management_url: $account_url''
+                    }
+                  }
+                }
+              }
+            '';
+          in
+          ''
+            set -euo pipefail
+            ${pkgs.jq}/bin/jq -n \
+              --rawfile secret ${config.sops.secrets."matrix-synapse/registration_shared_secret".path} \
+              --rawfile smtp ${config.sops.secrets."protonmail/smtp_token".path} \
+              --arg notif_from "Matrix <matrix@${VARS.domains.public}>" \
+              --arg smtp_user "matrix@${VARS.domains.public}" \
+              ${masArgs}
+              '{
+                registration_shared_secret: ($secret | rtrimstr("\n")),
+                email: {
+                  smtp_host: "smtp.protonmail.ch",
+                  smtp_port: 587,
+                  smtp_user: $smtp_user,
+                  smtp_pass: ($smtp | rtrimstr("\n")),
+                  require_transport_security: true,
+                  notif_from: $notif_from,
+                  app_name: "Matrix",
+                  enable_notifs: false
+                }
+              }${masJqExpr}' \
+              > /run/matrix-synapse-secret/shared-secret.yaml
+          '';
+      };
+
+      # Assembles MAS runtime config by merging the Nix-generated base
+      # config with decrypted secrets (encryption key, signing keys,
+      # Synapse shared secret, OIDC client secret, SMTP password).
+      mas-secret = {
+        description = "Generate MAS runtime config with secrets";
+        before = [ "matrix-authentication-service.service" ];
+        requiredBy = [ "matrix-authentication-service.service" ];
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          User = "mas";
+          Group = "mas";
+          UMask = "0337";
+          RuntimeDirectory = "mas-secret";
+          RuntimeDirectoryMode = "0750";
+        };
+
         script = ''
           set -euo pipefail
-          # Synapse does a shallow (top-level) merge of extra config files,
-          # so the entire email block must be here — a partial block would
-          # replace the main config's email dict and drop required keys.
-          # --rawfile reads secrets directly from files, keeping them out
-          # of /proc/<pid>/cmdline (unlike --arg which expands in argv).
           ${pkgs.jq}/bin/jq -n \
-            --rawfile secret ${config.sops.secrets."matrix-synapse/registration_shared_secret".path} \
-            --rawfile smtp ${config.sops.secrets."protonmail/smtp_token".path} \
-            --arg notif_from "Matrix <matrix@${VARS.domains.public}>" \
-            --arg smtp_user "matrix@${VARS.domains.public}" \
-            '{
-              registration_shared_secret: ($secret | rtrimstr("\n")),
-              email: {
-                smtp_host: "smtp.protonmail.ch",
-                smtp_port: 587,
-                smtp_user: $smtp_user,
-                smtp_pass: ($smtp | rtrimstr("\n")),
-                require_transport_security: true,
-                notif_from: $notif_from,
-                app_name: "Matrix",
-                enable_notifs: false
-              }
+            --slurpfile base /etc/matrix-authentication-service/config.json \
+            --rawfile encryption_key ${
+              config.sops.secrets."matrix-authentication-service/encryption_key".path
+            } \
+            --rawfile rsa_key ${config.sops.secrets."matrix-authentication-service/signing_key_rsa".path} \
+            --rawfile ec_p256 ${
+              config.sops.secrets."matrix-authentication-service/signing_key_ec_p256".path
+            } \
+            --rawfile ec_p384 ${
+              config.sops.secrets."matrix-authentication-service/signing_key_ec_p384".path
+            } \
+            --rawfile ec_k256 ${
+              config.sops.secrets."matrix-authentication-service/signing_key_ec_secp256k1".path
+            } \
+            --rawfile synapse_secret ${
+              config.sops.secrets."matrix-authentication-service/synapse_secret".path
+            } \
+            --rawfile client_secret ${
+              config.sops.secrets."matrix-authentication-service/client_secret".path
+            } \
+            --rawfile smtp_pass ${config.sops.secrets."protonmail/smtp_token".path} \
+            --arg client_id "${config.sys.services.matrix-authentication-service.clientId}" \
+            --arg client_auth_method "${config.sys.services.matrix-synapse.authDelegation.clientAuthMethod}" \
+            '$base[0] * {
+              secrets: {
+                encryption: ($encryption_key | rtrimstr("\n")),
+                keys: [
+                  {key: $rsa_key},
+                  {key: $ec_p256},
+                  {key: $ec_p384},
+                  {key: $ec_k256}
+                ]
+              },
+              matrix: ($base[0].matrix * {
+                secret: ($synapse_secret | rtrimstr("\n"))
+              }),
+              clients: [{
+                client_id: $client_id,
+                client_auth_method: $client_auth_method,
+                client_secret: ($client_secret | rtrimstr("\n"))
+              }],
+              email: ($base[0].email * {
+                password: ($smtp_pass | rtrimstr("\n"))
+              })
             }' \
-            > /run/matrix-synapse-secret/shared-secret.yaml
+            > /run/mas-secret/config.json
         '';
+      };
+
+      matrix-authentication-service = {
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
       };
     };
   };
 
+  # --- Matrix Authentication Service (MAS) ---
+  # MAS handles all auth flows (login, registration, OIDC) so
+  # Element X and other MSC3861/OIDC-native clients can work.
+  sys.services.matrix-authentication-service = {
+    enable = true;
+
+    port = 8081;
+    healthPort = 8082;
+
+    publicBaseUrl = "https://matrix.${VARS.domains.public}/";
+    issuer = "https://matrix.${VARS.domains.public}/";
+
+    database.createLocally = true;
+
+    email = {
+      from = ''"Matrix" <matrix@${VARS.domains.public}>'';
+      replyTo = ''"Matrix" <matrix@${VARS.domains.public}>'';
+      transport = "smtp";
+      mode = "starttls";
+      hostname = "smtp.protonmail.ch";
+      smtpPort = 587;
+      username = "matrix@${VARS.domains.public}";
+      # password injected at runtime by mas-secret service
+    };
+
+    passwords = {
+      enabled = true;
+      minimumComplexity = 3;
+    };
+
+    matrix = {
+      homeserver = "${VARS.domains.public}";
+      endpoint = "http://localhost:8008/";
+    };
+
+    clientId = "0000000000000000000SYNAPSE";
+
+    runtimeConfigFile = "/run/mas-secret/config.json";
+  };
+
+  # --- Synapse ---
   sys.services.matrix-synapse = {
     enable = true;
 
@@ -179,6 +374,15 @@
 
     reverseProxy.enable = false;
 
+    # Delegate core login and registration flows to MAS; other auth-related
+    # endpoints (for example password changes) are still handled by Synapse.
+    authDelegation = {
+      enable = true;
+      issuer = "https://matrix.${VARS.domains.public}/";
+      clientId = "0000000000000000000SYNAPSE";
+      accountManagementUrl = "https://matrix.${VARS.domains.public}/account/";
+    };
+
     settings = {
       # Let users browse other servers' public room directories
       allow_public_rooms_over_federation = true;
@@ -195,58 +399,26 @@
       # Disable presence (online/offline tracking) to reduce resource usage
       presence.enabled = false;
 
-      # Disable Synapse's built-in well-known — it generates m.server from
-      # server_name (mydomain.no:443) instead of the delegated matrix.mydomain.no.
-      # Nginx in front of Synapse serves the correct responses instead.
+      # Disable Synapse's built-in well-known — Nginx handles it
       serve_server_wellknown = false;
 
-      # Auto-join new users into a welcome room (create this room first)
-      # auto_join_rooms = [ "#welcome:${VARS.domains.public}" ];
-
       # --- Access control ---
+      # Registration and password policy are now managed by MAS.
+      # These Synapse-side settings remain for non-auth access control.
 
-      # Token-gated registration — set to false when done inviting users
-      enable_registration = true;
-
-      # Disable guest access entirely
       allow_guest_access = false;
-
-      # Require authentication to browse the public room directory
       allow_public_rooms_without_auth = false;
-
-      # Require auth for profile lookups
       require_auth_for_profile_requests = true;
-
-      # Only show profiles of users who share a room with the requester
       limit_profile_requests_to_users_who_share_rooms = true;
 
-      # Users must present a valid token to register
-      registration_requires_token = true;
-
-      # Require verified email during sign-up
-      registrations_require_3pid = [ "email" ];
-
-      # Allow users to add/remove validated 3PIDs (email/phone) on account
-      enable_3pid_changes = true;
-
       # Email/SMTP config (including smtp_pass) is injected at runtime
-      # via /run/matrix-synapse-secret/shared-secret.yaml to keep the
-      # SMTP token out of the world-readable /nix/store. Synapse does a
-      # shallow merge on top-level keys, so the entire email block must
-      # live in the extra config file.
+      # via /run/matrix-synapse-secret/shared-secret.yaml.
 
-      # Don't reveal whether a 3PID (email/phone) is registered
-      request_token_inhibit_3pid_errors = true;
-
-      # Admin contact shown to users on resource-limit errors
       admin_contact = "mailto:matrix@${VARS.domains.public}";
 
       # --- Federation hardening ---
 
-      # Require TLS 1.2+ for outbound federation connections
       federation_client_minimum_tls_version = "1.2";
-
-      # Don't leak device display names over federation
       allow_device_name_lookup_over_federation = false;
 
       # --- Rate limiting ---
@@ -289,42 +461,19 @@
 
       # --- Session management ---
 
-      # Absolute session lifetime (30 days)
       session_lifetime = "720h";
-
-      # Access tokens without refresh support expire after 7 days
       nonrefreshable_access_token_lifetime = "168h";
-
-      # Purge devices with no activity after 180 days
       delete_stale_devices_after = "180d";
-
-      # Auto-remove rooms from local state when a user leaves
       forget_rooms_on_leave = true;
-
-      # --- Password policy ---
-
-      password_config = {
-        enabled = true;
-        policy = {
-          enabled = true;
-          minimum_length = 12;
-          require_digit = true;
-          require_symbol = true;
-          require_lowercase = true;
-          require_uppercase = true;
-        };
-      };
 
       # --- Performance ---
 
-      # Tuned for a small deployment (2-10 users)
       caches.global_factor = 1.0;
     };
   };
 
-  # Nginx sits in front of Synapse on the externally-exposed port (11060).
-  # It serves correct /.well-known/matrix/* responses for federation and
-  # client auto-discovery, and proxies everything else to Synapse (8008).
+  # Nginx sits in front of Synapse (8008) and MAS (8081) on port 11060.
+  # Routes auth-related paths to MAS, everything else to Synapse.
   services.nginx = {
     enable = true;
 
@@ -332,7 +481,6 @@
     recommendedOptimisation = true;
     recommendedGzipSettings = true;
 
-    # Avoid warning about proxy_headers_hash with recommended settings
     appendHttpConfig = ''
       proxy_headers_hash_max_size 1024;
       proxy_headers_hash_bucket_size 128;
@@ -347,6 +495,81 @@
       ];
 
       locations = {
+        # --- MAS compatibility layer ---
+        # Route Synapse login/logout/refresh to MAS so legacy and OIDC
+        # clients both work through the same endpoints.
+        "~ ^/_matrix/client/(r0|v3)/login$" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+        "~ ^/_matrix/client/(r0|v3)/logout(/all)?$" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+        "~ ^/_matrix/client/(r0|v3)/refresh$" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+
+        # --- MAS OIDC / UI paths ---
+        "/.well-known/openid-configuration" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+        "/oauth2/" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+        "/authorize" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+        "/register" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+        "/account/" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+        "/assets/" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+        # MAS JWKS endpoint for token verification
+        "/.well-known/jwks.json" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+        # MAS GraphQL admin API
+        "/graphql" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+
+        # --- Synapse (everything else) ---
         "/" = {
           proxyPass = "http://127.0.0.1:8008";
           proxyWebsockets = true;
@@ -357,6 +580,7 @@
           '';
         };
 
+        # --- Well-known ---
         "= /.well-known/matrix/server" = {
           return = "200 '{\"m.server\":\"matrix.${VARS.domains.public}:443\"}'";
           extraConfig = ''
@@ -365,8 +589,10 @@
           '';
         };
 
+        # Includes org.matrix.msc2965.authentication so OIDC-native clients
+        # (Element X) discover MAS as the auth provider.
         "= /.well-known/matrix/client" = {
-          return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"}}'";
+          return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"},\"org.matrix.msc2965.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"}}'";
           extraConfig = ''
             default_type application/json;
             add_header Access-Control-Allow-Origin *;
@@ -390,6 +616,10 @@
       bits = 4096;
     }
   ];
+
+  users.groups.matrix-shared = { };
+  users.users.mas.extraGroups = [ "matrix-shared" ];
+  users.users.matrix-synapse.extraGroups = [ "matrix-shared" ];
 
   users.users.admin = {
     isNormalUser = true;
