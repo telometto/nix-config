@@ -30,6 +30,11 @@
         owner = "matrix-synapse";
         group = "matrix-synapse";
       };
+      "protonmail/smtp_token" = {
+        mode = "0440";
+        owner = "matrix-synapse";
+        group = "matrix-synapse";
+      };
     };
   };
 
@@ -119,12 +124,13 @@
           Type = "oneshot";
           RemainAfterExit = true;
           RuntimeDirectory = "matrix-synapse-secret";
-          RuntimeDirectoryMode = "0755";
+          RuntimeDirectoryMode = "0750";
         };
 
         script = ''
           secret=$(cat ${config.sops.secrets."matrix-synapse/registration_shared_secret".path})
-          echo "registration_shared_secret: \"$secret\"" > /run/matrix-synapse-secret/shared-secret.yaml
+          smtp_token=$(cat ${config.sops.secrets."protonmail/smtp_token".path})
+          printf 'registration_shared_secret: "%s"\nemail:\n  smtp_pass: "%s"\n' "$secret" "$smtp_token" > /run/matrix-synapse-secret/shared-secret.yaml
           chown matrix-synapse:matrix-synapse /run/matrix-synapse-secret/shared-secret.yaml
           chmod 0440 /run/matrix-synapse-secret/shared-secret.yaml
         '';
@@ -206,7 +212,8 @@
         smtp_host = "smtp.protonmail.ch";
         smtp_port = 587;
         smtp_user = "matrix@${VARS.domains.public}";
-        smtp_pass = "CHANGE_ME_SMTP_PASSWORD";
+        # smtp_pass is injected at runtime via /run/matrix-synapse-secret/shared-secret.yaml
+        # to avoid leaking it into the world-readable /nix/store
         require_transport_security = true;
         notif_from = "Matrix <matrix@${VARS.domains.public}>";
         app_name = "Matrix";
