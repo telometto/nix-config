@@ -64,6 +64,45 @@ in
       defaults.enable = false;
     };
 
+    authDelegation = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Delegate authentication to Matrix Authentication Service (MAS).
+          When enabled, Synapse's built-in user registration is disabled and
+          MAS handles authentication flows via MSC3861.
+          The MSC3861 secrets (client_secret, admin_token) must be injected
+          at runtime via extraConfigFiles.
+        '';
+      };
+
+      issuer = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = "MAS OIDC issuer URL (e.g. https://matrix.example.com/).";
+      };
+
+      clientId = lib.mkOption {
+        type = lib.types.str;
+        default = "0000000000000000000SYNAPSE";
+        description = "OIDC client ID registered in MAS for Synapse.";
+      };
+
+      clientAuthMethod = lib.mkOption {
+        type = lib.types.str;
+        default = "client_secret_basic";
+        description = "OIDC client authentication method.";
+      };
+
+      accountManagementUrl = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "MAS account management URL shown to users.";
+        example = "https://matrix.example.com/account/";
+      };
+    };
+
     settings = lib.mkOption {
       type = lib.types.attrs;
       default = { };
@@ -127,7 +166,7 @@ in
 
             url_preview_enabled = cfg.urlPreview.enable;
 
-            enable_registration = lib.mkDefault false;
+            enable_registration = if cfg.authDelegation.enable then lib.mkForce false else lib.mkDefault true;
             report_stats = false;
 
             # Allow VMs to override this when they handle well-known via Nginx
@@ -168,6 +207,19 @@ in
               "fec0::/10"
             ];
           })
+          # Non-secret MSC3861 fields — client_secret and admin_token
+          # are injected at runtime via extraConfigFiles.
+          (lib.optionalAttrs cfg.authDelegation.enable {
+            experimental_features.msc3861 = {
+              enabled = true;
+              issuer = cfg.authDelegation.issuer;
+              client_id = cfg.authDelegation.clientId;
+              client_auth_method = cfg.authDelegation.clientAuthMethod;
+            }
+            // lib.optionalAttrs (cfg.authDelegation.accountManagementUrl != null) {
+              account_management_url = cfg.authDelegation.accountManagementUrl;
+            };
+          })
           cfg.settings
         ];
       };
@@ -192,6 +244,14 @@ in
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
         message = "sys.services.matrix-synapse.reverseProxy.enable must be true when cfTunnel.enable is true";
+      }
+      {
+        assertion = !cfg.authDelegation.enable || cfg.authDelegation.issuer != "";
+        message = "sys.services.matrix-synapse.authDelegation.issuer must be set when authDelegation is enabled";
+      }
+      {
+        assertion = !cfg.authDelegation.enable || cfg.extraConfigFiles != [ ];
+        message = "sys.services.matrix-synapse.extraConfigFiles must contain at least one secrets file when authDelegation is enabled";
       }
       (traefikLib.mkCfTunnelAssertion {
         name = "matrix-synapse";
