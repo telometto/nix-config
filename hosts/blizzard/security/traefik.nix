@@ -1,4 +1,4 @@
-{ config, VARS, ... }:
+{ config, pkgs, VARS, ... }:
 {
   services.traefik = {
     enable = true;
@@ -61,7 +61,7 @@
               crowdsecMode = "stream";
               crowdsecLapiScheme = "http";
               crowdsecLapiHost = "127.0.0.1:8085";
-              crowdsecLapiKeyFile = "${config.sys.secrets.crowdsecTraefikBouncerTokenFile}";
+              crowdsecLapiKeyFile = "/run/traefik/crowdsec-bouncer-key";
 
               forwardedHeadersTrustedIPs = [
                 "127.0.0.1/32"
@@ -409,8 +409,16 @@
   };
 
   systemd.services.traefik.serviceConfig = {
-    BindReadOnlyPaths = [
-      config.sys.secrets.crowdsecTraefikBouncerTokenFile
+    # Copy the bouncer token into Traefik's RuntimeDirectory so the
+    # DynamicUser can read it without making the SOPS source world-readable.
+    # The directory is 0750 (only root + dynamic user), so 0444 on the copy
+    # is safe — no other user can even enter the directory.
+    RuntimeDirectory = "traefik";
+    RuntimeDirectoryMode = "0750";
+    ExecStartPre = [
+      "+${pkgs.writeShellScript "copy-bouncer-key" ''
+        install -m 0444 ${config.sys.secrets.crowdsecTraefikBouncerTokenFile} /run/traefik/crowdsec-bouncer-key
+      ''}"
     ];
   };
 }
