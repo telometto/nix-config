@@ -128,9 +128,14 @@
         };
 
         script = ''
+          set -euo pipefail
           secret=$(cat ${config.sops.secrets."matrix-synapse/registration_shared_secret".path})
           smtp_token=$(cat ${config.sops.secrets."protonmail/smtp_token".path})
-          printf 'registration_shared_secret: "%s"\nemail:\n  smtp_pass: "%s"\n' "$secret" "$smtp_token" > /run/matrix-synapse-secret/shared-secret.yaml
+          ${pkgs.jq}/bin/jq -n \
+            --arg secret "$secret" \
+            --arg smtp "$smtp_token" \
+            '{registration_shared_secret: $secret, email: {smtp_pass: $smtp}}' \
+            > /run/matrix-synapse-secret/shared-secret.yaml
           chown matrix-synapse:matrix-synapse /run/matrix-synapse-secret/shared-secret.yaml
           chmod 0440 /run/matrix-synapse-secret/shared-secret.yaml
         '';
