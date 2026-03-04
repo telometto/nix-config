@@ -129,6 +129,8 @@
 
         script = ''
           set -euo pipefail
+          # Allow matrix-synapse to traverse the runtime directory
+          chgrp matrix-synapse /run/matrix-synapse-secret
           secret=$(cat ${config.sops.secrets."matrix-synapse/registration_shared_secret".path})
           smtp_token=$(cat ${config.sops.secrets."protonmail/smtp_token".path})
           ${pkgs.jq}/bin/jq -n \
