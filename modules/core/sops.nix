@@ -27,6 +27,7 @@ let
   hasFirefox = config.sys.services.firefox.enable or false;
   hasBrave = config.sys.services.brave.enable or false;
   hasPushover = config.sys.services.grafanaPushover.enable or false;
+  hasMatrixSynapse = config.sys.services."matrix-synapse".enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -91,7 +92,9 @@ in
       }
       // whenEnabled hasCrowdsec {
         "crowdsec/traefik_bouncer" = {
-          mode = "0775";
+          mode = "0400";
+          owner = "root";
+          group = "root";
         };
         "crowdsec/firewall_bouncer" = { };
         "crowdsec/console_token" = { };
@@ -157,6 +160,14 @@ in
           owner = "grafana";
           group = "grafana";
           mode = "0440";
+        };
+      }
+      # Protonmail SMTP token (for Matrix Synapse email)
+      // whenEnabled hasMatrixSynapse {
+        "protonmail/smtp_token" = {
+          mode = "0440";
+          owner = "matrix-synapse";
+          group = "matrix-synapse";
         };
       };
 
@@ -256,6 +267,10 @@ in
     // whenEnabled hasPushover {
       pushoverApiTokenFile = toString config.sops.secrets."pushover/api_token".path;
       pushoverUserKeyFile = toString config.sops.secrets."pushover/user_key".path;
+    }
+    # Protonmail SMTP token
+    // whenEnabled hasMatrixSynapse {
+      protonmailSmtpTokenFile = toString config.sops.secrets."protonmail/smtp_token".path;
     };
 
   environment.systemPackages = [

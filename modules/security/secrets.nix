@@ -223,5 +223,11 @@
       default = null;
       description = "Path to a file containing the Pushover user/group key. Mapped from SOPS in core/sops.nix.";
     };
+
+    protonmailSmtpTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = "Path to a file containing the Protonmail SMTP token. Mapped from SOPS in core/sops.nix.";
+    };
   };
 }
