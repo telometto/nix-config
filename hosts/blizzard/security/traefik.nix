@@ -351,7 +351,7 @@
           };
 
           # Route /.well-known/matrix/* on the bare domain to Synapse so
-          # federation and client auto-discovery work for server_name zzxyz.no
+          # federation and client auto-discovery work for server_name mydomain.no
           matrix-well-known = {
             rule = "Host(`${VARS.domains.public}`) && PathPrefix(`/.well-known/matrix/`)";
             service = "matrix-synapse";
