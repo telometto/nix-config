@@ -374,8 +374,8 @@
 
     reverseProxy.enable = false;
 
-    # Delegate all authentication to MAS — Synapse no longer handles
-    # registration, login, or password management directly.
+    # Delegate core login and registration flows to MAS; other auth-related
+    # endpoints (for example password changes) are still handled by Synapse.
     authDelegation = {
       enable = true;
       issuer = "https://matrix.${VARS.domains.public}/";
