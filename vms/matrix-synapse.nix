@@ -167,7 +167,7 @@
       presence.enabled = false;
 
       # Disable Synapse's built-in well-known — it generates m.server from
-      # server_name (zzxyz.no:443) instead of the delegated matrix.zzxyz.no.
+      # server_name (mydomain.no:443) instead of the delegated matrix.mydomain.no.
       # Nginx in front of Synapse serves the correct responses instead.
       serve_server_wellknown = false;
 
@@ -193,6 +193,25 @@
 
       # Users must present a valid token to register
       registration_requires_token = true;
+
+      # Require verified email during sign-up
+      registrations_require_3pid = [ "email" ];
+
+      # Allow users to add/remove validated 3PIDs (email/phone) on account
+      enable_3pid_changes = true;
+
+      # Synapse sends verification emails through SMTP.
+      # Configure these to your mail relay/provider.
+      email = {
+        smtp_host = "smtp.protonmail.ch";
+        smtp_port = 587;
+        smtp_user = "matrix@${VARS.domains.public}";
+        smtp_pass = "CHANGE_ME_SMTP_PASSWORD";
+        require_transport_security = true;
+        notif_from = "Matrix <matrix@${VARS.domains.public}>";
+        app_name = "Matrix";
+        enable_notifs = false;
+      };
 
       # Don't reveal whether a 3PID (email/phone) is registered
       request_token_inhibit_3pid_errors = true;
