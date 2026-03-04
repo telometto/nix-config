@@ -193,21 +193,23 @@
                 authCfg.accountManagementUrl != null
               ) ''--arg account_url "${authCfg.accountManagementUrl}" \''}
             '';
-            masBlock = lib.optionalString authCfg.enable ''
-              experimental_features: {
-                msc3861: {
-                  enabled: true,
-                  issuer: $issuer,
-                  client_id: $client_id,
-                  client_auth_method: $client_auth_method,
-                  client_secret: ($client_secret | rtrimstr("\n")),
-                  admin_token: ($admin_token | rtrimstr("\n"))${
-                    lib.optionalString (authCfg.accountManagementUrl != null) ''
-                      ,
-                                        account_management_url: $account_url''
+            masJqExpr = lib.optionalString authCfg.enable ''
+              * {
+                experimental_features: {
+                  msc3861: {
+                    enabled: true,
+                    issuer: $issuer,
+                    client_id: $client_id,
+                    client_auth_method: $client_auth_method,
+                    client_secret: ($client_secret | rtrimstr("\n")),
+                    admin_token: ($admin_token | rtrimstr("\n"))${
+                      lib.optionalString (authCfg.accountManagementUrl != null) ''
+                        ,
+                                            account_management_url: $account_url''
+                    }
                   }
                 }
-              },
+              }
             '';
           in
           ''
@@ -229,9 +231,8 @@
                   notif_from: $notif_from,
                   app_name: "Matrix",
                   enable_notifs: false
-                },
-                ${masBlock}
-              }' \
+                }
+              }${masJqExpr}' \
               > /run/matrix-synapse-secret/shared-secret.yaml
           '';
       };
