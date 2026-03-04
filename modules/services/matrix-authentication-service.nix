@@ -228,6 +228,12 @@ in
       description = "Extra JSON/YAML config files merged at startup (for secrets).";
     };
 
+    runtimeConfigFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Override the MAS config file path at runtime. When null, uses the Nix-generated base config.";
+    };
+
     openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -258,7 +264,9 @@ in
     # assembly service can read and merge it with decrypted secrets.
     environment.etc."matrix-authentication-service/config.json" = {
       source = baseConfigFile;
-      mode = "0444";
+      user = "mas";
+      group = "mas";
+      mode = "0400";
     };
 
     # Idempotent DB creation — runs before MAS to ensure the role and
@@ -292,18 +300,21 @@ in
 
     systemd.services.matrix-authentication-service = {
       description = "Matrix Authentication Service";
-      after = [
-        "postgresql.service"
-        "network.target"
-      ];
-      requires = [ "postgresql.service" ];
+      after =
+        (if cfg.database.createLocally then [ "postgresql.service" ] else [ "network-online.target" ])
+        ++ [ "network.target" ];
+      requires = lib.optionals cfg.database.createLocally [ "postgresql.service" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "simple";
         User = "mas";
         Group = "mas";
-        ExecStart = "${pkgs.matrix-authentication-service}/bin/mas-cli server --config /run/mas/config.yaml";
+        ExecStart =
+          let
+            configPath = if cfg.runtimeConfigFile != null then cfg.runtimeConfigFile else "${baseConfigFile}";
+          in
+          "${pkgs.matrix-authentication-service}/bin/mas-cli server --config ${configPath}";
         Restart = "on-failure";
         RestartSec = "5s";
 
