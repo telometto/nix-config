@@ -70,8 +70,8 @@ in
         default = false;
         description = ''
           Delegate authentication to Matrix Authentication Service (MAS).
-          When enabled, Synapse's built-in registration and password auth
-          are disabled — MAS handles all auth flows via MSC3861.
+          When enabled, Synapse's built-in user registration is disabled and
+          MAS handles authentication flows via MSC3861.
           The MSC3861 secrets (client_secret, admin_token) must be injected
           at runtime via extraConfigFiles.
         '';
@@ -243,6 +243,10 @@ in
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
         message = "sys.services.matrix-synapse.reverseProxy.enable must be true when cfTunnel.enable is true";
+      }
+      {
+        assertion = !cfg.authDelegation.enable || cfg.authDelegation.issuer != "";
+        message = "sys.services.matrix-synapse.authDelegation.issuer must be set when authDelegation is enabled";
       }
       (traefikLib.mkCfTunnelAssertion {
         name = "matrix-synapse";

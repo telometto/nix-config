@@ -33,8 +33,8 @@
       };
       "protonmail/smtp_token" = {
         mode = "0440";
-        owner = "matrix-synapse";
-        group = "matrix-synapse";
+        owner = "root";
+        group = "matrix-shared";
       };
 
       # --- MAS secrets ---
@@ -68,14 +68,14 @@
       # Shared secret for MAS ↔ Synapse admin API calls
       "matrix-authentication-service/synapse_secret" = {
         mode = "0440";
-        owner = "mas";
-        group = "mas";
+        owner = "root";
+        group = "matrix-shared";
       };
       # OIDC client secret — same value in MAS clients[] and Synapse msc3861
       "matrix-authentication-service/client_secret" = {
         mode = "0440";
-        owner = "mas";
-        group = "mas";
+        owner = "root";
+        group = "matrix-shared";
       };
     };
   };
@@ -98,6 +98,11 @@
         mountPoint = "/var/lib/postgresql";
         image = "postgresql-state.img";
         size = 10240;
+      }
+      {
+        mountPoint = "/var/lib/mas";
+        image = "mas-state.img";
+        size = 1024;
       }
       {
         mountPoint = "/persist";
@@ -192,9 +197,10 @@
             --rawfile admin_token ${config.sops.secrets."matrix-authentication-service/synapse_secret".path} \
             --arg notif_from "Matrix <matrix@${VARS.domains.public}>" \
             --arg smtp_user "matrix@${VARS.domains.public}" \
-            --arg issuer "https://matrix.${VARS.domains.public}/" \
-            --arg client_id "0000000000000000000SYNAPSE" \
-            --arg account_url "https://matrix.${VARS.domains.public}/account/" \
+            --arg issuer "${config.sys.services.matrix-synapse.authDelegation.issuer}" \
+            --arg client_id "${config.sys.services.matrix-synapse.authDelegation.clientId}" \
+            --arg client_auth_method "${config.sys.services.matrix-synapse.authDelegation.clientAuthMethod}" \
+            --arg account_url "${config.sys.services.matrix-synapse.authDelegation.accountManagementUrl}" \
             '{
               registration_shared_secret: ($secret | rtrimstr("\n")),
               email: {
@@ -212,7 +218,7 @@
                   enabled: true,
                   issuer: $issuer,
                   client_id: $client_id,
-                  client_auth_method: "client_secret_basic",
+                  client_auth_method: $client_auth_method,
                   client_secret: ($client_secret | rtrimstr("\n")),
                   admin_token: ($admin_token | rtrimstr("\n")),
                   account_management_url: $account_url
@@ -266,7 +272,8 @@
               config.sops.secrets."matrix-authentication-service/client_secret".path
             } \
             --rawfile smtp_pass ${config.sops.secrets."protonmail/smtp_token".path} \
-            --arg client_id "0000000000000000000SYNAPSE" \
+            --arg client_id "${config.sys.services.matrix-authentication-service.clientId}" \
+            --arg client_auth_method "${config.sys.services.matrix-synapse.authDelegation.clientAuthMethod}" \
             '$base[0] * {
               secrets: {
                 encryption: ($encryption_key | rtrimstr("\n")),
@@ -282,7 +289,7 @@
               }),
               clients: [{
                 client_id: $client_id,
-                client_auth_method: "client_secret_basic",
+                client_auth_method: $client_auth_method,
                 client_secret: ($client_secret | rtrimstr("\n"))
               }],
               email: ($base[0].email * {
@@ -337,8 +344,7 @@
 
     clientId = "0000000000000000000SYNAPSE";
 
-    # The mas-secret oneshot assembles the full config with secrets
-    extraConfigFiles = [ "/run/mas/config.yaml" ];
+    runtimeConfigFile = "/run/mas/config.yaml";
   };
 
   # --- Synapse ---
@@ -602,6 +608,10 @@
       bits = 4096;
     }
   ];
+
+  users.groups.matrix-shared = { };
+  users.users.mas.extraGroups = [ "matrix-shared" ];
+  users.users.matrix-synapse.extraGroups = [ "matrix-shared" ];
 
   users.users.admin = {
     isNormalUser = true;
