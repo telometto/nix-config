@@ -166,8 +166,7 @@ in
 
             url_preview_enabled = cfg.urlPreview.enable;
 
-            # MAS owns registration when auth is delegated
-            enable_registration = lib.mkDefault (!cfg.authDelegation.enable);
+            enable_registration = if cfg.authDelegation.enable then lib.mkForce false else lib.mkDefault true;
             report_stats = false;
 
             # Allow VMs to override this when they handle well-known via Nginx
@@ -216,6 +215,8 @@ in
               issuer = cfg.authDelegation.issuer;
               client_id = cfg.authDelegation.clientId;
               client_auth_method = cfg.authDelegation.clientAuthMethod;
+            }
+            // lib.optionalAttrs (cfg.authDelegation.accountManagementUrl != null) {
               account_management_url = cfg.authDelegation.accountManagementUrl;
             };
           })

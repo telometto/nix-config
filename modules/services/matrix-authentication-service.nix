@@ -8,8 +8,9 @@ let
   cfg = config.sys.services.matrix-authentication-service;
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
 
-  # Base config without secrets — secrets are injected at runtime
-  # by a systemd oneshot that reads sops-decrypted files.
+  # Base config without secrets — an external oneshot (e.g. the VM's
+  # mas-secret service) must merge decrypted secrets and point
+  # runtimeConfigFile at the result.
   baseConfig = lib.recursiveUpdate {
     http = {
       listeners = [
@@ -117,7 +118,7 @@ in
 
     publicBaseUrl = lib.mkOption {
       type = lib.types.str;
-      description = "Public-facing base URL of MAS — must match the OIDC issuer.";
+      description = "Public-facing base URL of MAS.";
       example = "https://matrix.example.com/";
     };
 
@@ -361,6 +362,14 @@ in
       {
         assertion = cfg.email.transport != "smtp" || (cfg.email.hostname != "" && cfg.email.username != "");
         message = "sys.services.matrix-authentication-service.email.hostname and email.username must be set when email.transport is 'smtp'";
+      }
+      {
+        assertion =
+          let
+            normalize = url: lib.removeSuffix "/" url;
+          in
+          normalize cfg.publicBaseUrl == normalize cfg.issuer;
+        message = "sys.services.matrix-authentication-service.publicBaseUrl and issuer must match (ignoring trailing slash) for OIDC discovery to work";
       }
       (traefikLib.mkCfTunnelAssertion {
         name = "matrix-authentication-service";
