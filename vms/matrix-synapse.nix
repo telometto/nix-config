@@ -123,9 +123,11 @@
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          User = "matrix-synapse";
+          Group = "matrix-synapse";
+          UMask = "0337";
           RuntimeDirectory = "matrix-synapse-secret";
           RuntimeDirectoryMode = "0750";
-          Group = "matrix-synapse";
         };
 
         script = ''
@@ -154,8 +156,6 @@
               }
             }' \
             > /run/matrix-synapse-secret/shared-secret.yaml
-          chown matrix-synapse:matrix-synapse /run/matrix-synapse-secret/shared-secret.yaml
-          chmod 0440 /run/matrix-synapse-secret/shared-secret.yaml
         '';
       };
     };
