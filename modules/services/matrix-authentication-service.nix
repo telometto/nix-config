@@ -350,6 +350,18 @@ in
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
         message = "sys.services.matrix-authentication-service.reverseProxy.enable must be true when cfTunnel.enable is true";
       }
+      {
+        assertion =
+          !(
+            builtins.match ".*[:@].*@.*" cfg.database.uri != null
+            || builtins.match ".*password=.*" cfg.database.uri != null
+          );
+        message = "sys.services.matrix-authentication-service.database.uri must not contain embedded credentials — inject them via runtime secrets instead";
+      }
+      {
+        assertion = cfg.email.transport != "smtp" || (cfg.email.hostname != "" && cfg.email.username != "");
+        message = "sys.services.matrix-authentication-service.email.hostname and email.username must be set when email.transport is 'smtp'";
+      }
       (traefikLib.mkCfTunnelAssertion {
         name = "matrix-authentication-service";
         inherit cfg;

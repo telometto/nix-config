@@ -248,6 +248,10 @@ in
         assertion = !cfg.authDelegation.enable || cfg.authDelegation.issuer != "";
         message = "sys.services.matrix-synapse.authDelegation.issuer must be set when authDelegation is enabled";
       }
+      {
+        assertion = !cfg.authDelegation.enable || cfg.extraConfigFiles != [ ];
+        message = "sys.services.matrix-synapse.extraConfigFiles must contain at least one secrets file when authDelegation is enabled";
+      }
       (traefikLib.mkCfTunnelAssertion {
         name = "matrix-synapse";
         inherit cfg;

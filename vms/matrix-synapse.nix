@@ -496,7 +496,7 @@
             proxy_set_header X-Forwarded-Proto $scheme;
           '';
         };
-        "~ ^/_matrix/client/(r0|v3)/logout" = {
+        "~ ^/_matrix/client/(r0|v3)/logout(/all)?$" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
             proxy_set_header X-Forwarded-Proto $scheme;
