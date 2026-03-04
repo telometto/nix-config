@@ -64,6 +64,45 @@ in
       defaults.enable = false;
     };
 
+    authDelegation = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Delegate authentication to Matrix Authentication Service (MAS).
+          When enabled, Synapse's built-in registration and password auth
+          are disabled — MAS handles all auth flows via MSC3861.
+          The MSC3861 secrets (client_secret, admin_token) must be injected
+          at runtime via extraConfigFiles.
+        '';
+      };
+
+      issuer = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = "MAS OIDC issuer URL (e.g. https://matrix.example.com/).";
+      };
+
+      clientId = lib.mkOption {
+        type = lib.types.str;
+        default = "0000000000000000000SYNAPSE";
+        description = "OIDC client ID registered in MAS for Synapse.";
+      };
+
+      clientAuthMethod = lib.mkOption {
+        type = lib.types.str;
+        default = "client_secret_basic";
+        description = "OIDC client authentication method.";
+      };
+
+      accountManagementUrl = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "MAS account management URL shown to users.";
+        example = "https://matrix.example.com/account/";
+      };
+    };
+
     settings = lib.mkOption {
       type = lib.types.attrs;
       default = { };
@@ -127,7 +166,8 @@ in
 
             url_preview_enabled = cfg.urlPreview.enable;
 
-            enable_registration = lib.mkDefault false;
+            # MAS owns registration when auth is delegated
+            enable_registration = lib.mkDefault (!cfg.authDelegation.enable);
             report_stats = false;
 
             # Allow VMs to override this when they handle well-known via Nginx
@@ -167,6 +207,17 @@ in
               "ff00::/8"
               "fec0::/10"
             ];
+          })
+          # Non-secret MSC3861 fields — client_secret and admin_token
+          # are injected at runtime via extraConfigFiles.
+          (lib.optionalAttrs cfg.authDelegation.enable {
+            experimental_features.msc3861 = {
+              enabled = true;
+              issuer = cfg.authDelegation.issuer;
+              client_id = cfg.authDelegation.clientId;
+              client_auth_method = cfg.authDelegation.clientAuthMethod;
+              account_management_url = cfg.authDelegation.accountManagementUrl;
+            };
           })
           cfg.settings
         ];
