@@ -180,39 +180,20 @@
           RuntimeDirectoryMode = "0750";
         };
 
-        script = ''
-          set -euo pipefail
-          # --rawfile reads secrets directly from files, keeping them out
-          # of /proc/<pid>/cmdline (unlike --arg which expands in argv).
-          # Includes:
-          #  - registration_shared_secret (legacy, still needed for admin tools)
-          #  - email/SMTP block (shallow merge means entire block must be here)
-          #  - experimental_features.msc3861 for MAS auth delegation
-          ${pkgs.jq}/bin/jq -n \
-            --rawfile secret ${config.sops.secrets."matrix-synapse/registration_shared_secret".path} \
-            --rawfile smtp ${config.sops.secrets."protonmail/smtp_token".path} \
-            --rawfile client_secret ${
-              config.sops.secrets."matrix-authentication-service/client_secret".path
-            } \
-            --rawfile admin_token ${config.sops.secrets."matrix-authentication-service/synapse_secret".path} \
-            --arg notif_from "Matrix <matrix@${VARS.domains.public}>" \
-            --arg smtp_user "matrix@${VARS.domains.public}" \
-            --arg issuer "${config.sys.services.matrix-synapse.authDelegation.issuer}" \
-            --arg client_id "${config.sys.services.matrix-synapse.authDelegation.clientId}" \
-            --arg client_auth_method "${config.sys.services.matrix-synapse.authDelegation.clientAuthMethod}" \
-            --arg account_url "${config.sys.services.matrix-synapse.authDelegation.accountManagementUrl}" \
-            '{
-              registration_shared_secret: ($secret | rtrimstr("\n")),
-              email: {
-                smtp_host: "smtp.protonmail.ch",
-                smtp_port: 587,
-                smtp_user: $smtp_user,
-                smtp_pass: ($smtp | rtrimstr("\n")),
-                require_transport_security: true,
-                notif_from: $notif_from,
-                app_name: "Matrix",
-                enable_notifs: false
-              },
+        script =
+          let
+            authCfg = config.sys.services.matrix-synapse.authDelegation;
+            masArgs = lib.optionalString authCfg.enable ''
+              --rawfile client_secret ${config.sops.secrets."matrix-authentication-service/client_secret".path} \
+              --rawfile admin_token ${config.sops.secrets."matrix-authentication-service/synapse_secret".path} \
+              --arg issuer "${authCfg.issuer}" \
+              --arg client_id "${authCfg.clientId}" \
+              --arg client_auth_method "${authCfg.clientAuthMethod}" \
+              ${lib.optionalString (
+                authCfg.accountManagementUrl != null
+              ) ''--arg account_url "${authCfg.accountManagementUrl}" \''}
+            '';
+            masBlock = lib.optionalString authCfg.enable ''
               experimental_features: {
                 msc3861: {
                   enabled: true,
@@ -220,13 +201,39 @@
                   client_id: $client_id,
                   client_auth_method: $client_auth_method,
                   client_secret: ($client_secret | rtrimstr("\n")),
-                  admin_token: ($admin_token | rtrimstr("\n")),
-                  account_management_url: $account_url
+                  admin_token: ($admin_token | rtrimstr("\n"))${
+                    lib.optionalString (authCfg.accountManagementUrl != null) ''
+                      ,
+                                        account_management_url: $account_url''
+                  }
                 }
-              }
-            }' \
-            > /run/matrix-synapse-secret/shared-secret.yaml
-        '';
+              },
+            '';
+          in
+          ''
+            set -euo pipefail
+            ${pkgs.jq}/bin/jq -n \
+              --rawfile secret ${config.sops.secrets."matrix-synapse/registration_shared_secret".path} \
+              --rawfile smtp ${config.sops.secrets."protonmail/smtp_token".path} \
+              --arg notif_from "Matrix <matrix@${VARS.domains.public}>" \
+              --arg smtp_user "matrix@${VARS.domains.public}" \
+              ${masArgs}
+              '{
+                registration_shared_secret: ($secret | rtrimstr("\n")),
+                email: {
+                  smtp_host: "smtp.protonmail.ch",
+                  smtp_port: 587,
+                  smtp_user: $smtp_user,
+                  smtp_pass: ($smtp | rtrimstr("\n")),
+                  require_transport_security: true,
+                  notif_from: $notif_from,
+                  app_name: "Matrix",
+                  enable_notifs: false
+                },
+                ${masBlock}
+              }' \
+              > /run/matrix-synapse-secret/shared-secret.yaml
+          '';
       };
 
       # Assembles MAS runtime config by merging the Nix-generated base
