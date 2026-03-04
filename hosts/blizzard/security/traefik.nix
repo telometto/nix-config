@@ -1,4 +1,9 @@
-{ config, pkgs, VARS, ... }:
+{
+  config,
+  pkgs,
+  VARS,
+  ...
+}:
 {
   services.traefik = {
     enable = true;
