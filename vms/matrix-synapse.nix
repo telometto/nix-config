@@ -244,7 +244,7 @@
           User = "mas";
           Group = "mas";
           UMask = "0337";
-          RuntimeDirectory = "mas";
+          RuntimeDirectory = "mas-secret";
           RuntimeDirectoryMode = "0750";
         };
 
@@ -296,7 +296,7 @@
                 password: ($smtp_pass | rtrimstr("\n"))
               })
             }' \
-            > /run/mas/config.yaml
+            > /run/mas-secret/config.json
         '';
       };
 
@@ -344,7 +344,7 @@
 
     clientId = "0000000000000000000SYNAPSE";
 
-    runtimeConfigFile = "/run/mas/config.yaml";
+    runtimeConfigFile = "/run/mas-secret/config.json";
   };
 
   # --- Synapse ---

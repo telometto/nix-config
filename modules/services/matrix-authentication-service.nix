@@ -23,7 +23,11 @@ let
             { name = "graphql"; }
             { name = "assets"; }
           ];
-          binds = [ { address = "127.0.0.1:${toString cfg.port}"; } ];
+          binds = [
+            {
+              address = "${if cfg.openFirewall then "0.0.0.0" else "127.0.0.1"}:${toString cfg.port}";
+            }
+          ];
           proxy_protocol = false;
         }
         {
@@ -67,7 +71,7 @@ let
       hostname = cfg.email.hostname;
       port = cfg.email.smtpPort;
       username = cfg.email.username;
-      # password injected at runtime via extraConfigFiles
+      # password injected at runtime via runtimeConfigFile
     };
 
     passwords = {
@@ -85,10 +89,10 @@ let
       kind = "synapse";
       homeserver = cfg.matrix.homeserver;
       endpoint = cfg.matrix.endpoint;
-      # secret injected at runtime via extraConfigFiles
+      # secret injected at runtime via runtimeConfigFile
     };
 
-    # secrets and clients are injected at runtime via extraConfigFiles
+    # secrets and clients are injected at runtime via runtimeConfigFile
   } cfg.settings;
 
   baseConfigFile = pkgs.writeText "mas-config-base.json" (builtins.toJSON baseConfig);
@@ -222,12 +226,6 @@ in
       description = "OIDC client ID that Synapse uses to authenticate against MAS.";
     };
 
-    extraConfigFiles = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      description = "Extra JSON/YAML config files merged at startup (for secrets).";
-    };
-
     runtimeConfigFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -319,6 +317,7 @@ in
         RestartSec = "5s";
 
         StateDirectory = "mas";
+        StateDirectoryMode = "0700";
         RuntimeDirectory = "mas";
         RuntimeDirectoryMode = "0750";
 
