@@ -125,29 +125,28 @@
           RemainAfterExit = true;
           RuntimeDirectory = "matrix-synapse-secret";
           RuntimeDirectoryMode = "0750";
+          Group = "matrix-synapse";
         };
 
         script = ''
           set -euo pipefail
-          # Allow matrix-synapse to traverse the runtime directory
-          chgrp matrix-synapse /run/matrix-synapse-secret
-          secret=$(cat ${config.sops.secrets."matrix-synapse/registration_shared_secret".path})
-          smtp_token=$(cat ${config.sops.secrets."protonmail/smtp_token".path})
           # Synapse does a shallow (top-level) merge of extra config files,
           # so the entire email block must be here — a partial block would
           # replace the main config's email dict and drop required keys.
+          # --rawfile reads secrets directly from files, keeping them out
+          # of /proc/<pid>/cmdline (unlike --arg which expands in argv).
           ${pkgs.jq}/bin/jq -n \
-            --arg secret "$secret" \
-            --arg smtp "$smtp_token" \
+            --rawfile secret ${config.sops.secrets."matrix-synapse/registration_shared_secret".path} \
+            --rawfile smtp ${config.sops.secrets."protonmail/smtp_token".path} \
             --arg notif_from "Matrix <matrix@${VARS.domains.public}>" \
             --arg smtp_user "matrix@${VARS.domains.public}" \
             '{
-              registration_shared_secret: $secret,
+              registration_shared_secret: ($secret | rtrimstr("\n")),
               email: {
                 smtp_host: "smtp.protonmail.ch",
                 smtp_port: 587,
                 smtp_user: $smtp_user,
-                smtp_pass: $smtp,
+                smtp_pass: ($smtp | rtrimstr("\n")),
                 require_transport_security: true,
                 notif_from: $notif_from,
                 app_name: "Matrix",
