@@ -123,21 +123,39 @@
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          User = "matrix-synapse";
+          Group = "matrix-synapse";
+          UMask = "0337";
           RuntimeDirectory = "matrix-synapse-secret";
           RuntimeDirectoryMode = "0750";
         };
 
         script = ''
           set -euo pipefail
-          secret=$(cat ${config.sops.secrets."matrix-synapse/registration_shared_secret".path})
-          smtp_token=$(cat ${config.sops.secrets."protonmail/smtp_token".path})
+          # Synapse does a shallow (top-level) merge of extra config files,
+          # so the entire email block must be here — a partial block would
+          # replace the main config's email dict and drop required keys.
+          # --rawfile reads secrets directly from files, keeping them out
+          # of /proc/<pid>/cmdline (unlike --arg which expands in argv).
           ${pkgs.jq}/bin/jq -n \
-            --arg secret "$secret" \
-            --arg smtp "$smtp_token" \
-            '{registration_shared_secret: $secret, email: {smtp_pass: $smtp}}' \
+            --rawfile secret ${config.sops.secrets."matrix-synapse/registration_shared_secret".path} \
+            --rawfile smtp ${config.sops.secrets."protonmail/smtp_token".path} \
+            --arg notif_from "Matrix <matrix@${VARS.domains.public}>" \
+            --arg smtp_user "matrix@${VARS.domains.public}" \
+            '{
+              registration_shared_secret: ($secret | rtrimstr("\n")),
+              email: {
+                smtp_host: "smtp.protonmail.ch",
+                smtp_port: 587,
+                smtp_user: $smtp_user,
+                smtp_pass: ($smtp | rtrimstr("\n")),
+                require_transport_security: true,
+                notif_from: $notif_from,
+                app_name: "Matrix",
+                enable_notifs: false
+              }
+            }' \
             > /run/matrix-synapse-secret/shared-secret.yaml
-          chown matrix-synapse:matrix-synapse /run/matrix-synapse-secret/shared-secret.yaml
-          chmod 0440 /run/matrix-synapse-secret/shared-secret.yaml
         '';
       };
     };
@@ -211,19 +229,11 @@
       # Allow users to add/remove validated 3PIDs (email/phone) on account
       enable_3pid_changes = true;
 
-      # Synapse sends verification emails through SMTP.
-      # Configure these to your mail relay/provider.
-      email = {
-        smtp_host = "smtp.protonmail.ch";
-        smtp_port = 587;
-        smtp_user = "matrix@${VARS.domains.public}";
-        # smtp_pass is injected at runtime via /run/matrix-synapse-secret/shared-secret.yaml
-        # to avoid leaking it into the world-readable /nix/store
-        require_transport_security = true;
-        notif_from = "Matrix <matrix@${VARS.domains.public}>";
-        app_name = "Matrix";
-        enable_notifs = false;
-      };
+      # Email/SMTP config (including smtp_pass) is injected at runtime
+      # via /run/matrix-synapse-secret/shared-secret.yaml to keep the
+      # SMTP token out of the world-readable /nix/store. Synapse does a
+      # shallow merge on top-level keys, so the entire email block must
+      # live in the extra config file.
 
       # Don't reveal whether a 3PID (email/phone) is registered
       request_token_inhibit_3pid_errors = true;
