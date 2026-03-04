@@ -422,6 +422,7 @@
     RuntimeDirectoryMode = "0750";
     ExecStartPre = [
       "+${pkgs.writeShellScript "copy-bouncer-key" ''
+        set -euo pipefail
         install -m 0444 ${config.sys.secrets.crowdsecTraefikBouncerTokenFile} /run/traefik/crowdsec-bouncer-key
       ''}"
     ];
