@@ -50,11 +50,11 @@ let
         "192.168.0.0/16"
       ];
       public_base = cfg.publicBaseUrl;
-      issuer = cfg.issuer;
+      inherit (cfg) issuer;
     };
 
     database = {
-      uri = cfg.database.uri;
+      inherit (cfg.database) uri;
       max_connections = 10;
       min_connections = 0;
       connect_timeout = 30;
@@ -63,20 +63,17 @@ let
     };
 
     email = {
-      from = cfg.email.from;
+      inherit (cfg.email) from transport;
       reply_to = cfg.email.replyTo;
-      transport = cfg.email.transport;
     }
     // lib.optionalAttrs (cfg.email.transport == "smtp") {
-      mode = cfg.email.mode;
-      hostname = cfg.email.hostname;
+      inherit (cfg.email) mode hostname username;
       port = cfg.email.smtpPort;
-      username = cfg.email.username;
       # password injected at runtime via runtimeConfigFile
     };
 
     passwords = {
-      enabled = cfg.passwords.enabled;
+      inherit (cfg.passwords) enabled;
       schemes = [
         {
           version = 1;
@@ -88,8 +85,7 @@ let
 
     matrix = {
       kind = "synapse";
-      homeserver = cfg.matrix.homeserver;
-      endpoint = cfg.matrix.endpoint;
+      inherit (cfg.matrix) homeserver endpoint;
       # secret injected at runtime via runtimeConfigFile
     };
 

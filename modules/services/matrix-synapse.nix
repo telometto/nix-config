@@ -212,7 +212,7 @@ in
           (lib.optionalAttrs cfg.authDelegation.enable {
             experimental_features.msc3861 = {
               enabled = true;
-              issuer = cfg.authDelegation.issuer;
+              inherit (cfg.authDelegation) issuer;
               client_id = cfg.authDelegation.clientId;
               client_auth_method = cfg.authDelegation.clientAuthMethod;
             }
