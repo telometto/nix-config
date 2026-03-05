@@ -184,46 +184,21 @@
           let
             authCfg = config.sys.services.matrix-synapse.authDelegation;
             masArgs = lib.escapeShellArgs (
-              lib.optionals authCfg.enable (
-                [
-                  "--rawfile"
-                  "client_secret"
-                  config.sops.secrets."matrix-authentication-service/client_secret".path
-                  "--rawfile"
-                  "admin_token"
-                  config.sops.secrets."matrix-authentication-service/synapse_secret".path
-                  "--arg"
-                  "issuer"
-                  authCfg.issuer
-                  "--arg"
-                  "client_id"
-                  authCfg.clientId
-                  "--arg"
-                  "client_auth_method"
-                  authCfg.clientAuthMethod
-                ]
-                ++ lib.optionals (authCfg.accountManagementUrl != null) [
-                  "--arg"
-                  "account_url"
-                  authCfg.accountManagementUrl
-                ]
-              )
+              lib.optionals authCfg.enable [
+                "--rawfile"
+                "mas_secret"
+                config.sops.secrets."matrix-authentication-service/synapse_secret".path
+                "--arg"
+                "mas_endpoint"
+                "http://localhost:${toString config.sys.services.matrix-authentication-service.port}/"
+              ]
             );
             masJqExpr = lib.optionalString authCfg.enable ''
               * {
-                experimental_features: {
-                  msc3861: {
-                    enabled: true,
-                    issuer: $issuer,
-                    client_id: $client_id,
-                    client_auth_method: $client_auth_method,
-                    client_secret: ($client_secret | rtrimstr("\n")),
-                    admin_token: ($admin_token | rtrimstr("\n"))${
-                      lib.optionalString (authCfg.accountManagementUrl != null) ''
-                        ,
-                                            account_management_url: $account_url''
-                    }
-                  }
+                matrix_authentication_service: {
+                  enabled: true,
+                  endpoint: $mas_endpoint,
+                  secret: ($mas_secret | rtrimstr("\n"))
                 }
               }
             '';
@@ -369,6 +344,42 @@
     clientId = "0000000000000000000SYNAPSE";
 
     runtimeConfigFile = "/run/mas-secret/config.json";
+
+    # Enable registration and account management in MAS.
+    # Without this, MAS only advertises "login" in prompt_values_supported
+    # and all registration attempts redirect to login.
+    settings = {
+      # Include bcrypt as scheme v1 so migrated Synapse password hashes
+      # (which are bcrypt) keep working after syn2mas import.  New
+      # registrations and re-logins will upgrade hashes to argon2id (v2).
+      passwords.schemes = [
+        {
+          version = 1;
+          algorithm = "bcrypt";
+          unicode_normalization = true;
+          # If Synapse had a password pepper, set it here:
+          # secret = "your-synapse-pepper";
+        }
+        {
+          version = 2;
+          algorithm = "argon2id";
+        }
+      ];
+      account = {
+        password_registration_enabled = true;
+        email_change_allowed = true;
+        displayname_change_allowed = true;
+        password_change_allowed = true;
+      };
+      # Allow dynamic client registration so Element X (and other
+      # OIDC-native clients) can register themselves as OAuth clients.
+      # Without this, MAS rejects the POST to /oauth2/registration
+      # and Element X reports "can't reach this homeserver".
+      policy.data.client_registration = {
+        allow_host_mismatch = true;
+        allow_insecure_uris = true;
+      };
+    };
   };
 
   # --- Synapse ---
@@ -397,6 +408,7 @@
       issuer = "https://matrix.${VARS.domains.public}/";
       clientId = "0000000000000000000SYNAPSE";
       accountManagementUrl = "https://matrix.${VARS.domains.public}/account/";
+      masEndpoint = "http://localhost:${toString config.sys.services.matrix-authentication-service.port}/";
     };
 
     settings = {
@@ -477,8 +489,6 @@
 
       # --- Session management ---
 
-      session_lifetime = "720h";
-      nonrefreshable_access_token_lifetime = "168h";
       delete_stale_devices_after = "180d";
       forget_rooms_on_leave = true;
 
@@ -514,19 +524,19 @@
         # --- MAS compatibility layer ---
         # Route Synapse login/logout/refresh to MAS so legacy and OIDC
         # clients both work through the same endpoints.
-        "~ ^/_matrix/client/(r0|v3)/login$" = {
+        "~ ^/_matrix/client/(r0|v1|v3)/login$" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
             proxy_set_header X-Forwarded-Proto $scheme;
           '';
         };
-        "~ ^/_matrix/client/(r0|v3)/logout(/all)?$" = {
+        "~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
             proxy_set_header X-Forwarded-Proto $scheme;
           '';
         };
-        "~ ^/_matrix/client/(r0|v3)/refresh$" = {
+        "~ ^/_matrix/client/(r0|v1|v3)/refresh$" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
             proxy_set_header X-Forwarded-Proto $scheme;
@@ -584,6 +594,19 @@
             proxy_set_header X-Forwarded-Proto $scheme;
           '';
         };
+        # MAS human-facing pages (login, logout, consent, recovery, etc.)
+        "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+        "/upstream/" = {
+          proxyPass = "http://127.0.0.1:8081";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
 
         # --- Synapse (everything else) ---
         "/" = {
@@ -605,10 +628,10 @@
           '';
         };
 
-        # Includes org.matrix.msc2965.authentication so OIDC-native clients
-        # (Element X) discover MAS as the auth provider.
+        # Includes m.authentication (stable) and org.matrix.msc2965.authentication
+        # (unstable) so OIDC-native clients (Element X) discover MAS.
         "= /.well-known/matrix/client" = {
-          return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"},\"org.matrix.msc2965.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"}}'";
+          return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"},\"m.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"},\"org.matrix.msc2965.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"}}'";
           extraConfig = ''
             default_type application/json;
             add_header Access-Control-Allow-Origin *;
