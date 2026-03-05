@@ -186,14 +186,26 @@
             masArgs = lib.escapeShellArgs (
               lib.optionals authCfg.enable (
                 [
-                  "--rawfile" "client_secret" config.sops.secrets."matrix-authentication-service/client_secret".path
-                  "--rawfile" "admin_token" config.sops.secrets."matrix-authentication-service/synapse_secret".path
-                  "--arg" "issuer" authCfg.issuer
-                  "--arg" "client_id" authCfg.clientId
-                  "--arg" "client_auth_method" authCfg.clientAuthMethod
+                  "--rawfile"
+                  "client_secret"
+                  config.sops.secrets."matrix-authentication-service/client_secret".path
+                  "--rawfile"
+                  "admin_token"
+                  config.sops.secrets."matrix-authentication-service/synapse_secret".path
+                  "--arg"
+                  "issuer"
+                  authCfg.issuer
+                  "--arg"
+                  "client_id"
+                  authCfg.clientId
+                  "--arg"
+                  "client_auth_method"
+                  authCfg.clientAuthMethod
                 ]
                 ++ lib.optionals (authCfg.accountManagementUrl != null) [
-                  "--arg" "account_url" authCfg.accountManagementUrl
+                  "--arg"
+                  "account_url"
+                  authCfg.accountManagementUrl
                 ]
               )
             );
