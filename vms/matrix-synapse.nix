@@ -183,16 +183,20 @@
         script =
           let
             authCfg = config.sys.services.matrix-synapse.authDelegation;
-            masArgs = lib.optionalString authCfg.enable ''
-              --rawfile client_secret ${config.sops.secrets."matrix-authentication-service/client_secret".path} \
-              --rawfile admin_token ${config.sops.secrets."matrix-authentication-service/synapse_secret".path} \
-              --arg issuer "${authCfg.issuer}" \
-              --arg client_id "${authCfg.clientId}" \
-              --arg client_auth_method "${authCfg.clientAuthMethod}" \
-              ${lib.optionalString (
-                authCfg.accountManagementUrl != null
-              ) ''--arg account_url "${authCfg.accountManagementUrl}" \''}
-            '';
+            masArgs = lib.escapeShellArgs (
+              lib.optionals authCfg.enable (
+                [
+                  "--rawfile" "client_secret" config.sops.secrets."matrix-authentication-service/client_secret".path
+                  "--rawfile" "admin_token" config.sops.secrets."matrix-authentication-service/synapse_secret".path
+                  "--arg" "issuer" authCfg.issuer
+                  "--arg" "client_id" authCfg.clientId
+                  "--arg" "client_auth_method" authCfg.clientAuthMethod
+                ]
+                ++ lib.optionals (authCfg.accountManagementUrl != null) [
+                  "--arg" "account_url" authCfg.accountManagementUrl
+                ]
+              )
+            );
             masJqExpr = lib.optionalString authCfg.enable ''
               * {
                 experimental_features: {
@@ -219,7 +223,7 @@
               --rawfile smtp ${config.sops.secrets."protonmail/smtp_token".path} \
               --arg notif_from "Matrix <matrix@${VARS.domains.public}>" \
               --arg smtp_user "matrix@${VARS.domains.public}" \
-              ${masArgs}
+              ${masArgs} \
               '{
                 registration_shared_secret: ($secret | rtrimstr("\n")),
                 email: {
