@@ -531,19 +531,19 @@
         "~ ^/_matrix/client/(r0|v1|v3)/login$" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         "~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         "~ ^/_matrix/client/(r0|v1|v3)/refresh$" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
 
@@ -551,64 +551,64 @@
         "/.well-known/openid-configuration" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         "/oauth2/" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         "/authorize" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         "/register" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         "/account/" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         "/assets/" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         # MAS JWKS endpoint for token verification
         "/.well-known/jwks.json" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         # MAS GraphQL admin API
         "/graphql" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         # MAS human-facing pages (login, logout, consent, recovery, etc.)
         "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
         "/upstream/" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
 
@@ -617,7 +617,7 @@
           proxyPass = "http://127.0.0.1:8008";
           proxyWebsockets = true;
           extraConfig = ''
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
             proxy_read_timeout 600s;
             client_max_body_size 90M;
           '';
@@ -636,6 +636,15 @@
         # (unstable) so OIDC-native clients (Element X) discover MAS.
         "= /.well-known/matrix/client" = {
           return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"},\"m.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"},\"org.matrix.msc2965.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"}}'";
+          extraConfig = ''
+            default_type application/json;
+            add_header Access-Control-Allow-Origin *;
+          '';
+        };
+
+        # MSC1929: admin contact info for homeserver discovery
+        "= /.well-known/matrix/support" = {
+          return = "200 '{\"contacts\":[{\"role\":\"admin\",\"email_address\":\"matrix@${VARS.domains.public}\"}]}'";
           extraConfig = ''
             default_type application/json;
             add_header Access-Control-Allow-Origin *;
