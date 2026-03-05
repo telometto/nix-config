@@ -71,9 +71,9 @@ in
         description = ''
           Delegate authentication to Matrix Authentication Service (MAS).
           When enabled, Synapse's built-in user registration is disabled and
-          MAS handles authentication flows via MSC3861.
-          The MSC3861 secrets (client_secret, admin_token) must be injected
-          at runtime via extraConfigFiles.
+          MAS handles authentication via the matrix_authentication_service
+          config block.  The shared secret must be injected at runtime via
+          extraConfigFiles.
         '';
       };
 
@@ -100,6 +100,12 @@ in
         default = null;
         description = "MAS account management URL shown to users.";
         example = "https://matrix.example.com/account/";
+      };
+
+      masEndpoint = lib.mkOption {
+        type = lib.types.str;
+        default = "http://localhost:8081/";
+        description = "Internal MAS endpoint URL for Synapse ↔ MAS communication.";
       };
     };
 
@@ -129,7 +135,7 @@ in
         enable = true;
         inherit (cfg) dataDir;
 
-        extras = [ "postgres" ];
+        extras = [ "postgres" ] ++ lib.optionals cfg.authDelegation.enable [ "oidc" ];
 
         inherit (cfg) extraConfigFiles;
 
@@ -207,17 +213,12 @@ in
               "fec0::/10"
             ];
           })
-          # Non-secret MSC3861 fields — client_secret and admin_token
-          # are injected at runtime via extraConfigFiles.
+          # Delegate authentication to MAS. The shared secret is injected
+          # at runtime via extraConfigFiles.
           (lib.optionalAttrs cfg.authDelegation.enable {
-            experimental_features.msc3861 = {
+            matrix_authentication_service = {
               enabled = true;
-              inherit (cfg.authDelegation) issuer;
-              client_id = cfg.authDelegation.clientId;
-              client_auth_method = cfg.authDelegation.clientAuthMethod;
-            }
-            // lib.optionalAttrs (cfg.authDelegation.accountManagementUrl != null) {
-              account_management_url = cfg.authDelegation.accountManagementUrl;
+              endpoint = cfg.authDelegation.masEndpoint;
             };
           })
           cfg.settings
@@ -244,10 +245,6 @@ in
       {
         assertion = !cfg.reverseProxy.cfTunnel.enable || cfg.reverseProxy.enable;
         message = "sys.services.matrix-synapse.reverseProxy.enable must be true when cfTunnel.enable is true";
-      }
-      {
-        assertion = !cfg.authDelegation.enable || cfg.authDelegation.issuer != "";
-        message = "sys.services.matrix-synapse.authDelegation.issuer must be set when authDelegation is enabled";
       }
       {
         assertion = !cfg.authDelegation.enable || cfg.extraConfigFiles != [ ];
