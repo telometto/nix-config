@@ -190,7 +190,7 @@
                 config.sops.secrets."matrix-authentication-service/synapse_secret".path
                 "--arg"
                 "mas_endpoint"
-                "http://localhost:${toString config.sys.services.matrix-authentication-service.port}/"
+                authCfg.masEndpoint
               ]
             );
             masJqExpr = lib.optionalString authCfg.enable ''
@@ -377,7 +377,7 @@
       # and Element X reports "can't reach this homeserver".
       policy.data.client_registration = {
         allow_host_mismatch = true;
-        allow_insecure_uris = true;
+        allow_insecure_uris = false;
       };
     };
   };
