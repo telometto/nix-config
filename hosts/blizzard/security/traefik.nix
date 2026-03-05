@@ -141,10 +141,18 @@
           };
 
           # Matrix needs relaxed headers: no CSP (Element/clients make
-          # cross-origin requests) and DENY framing to prevent click-jacking
+          # cross-origin requests) and DENY framing to prevent click-jacking.
+          # CORS headers are set here so browsers (and tools like the Matrix
+          # connectivity tester) can reach all API/well-known endpoints.
+          # Traefik's customResponseHeaders overrides any backend CORS header,
+          # preventing duplicates.
           matrix-headers = {
             headers = {
               customResponseHeaders = {
+                Access-Control-Allow-Origin = "*";
+                Access-Control-Allow-Methods = "GET, HEAD, POST, PUT, DELETE, OPTIONS";
+                Access-Control-Allow-Headers = "X-Requested-With, Content-Type, Authorization, Date";
+                Access-Control-Expose-Headers = "Content-Length, Content-Type, Content-Disposition";
                 X-Content-Type-Options = "nosniff";
                 X-Frame-Options = "DENY";
                 X-XSS-Protection = "0";
