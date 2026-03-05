@@ -638,7 +638,7 @@
     users = {
       mas.extraGroups = [ "matrix-shared" ];
       matrix-synapse.extraGroups = [ "matrix-shared" ];
-      
+
       admin = {
         isNormalUser = true;
         extraGroups = [ "wheel" ];
