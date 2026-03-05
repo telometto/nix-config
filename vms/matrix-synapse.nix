@@ -633,16 +633,20 @@
     }
   ];
 
-  users.groups.matrix-shared = { };
-  users.users.mas.extraGroups = [ "matrix-shared" ];
-  users.users.matrix-synapse.extraGroups = [ "matrix-shared" ];
-
-  users.users.admin = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keys = [
-      VARS.users.zeno.sshPubKey
-    ];
+  users = {
+    groups.matrix-shared = { };
+    users = {
+      mas.extraGroups = [ "matrix-shared" ];
+      matrix-synapse.extraGroups = [ "matrix-shared" ];
+      
+      admin = {
+        isNormalUser = true;
+        extraGroups = [ "wheel" ];
+        openssh.authorizedKeys.keys = [
+          VARS.users.zeno.sshPubKey
+        ];
+      };
+    };
   };
 
   # security.sudo.wheelNeedsPassword = lib.mkForce false;
