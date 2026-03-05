@@ -183,16 +183,32 @@
         script =
           let
             authCfg = config.sys.services.matrix-synapse.authDelegation;
-            masArgs = lib.optionalString authCfg.enable ''
-              --rawfile client_secret ${config.sops.secrets."matrix-authentication-service/client_secret".path} \
-              --rawfile admin_token ${config.sops.secrets."matrix-authentication-service/synapse_secret".path} \
-              --arg issuer "${authCfg.issuer}" \
-              --arg client_id "${authCfg.clientId}" \
-              --arg client_auth_method "${authCfg.clientAuthMethod}" \
-              ${lib.optionalString (
-                authCfg.accountManagementUrl != null
-              ) ''--arg account_url "${authCfg.accountManagementUrl}" \''}
-            '';
+            masArgs = lib.escapeShellArgs (
+              lib.optionals authCfg.enable (
+                [
+                  "--rawfile"
+                  "client_secret"
+                  config.sops.secrets."matrix-authentication-service/client_secret".path
+                  "--rawfile"
+                  "admin_token"
+                  config.sops.secrets."matrix-authentication-service/synapse_secret".path
+                  "--arg"
+                  "issuer"
+                  authCfg.issuer
+                  "--arg"
+                  "client_id"
+                  authCfg.clientId
+                  "--arg"
+                  "client_auth_method"
+                  authCfg.clientAuthMethod
+                ]
+                ++ lib.optionals (authCfg.accountManagementUrl != null) [
+                  "--arg"
+                  "account_url"
+                  authCfg.accountManagementUrl
+                ]
+              )
+            );
             masJqExpr = lib.optionalString authCfg.enable ''
               * {
                 experimental_features: {
@@ -219,7 +235,7 @@
               --rawfile smtp ${config.sops.secrets."protonmail/smtp_token".path} \
               --arg notif_from "Matrix <matrix@${VARS.domains.public}>" \
               --arg smtp_user "matrix@${VARS.domains.public}" \
-              ${masArgs}
+              ${masArgs} \
               '{
                 registration_shared_secret: ($secret | rtrimstr("\n")),
                 email: {
@@ -617,16 +633,20 @@
     }
   ];
 
-  users.groups.matrix-shared = { };
-  users.users.mas.extraGroups = [ "matrix-shared" ];
-  users.users.matrix-synapse.extraGroups = [ "matrix-shared" ];
-
-  users.users.admin = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keys = [
-      VARS.users.zeno.sshPubKey
-    ];
+  users = {
+    groups.matrix-shared = { };
+    users = {
+      mas.extraGroups = [ "matrix-shared" ];
+      matrix-synapse.extraGroups = [ "matrix-shared" ];
+      
+      admin = {
+        isNormalUser = true;
+        extraGroups = [ "wheel" ];
+        openssh.authorizedKeys.keys = [
+          VARS.users.zeno.sshPubKey
+        ];
+      };
+    };
   };
 
   # security.sudo.wheelNeedsPassword = lib.mkForce false;
