@@ -415,6 +415,10 @@
       # Let users browse other servers' public room directories
       allow_public_rooms_over_federation = true;
 
+      # QR code device linking (MSC4108) — exposes /_synapse/client/rendezvous
+      # and advertises support in /versions for Element's "Link new device" flow
+      experimental_features.msc4108_enabled = true;
+
       # Suppress warning about trusting the default matrix.org key server
       suppress_key_server_warning = true;
 
