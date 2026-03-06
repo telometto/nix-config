@@ -27,6 +27,7 @@ sudo nixos-rebuild switch --flake .#<hostname>
 | [home/](home/) | Home Manager modules (`hm.*` options) |
 | [hosts/](hosts/) | Host configurations |
 | [vms/](vms/) | MicroVM definitions |
+| [lib/](lib/) | Shared helpers (Traefik, Grafana, constants) |
 | [docs/](docs/) | Documentation |
 
 ## Host Configuration

@@ -4,6 +4,7 @@
   pkgs,
   VARS,
   inputs,
+  consts,
   ...
 }:
 let
@@ -83,8 +84,7 @@ in
 
       cloudflareAccessIpUpdater = {
         enable = true;
-        accountId = "1f65156829c5e18a3648609b381dec9c";
-        policyId = "897e5beb-2937-448f-a444-4b51ff7479b0";
+        inherit (consts.cloudflare) accountId policyId;
         apiTokenFile = config.sops.secrets."cloudflare/access_api_token".path;
         interval = "30min";
       };

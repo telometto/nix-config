@@ -1,60 +1,20 @@
-{
-  lib,
-  config,
-  pkgs,
-  inputs,
-  VARS,
-  ...
-}:
+{ pkgs, ... }:
+let
+  registry = import ./vm-registry.nix;
+  reg = registry.wireguard;
+  qbtIp = registry.qbittorrent.ip;
+in
 {
   imports = [
     ./base.nix
     ../modules/services/wireguard.nix
+    (import ./mkMicrovmConfig.nix reg)
   ];
 
   # Note: WireGuard private key is stored in /persist/wireguard/privatekey
   # This avoids sops-nix timing issues with SSH keys on MicroVM volumes
 
-  microvm = {
-    hypervisor = "cloud-hypervisor";
-
-    vsock.cid = 116;
-
-    mem = 512;
-    vcpu = 1;
-
-    volumes = [
-      {
-        mountPoint = "/persist";
-        image = "persist.img";
-        size = 64;
-      }
-    ];
-
-    interfaces = [
-      {
-        type = "tap";
-        id = "vm-wireguard";
-        mac = "02:00:00:00:00:11";
-      }
-    ];
-
-    shares = [
-      {
-        source = "/nix/store";
-        mountPoint = "/nix/.ro-store";
-        tag = "ro-store";
-        proto = "virtiofs";
-      }
-    ];
-  };
-
   networking = {
-    hostName = "wireguard-vm";
-
-    useDHCP = false;
-    useNetworkd = true;
-
     nat = {
       enable = true;
       externalInterface = "wg0";
@@ -62,18 +22,17 @@
     };
 
     firewall = {
-      enable = true;
       allowPing = true;
       trustedInterfaces = [ "ens3" ];
-      allowedUDPPorts = [ 56943 ];
+      allowedUDPPorts = [ reg.port ];
       extraCommands = ''
         ${pkgs.iptables}/bin/iptables -A FORWARD -i ens3 -o wg0 -j ACCEPT
         ${pkgs.iptables}/bin/iptables -A FORWARD -i wg0 -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT
         ${pkgs.iptables}/bin/iptables -A FORWARD -i ens3 ! -o wg0 -j REJECT
 
         # Port forward incoming VPN traffic to qBittorrent VM
-        ${pkgs.iptables}/bin/iptables -t nat -A PREROUTING -i wg0 -p tcp --dport 50820 -j DNAT --to-destination 10.100.0.30:50820
-        ${pkgs.iptables}/bin/iptables -t nat -A PREROUTING -i wg0 -p udp --dport 50820 -j DNAT --to-destination 10.100.0.30:50820
+        ${pkgs.iptables}/bin/iptables -t nat -A PREROUTING -i wg0 -p tcp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820
+        ${pkgs.iptables}/bin/iptables -t nat -A PREROUTING -i wg0 -p udp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820
         ${pkgs.iptables}/bin/iptables -A FORWARD -i wg0 -o ens3 -p tcp --dport 50820 -j ACCEPT
         ${pkgs.iptables}/bin/iptables -A FORWARD -i wg0 -o ens3 -p udp --dport 50820 -j ACCEPT
       '';
@@ -82,8 +41,8 @@
         ${pkgs.iptables}/bin/iptables -D FORWARD -i wg0 -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT || true
         ${pkgs.iptables}/bin/iptables -D FORWARD -i ens3 ! -o wg0 -j REJECT || true
 
-        ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i wg0 -p tcp --dport 50820 -j DNAT --to-destination 10.100.0.30:50820 || true
-        ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i wg0 -p udp --dport 50820 -j DNAT --to-destination 10.100.0.30:50820 || true
+        ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i wg0 -p tcp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820 || true
+        ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i wg0 -p udp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820 || true
         ${pkgs.iptables}/bin/iptables -D FORWARD -i wg0 -o ens3 -p tcp --dport 50820 -j ACCEPT || true
         ${pkgs.iptables}/bin/iptables -D FORWARD -i wg0 -o ens3 -p udp --dport 50820 -j ACCEPT || true
       '';
@@ -95,7 +54,7 @@
     settings = {
       interface = "ens3";
       bind-interfaces = true;
-      listen-address = "10.100.0.11";
+      listen-address = reg.ip;
       server = [
         "1.1.1.1"
         "1.0.0.1"
@@ -105,28 +64,15 @@
     };
   };
 
-  systemd = {
-    network.networks."20-lan" = {
-      matchConfig.Type = "ether";
-      networkConfig = {
-        Address = [ "10.100.0.11/24" ];
-        Gateway = "10.100.0.1";
-        DNS = [ "1.1.1.1" ];
-        DHCP = "no";
-      };
-    };
-
-    tmpfiles.rules = [
-      "d /persist/ssh 0700 root root -"
-      "d /persist/wireguard 0700 root root -"
-    ];
-  };
+  systemd.tmpfiles.rules = [
+    "d /persist/wireguard 0700 root root -"
+  ];
 
   sys.services.wireguard = {
     enable = true;
     openFirewall = true;
     privateKeyFile = "/persist/wireguard/privatekey";
-    listenPort = 56943;
+    listenPort = reg.port;
     mtu = 1390;
     dns = [ "1.1.1.1" ];
     addresses = [ "10.13.128.81/24" ];
@@ -172,28 +118,4 @@
       }
     ];
   };
-
-  services.openssh.hostKeys = [
-    {
-      path = "/persist/ssh/ssh_host_ed25519_key";
-      type = "ed25519";
-    }
-    {
-      path = "/persist/ssh/ssh_host_rsa_key";
-      type = "rsa";
-      bits = 4096;
-    }
-  ];
-
-  users.users.admin = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keys = [
-      VARS.users.zeno.sshPubKey
-    ];
-  };
-
-  # security.sudo.wheelNeedsPassword = lib.mkForce false;
-
-  system.stateVersion = "24.11";
 }
