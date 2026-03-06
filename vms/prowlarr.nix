@@ -31,7 +31,7 @@ in
 
   sys.services.prowlarr = {
     enable = true;
-    port = reg.port;
+    inherit (reg) port;;
     dataDir = "/var/lib/prowlarr";
     reverseProxy.enable = false;
   };

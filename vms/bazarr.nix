@@ -35,7 +35,7 @@ in
 
   sys.services.bazarr = {
     enable = true;
-    port = reg.port;
+    inherit (reg) port;;
     dataDir = "/var/lib/bazarr";
     reverseProxy.enable = false;
   };

@@ -35,7 +35,7 @@ in
 
   sys.services.sonarr = {
     enable = true;
-    port = reg.port;
+    inherit (reg) port;
     dataDir = "/var/lib/sonarr";
     reverseProxy.enable = false;
   };

@@ -35,7 +35,7 @@ in
 
   sys.services.lidarr = {
     enable = true;
-    port = reg.port;
+    inherit (reg) port;
     dataDir = "/var/lib/lidarr";
     reverseProxy.enable = false;
   };

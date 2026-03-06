@@ -79,7 +79,7 @@ in
   services.nginx.virtualHosts."firefly".listen = lib.mkForce [
     {
       addr = "0.0.0.0";
-      port = reg.port;
+      inherit (reg) port;
     }
   ];
 }

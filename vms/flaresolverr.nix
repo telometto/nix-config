@@ -13,7 +13,7 @@ in
 
   sys.services.flaresolverr = {
     enable = true;
-    port = reg.port;
+    inherit (reg) port;;
     openFirewall = false;
   };
 }
