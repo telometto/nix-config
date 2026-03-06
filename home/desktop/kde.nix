@@ -34,24 +34,19 @@ let
       timeout=$((timeout - 1))
     done
 
-    # Find and add all SSH private keys recursively
-    # Exclude .pub files, known_hosts, and other non-key files
-    find "${config.home.homeDirectory}/.ssh" -type f \
-      ! -name "*.pub" \
-      ! -name "known_hosts*" \
-      ! -name "config" \
-      ! -name "authorized_keys*" \
-      ! -name "*.old" \
-      ! -name "*.bak" \
-      -exec grep -l "PRIVATE KEY" {} \; 2>/dev/null | while read -r key; do
+    # Import only explicitly listed SSH keys (no greedy auto-discovery)
+    sshDir="${config.home.homeDirectory}/.ssh"
+    for keyName in ${lib.escapeShellArgs cfg.sshKeys}; do
+      key="$sshDir/$keyName"
       if [ -f "$key" ]; then
-        # Validate the key using ssh-keygen
         if ${pkgs.openssh}/bin/ssh-keygen -l -f "$key" > /dev/null 2>&1; then
           echo "Adding key: $key"
           ${pkgs.openssh}/bin/ssh-add "$key" </dev/null || true
         else
           echo "Skipping invalid key: $key"
         fi
+      else
+        echo "Warning: SSH key not found: $key"
       fi
     done
   '';
@@ -72,10 +67,11 @@ in
       description = "Additional KDE configuration";
     };
 
-    autoImportSshKeys = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Automatically import SSH keys from ~/.ssh using KWallet on login";
+    sshKeys = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "List of SSH key filenames in ~/.ssh to auto-import via KWallet on login. Empty list disables auto-import.";
+      example = [ "id_ed25519" "work_rsa" ];
     };
 
     kwalletName = lib.mkOption {
@@ -120,7 +116,7 @@ in
     };
 
     # Automatic SSH key import using KWallet
-    systemd.user.services."ssh-add-keys" = lib.mkIf cfg.autoImportSshKeys {
+    systemd.user.services."ssh-add-keys" = lib.mkIf (cfg.sshKeys != [ ]) {
       Unit = {
         Description = "Load SSH keys into the agent using KWallet";
 

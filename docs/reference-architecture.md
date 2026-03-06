@@ -83,8 +83,34 @@ nix flake check
 - Put HM modules under `home/` — they’re auto-loaded by HM.
 - Use `sys.*` options to opt-in features; avoid ad-hoc host edits when a module
   exists.
-- Use overrides under `home/overrides/*` for per-host or per-user adjustments.
+- Use overrides under `home/overrides/*` for per-host or per-user adjustments.- Use `home/overrides/host/ssh-common.nix` for shared SSH matchBlocks across hosts.
 
+## VM Registry & MicroVM Helper
+
+- [vms/vm-registry.nix](../vms/vm-registry.nix): Central data registry for all
+  MicroVM network and resource allocations. Single source of truth for CID, MAC,
+  IP, port, memory, vCPU, gateway, and DNS per VM.
+- [vms/mkMicrovmConfig.nix](../vms/mkMicrovmConfig.nix): Helper function that
+  generates common MicroVM infrastructure config (hypervisor, networking,
+  volumes, shares) from registry entries. Each VM file imports this and passes
+  its registry entry plus any extra volumes or shares.
+- [vms/base.nix](../vms/base.nix): Shared hardened base config for all VMs.
+  Includes SSH host keys, admin user, firewall, and stateVersion.
+
+## Traefik Helpers (`lib/traefik.nix`)
+
+- `mkSecurityHeaders { ... }`: Generate Traefik middleware attrsets with
+  customisable security response headers (X-Frame-Options, CSP, etc.). Pass
+  `null` to any header to omit it.
+- `mkRoutes { domain; defaultMiddlewares? }`: Generate `{ routers; services; }`
+  from a concise routing table mapping service names to subdomains and URLs.
+- `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`:
+  Per-service reverse proxy options used by `modules/services/*.nix`.
+
+## Constants (`lib/constants.nix`)
+
+- Centralises shared magic strings: Tailscale domain suffix, Cloudflare
+  account/policy IDs. Imported directly where needed.
 ______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require

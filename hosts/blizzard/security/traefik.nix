@@ -1,10 +1,49 @@
 {
   config,
+  lib,
   pkgs,
   VARS,
   ...
 }:
+let
+  reg = import ../../../vms/vm-registry.nix;
+  traefikLib = import ../../../lib/traefik.nix { inherit lib; };
+  vmUrl = name: "http://${reg.${name}.ip}:${toString reg.${name}.port}";
+
+  trustedIPs = [
+    "127.0.0.1/32"
+    "10.0.0.0/8"
+    "172.16.0.0/12"
+    "192.168.0.0/16"
+    "100.64.0.0/10"
+  ];
+
+  plexCsp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
+
+  # Standard routes generated from a concise table (routers + services).
+  # Services with custom routers (matrix-synapse, traefik-dashboard) are added separately below.
+  generated = traefikLib.mkRoutes { domain = VARS.domains.public; } {
+    overseerr = { subdomain = "requests"; url = vmUrl "overseerr"; middlewares = [ "plex-headers" "crowdsec" ]; };
+    tautulli  = { subdomain = "tautulli"; url = vmUrl "tautulli";  middlewares = [ "plex-headers" "crowdsec" ]; };
+    firefox   = { subdomain = "ff";       url = vmUrl "firefox";   middlewares = [ "firefox-headers" "crowdsec" ]; };
+    paperless = { subdomain = "docs";     url = vmUrl "paperless"; middlewares = [ "csrf-safe-headers" "crowdsec" ]; };
+    firefly   = { subdomain = "finance";  url = vmUrl "firefly";   middlewares = [ "csrf-safe-headers" "crowdsec" ]; };
+    gitea     = { subdomain = "git";      url = vmUrl "gitea";     middlewares = [ "security-headers" "gitea-xfp-https" "crowdsec" ]; };
+    sabnzbd   = { subdomain = "sab";      url = vmUrl "sabnzbd"; };
+    bazarr    = { subdomain = "subs";     url = vmUrl "bazarr"; };
+    lingarr   = { subdomain = "lingarr";  url = "http://localhost:11025"; }; # runs on host, not a VM
+    prowlarr  = { subdomain = "indexer";  url = vmUrl "prowlarr"; };
+    radarr    = { subdomain = "movies";   url = vmUrl "radarr"; };
+    readarr   = { subdomain = "books";    url = vmUrl "readarr"; };
+    sonarr    = { subdomain = "series";   url = vmUrl "sonarr"; };
+    searx     = { subdomain = "search";   url = vmUrl "searx"; };
+    actual    = { subdomain = "actual";   url = vmUrl "actual"; };
+    ombi      = { subdomain = "ombi";     url = vmUrl "ombi"; };
+  };
+in
 {
+  # Trust model: Traefik ↔ VM communication uses plain HTTP over an isolated
+  # bridge network (10.100.0.0/24) that is not routable from external networks.
   services.traefik = {
     enable = true;
 
@@ -22,28 +61,11 @@
       entryPoints = {
         web = {
           address = ":80";
-          forwardedHeaders = {
-            trustedIPs = [
-              "127.0.0.1/32"
-              "10.0.0.0/8"
-              "172.16.0.0/12"
-              "192.168.0.0/16"
-              "100.64.0.0/10"
-            ];
-          };
+          forwardedHeaders = { inherit trustedIPs; };
         };
-
         websecure = {
           address = ":443";
-          forwardedHeaders = {
-            trustedIPs = [
-              "127.0.0.1/32"
-              "10.0.0.0/8"
-              "172.16.0.0/12"
-              "192.168.0.0/16"
-              "100.64.0.0/10"
-            ];
-          };
+          forwardedHeaders = { inherit trustedIPs; };
         };
       };
 
@@ -62,12 +84,10 @@
           crowdsec = {
             plugin.bouncer = {
               enabled = true;
-
               crowdsecMode = "stream";
               crowdsecLapiScheme = "http";
               crowdsecLapiHost = "127.0.0.1:8085";
               crowdsecLapiKeyFile = "/run/traefik/crowdsec-bouncer-key";
-
               forwardedHeadersTrustedIPs = [
                 "127.0.0.1/32"
                 "173.245.48.0/20"
@@ -89,333 +109,77 @@
             };
           };
 
-          security-headers = {
-            headers = {
-              customResponseHeaders = {
-                X-Content-Type-Options = "nosniff";
-                X-Frame-Options = "SAMEORIGIN";
-                X-XSS-Protection = "1; mode=block";
-                Referrer-Policy = "no-referrer";
-                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-              };
+          security-headers = traefikLib.mkSecurityHeaders { };
 
-              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
-            };
-          };
-
-          gitea-xfp-https = {
-            headers.customRequestHeaders = {
-              X-Forwarded-Proto = "https";
-            };
-          };
+          gitea-xfp-https.headers.customRequestHeaders.X-Forwarded-Proto = "https";
 
           # Django CSRF requires the Referer header, which "no-referrer" strips.
           # See: https://github.com/paperless-ngx/paperless-ngx/discussions/5684
-          csrf-safe-headers = {
-            headers = {
-              customResponseHeaders = {
-                X-Content-Type-Options = "nosniff";
-                X-Frame-Options = "SAMEORIGIN";
-                X-XSS-Protection = "1; mode=block";
-                Referrer-Policy = "same-origin";
-                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-              };
-
-              customRequestHeaders = {
-                X-Forwarded-Proto = "https";
-              };
-
-              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
-            };
+          csrf-safe-headers = traefikLib.mkSecurityHeaders {
+            referrerPolicy = "same-origin";
+            requestHeaders.X-Forwarded-Proto = "https";
           };
 
-          firefox-headers = {
-            headers = {
-              customResponseHeaders = {
-                X-Content-Type-Options = "nosniff";
-                X-XSS-Protection = "1; mode=block";
-                Referrer-Policy = "no-referrer";
-                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-              };
-            };
+          firefox-headers = traefikLib.mkSecurityHeaders {
+            xFrameOptions = null;
+            csp = null;
           };
 
           # Matrix needs relaxed headers: no CSP (Element/clients make
           # cross-origin requests) and DENY framing to prevent click-jacking.
           # CORS headers are set here so browsers (and tools like the Matrix
           # connectivity tester) can reach all API/well-known endpoints.
-          # Traefik's customResponseHeaders overrides any backend CORS header,
-          # preventing duplicates.
-          matrix-headers = {
-            headers = {
-              customResponseHeaders = {
-                Access-Control-Allow-Origin = "*";
-                Access-Control-Allow-Methods = "GET, HEAD, POST, PUT, DELETE, OPTIONS";
-                Access-Control-Allow-Headers = "X-Requested-With, Content-Type, Authorization, Date";
-                Access-Control-Expose-Headers = "Content-Length, Content-Type, Content-Disposition";
-                X-Content-Type-Options = "nosniff";
-                X-Frame-Options = "DENY";
-                X-XSS-Protection = "0";
-                Referrer-Policy = "strict-origin-when-cross-origin";
-                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()";
-              };
+          matrix-headers = traefikLib.mkSecurityHeaders {
+            xFrameOptions = "DENY";
+            xssProtection = "0";
+            referrerPolicy = "strict-origin-when-cross-origin";
+            permissionsPolicy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()";
+            csp = null;
+            extraResponseHeaders = {
+              Access-Control-Allow-Origin = "*";
+              Access-Control-Allow-Methods = "GET, HEAD, POST, PUT, DELETE, OPTIONS";
+              Access-Control-Allow-Headers = "X-Requested-With, Content-Type, Authorization, Date";
+              Access-Control-Expose-Headers = "Content-Length, Content-Type, Content-Disposition";
             };
           };
 
-          overseerr-headers = {
-            headers = {
-              customResponseHeaders = {
-                X-Content-Type-Options = "nosniff";
-                X-Frame-Options = "SAMEORIGIN";
-                X-XSS-Protection = "1; mode=block";
-                Referrer-Policy = "no-referrer-when-downgrade";
-                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-              };
-
-              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
-            };
-          };
-
-          tautulli-headers = {
-            headers = {
-              customResponseHeaders = {
-                X-Content-Type-Options = "nosniff";
-                X-Frame-Options = "SAMEORIGIN";
-                X-XSS-Protection = "1; mode=block";
-                Referrer-Policy = "no-referrer-when-downgrade";
-                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-              };
-
-              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
-            };
+          # Plex-adjacent services (Overseerr, Tautulli) — relaxed referrer + Plex CSP
+          plex-headers = traefikLib.mkSecurityHeaders {
+            referrerPolicy = "no-referrer-when-downgrade";
+            csp = plexCsp;
           };
         };
 
-        routers = {
+        routers = generated.routers // {
           traefik-dashboard = {
-            rule = "Host(`${config.networking.hostName}.mole-delta.ts.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
+            rule = "Host(`${config.networking.hostName}.${consts.tailscale.suffix}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
             service = "api@internal";
             entryPoints = [ "websecure" ];
             tls.certResolver = "myresolver";
             middlewares = [ "security-headers" ];
           };
 
-          overseerr = {
-            rule = "Host(`requests.${VARS.domains.public}`)";
-            service = "overseerr";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "overseerr-headers"
-              "crowdsec"
-            ];
-          };
-
-          firefox = {
-            rule = "Host(`ff.${VARS.domains.public}`)";
-            service = "firefox";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "firefox-headers"
-              "crowdsec"
-            ];
-          };
-
-          sabnzbd = {
-            rule = "Host(`sab.${VARS.domains.public}`)";
-            service = "sabnzbd";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "crowdsec"
-            ];
-          };
-
-          bazarr = {
-            rule = "Host(`subs.${VARS.domains.public}`)";
-            service = "bazarr";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "crowdsec"
-            ];
-          };
-
-          lingarr = {
-            rule = "Host(`lingarr.${VARS.domains.public}`)";
-            service = "lingarr";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "crowdsec"
-            ];
-          };
-
-          prowlarr = {
-            rule = "Host(`indexer.${VARS.domains.public}`)";
-            service = "prowlarr";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "crowdsec"
-            ];
-          };
-
-          radarr = {
-            rule = "Host(`movies.${VARS.domains.public}`)";
-            service = "radarr";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "crowdsec"
-            ];
-          };
-
-          readarr = {
-            rule = "Host(`books.${VARS.domains.public}`)";
-            service = "readarr";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "crowdsec"
-            ];
-          };
-
-          sonarr = {
-            rule = "Host(`series.${VARS.domains.public}`)";
-            service = "sonarr";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "crowdsec"
-            ];
-          };
-
-          searx = {
-            rule = "Host(`search.${VARS.domains.public}`)";
-            service = "searx";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "crowdsec"
-            ];
-          };
-
-          # adguard = {
-          #   rule = "Host(`adguard.${VARS.domains.public}`)";
-          #   service = "adguard";
-          #   entryPoints = [ "web" ];
-          #   middlewares = [
-          #     "security-headers"
-          #     "crowdsec"
-          #   ];
-          # };
-
-          actual = {
-            rule = "Host(`actual.${VARS.domains.public}`)";
-            service = "actual";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "crowdsec"
-            ];
-          };
-
-          ombi = {
-            rule = "Host(`ombi.${VARS.domains.public}`)";
-            service = "ombi";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "crowdsec"
-            ];
-          };
-
-          tautulli = {
-            rule = "Host(`tautulli.${VARS.domains.public}`)";
-            service = "tautulli";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "tautulli-headers"
-              "crowdsec"
-            ];
-          };
-
-          gitea = {
-            rule = "Host(`git.${VARS.domains.public}`)";
-            service = "gitea";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "security-headers"
-              "gitea-xfp-https"
-              "crowdsec"
-            ];
-          };
-
           matrix-synapse = {
             rule = "Host(`matrix.${VARS.domains.public}`)";
             service = "matrix-synapse";
             entryPoints = [ "web" ];
-            # No crowdsec middleware: federation requires accepting traffic
-            # from external Matrix servers that may be flagged by CrowdSec.
-            # Uses matrix-headers (no CSP) instead of security-headers.
-            middlewares = [
-              "matrix-headers"
-            ];
+            # No crowdsec: federation requires accepting traffic from external Matrix servers.
+            middlewares = [ "matrix-headers" ];
           };
 
           # Route /.well-known/matrix/* on the bare domain to Synapse so
-          # federation and client auto-discovery work for server_name mydomain.no
+          # federation and client auto-discovery work for server_name
           matrix-well-known = {
             rule = "Host(`${VARS.domains.public}`) && PathPrefix(`/.well-known/matrix/`)";
             service = "matrix-synapse";
             entryPoints = [ "web" ];
-            middlewares = [
-              "matrix-headers"
-            ];
-          };
-
-          paperless = {
-            rule = "Host(`docs.${VARS.domains.public}`)";
-            service = "paperless";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "csrf-safe-headers"
-              "crowdsec"
-            ];
-          };
-
-          firefly = {
-            rule = "Host(`finance.${VARS.domains.public}`)";
-            service = "firefly";
-            entryPoints = [ "web" ];
-            middlewares = [
-              "csrf-safe-headers"
-              "crowdsec"
-            ];
+            middlewares = [ "matrix-headers" ];
           };
         };
 
-        services = {
-          # adguard.loadBalancer.servers = [ { url = "http://10.100.0.10:11010"; } ];
-          searx.loadBalancer.servers = [ { url = "http://10.100.0.12:11012"; } ];
-          prowlarr.loadBalancer.servers = [ { url = "http://10.100.0.20:11020"; } ];
-          sonarr.loadBalancer.servers = [ { url = "http://10.100.0.21:11021"; } ];
-          radarr.loadBalancer.servers = [ { url = "http://10.100.0.22:11022"; } ];
-          bazarr.loadBalancer.servers = [ { url = "http://10.100.0.23:11023"; } ];
-          readarr.loadBalancer.servers = [ { url = "http://10.100.0.24:11024"; } ];
-          lingarr.loadBalancer.servers = [ { url = "http://localhost:11025"; } ];
-          qbittorrent.loadBalancer.servers = [ { url = "http://10.100.0.30:11030"; } ];
-          sabnzbd.loadBalancer.servers = [ { url = "http://10.100.0.31:11031"; } ];
-          overseerr.loadBalancer.servers = [ { url = "http://10.100.0.40:11040"; } ];
-          ombi.loadBalancer.servers = [ { url = "http://10.100.0.41:11041"; } ];
-          tautulli.loadBalancer.servers = [ { url = "http://10.100.0.42:11042"; } ];
-          gitea.loadBalancer.servers = [ { url = "http://10.100.0.50:11050"; } ];
-          matrix-synapse.loadBalancer.servers = [ { url = "http://10.100.0.60:11060"; } ];
-          actual.loadBalancer.servers = [ { url = "http://10.100.0.51:11051"; } ];
-          firefox.loadBalancer.servers = [ { url = "http://10.100.0.52:11052"; } ];
-          # firefox occupies port 11053; no .53 IP shall be assigned
-          paperless.loadBalancer.servers = [ { url = "http://10.100.0.61:11061"; } ];
-          firefly.loadBalancer.servers = [ { url = "http://10.100.0.62:11062"; } ];
+        services = generated.services // {
+          matrix-synapse.loadBalancer.servers = [ { url = vmUrl "matrix-synapse"; } ];
+          qbittorrent.loadBalancer.servers = [ { url = vmUrl "qbittorrent"; } ];
         };
       };
     };

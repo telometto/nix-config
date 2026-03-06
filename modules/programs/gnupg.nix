@@ -17,8 +17,8 @@ in
       enable = lib.mkDefault true;
       inherit (cfg) enableSSHSupport;
       settings = {
-        default-cache-ttl = lib.mkDefault 34560000;
-        max-cache-ttl = lib.mkDefault 34560000;
+        default-cache-ttl = lib.mkDefault 86400;
+        max-cache-ttl = lib.mkDefault 86400;
       };
     };
   };

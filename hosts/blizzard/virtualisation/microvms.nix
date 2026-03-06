@@ -1,4 +1,7 @@
 { self, VARS, ... }:
+let
+  reg = import ../../../vms/vm-registry.nix;
+in
 {
   sys.virtualisation = {
     enable = true;
@@ -92,7 +95,7 @@
         # };
 
         actual-vm = {
-          ip = "10.100.0.51";
+          ip = reg.actual.ip;
 
           portForward = {
             enable = false;
@@ -108,7 +111,7 @@
         };
 
         searx-vm = {
-          ip = "10.100.0.12";
+          ip = reg.searx.ip;
 
           portForward = {
             enable = false;
@@ -124,7 +127,7 @@
         };
 
         overseerr-vm = {
-          ip = "10.100.0.40";
+          ip = reg.overseerr.ip;
 
           portForward = {
             enable = false;
@@ -140,7 +143,7 @@
         };
 
         gitea-vm = {
-          ip = "10.100.0.50";
+          ip = reg.gitea.ip;
 
           portForward = {
             enable = false;
@@ -151,13 +154,13 @@
             enable = true;
             ingress = {
               "git.${VARS.domains.public}" = "http://localhost:80";
-              "ssh-git.${VARS.domains.public}" = "ssh://10.100.0.50:2222";
+              "ssh-git.${VARS.domains.public}" = "ssh://${reg.gitea.ip}:2222";
             };
           };
         };
 
         ombi-vm = {
-          ip = "10.100.0.41";
+          ip = reg.ombi.ip;
 
           portForward = {
             enable = false;
@@ -173,7 +176,7 @@
         };
 
         tautulli-vm = {
-          ip = "10.100.0.42";
+          ip = reg.tautulli.ip;
 
           portForward = {
             enable = false;
@@ -189,7 +192,7 @@
         };
 
         sonarr-vm = {
-          ip = "10.100.0.21";
+          ip = reg.sonarr.ip;
 
           portForward = {
             enable = false;
@@ -205,7 +208,7 @@
         };
 
         radarr-vm = {
-          ip = "10.100.0.22";
+          ip = reg.radarr.ip;
 
           portForward = {
             enable = false;
@@ -221,7 +224,7 @@
         };
 
         prowlarr-vm = {
-          ip = "10.100.0.20";
+          ip = reg.prowlarr.ip;
 
           portForward = {
             enable = false;
@@ -237,7 +240,7 @@
         };
 
         bazarr-vm = {
-          ip = "10.100.0.23";
+          ip = reg.bazarr.ip;
 
           portForward = {
             enable = false;
@@ -253,7 +256,7 @@
         };
 
         readarr-vm = {
-          ip = "10.100.0.24";
+          ip = reg.readarr.ip;
 
           portForward = {
             enable = false;
@@ -286,7 +289,7 @@
         # };
 
         qbittorrent-vm = {
-          ip = "10.100.0.30";
+          ip = reg.qbittorrent.ip;
 
           portForward = {
             enable = true;
@@ -307,7 +310,7 @@
         };
 
         sabnzbd-vm = {
-          ip = "10.100.0.31";
+          ip = reg.sabnzbd.ip;
 
           portForward = {
             enable = true;
@@ -328,7 +331,7 @@
         };
 
         wireguard-vm = {
-          ip = "10.100.0.11";
+          ip = reg.wireguard.ip;
 
           portForward = {
             enable = true;
@@ -343,7 +346,7 @@
         };
 
         firefox-vm = {
-          ip = "10.100.0.52";
+          ip = reg.firefox.ip;
 
           portForward = {
             enable = true;
@@ -368,7 +371,7 @@
         };
 
         matrix-synapse-vm = {
-          ip = "10.100.0.60";
+          ip = reg."matrix-synapse".ip;
 
           portForward = {
             enable = true;
@@ -416,7 +419,7 @@
         # };
 
         paperless-vm = {
-          ip = "10.100.0.61";
+          ip = reg.paperless.ip;
 
           portForward = {
             enable = true;

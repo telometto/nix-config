@@ -20,8 +20,8 @@ in
 
     defaultCacheTimes = lib.mkOption {
       type = lib.types.int;
-      default = 34560000;
-      description = "Default lock timeout";
+      default = 86400;
+      description = "Cache TTL in seconds (default: 1 day)";
     };
   };
 

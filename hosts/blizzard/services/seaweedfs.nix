@@ -7,7 +7,7 @@
 
     tailscale = {
       enable = true;
-      hostname = "${config.networking.hostName}.mole-delta.ts.net";
+      hostname = "${config.networking.hostName}.${consts.tailscale.suffix}";
     };
 
     configDir = "/rpool/unenc/apps/nixos/seaweedfs/config";
