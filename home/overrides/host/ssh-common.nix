@@ -24,7 +24,6 @@
         identityFile = "${config.home.homeDirectory}/.ssh/github-key";
       };
       "192.168.*" = {
-        forwardAgent = true;
         identityFile = "${config.home.homeDirectory}/.ssh/id_ed25519";
         identitiesOnly = true;
       };

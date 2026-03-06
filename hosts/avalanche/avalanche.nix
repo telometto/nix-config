@@ -4,6 +4,7 @@
   pkgs,
   VARS,
   inputs,
+  consts,
   ...
 }:
 let

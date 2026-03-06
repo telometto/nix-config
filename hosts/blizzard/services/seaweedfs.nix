@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, consts, ... }:
 {
   sys.services.seaweedfs = {
     enable = false;

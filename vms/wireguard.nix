@@ -1,7 +1,8 @@
 { pkgs, ... }:
 let
-  reg = (import ./vm-registry.nix).wireguard;
-  qbtIp = (import ./vm-registry.nix).qbittorrent.ip;
+  registry = import ./vm-registry.nix;
+  reg = registry.wireguard;
+  qbtIp = registry.qbittorrent.ip;
 in
 {
   imports = [

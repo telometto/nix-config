@@ -40,7 +40,7 @@ in
 
   networking.firewall = {
     allowedTCPPorts = [
-      11030
+      reg.port
       50820
     ];
     allowedUDPPorts = [ 50820 ];
@@ -48,7 +48,7 @@ in
 
   sys.services.qbittorrent = {
     enable = true;
-    webPort = 11030;
+    webPort = reg.port;
     torrentPort = 50820;
     dataDir = "/var/lib/qbittorrent";
     openFirewall = false;

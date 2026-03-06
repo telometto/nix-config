@@ -3,6 +3,7 @@
   lib,
   pkgs,
   VARS,
+  consts,
   ...
 }:
 let

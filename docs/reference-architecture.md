@@ -83,7 +83,8 @@ nix flake check
 - Put HM modules under `home/` — they’re auto-loaded by HM.
 - Use `sys.*` options to opt-in features; avoid ad-hoc host edits when a module
   exists.
-- Use overrides under `home/overrides/*` for per-host or per-user adjustments.- Use `home/overrides/host/ssh-common.nix` for shared SSH matchBlocks across hosts.
+- Use overrides under `home/overrides/*` for per-host or per-user adjustments.
+- Use `home/overrides/host/ssh-common.nix` for shared SSH matchBlocks across hosts.
 
 ## VM Registry & MicroVM Helper
 
