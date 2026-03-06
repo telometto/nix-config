@@ -8,29 +8,41 @@ let
     proto = "virtiofs";
   };
   vpnRoutes = [
-    { Gateway = "10.100.0.1"; Destination = "192.168.0.0/16"; }
-    { Gateway = "10.100.0.1"; Destination = "10.100.0.0/24"; }
+    {
+      Gateway = "10.100.0.1";
+      Destination = "192.168.0.0/16";
+    }
+    {
+      Gateway = "10.100.0.1";
+      Destination = "10.100.0.0/24";
+    }
   ];
 in
 {
   imports = [
     ./base.nix
     ../modules/services/qbittorrent.nix
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/qbittorrent";
-          image = "qbittorrent-state.img";
-          size = 10240;
-        }
-      ];
-      extraShares = [ mediaShare ];
-      extraRoutes = vpnRoutes;
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/qbittorrent";
+            image = "qbittorrent-state.img";
+            size = 10240;
+          }
+        ];
+        extraShares = [ mediaShare ];
+        extraRoutes = vpnRoutes;
+      }
+    ))
   ];
 
   networking.firewall = {
-    allowedTCPPorts = [ 11030 50820 ];
+    allowedTCPPorts = [
+      11030
+      50820
+    ];
     allowedUDPPorts = [ 50820 ];
   };
 

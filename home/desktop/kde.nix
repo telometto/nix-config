@@ -71,7 +71,10 @@ in
       type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "List of SSH key filenames in ~/.ssh to auto-import via KWallet on login. Empty list disables auto-import.";
-      example = [ "id_ed25519" "work_rsa" ];
+      example = [
+        "id_ed25519"
+        "work_rsa"
+      ];
     };
 
     kwalletName = lib.mkOption {

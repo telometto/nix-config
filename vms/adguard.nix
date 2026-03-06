@@ -1,4 +1,10 @@
-{ lib, config, inputs, VARS, ... }:
+{
+  lib,
+  config,
+  inputs,
+  VARS,
+  ...
+}:
 let
   reg = (import ./vm-registry.nix).adguard;
 in
@@ -8,16 +14,19 @@ in
     ../modules/services/adguardhome.nix
     ../modules/services/resolved.nix
     inputs.sops-nix.nixosModules.sops
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          # NOTE: NixOS adguardhome uses DynamicUser=true, requiring /var/lib/private/
-          mountPoint = "/var/lib/private/AdGuardHome";
-          image = "adguard-state.img";
-          size = 10240;
-        }
-      ];
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            # NOTE: NixOS adguardhome uses DynamicUser=true, requiring /var/lib/private/
+            mountPoint = "/var/lib/private/AdGuardHome";
+            image = "adguard-state.img";
+            size = 10240;
+          }
+        ];
+      }
+    ))
   ];
 
   # SOPS configuration for this MicroVM

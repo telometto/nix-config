@@ -6,15 +6,18 @@ in
   imports = [
     ./base.nix
     ../modules/services/ombi.nix
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/ombi";
-          image = "ombi-state.img";
-          size = 10240;
-        }
-      ];
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/ombi";
+            image = "ombi-state.img";
+            size = 10240;
+          }
+        ];
+      }
+    ))
   ];
 
   networking.firewall.allowedTCPPorts = [ reg.port ];

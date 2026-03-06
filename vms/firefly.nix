@@ -1,4 +1,9 @@
-{ lib, config, inputs, ... }:
+{
+  lib,
+  config,
+  inputs,
+  ...
+}:
 let
   reg = (import ./vm-registry.nix).firefly;
 in
@@ -7,20 +12,23 @@ in
     ./base.nix
     ../modules/services/firefly.nix
     inputs.sops-nix.nixosModules.sops
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/firefly-iii";
-          image = "firefly-iii-state.img";
-          size = 10240;
-        }
-        {
-          mountPoint = "/var/lib/postgresql";
-          image = "postgresql-state.img";
-          size = 10240;
-        }
-      ];
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/firefly-iii";
+            image = "firefly-iii-state.img";
+            size = 10240;
+          }
+          {
+            mountPoint = "/var/lib/postgresql";
+            image = "postgresql-state.img";
+            size = 10240;
+          }
+        ];
+      }
+    ))
   ];
 
   sops = {

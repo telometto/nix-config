@@ -8,25 +8,34 @@ let
     proto = "virtiofs";
   };
   vpnRoutes = [
-    { Gateway = "10.100.0.1"; Destination = "192.168.0.0/16"; }
-    { Gateway = "10.100.0.1"; Destination = "10.100.0.0/24"; }
+    {
+      Gateway = "10.100.0.1";
+      Destination = "192.168.0.0/16";
+    }
+    {
+      Gateway = "10.100.0.1";
+      Destination = "10.100.0.0/24";
+    }
   ];
 in
 {
   imports = [
     ./base.nix
     ../modules/services/sabnzbd.nix
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/sabnzbd";
-          image = "sabnzbd-state.img";
-          size = 10240;
-        }
-      ];
-      extraShares = [ mediaShare ];
-      extraRoutes = vpnRoutes;
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/sabnzbd";
+            image = "sabnzbd-state.img";
+            size = 10240;
+          }
+        ];
+        extraShares = [ mediaShare ];
+        extraRoutes = vpnRoutes;
+      }
+    ))
   ];
 
   nixpkgs.config.allowUnfree = true;

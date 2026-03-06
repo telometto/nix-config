@@ -8,15 +8,18 @@ in
     ../modules/services/searx.nix
     ../modules/security/secrets.nix
     ../modules/core/overlays.nix
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/searx";
-          image = "searx-state.img";
-          size = 10240;
-        }
-      ];
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/searx";
+            image = "searx-state.img";
+            size = 10240;
+          }
+        ];
+      }
+    ))
   ];
 
   networking.firewall.allowedTCPPorts = [ reg.port ];
