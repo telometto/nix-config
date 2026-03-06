@@ -7,6 +7,13 @@ in
     enable = lib.mkEnableOption "systemd-networkd service";
   };
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !config.sys.networking.networkmanager.enable;
+        message = "sys.networking.networkd and sys.networking.networkmanager are mutually exclusive — enable only one.";
+      }
+    ];
+
     networking = {
       networkmanager.enable = lib.mkForce false;
       useNetworkd = lib.mkDefault false;

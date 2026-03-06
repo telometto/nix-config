@@ -66,6 +66,7 @@
     let
       system = "x86_64-linux";
       VARS = import nix-secrets.vars.varsFile;
+      consts = import ./lib/constants.nix;
       treefmtEval = inputs.treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} ./treefmt.nix;
       microvmConfigurations = import ./vms/flake-microvms.nix {
         inherit inputs system VARS;
@@ -89,6 +90,7 @@
               inputs
               system
               VARS
+              consts
               self
               hostname
               ;

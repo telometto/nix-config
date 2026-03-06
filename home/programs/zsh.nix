@@ -1,0 +1,147 @@
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.hm.programs.terminal;
+in
+{
+  config = lib.mkIf cfg.enable {
+    programs.zsh = {
+      enable = lib.mkDefault true;
+      enableCompletion = lib.mkDefault true;
+      autocd = lib.mkDefault true;
+      enableVteIntegration = lib.mkDefault true;
+      dotDir = "${config.xdg.configHome}/zsh";
+
+      setOptions = [
+        "EXTENDED_HISTORY"
+        "SHARE_HISTORY"
+        "HIST_REDUCE_BLANKS"
+        "HIST_VERIFY"
+        "NO_BEEP"
+        "INTERACTIVE_COMMENTS"
+        "CORRECT"
+      ];
+
+      autosuggestion = {
+        enable = lib.mkDefault true;
+        strategy = [
+          "history"
+          "completion"
+        ];
+        highlight = "fg=#666666";
+      };
+
+      syntaxHighlighting = {
+        enable = lib.mkDefault true;
+        highlighters = [
+          "main"
+          "brackets"
+          "pattern"
+          "cursor"
+        ];
+        patterns = {
+          "rm -rf [^&|]*" = "fg=white,bold,bg=red";
+        };
+      };
+
+      sessionVariables = {
+        KAIZMACH = "kaizer";
+        KAIZADDR = "gianluca@$KAIZMACH";
+      };
+
+      shellAliases = {
+        localNrb = "nixos-rebuild boot --flake .# --sudo";
+        localNrs = "nixos-rebuild switch --flake .# --sudo";
+        targetNrb = "nixos-rebuild boot --flake .#$MACH --target-host $TARGET --ask-sudo-password";
+
+        mountNfs = "sudo mount -t nfs";
+        umountNfs = "sudo umount";
+        unRar = "NIXPKGS_ALLOW_UNFREE=1 nix run --impure nixpkgs#unrar e";
+
+        bSsh = "ssh zeno@192.168.2.100";
+        sSsh = "ssh zeno@192.168.2.101";
+        aSsh = "ssh zeno@192.168.2.234";
+
+        bTsh = "tailscale ssh zeno@blizzard";
+        sTsh = "tailscale ssh zeno@snowfall";
+        aTsh = "tailscale ssh zeno@avalanche";
+        kTsh = "tailscale ssh $KAIZADDR";
+
+        zeat = "zellij a";
+        zels = "zellij ls";
+        zeda = "zellij da";
+        zeks = "zellij kill-session";
+      };
+
+      history = {
+        expireDuplicatesFirst = true;
+        extended = true;
+        ignoreAllDups = true;
+      };
+
+      dirHashes = {
+        nixConf = "${config.home.homeDirectory}/.versioncontrol/github/projects/personal/nix-config";
+        projectsDir = "${config.home.homeDirectory}/.versioncontrol/github/projects";
+        homeDir = "${config.home.homeDirectory}";
+      };
+
+      siteFunctions = {
+        mkcd = ''
+          mkdir --parents "$1" && cd "$1"
+        '';
+        extract = ''
+          if [[ -f "$1" ]]; then
+            case "$1" in
+              *.tar.bz2) tar xjf "$1" ;;
+              *.tar.gz)  tar xzf "$1" ;;
+              *.tar.xz)  tar xJf "$1" ;;
+              *.bz2)     bunzip2 "$1" ;;
+              *.gz)      gunzip "$1" ;;
+              *.tar)     tar xf "$1" ;;
+              *.tbz2)    tar xjf "$1" ;;
+              *.tgz)     tar xzf "$1" ;;
+              *.zip)     unzip "$1" ;;
+              *.Z)       uncompress "$1" ;;
+              *.7z)      7z x "$1" ;;
+              *)         echo "Cannot extract '$1'" ;;
+            esac
+          else
+            echo "'$1' is not a valid file"
+          fi
+        '';
+      };
+
+      initContent = lib.mkMerge [
+        (lib.mkOrder 550 "source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme")
+
+        (lib.mkOrder 1000 "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh")
+      ];
+
+      oh-my-zsh = {
+        enable = lib.mkDefault true;
+
+        plugins = [
+          "colored-man-pages"
+          "colorize"
+          "command-not-found"
+          "common-aliases"
+          "git"
+          "emoji"
+          "gpg-agent"
+          "podman"
+          "sudo"
+          "systemd"
+          "tailscale"
+          "tmux"
+          "vscode"
+        ];
+      };
+    };
+
+    home.packages = [ pkgs.zsh-powerlevel10k ];
+  };
+}

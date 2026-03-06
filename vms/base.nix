@@ -2,6 +2,7 @@
   lib,
   config,
   pkgs,
+  VARS,
   ...
 }:
 {
@@ -78,6 +79,19 @@
 
     openssh = {
       enable = true;
+
+      hostKeys = [
+        {
+          path = "/persist/ssh/ssh_host_ed25519_key";
+          type = "ed25519";
+        }
+        {
+          path = "/persist/ssh/ssh_host_rsa_key";
+          type = "rsa";
+          bits = 4096;
+        }
+      ];
+
       settings = {
         PermitRootLogin = "no";
         PasswordAuthentication = false;
@@ -151,4 +165,19 @@
     htop
     curl
   ];
+
+  # Common VM user and persistence (shared by all MicroVMs)
+  users.users.admin = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" ];
+    openssh.authorizedKeys.keys = [
+      VARS.users.zeno.sshPubKey
+    ];
+  };
+
+  systemd.tmpfiles.rules = [
+    "d /persist/ssh 0700 root root -"
+  ];
+
+  system.stateVersion = "24.11";
 }

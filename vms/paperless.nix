@@ -1,17 +1,32 @@
-{
-  lib,
-  config,
-  pkgs,
-  inputs,
-  VARS,
-  ...
-}:
+{ config, inputs, VARS, ... }:
+let
+  reg = (import ./vm-registry.nix).paperless;
+in
 {
   imports = [
     ./base.nix
     ../modules/services/paperless.nix
     ../modules/services/protonmail-bridge.nix
     inputs.sops-nix.nixosModules.sops
+    (import ./mkMicrovmConfig.nix (reg // {
+      volumes = [
+        {
+          mountPoint = "/var/lib/paperless";
+          image = "paperless-state.img";
+          size = 307200;
+        }
+        {
+          mountPoint = "/var/lib/postgresql";
+          image = "postgresql-state.img";
+          size = 30720;
+        }
+        {
+          mountPoint = "/var/lib/protonmail-bridge";
+          image = "protonmail-bridge-state.img";
+          size = 51200;
+        }
+      ];
+    }))
   ];
 
   sops = {
@@ -39,80 +54,10 @@
     paperlessSecretKeyFile = config.sops.secrets."paperless/secret_key".path;
   };
 
-  microvm = {
-    hypervisor = "cloud-hypervisor";
-
-    vsock.cid = 120;
-
-    mem = 8192;
-    vcpu = 4;
-
-    volumes = [
-      {
-        mountPoint = "/var/lib/paperless";
-        image = "paperless-state.img";
-        size = 307200;
-      }
-      {
-        mountPoint = "/var/lib/postgresql";
-        image = "postgresql-state.img";
-        size = 30720;
-      }
-      {
-        mountPoint = "/var/lib/protonmail-bridge";
-        image = "protonmail-bridge-state.img";
-        size = 51200;
-      }
-      {
-        mountPoint = "/persist";
-        image = "persist.img";
-        size = 64;
-      }
-    ];
-
-    interfaces = [
-      {
-        type = "tap";
-        id = "vm-paperles";
-        mac = "02:00:00:00:00:15";
-      }
-    ];
-
-    shares = [
-      {
-        source = "/nix/store";
-        mountPoint = "/nix/.ro-store";
-        tag = "ro-store";
-        proto = "virtiofs";
-      }
-    ];
-  };
-
-  networking = {
-    hostName = "paperless-vm";
-
-    useDHCP = false;
-    useNetworkd = true;
-
-    firewall = {
-      enable = true;
-      allowedTCPPorts = [ 11061 ];
-    };
-  };
+  networking.firewall.allowedTCPPorts = [ reg.port ];
 
   systemd = {
-    network.networks."20-lan" = {
-      matchConfig.Type = "ether";
-      networkConfig = {
-        Address = [ "10.100.0.61/24" ];
-        Gateway = "10.100.0.1";
-        DNS = [ "1.1.1.1" ];
-        DHCP = "no";
-      };
-    };
-
     tmpfiles.rules = [
-      "d /persist/ssh 0700 root root -"
       "d /var/lib/paperless 0700 paperless paperless -"
       "d /var/lib/postgresql 0700 postgres postgres -"
       "d /var/lib/protonmail-bridge 0700 protonmail-bridge protonmail-bridge -"
@@ -180,7 +125,7 @@
       listen = [
         {
           addr = "0.0.0.0";
-          port = 11061;
+          port = reg.port;
         }
       ];
 
@@ -197,28 +142,4 @@
       };
     };
   };
-
-  services.openssh.hostKeys = [
-    {
-      path = "/persist/ssh/ssh_host_ed25519_key";
-      type = "ed25519";
-    }
-    {
-      path = "/persist/ssh/ssh_host_rsa_key";
-      type = "rsa";
-      bits = 4096;
-    }
-  ];
-
-  users.users.admin = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keys = [
-      VARS.users.zeno.sshPubKey
-    ];
-  };
-
-  # security.sudo.wheelNeedsPassword = lib.mkForce false;
-
-  system.stateVersion = "24.11";
 }

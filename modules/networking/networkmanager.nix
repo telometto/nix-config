@@ -7,6 +7,13 @@ in
     enable = lib.mkEnableOption "NetworkManager service";
   };
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !config.sys.networking.networkd.enable;
+        message = "sys.networking.networkmanager and sys.networking.networkd are mutually exclusive — enable only one.";
+      }
+    ];
+
     networking = {
       networkmanager = {
         enable = lib.mkDefault true;
