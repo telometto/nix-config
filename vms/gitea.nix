@@ -2,6 +2,7 @@
   config,
   inputs,
   VARS,
+  consts,
   ...
 }:
 let

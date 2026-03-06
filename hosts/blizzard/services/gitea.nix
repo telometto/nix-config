@@ -1,4 +1,4 @@
-{ config, VARS, ... }:
+{ config, VARS, consts, ... }:
 {
   sys.services.gitea = {
     enable = false;
