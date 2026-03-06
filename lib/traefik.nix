@@ -30,13 +30,13 @@ in
         // optH "X-XSS-Protection" xssProtection
         // optH "Referrer-Policy" referrerPolicy
         // optH "Permissions-Policy" permissionsPolicy
-        // extraResponseHeaders;
-      }
-      // lib.optionalAttrs (requestHeaders != { }) {
-        customRequestHeaders = requestHeaders;
-      }
-      // lib.optionalAttrs (csp != null) {
-        contentSecurityPolicy = csp;
+        // extraResponseHeaders
+        // lib.optionalAttrs (requestHeaders != { }) {
+          customRequestHeaders = requestHeaders;
+        }
+        // lib.optionalAttrs (csp != null) {
+          contentSecurityPolicy = csp;
+        };
       };
     };
 
