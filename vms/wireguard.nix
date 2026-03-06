@@ -72,7 +72,7 @@ in
     enable = true;
     openFirewall = true;
     privateKeyFile = "/persist/wireguard/privatekey";
-    listeninherit (reg) port;;
+    listenPort = reg.port;
     mtu = 1390;
     dns = [ "1.1.1.1" ];
     addresses = [ "10.13.128.81/24" ];
