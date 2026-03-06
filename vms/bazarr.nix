@@ -1,4 +1,4 @@
-{ ... }:
+_:
 let
   reg = (import ./vm-registry.nix).bazarr;
   mediaShare = {
