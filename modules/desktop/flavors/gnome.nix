@@ -13,7 +13,6 @@ in
     programs = {
       gnome-disks.enable = lib.mkDefault true;
       gnome-terminal.enable = lib.mkDefault false;
-      light.brightnessKeys.enable = lib.mkDefault true;
       seahorse.enable = lib.mkDefault true;
       ssh.startAgent = lib.mkForce false; # services.gnome.gcr-ssh-agent.enable cannot be enabled at the same time
     };
