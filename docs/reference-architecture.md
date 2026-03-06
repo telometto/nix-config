@@ -111,6 +111,7 @@ nix flake check
 
 - Centralises shared magic strings: Tailscale domain suffix, Cloudflare
   account/policy IDs. Imported directly where needed.
+
 ______________________________________________________________________
 
 *This documentation was generated with the assistance of LLMs and may require

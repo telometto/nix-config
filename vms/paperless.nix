@@ -1,4 +1,9 @@
-{ config, inputs, VARS, ... }:
+{
+  config,
+  inputs,
+  VARS,
+  ...
+}:
 let
   reg = (import ./vm-registry.nix).paperless;
 in
@@ -8,25 +13,28 @@ in
     ../modules/services/paperless.nix
     ../modules/services/protonmail-bridge.nix
     inputs.sops-nix.nixosModules.sops
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/paperless";
-          image = "paperless-state.img";
-          size = 307200;
-        }
-        {
-          mountPoint = "/var/lib/postgresql";
-          image = "postgresql-state.img";
-          size = 30720;
-        }
-        {
-          mountPoint = "/var/lib/protonmail-bridge";
-          image = "protonmail-bridge-state.img";
-          size = 51200;
-        }
-      ];
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/paperless";
+            image = "paperless-state.img";
+            size = 307200;
+          }
+          {
+            mountPoint = "/var/lib/postgresql";
+            image = "postgresql-state.img";
+            size = 30720;
+          }
+          {
+            mountPoint = "/var/lib/protonmail-bridge";
+            image = "protonmail-bridge-state.img";
+            size = 51200;
+          }
+        ];
+      }
+    ))
   ];
 
   sops = {

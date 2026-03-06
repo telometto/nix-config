@@ -1,9 +1,21 @@
-{ lib, config, pkgs, inputs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  inputs,
+  ...
+}:
 let
   reg = (import ./vm-registry.nix).brave;
   vpnRoutes = [
-    { Gateway = "10.100.0.1"; Destination = "192.168.0.0/16"; }
-    { Gateway = "10.100.0.1"; Destination = "10.100.0.0/24"; }
+    {
+      Gateway = "10.100.0.1";
+      Destination = "192.168.0.0/16";
+    }
+    {
+      Gateway = "10.100.0.1";
+      Destination = "10.100.0.0/24";
+    }
   ];
 in
 {
@@ -12,21 +24,24 @@ in
     ../modules/services/brave.nix
     ../modules/virtualisation/virtualisation.nix
     inputs.sops-nix.nixosModules.sops
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/brave";
-          image = "brave-state.img";
-          size = 10240;
-        }
-        {
-          mountPoint = "/var/lib/containers";
-          image = "containers-storage.img";
-          size = 4096;
-        }
-      ];
-      extraRoutes = vpnRoutes;
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/brave";
+            image = "brave-state.img";
+            size = 10240;
+          }
+          {
+            mountPoint = "/var/lib/containers";
+            image = "containers-storage.img";
+            size = 4096;
+          }
+        ];
+        extraRoutes = vpnRoutes;
+      }
+    ))
   ];
 
   # SOPS configuration for this MicroVM

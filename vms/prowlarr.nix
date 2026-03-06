@@ -6,15 +6,18 @@ in
   imports = [
     ./base.nix
     ../modules/services/prowlarr.nix
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/prowlarr";
-          image = "prowlarr-state.img";
-          size = 10240;
-        }
-      ];
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/prowlarr";
+            image = "prowlarr-state.img";
+            size = 10240;
+          }
+        ];
+      }
+    ))
   ];
 
   networking.firewall.allowedTCPPorts = [

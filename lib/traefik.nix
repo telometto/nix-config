@@ -22,24 +22,22 @@ in
       optH = name: value: lib.optionalAttrs (value != null) { ${name} = value; };
     in
     {
-      headers =
-        {
-          customResponseHeaders =
-            {
-              X-Content-Type-Options = "nosniff";
-            }
-            // optH "X-Frame-Options" xFrameOptions
-            // optH "X-XSS-Protection" xssProtection
-            // optH "Referrer-Policy" referrerPolicy
-            // optH "Permissions-Policy" permissionsPolicy
-            // extraResponseHeaders;
+      headers = {
+        customResponseHeaders = {
+          X-Content-Type-Options = "nosniff";
         }
-        // lib.optionalAttrs (requestHeaders != { }) {
-          customRequestHeaders = requestHeaders;
-        }
-        // lib.optionalAttrs (csp != null) {
-          contentSecurityPolicy = csp;
-        };
+        // optH "X-Frame-Options" xFrameOptions
+        // optH "X-XSS-Protection" xssProtection
+        // optH "Referrer-Policy" referrerPolicy
+        // optH "Permissions-Policy" permissionsPolicy
+        // extraResponseHeaders;
+      }
+      // lib.optionalAttrs (requestHeaders != { }) {
+        customRequestHeaders = requestHeaders;
+      }
+      // lib.optionalAttrs (csp != null) {
+        contentSecurityPolicy = csp;
+      };
     };
 
   # Generate Traefik routers + services from a concise route table.

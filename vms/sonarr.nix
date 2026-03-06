@@ -12,16 +12,19 @@ in
   imports = [
     ./base.nix
     ../modules/services/sonarr.nix
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/sonarr";
-          image = "sonarr-state.img";
-          size = 10240;
-        }
-      ];
-      extraShares = [ mediaShare ];
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/sonarr";
+            image = "sonarr-state.img";
+            size = 10240;
+          }
+        ];
+        extraShares = [ mediaShare ];
+      }
+    ))
   ];
 
   networking.firewall.allowedTCPPorts = [ reg.port ];

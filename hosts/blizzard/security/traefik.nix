@@ -23,22 +23,95 @@ let
   # Standard routes generated from a concise table (routers + services).
   # Services with custom routers (matrix-synapse, traefik-dashboard) are added separately below.
   generated = traefikLib.mkRoutes { domain = VARS.domains.public; } {
-    overseerr = { subdomain = "requests"; url = vmUrl "overseerr"; middlewares = [ "plex-headers" "crowdsec" ]; };
-    tautulli  = { subdomain = "tautulli"; url = vmUrl "tautulli";  middlewares = [ "plex-headers" "crowdsec" ]; };
-    firefox   = { subdomain = "ff";       url = vmUrl "firefox";   middlewares = [ "firefox-headers" "crowdsec" ]; };
-    paperless = { subdomain = "docs";     url = vmUrl "paperless"; middlewares = [ "csrf-safe-headers" "crowdsec" ]; };
-    firefly   = { subdomain = "finance";  url = vmUrl "firefly";   middlewares = [ "csrf-safe-headers" "crowdsec" ]; };
-    gitea     = { subdomain = "git";      url = vmUrl "gitea";     middlewares = [ "security-headers" "gitea-xfp-https" "crowdsec" ]; };
-    sabnzbd   = { subdomain = "sab";      url = vmUrl "sabnzbd"; };
-    bazarr    = { subdomain = "subs";     url = vmUrl "bazarr"; };
-    lingarr   = { subdomain = "lingarr";  url = "http://localhost:11025"; }; # runs on host, not a VM
-    prowlarr  = { subdomain = "indexer";  url = vmUrl "prowlarr"; };
-    radarr    = { subdomain = "movies";   url = vmUrl "radarr"; };
-    readarr   = { subdomain = "books";    url = vmUrl "readarr"; };
-    sonarr    = { subdomain = "series";   url = vmUrl "sonarr"; };
-    searx     = { subdomain = "search";   url = vmUrl "searx"; };
-    actual    = { subdomain = "actual";   url = vmUrl "actual"; };
-    ombi      = { subdomain = "ombi";     url = vmUrl "ombi"; };
+    overseerr = {
+      subdomain = "requests";
+      url = vmUrl "overseerr";
+      middlewares = [
+        "plex-headers"
+        "crowdsec"
+      ];
+    };
+    tautulli = {
+      subdomain = "tautulli";
+      url = vmUrl "tautulli";
+      middlewares = [
+        "plex-headers"
+        "crowdsec"
+      ];
+    };
+    firefox = {
+      subdomain = "ff";
+      url = vmUrl "firefox";
+      middlewares = [
+        "firefox-headers"
+        "crowdsec"
+      ];
+    };
+    paperless = {
+      subdomain = "docs";
+      url = vmUrl "paperless";
+      middlewares = [
+        "csrf-safe-headers"
+        "crowdsec"
+      ];
+    };
+    firefly = {
+      subdomain = "finance";
+      url = vmUrl "firefly";
+      middlewares = [
+        "csrf-safe-headers"
+        "crowdsec"
+      ];
+    };
+    gitea = {
+      subdomain = "git";
+      url = vmUrl "gitea";
+      middlewares = [
+        "security-headers"
+        "gitea-xfp-https"
+        "crowdsec"
+      ];
+    };
+    sabnzbd = {
+      subdomain = "sab";
+      url = vmUrl "sabnzbd";
+    };
+    bazarr = {
+      subdomain = "subs";
+      url = vmUrl "bazarr";
+    };
+    lingarr = {
+      subdomain = "lingarr";
+      url = "http://localhost:11025";
+    }; # runs on host, not a VM
+    prowlarr = {
+      subdomain = "indexer";
+      url = vmUrl "prowlarr";
+    };
+    radarr = {
+      subdomain = "movies";
+      url = vmUrl "radarr";
+    };
+    readarr = {
+      subdomain = "books";
+      url = vmUrl "readarr";
+    };
+    sonarr = {
+      subdomain = "series";
+      url = vmUrl "sonarr";
+    };
+    searx = {
+      subdomain = "search";
+      url = vmUrl "searx";
+    };
+    actual = {
+      subdomain = "actual";
+      url = vmUrl "actual";
+    };
+    ombi = {
+      subdomain = "ombi";
+      url = vmUrl "ombi";
+    };
   };
 in
 {

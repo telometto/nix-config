@@ -1,4 +1,9 @@
-{ config, inputs, VARS, ... }:
+{
+  config,
+  inputs,
+  VARS,
+  ...
+}:
 let
   reg = (import ./vm-registry.nix).gitea;
 in
@@ -7,20 +12,23 @@ in
     ./base.nix
     ../modules/services/gitea.nix
     inputs.sops-nix.nixosModules.sops
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/gitea";
-          image = "gitea-state.img";
-          size = 102400;
-        }
-        {
-          mountPoint = "/var/lib/postgresql";
-          image = "postgresql-state.img";
-          size = 10240;
-        }
-      ];
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/gitea";
+            image = "gitea-state.img";
+            size = 102400;
+          }
+          {
+            mountPoint = "/var/lib/postgresql";
+            image = "postgresql-state.img";
+            size = 10240;
+          }
+        ];
+      }
+    ))
   ];
 
   # SOPS configuration for this MicroVM

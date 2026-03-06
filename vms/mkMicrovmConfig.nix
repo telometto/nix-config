@@ -56,7 +56,8 @@
         tag = "ro-store";
         proto = "virtiofs";
       }
-    ] ++ extraShares;
+    ]
+    ++ extraShares;
   };
 
   networking = {
@@ -74,5 +75,6 @@
       DNS = [ dns ];
       DHCP = "no";
     };
-  } // lib.optionalAttrs (extraRoutes != [ ]) { routes = extraRoutes; };
+  }
+  // lib.optionalAttrs (extraRoutes != [ ]) { routes = extraRoutes; };
 }

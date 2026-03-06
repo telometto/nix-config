@@ -1,4 +1,11 @@
-{ lib, config, pkgs, inputs, VARS, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  inputs,
+  VARS,
+  ...
+}:
 let
   reg = (import ./vm-registry.nix)."matrix-synapse";
 in
@@ -8,25 +15,28 @@ in
     ../modules/services/matrix-synapse.nix
     ../modules/services/matrix-authentication-service.nix
     inputs.sops-nix.nixosModules.sops
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/matrix-synapse";
-          image = "matrix-synapse-state.img";
-          size = 20480;
-        }
-        {
-          mountPoint = "/var/lib/postgresql";
-          image = "postgresql-state.img";
-          size = 10240;
-        }
-        {
-          mountPoint = "/var/lib/mas";
-          image = "mas-state.img";
-          size = 1024;
-        }
-      ];
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/matrix-synapse";
+            image = "matrix-synapse-state.img";
+            size = 20480;
+          }
+          {
+            mountPoint = "/var/lib/postgresql";
+            image = "postgresql-state.img";
+            size = 10240;
+          }
+          {
+            mountPoint = "/var/lib/mas";
+            image = "mas-state.img";
+            size = 1024;
+          }
+        ];
+      }
+    ))
   ];
 
   # After first boot, get the VM's age key with:

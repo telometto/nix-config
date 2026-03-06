@@ -6,15 +6,18 @@ in
   imports = [
     ./base.nix
     ../modules/services/overseerr.nix
-    (import ./mkMicrovmConfig.nix (reg // {
-      volumes = [
-        {
-          mountPoint = "/var/lib/overseerr";
-          image = "overseerr-state.img";
-          size = 10240;
-        }
-      ];
-    }))
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = "/var/lib/overseerr";
+            image = "overseerr-state.img";
+            size = 10240;
+          }
+        ];
+      }
+    ))
   ];
 
   networking.firewall.allowedTCPPorts = [ reg.port ];

@@ -38,7 +38,10 @@ let
       inherit system;
       modules = [ fromInputsOverlays ] ++ modules;
 
-      specialArgs = { inherit inputs system VARS; consts = import ../lib/constants.nix; };
+      specialArgs = {
+        inherit inputs system VARS;
+        consts = import ../lib/constants.nix;
+      };
     };
 in
 {
