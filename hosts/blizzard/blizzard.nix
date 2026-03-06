@@ -2,6 +2,7 @@
   config,
   lib,
   VARS,
+  consts,
   ...
 }:
 {
@@ -89,7 +90,7 @@
       enable = true;
       openFirewall = true;
       signal.relayHosts = [
-        "${config.networking.hostName}.mole-delta.ts.net"
+        "${config.networking.hostName}.${consts.tailscale.suffix}"
       ];
     };
   };

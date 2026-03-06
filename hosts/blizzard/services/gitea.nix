@@ -1,4 +1,9 @@
-{ config, VARS, ... }:
+{
+  config,
+  VARS,
+  consts,
+  ...
+}:
 {
   sys.services.gitea = {
     enable = false;
@@ -21,7 +26,7 @@
 
       s3Backend = {
         enable = false;
-        endpoint = "${config.networking.hostName}.mole-delta.ts.net:${toString config.sys.services.seaweedfs.s3.port}";
+        endpoint = "${config.networking.hostName}.${consts.tailscale.suffix}:${toString config.sys.services.seaweedfs.s3.port}";
         bucket = "gitea-lfs";
         accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;
         secretAccessKeyFile = config.sys.secrets.seaweedfsSecretAccessKeyFile;

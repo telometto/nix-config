@@ -39,17 +39,4 @@ let
 in
 {
   environment.systemPackages = storage ++ desktop ++ wine ++ extras;
-
-  fonts.packages = [
-    pkgs.google-fonts
-    pkgs.ibm-plex
-    pkgs.meslo-lgs-nf
-    pkgs.nerd-fonts.ubuntu
-    pkgs.nerd-fonts.inconsolata
-    pkgs.nerd-fonts.mononoki
-    pkgs.nerd-fonts.fira-code
-    pkgs.nerd-fonts.tinos
-    pkgs.noto-fonts
-    pkgs.noto-fonts-color-emoji
-  ];
 }

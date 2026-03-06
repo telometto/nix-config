@@ -1,5 +1,79 @@
 { lib }:
+let
+  defaultPermissionsPolicy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
+  defaultCsp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
+in
 {
+  inherit defaultPermissionsPolicy defaultCsp;
+
+  # Build a Traefik middleware attrset with security response headers.
+  # Pass null to any parameter to omit that header entirely.
+  mkSecurityHeaders =
+    {
+      xFrameOptions ? "SAMEORIGIN",
+      xssProtection ? "1; mode=block",
+      referrerPolicy ? "no-referrer",
+      permissionsPolicy ? defaultPermissionsPolicy,
+      csp ? defaultCsp,
+      extraResponseHeaders ? { },
+      requestHeaders ? { },
+    }:
+    let
+      optH = name: value: lib.optionalAttrs (value != null) { ${name} = value; };
+    in
+    {
+      headers = {
+        customResponseHeaders = {
+          X-Content-Type-Options = "nosniff";
+        }
+        // optH "X-Frame-Options" xFrameOptions
+        // optH "X-XSS-Protection" xssProtection
+        // optH "Referrer-Policy" referrerPolicy
+        // optH "Permissions-Policy" permissionsPolicy
+        // extraResponseHeaders
+        // lib.optionalAttrs (requestHeaders != { }) {
+          customRequestHeaders = requestHeaders;
+        }
+        // lib.optionalAttrs (csp != null) {
+          contentSecurityPolicy = csp;
+        };
+      };
+    };
+
+  # Generate Traefik routers + services from a concise route table.
+  #
+  # Usage:
+  #   mkRoutes { domain = VARS.domains.public; } {
+  #     overseerr = { subdomain = "requests"; url = vmUrl "overseerr"; middlewares = [...]; };
+  #     ...
+  #   }
+  #
+  # Returns: { routers = { ... }; services = { ... }; }
+  mkRoutes =
+    {
+      domain,
+      defaultMiddlewares ? [
+        "security-headers"
+        "crowdsec"
+      ],
+    }:
+    routes:
+    let
+      genRouter = name: route: {
+        rule = "Host(`${route.subdomain}.${domain}`)";
+        service = name;
+        entryPoints = route.entryPoints or [ "web" ];
+        middlewares = route.middlewares or defaultMiddlewares;
+      };
+      genService = name: route: {
+        loadBalancer.servers = [ { inherit (route) url; } ];
+      };
+    in
+    {
+      routers = builtins.mapAttrs genRouter routes;
+      services = builtins.mapAttrs genService routes;
+    };
+
   mkReverseProxyOptions =
     {
       name,
