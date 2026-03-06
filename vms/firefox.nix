@@ -68,7 +68,7 @@ in
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
   networking.firewall.allowedTCPPorts = [
-    11052
+    reg.port
     11053
   ];
 
@@ -105,7 +105,7 @@ in
         enable = true;
 
         dataDir = "/var/lib/firefox";
-        httpPort = 11052;
+        httpPort = reg.port;
         httpsPort = 11053;
         networkMode = "bridge";
         timeZone = "Europe/Oslo";
