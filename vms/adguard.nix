@@ -73,7 +73,7 @@ in
   # Enable AdGuard Home
   sys.services.adguardhome = {
     enable = true;
-    inherit (reg) port;;
+    inherit (reg) port;
     mutableSettings = true;
     openFirewall = true;
 

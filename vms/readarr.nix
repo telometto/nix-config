@@ -35,7 +35,7 @@ in
 
   sys.services.readarr = {
     enable = true;
-    inherit (reg) port;;
+    inherit (reg) port;
     dataDir = "/var/lib/readarr";
     reverseProxy.enable = false;
   };

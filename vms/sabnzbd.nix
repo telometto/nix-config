@@ -44,7 +44,7 @@ in
 
   sys.services.sabnzbd = {
     enable = true;
-    inherit (reg) port;;
+    inherit (reg) port;
     dataDir = "/var/lib/sabnzbd";
     openFirewall = false;
   };
