@@ -25,7 +25,7 @@ in
 
   sys.services.actual = {
     enable = true;
-    inherit (reg) port;;
+    inherit (reg) port;
     dataDir = "/var/lib/actual";
   };
 }

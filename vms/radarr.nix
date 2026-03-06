@@ -35,7 +35,7 @@ in
 
   sys.services.radarr = {
     enable = true;
-    inherit (reg) port;;
+    inherit (reg) port;
     dataDir = "/var/lib/radarr";
     reverseProxy.enable = false;
   };

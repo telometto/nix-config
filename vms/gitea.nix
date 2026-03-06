@@ -66,7 +66,7 @@ in
   sys.services.gitea = {
     enable = true;
 
-    inherit (reg) port;;
+    inherit (reg) port;
     openFirewall = true;
     stateDir = "/var/lib/gitea";
     repositoryRoot = "/var/lib/gitea/repositories";
