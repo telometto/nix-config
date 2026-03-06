@@ -21,7 +21,10 @@ let
 
   storage = [ pkgs.btrfs-progs ];
 
-  desktop = [ pkgs.baobab ];
+  desktop = [
+    pkgs.baobab
+    pkgs.brightnessctl
+  ];
 
   wine = [
     # pkgs.wineWow64Packages.stable
