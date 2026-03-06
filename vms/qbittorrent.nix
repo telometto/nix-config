@@ -48,7 +48,7 @@ in
 
   sys.services.qbittorrent = {
     enable = true;
-    webinherit (reg) port;
+    webPort = reg.port;
     torrentPort = 50820;
     dataDir = "/var/lib/qbittorrent";
     openFirewall = false;
