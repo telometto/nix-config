@@ -66,7 +66,7 @@ in
         middlewares = route.middlewares or defaultMiddlewares;
       };
       genService = name: route: {
-        loadBalancer.servers = [ { url = route.url; } ];
+        loadBalancer.servers = [ { inherit (route) url; } ];
       };
     in
     {

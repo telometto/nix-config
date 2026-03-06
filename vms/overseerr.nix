@@ -28,7 +28,7 @@ in
 
   sys.services.overseerr = {
     enable = true;
-    port = reg.port;
+    inherit (reg) port;;
     openFirewall = false;
     reverseProxy.enable = false;
   };

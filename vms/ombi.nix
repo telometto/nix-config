@@ -28,7 +28,7 @@ in
 
   sys.services.ombi = {
     enable = true;
-    port = reg.port;
+    inherit (reg) port;;
     dataDir = "/var/lib/ombi";
     reverseProxy.enable = false;
   };

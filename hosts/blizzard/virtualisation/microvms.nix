@@ -95,7 +95,7 @@ in
         # };
 
         actual-vm = {
-          ip = reg.actual.ip;
+          inherit (reg.actual) ip;
 
           portForward = {
             enable = false;
@@ -111,7 +111,7 @@ in
         };
 
         searx-vm = {
-          ip = reg.searx.ip;
+          inherit (reg.searx) ip;
 
           portForward = {
             enable = false;
@@ -127,7 +127,7 @@ in
         };
 
         overseerr-vm = {
-          ip = reg.overseerr.ip;
+          inherit (reg.overseerr) ip;
 
           portForward = {
             enable = false;
@@ -143,7 +143,7 @@ in
         };
 
         gitea-vm = {
-          ip = reg.gitea.ip;
+          inherit (reg.gitea) ip;
 
           portForward = {
             enable = false;
@@ -160,7 +160,7 @@ in
         };
 
         ombi-vm = {
-          ip = reg.ombi.ip;
+          inherit (reg.ombi) ip;
 
           portForward = {
             enable = false;
@@ -176,7 +176,7 @@ in
         };
 
         tautulli-vm = {
-          ip = reg.tautulli.ip;
+          inherit (reg.tautulli) ip;
 
           portForward = {
             enable = false;
@@ -192,7 +192,7 @@ in
         };
 
         sonarr-vm = {
-          ip = reg.sonarr.ip;
+          inherit (reg.sonarr) ip;
 
           portForward = {
             enable = false;
@@ -208,7 +208,7 @@ in
         };
 
         radarr-vm = {
-          ip = reg.radarr.ip;
+          inherit (reg.radarr) ip;
 
           portForward = {
             enable = false;
@@ -224,7 +224,7 @@ in
         };
 
         prowlarr-vm = {
-          ip = reg.prowlarr.ip;
+          inherit (reg.prowlarr) ip;
 
           portForward = {
             enable = false;
@@ -240,7 +240,7 @@ in
         };
 
         bazarr-vm = {
-          ip = reg.bazarr.ip;
+          inherit (reg.bazarr) ip;
 
           portForward = {
             enable = false;
@@ -256,7 +256,7 @@ in
         };
 
         readarr-vm = {
-          ip = reg.readarr.ip;
+          inherit (reg.readarr) ip;
 
           portForward = {
             enable = false;
@@ -289,7 +289,7 @@ in
         # };
 
         qbittorrent-vm = {
-          ip = reg.qbittorrent.ip;
+          inherit (reg.qbittorrent) ip;
 
           portForward = {
             enable = true;
@@ -310,7 +310,7 @@ in
         };
 
         sabnzbd-vm = {
-          ip = reg.sabnzbd.ip;
+          inherit (reg.sabnzbd) ip;
 
           portForward = {
             enable = true;
@@ -331,7 +331,7 @@ in
         };
 
         wireguard-vm = {
-          ip = reg.wireguard.ip;
+          inherit (reg.wireguard) ip;
 
           portForward = {
             enable = true;
@@ -346,7 +346,7 @@ in
         };
 
         firefox-vm = {
-          ip = reg.firefox.ip;
+          inherit (reg.firefox) ip;
 
           portForward = {
             enable = true;
@@ -371,7 +371,7 @@ in
         };
 
         matrix-synapse-vm = {
-          ip = reg."matrix-synapse".ip;
+          inherit (reg."matrix-synapse") ip;
 
           portForward = {
             enable = true;
@@ -419,7 +419,7 @@ in
         # };
 
         paperless-vm = {
-          ip = reg.paperless.ip;
+          inherit (reg.paperless) ip;
 
           portForward = {
             enable = true;

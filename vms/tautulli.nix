@@ -28,7 +28,7 @@ in
 
   sys.services.tautulli = {
     enable = true;
-    port = reg.port;
+    inherit (reg) port;
     dataDir = "/var/lib/tautulli";
     configFile = "/var/lib/tautulli/config.ini";
     reverseProxy.enable = false;

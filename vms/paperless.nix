@@ -133,7 +133,7 @@ in
       listen = [
         {
           addr = "0.0.0.0";
-          port = reg.port;
+          inherit (reg) port;;
         }
       ];
 

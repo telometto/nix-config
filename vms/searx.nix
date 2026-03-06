@@ -52,7 +52,7 @@ in
 
     services.searx = {
       enable = true;
-      port = reg.port;
+      inherit (reg) port;;
       bind = "0.0.0.0";
       reverseProxy.enable = false;
     };
