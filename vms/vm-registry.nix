@@ -217,7 +217,7 @@
     port = 11061;
     mem = 8192;
     vcpu = 4;
-    tapId = "vm-paperles";
+    tapId = "vm-paperless";
   };
 
   firefly = {
