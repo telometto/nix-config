@@ -57,7 +57,7 @@ in
 
   networking.firewall = {
     # DNS and encrypted DNS ports
-    # Web UI port (11016) is handled by openFirewall = true
+    # Web UI port is handled by openFirewall = true
     allowedTCPPorts = [
       53 # DNS over TCP
       80 # HTTP (for Cloudflare tunnel)
