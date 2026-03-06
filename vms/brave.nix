@@ -68,7 +68,7 @@ in
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
   networking.firewall.allowedTCPPorts = [
-    11054
+    reg.port
     11055
   ];
 
@@ -104,7 +104,7 @@ in
         enable = true;
 
         dataDir = "/var/lib/brave";
-        httpPort = 11054;
+        httpPort = reg.port;
         httpsPort = 11055;
         networkMode = "bridge";
         timeZone = "Europe/Oslo";

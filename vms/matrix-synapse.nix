@@ -106,7 +106,7 @@ in
   };
 
   # Nginx takes over the external port; Synapse listens on 8008 (localhost only)
-  networking.firewall.allowedTCPPorts = [ 11060 ];
+  networking.firewall.allowedTCPPorts = [ reg.port ];
 
   systemd = {
     tmpfiles.rules = [
@@ -479,7 +479,7 @@ in
       listen = [
         {
           addr = "0.0.0.0";
-          port = 11060;
+          inherit (reg) port;
         }
       ];
 

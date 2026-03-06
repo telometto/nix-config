@@ -1,6 +1,8 @@
 _:
 let
-  reg = (import ./vm-registry.nix).prowlarr;
+  registry = import ./vm-registry.nix;
+  reg = registry.prowlarr;
+  flaresolverrPort = registry.flaresolverr.port;
 in
 {
   imports = [
@@ -22,7 +24,7 @@ in
 
   networking.firewall.allowedTCPPorts = [
     reg.port # prowlarr
-    11013 # flaresolverr
+    flaresolverrPort
   ];
 
   systemd.tmpfiles.rules = [
@@ -38,6 +40,6 @@ in
 
   services.flaresolverr = {
     enable = true;
-    port = 11013;
+    port = flaresolverrPort;
   };
 }
