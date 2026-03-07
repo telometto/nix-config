@@ -14,14 +14,19 @@ let
   enabledVmReverseProxies = lib.filterAttrs (
     _: instance: instance.enable && instance.reverseProxy.enable
   ) vmInstances;
-  generatedVmRoutes = builtins.mapAttrs (_: instance: {
-    inherit (instance.reverseProxy)
-      subdomain
-      url
-      middlewares
-      entryPoints
-      ;
-  }) enabledVmReverseProxies;
+  generatedVmRoutes = builtins.mapAttrs (
+    _: instance:
+    {
+      inherit (instance.reverseProxy)
+        subdomain
+        url
+        entryPoints
+        ;
+    }
+    // lib.optionalAttrs (instance.reverseProxy.middlewares != null) {
+      inherit (instance.reverseProxy) middlewares;
+    }
+  ) enabledVmReverseProxies;
   hostRoutes = {
     lingarr = {
       subdomain = "lingarr";
