@@ -10,6 +10,26 @@ let
   reg = import ../../../vms/vm-registry.nix;
   traefikLib = import ../../../lib/traefik.nix { inherit lib; };
   vmUrl = name: "http://${reg.${name}.ip}:${toString reg.${name}.port}";
+  vmInstances = config.sys.virtualisation.microvm.instances;
+  enabledVmReverseProxies = lib.filterAttrs (
+    _: instance: instance.enable && instance.reverseProxy.enable
+  ) vmInstances;
+  generatedVmRoutes = builtins.mapAttrs (_: instance: {
+    inherit (instance.reverseProxy)
+      subdomain
+      url
+      middlewares
+      entryPoints
+      ;
+  }) enabledVmReverseProxies;
+  hostRoutes = {
+    lingarr = {
+      subdomain = "lingarr";
+      url = "http://localhost:11025";
+    };
+  };
+  generated = traefikLib.mkRoutes { domain = VARS.domains.public; } (generatedVmRoutes // hostRoutes);
+  matrixSynapseEnabled = vmInstances."matrix-synapse".enable or false;
 
   trustedIPs = [
     "127.0.0.1/32"
@@ -20,100 +40,6 @@ let
   ];
 
   plexCsp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
-
-  # Standard routes generated from a concise table (routers + services).
-  # Services with custom routers (matrix-synapse, traefik-dashboard) are added separately below.
-  generated = traefikLib.mkRoutes { domain = VARS.domains.public; } {
-    overseerr = {
-      subdomain = "requests";
-      url = vmUrl "overseerr";
-      middlewares = [
-        "plex-headers"
-        "crowdsec"
-      ];
-    };
-    tautulli = {
-      subdomain = "tautulli";
-      url = vmUrl "tautulli";
-      middlewares = [
-        "plex-headers"
-        "crowdsec"
-      ];
-    };
-    firefox = {
-      subdomain = "ff";
-      url = vmUrl "firefox";
-      middlewares = [
-        "firefox-headers"
-        "crowdsec"
-      ];
-    };
-    paperless = {
-      subdomain = "docs";
-      url = vmUrl "paperless";
-      middlewares = [
-        "csrf-safe-headers"
-        "crowdsec"
-      ];
-    };
-    firefly = {
-      subdomain = "finance";
-      url = vmUrl "firefly";
-      middlewares = [
-        "csrf-safe-headers"
-        "crowdsec"
-      ];
-    };
-    gitea = {
-      subdomain = "git";
-      url = vmUrl "gitea";
-      middlewares = [
-        "security-headers"
-        "gitea-xfp-https"
-        "crowdsec"
-      ];
-    };
-    sabnzbd = {
-      subdomain = "sab";
-      url = vmUrl "sabnzbd";
-    };
-    bazarr = {
-      subdomain = "subs";
-      url = vmUrl "bazarr";
-    };
-    lingarr = {
-      subdomain = "lingarr";
-      url = "http://localhost:11025";
-    }; # runs on host, not a VM
-    prowlarr = {
-      subdomain = "indexer";
-      url = vmUrl "prowlarr";
-    };
-    radarr = {
-      subdomain = "movies";
-      url = vmUrl "radarr";
-    };
-    readarr = {
-      subdomain = "books";
-      url = vmUrl "readarr";
-    };
-    sonarr = {
-      subdomain = "series";
-      url = vmUrl "sonarr";
-    };
-    searx = {
-      subdomain = "search";
-      url = vmUrl "searx";
-    };
-    actual = {
-      subdomain = "actual";
-      url = vmUrl "actual";
-    };
-    ombi = {
-      subdomain = "ombi";
-      url = vmUrl "ombi";
-    };
-  };
 in
 {
   # Trust model: Traefik ↔ VM communication uses plain HTTP over an isolated
@@ -224,37 +150,38 @@ in
           };
         };
 
-        routers = generated.routers // {
-          traefik-dashboard = {
-            rule = "Host(`${config.networking.hostName}.${consts.tailscale.suffix}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
-            service = "api@internal";
-            entryPoints = [ "websecure" ];
-            tls.certResolver = "myresolver";
-            middlewares = [ "security-headers" ];
+        routers =
+          generated.routers
+          // {
+            traefik-dashboard = {
+              rule = "Host(`${config.networking.hostName}.${consts.tailscale.suffix}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))";
+              service = "api@internal";
+              entryPoints = [ "websecure" ];
+              tls.certResolver = "myresolver";
+              middlewares = [ "security-headers" ];
+            };
+          }
+          // lib.optionalAttrs matrixSynapseEnabled {
+            matrix-synapse = {
+              rule = "Host(`matrix.${VARS.domains.public}`)";
+              service = "matrix-synapse";
+              entryPoints = [ "web" ];
+              middlewares = [ "matrix-headers" ];
+            };
+
+            matrix-well-known = {
+              rule = "Host(`${VARS.domains.public}`) && PathPrefix(`/.well-known/matrix/`)";
+              service = "matrix-synapse";
+              entryPoints = [ "web" ];
+              middlewares = [ "matrix-headers" ];
+            };
           };
 
-          matrix-synapse = {
-            rule = "Host(`matrix.${VARS.domains.public}`)";
-            service = "matrix-synapse";
-            entryPoints = [ "web" ];
-            # No crowdsec: federation requires accepting traffic from external Matrix servers.
-            middlewares = [ "matrix-headers" ];
+        services =
+          generated.services
+          // lib.optionalAttrs matrixSynapseEnabled {
+            matrix-synapse.loadBalancer.servers = [ { url = vmUrl "matrix-synapse"; } ];
           };
-
-          # Route /.well-known/matrix/* on the bare domain to Synapse so
-          # federation and client auto-discovery work for server_name
-          matrix-well-known = {
-            rule = "Host(`${VARS.domains.public}`) && PathPrefix(`/.well-known/matrix/`)";
-            service = "matrix-synapse";
-            entryPoints = [ "web" ];
-            middlewares = [ "matrix-headers" ];
-          };
-        };
-
-        services = generated.services // {
-          matrix-synapse.loadBalancer.servers = [ { url = vmUrl "matrix-synapse"; } ];
-          qbittorrent.loadBalancer.servers = [ { url = vmUrl "qbittorrent"; } ];
-        };
       };
     };
   };

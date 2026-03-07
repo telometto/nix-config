@@ -153,6 +153,21 @@ microvm -l
 microvm -k <vm-name>
 ```
 
+### Host-level enablement and exposure
+
+Hosts enable MicroVMs through `sys.virtualisation.microvm.instances.<name>`.
+Each instance entry controls whether the VM is present on that host and which
+host-side exposure paths are active.
+
+- `enable` opts a VM into the host
+- `autostart` defaults to the VM's `enable` value
+- `portForward.enable` defaults to `true` when port forwards are defined
+- `cfTunnel.enable` defaults to `true` when tunnel ingress is defined
+- `reverseProxy.enable` defaults to `true` when reverse-proxy metadata is defined
+
+Those exposure toggles remain overridable per host, so a VM can stay enabled
+while selectively disabling Cloudflare Tunnel or Traefik routing.
+
 ### Security Considerations
 
 - VMs run with minimal privileges
