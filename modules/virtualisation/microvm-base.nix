@@ -286,7 +286,8 @@ let
     let
       instance = enabledInstances.${name};
     in
-    instance.reverseProxy.enable && (instance.reverseProxy.subdomain == null || instance.reverseProxy.url == null)
+    instance.reverseProxy.enable
+    && (instance.reverseProxy.subdomain == null || instance.reverseProxy.url == null)
   ) enabledInstanceNames;
 
   portForwardEnabledWithoutPorts = lib.filter (
