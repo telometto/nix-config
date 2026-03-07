@@ -90,8 +90,8 @@ let
     {
       options = {
         enable = lib.mkOption {
-          type = lib.types.nullOr lib.types.bool;
-          default = null;
+          type = lib.types.bool;
+          default = false;
           description = "Enable Traefik reverse proxy configuration for this VM.";
         };
 
@@ -108,8 +108,8 @@ let
         };
 
         middlewares = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ ];
+          type = lib.types.nullOr (lib.types.listOf lib.types.str);
+          default = null;
           description = "Traefik middlewares applied to the generated router.";
         };
 
@@ -130,8 +130,8 @@ let
         enable = lib.mkEnableOption "MicroVM instance ${name}";
 
         autostart = lib.mkOption {
-          type = lib.types.nullOr lib.types.bool;
-          default = null;
+          type = lib.types.bool;
+          default = false;
           description = "Whether to autostart this VM on boot.";
         };
 
@@ -155,8 +155,8 @@ let
 
         portForward = {
           enable = lib.mkOption {
-            type = lib.types.nullOr lib.types.bool;
-            default = null;
+            type = lib.types.bool;
+            default = false;
             description = "Enable port forwarding from host to this VM.";
           };
 
@@ -169,8 +169,8 @@ let
 
         cfTunnel = {
           enable = lib.mkOption {
-            type = lib.types.nullOr lib.types.bool;
-            default = null;
+            type = lib.types.bool;
+            default = false;
             description = "Enable Cloudflare Tunnel ingress for this VM.";
           };
 
@@ -312,7 +312,9 @@ let
   duplicateIngressHosts =
     let
       hosts = lib.flatten (
-        lib.mapAttrsToList (_: vmCfg: builtins.attrNames vmCfg.cfTunnel.ingress) allExpose
+        lib.mapAttrsToList (
+          _: vmCfg: lib.optionals vmCfg.cfTunnel.enable (builtins.attrNames vmCfg.cfTunnel.ingress)
+        ) allExpose
       );
     in
     lib.unique (
