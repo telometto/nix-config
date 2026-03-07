@@ -215,7 +215,7 @@ let
       value = {
         inherit (instance) ip portForward cfTunnel;
       };
-    }) (lib.filterAttrs (_: instance: instance.ip != null) enabledInstances)
+    }) enabledInstances
   );
 
   allVms = derivedVms // cfg.vms;
@@ -279,6 +279,14 @@ let
       instance = enabledInstances.${name};
     in
     instance.portForward.enable && instance.ip == null
+  ) enabledInstanceNames;
+
+  reverseProxyMissingFields = lib.filter (
+    name:
+    let
+      instance = enabledInstances.${name};
+    in
+    instance.reverseProxy.enable && (instance.reverseProxy.subdomain == null || instance.reverseProxy.url == null)
   ) enabledInstanceNames;
 
   portForwardEnabledWithoutPorts = lib.filter (
@@ -431,6 +439,10 @@ in
         message = "sys.virtualisation.microvm.instances enables port forwarding without an IP for: ${formatList missingIpPortForwardInstances}";
       }
       {
+        assertion = reverseProxyMissingFields == [ ];
+        message = "sys.virtualisation.microvm.instances enables reverseProxy without both subdomain and url for: ${formatList reverseProxyMissingFields}";
+      }
+      {
         assertion = unknownExposeVms == [ ];
         message = "sys.virtualisation.microvm.expose contains unknown VMs: ${formatList unknownExposeVms}";
       }
@@ -440,23 +452,23 @@ in
       }
       {
         assertion = portForwardEnabledWithoutPorts == [ ];
-        message = "sys.virtualisation.microvm.expose enables port forwarding without ports for: ${formatList portForwardEnabledWithoutPorts}";
+        message = "sys.virtualisation.microvm (expose/instances) enables port forwarding without ports for: ${formatList portForwardEnabledWithoutPorts}";
       }
       {
         assertion = cfTunnelEnabledWithoutIngress == [ ];
-        message = "sys.virtualisation.microvm.expose enables Cloudflare Tunnel without ingress rules for: ${formatList cfTunnelEnabledWithoutIngress}";
+        message = "sys.virtualisation.microvm (expose/instances) enables Cloudflare Tunnel without ingress rules for: ${formatList cfTunnelEnabledWithoutIngress}";
       }
       {
         assertion = duplicateForwardPortKeys == [ ];
-        message = "sys.virtualisation.microvm.expose defines duplicate forwarded source ports: ${formatList duplicateForwardPortKeys}";
+        message = "sys.virtualisation.microvm (expose/instances) defines duplicate forwarded source ports: ${formatList duplicateForwardPortKeys}";
       }
       {
         assertion = duplicateIngressHosts == [ ];
-        message = "sys.virtualisation.microvm.expose defines duplicate Cloudflare ingress hosts: ${formatList duplicateIngressHosts}";
+        message = "sys.virtualisation.microvm (expose/instances) defines duplicate Cloudflare ingress hosts: ${formatList duplicateIngressHosts}";
       }
       {
         assertion = cloudflaredEnabled || enabledCfTunnelVms == [ ];
-        message = "sys.virtualisation.microvm.expose enables Cloudflare Tunnel for ${formatList enabledCfTunnelVms}, but sys.services.cloudflared.enable is false";
+        message = "sys.virtualisation.microvm (expose/instances) enables Cloudflare Tunnel for ${formatList enabledCfTunnelVms}, but sys.services.cloudflared.enable is false";
       }
     ];
 
