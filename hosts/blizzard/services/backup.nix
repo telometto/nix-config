@@ -5,7 +5,7 @@
 
     jobs.homeserver = {
       paths = [ "/home/${VARS.users.zeno.user}" ];
-      environment.BORG_RSH = "ssh -o 'StrictHostKeyChecking=no' -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
+      environment.BORG_RSH = "ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -i /home/${VARS.users.zeno.user}/.ssh/borg-blizzard";
       repo = config.sys.secrets.borgRepo or "ssh://iu445agy@iu445agy.repo.borgbase.com/./repo";
       compression = "zstd,8";
       startAt = "daily";

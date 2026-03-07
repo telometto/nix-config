@@ -1,6 +1,266 @@
-{ self, VARS, ... }:
+{
+  self,
+  VARS,
+  lib,
+  ...
+}:
 let
   reg = import ../../../vms/vm-registry.nix;
+  vmUrl = name: "http://${reg.${name}.ip}:${toString reg.${name}.port}";
+
+  localhostUrl = "http://localhost:80";
+
+  mkPublicIngress =
+    subdomains:
+    builtins.listToAttrs (
+      map (subdomain: {
+        name = "${subdomain}.${VARS.domains.public}";
+        value = localhostUrl;
+      }) subdomains
+    );
+
+  mkPortForward =
+    proto: sourcePort: destPort:
+    {
+      inherit proto sourcePort;
+    }
+    // lib.optionalAttrs (destPort != null) {
+      inherit destPort;
+    };
+
+  mkInstance =
+    name: spec:
+    {
+      flake = self;
+      inherit (reg.${name}) ip;
+    }
+    // lib.optionalAttrs (spec ? enable) { inherit (spec) enable; }
+    // {
+      portForward.ports = spec.portForwards or [ ];
+      cfTunnel.ingress = mkPublicIngress (spec.ingressHosts or [ ]) // (spec.extraIngress or { });
+      reverseProxy = spec.reverseProxy or { };
+    };
+
+  vmSpecs = {
+    adguard = {
+      enable = false;
+      portForwards = [
+        (mkPortForward "both" 53 null)
+        (mkPortForward "tcp" 443 null)
+        (mkPortForward "tcp" 853 null)
+        (mkPortForward "tcp" 11010 null)
+      ];
+      ingressHosts = [ "adguard" ];
+    };
+
+    actual = {
+      enable = true;
+      ingressHosts = [ "actual" ];
+      reverseProxy = {
+        subdomain = "actual";
+        url = vmUrl "actual";
+      };
+    };
+
+    searx = {
+      enable = true;
+      ingressHosts = [ "search" ];
+      reverseProxy = {
+        subdomain = "search";
+        url = vmUrl "searx";
+      };
+    };
+
+    overseerr = {
+      enable = true;
+      ingressHosts = [ "requests" ];
+      reverseProxy = {
+        subdomain = "requests";
+        url = vmUrl "overseerr";
+        middlewares = [
+          "plex-headers"
+          "crowdsec"
+        ];
+      };
+    };
+
+    ombi = {
+      enable = true;
+      ingressHosts = [ "ombi" ];
+      reverseProxy = {
+        subdomain = "ombi";
+        url = vmUrl "ombi";
+      };
+    };
+
+    tautulli = {
+      enable = true;
+      ingressHosts = [ "tautulli" ];
+      reverseProxy = {
+        subdomain = "tautulli";
+        url = vmUrl "tautulli";
+        middlewares = [
+          "plex-headers"
+          "crowdsec"
+        ];
+      };
+    };
+
+    gitea = {
+      enable = true;
+      ingressHosts = [ "git" ];
+      extraIngress = {
+        "ssh-git.${VARS.domains.public}" = "ssh://${reg.gitea.ip}:2222";
+      };
+      reverseProxy = {
+        subdomain = "git";
+        url = vmUrl "gitea";
+        middlewares = [
+          "security-headers"
+          "gitea-xfp-https"
+          "crowdsec"
+        ];
+      };
+    };
+
+    sonarr = {
+      enable = true;
+      ingressHosts = [ "series" ];
+      reverseProxy = {
+        subdomain = "series";
+        url = vmUrl "sonarr";
+      };
+    };
+
+    radarr = {
+      enable = true;
+      ingressHosts = [ "movies" ];
+      reverseProxy = {
+        subdomain = "movies";
+        url = vmUrl "radarr";
+      };
+    };
+
+    prowlarr = {
+      enable = true;
+      ingressHosts = [ "indexer" ];
+      reverseProxy = {
+        subdomain = "indexer";
+        url = vmUrl "prowlarr";
+      };
+    };
+
+    bazarr = {
+      enable = true;
+      ingressHosts = [ "subs" ];
+      reverseProxy = {
+        subdomain = "subs";
+        url = vmUrl "bazarr";
+      };
+    };
+
+    readarr = {
+      enable = true;
+      ingressHosts = [ "books" ];
+      reverseProxy = {
+        subdomain = "books";
+        url = vmUrl "readarr";
+      };
+    };
+
+    lidarr = {
+      enable = false;
+      ingressHosts = [ "music" ];
+    };
+
+    qbittorrent = {
+      enable = true;
+      portForwards = [ (mkPortForward "tcp" 11030 null) ];
+    };
+
+    sabnzbd = {
+      enable = true;
+      portForwards = [ (mkPortForward "tcp" 11031 null) ];
+      ingressHosts = [ "sab" ];
+      reverseProxy = {
+        subdomain = "sab";
+        url = vmUrl "sabnzbd";
+      };
+    };
+
+    wireguard = {
+      enable = true;
+      portForwards = [ (mkPortForward "udp" 51820 56943) ];
+    };
+
+    firefox = {
+      enable = true;
+      portForwards = [
+        (mkPortForward "tcp" 11052 null)
+        (mkPortForward "tcp" 11053 null)
+      ];
+      ingressHosts = [ "ff" ];
+      reverseProxy = {
+        subdomain = "ff";
+        url = vmUrl "firefox";
+        middlewares = [
+          "firefox-headers"
+          "crowdsec"
+        ];
+      };
+    };
+
+    brave = {
+      enable = false;
+      portForwards = [
+        (mkPortForward "tcp" 11054 null)
+        (mkPortForward "tcp" 11055 null)
+      ];
+      ingressHosts = [ "brave" ];
+    };
+
+    matrix-synapse = {
+      enable = true;
+      portForwards = [ (mkPortForward "tcp" 11060 null) ];
+      ingressHosts = [ "matrix" ];
+      extraIngress = {
+        "${VARS.domains.public}" = localhostUrl;
+      };
+      reverseProxy = {
+        enable = false;
+        subdomain = "matrix";
+        url = vmUrl "matrix-synapse";
+      };
+    };
+
+    paperless = {
+      enable = true;
+      portForwards = [ (mkPortForward "tcp" 11061 null) ];
+      ingressHosts = [ "docs" ];
+      reverseProxy = {
+        subdomain = "docs";
+        url = vmUrl "paperless";
+        middlewares = [
+          "csrf-safe-headers"
+          "crowdsec"
+        ];
+      };
+    };
+
+    firefly = {
+      enable = false;
+      portForwards = [ (mkPortForward "tcp" 11062 null) ];
+      ingressHosts = [ "finance" ];
+      reverseProxy = {
+        subdomain = "finance";
+        url = vmUrl "firefly";
+        middlewares = [
+          "csrf-safe-headers"
+          "crowdsec"
+        ];
+      };
+    };
+  };
 in
 {
   sys.virtualisation = {
@@ -12,457 +272,7 @@ in
       externalInterface = "enp8s0";
       stateDir = "/rpool/unenc/vms";
 
-      autostart = [
-        # "adguard-vm"
-        "actual-vm"
-        "searx-vm"
-        "overseerr-vm"
-        "ombi-vm"
-        "tautulli-vm"
-        "gitea-vm"
-        "sonarr-vm"
-        "radarr-vm"
-        "prowlarr-vm"
-        "bazarr-vm"
-        "readarr-vm"
-        # "lidarr-vm" # disabled for now
-        "qbittorrent-vm"
-        "sabnzbd-vm"
-        "wireguard-vm"
-        "firefox-vm"
-        # "brave-vm"
-        "matrix-synapse-vm"
-        "paperless-vm"
-        # "firefly-vm"
-      ];
-
-      vms = {
-        # adguard-vm.flake = self;
-        actual-vm.flake = self;
-        searx-vm.flake = self;
-        overseerr-vm.flake = self;
-        ombi-vm.flake = self;
-        tautulli-vm.flake = self;
-        gitea-vm.flake = self;
-        sonarr-vm.flake = self;
-        radarr-vm.flake = self;
-        prowlarr-vm.flake = self;
-        bazarr-vm.flake = self;
-        readarr-vm.flake = self;
-        # lidarr-vm.flake = self;
-        qbittorrent-vm.flake = self;
-        sabnzbd-vm.flake = self;
-        wireguard-vm.flake = self;
-        firefox-vm.flake = self;
-        # brave-vm.flake = self;
-        matrix-synapse-vm.flake = self;
-        paperless-vm.flake = self;
-        # firefly-vm.flake = self;
-      };
-
-      expose = {
-        # adguard-vm = {
-        #   ip = "10.100.0.10";
-        #
-        #   portForward = {
-        #     enable = true;
-        #     ports = [
-        #       {
-        #         proto = "both";
-        #         sourcePort = 53;
-        #       }
-        #       {
-        #         proto = "tcp";
-        #         sourcePort = 443;
-        #       }
-        #       {
-        #         proto = "tcp";
-        #         sourcePort = 853;
-        #       }
-        #       {
-        #         proto = "tcp";
-        #         sourcePort = 11010;
-        #       }
-        #     ];
-        #   };
-        #
-        #   cfTunnel = {
-        #     enable = false;
-        #     ingress = {
-        #       "adguard.${VARS.domains.public}" = "http://localhost:80";
-        #     };
-        #   };
-        # };
-
-        actual-vm = {
-          inherit (reg.actual) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "actual.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        searx-vm = {
-          inherit (reg.searx) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "search.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        overseerr-vm = {
-          inherit (reg.overseerr) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "requests.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        gitea-vm = {
-          inherit (reg.gitea) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "git.${VARS.domains.public}" = "http://localhost:80";
-              "ssh-git.${VARS.domains.public}" = "ssh://${reg.gitea.ip}:2222";
-            };
-          };
-        };
-
-        ombi-vm = {
-          inherit (reg.ombi) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "ombi.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        tautulli-vm = {
-          inherit (reg.tautulli) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "tautulli.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        sonarr-vm = {
-          inherit (reg.sonarr) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "series.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        radarr-vm = {
-          inherit (reg.radarr) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "movies.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        prowlarr-vm = {
-          inherit (reg.prowlarr) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "indexer.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        bazarr-vm = {
-          inherit (reg.bazarr) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "subs.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        readarr-vm = {
-          inherit (reg.readarr) ip;
-
-          portForward = {
-            enable = false;
-            ports = [ ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "books.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        # lidarr is disabled for now
-        # lidarr-vm = {
-        #   ip = "10.100.0.26";
-
-        #   portForward = {
-        #     enable = false;
-        #     ports = [ ];
-        #   };
-
-        #   cfTunnel = {
-        #     enable = true;
-        #     ingress = {
-        #       "music.${VARS.domains.public}" = "http://localhost:80";
-        #     };
-        #   };
-        # };
-
-        qbittorrent-vm = {
-          inherit (reg.qbittorrent) ip;
-
-          portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11030;
-              }
-            ];
-          };
-
-          cfTunnel = {
-            enable = false;
-            ingress = {
-              "torrent.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        sabnzbd-vm = {
-          inherit (reg.sabnzbd) ip;
-
-          portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11031;
-              }
-            ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "sab.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        wireguard-vm = {
-          inherit (reg.wireguard) ip;
-
-          portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "udp";
-                sourcePort = 51820;
-                destPort = 56943;
-              }
-            ];
-          };
-        };
-
-        firefox-vm = {
-          inherit (reg.firefox) ip;
-
-          portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11052;
-              }
-              {
-                proto = "tcp";
-                sourcePort = 11053;
-              }
-            ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "ff.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        matrix-synapse-vm = {
-          inherit (reg."matrix-synapse") ip;
-
-          portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11060;
-              }
-            ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "matrix.${VARS.domains.public}" = "http://localhost:80";
-              # Bare domain for /.well-known/matrix/* federation/client discovery
-              "${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        # brave-vm = {
-        #   ip = "10.100.0.54";
-
-        #   portForward = {
-        #     enable = true;
-        #     ports = [
-        #       {
-        #         proto = "tcp";
-        #         sourcePort = 11054;
-        #       }
-        #       {
-        #         proto = "tcp";
-        #         sourcePort = 11055;
-        #       }
-        #     ];
-        #   };
-
-        #   cfTunnel = {
-        #     enable = true;
-        #     ingress = {
-        #       "brave.${VARS.domains.public}" = "http://localhost:80";
-        #     };
-        #   };
-        # };
-
-        paperless-vm = {
-          inherit (reg.paperless) ip;
-
-          portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "tcp";
-                sourcePort = 11061;
-              }
-            ];
-          };
-
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "docs.${VARS.domains.public}" = "http://localhost:80";
-            };
-          };
-        };
-
-        /*
-          firefly-vm = {
-            ip = "10.100.0.62";
-
-            portForward = {
-              enable = true;
-              ports = [
-                {
-                  proto = "tcp";
-                  sourcePort = 11062;
-                }
-              ];
-            };
-
-            cfTunnel = {
-              enable = true;
-              ingress = {
-                "finance.${VARS.domains.public}" = "http://localhost:80";
-              };
-            };
-          };
-        */
-
-      };
+      instances = builtins.mapAttrs mkInstance vmSpecs;
     };
   };
 }
