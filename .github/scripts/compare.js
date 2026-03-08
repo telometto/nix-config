@@ -39,7 +39,7 @@ module.exports = async ({ core }) => {
         return [];
     }
 
-    core.info(`Processing commit message: ${GIT_COMMIT_MESSAGE.substring(0, 200)}...`);
+    core.info("Processing lockfile update commit message");
 
     const compareLinks = generateCompareLinks(GIT_COMMIT_MESSAGE);
     if (!compareLinks.length) {
