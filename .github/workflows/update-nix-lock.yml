@@ -9,6 +9,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  checks: read
   contents: write
   pull-requests: write
 
@@ -145,12 +146,12 @@ jobs:
               break
             fi
 
-            if [ "$flake_conclusion" = "failure" ] || [ "$flake_conclusion" = "cancelled" ] || [ "$flake_conclusion" = "timed_out" ] || [ "$flake_conclusion" = "action_required" ] || [ "$flake_conclusion" = "startup_failure" ] || [ "$flake_conclusion" = "stale" ]; then
+            if [ -n "$flake_conclusion" ] && [ "$flake_conclusion" != "success" ]; then
               echo "Flake Check did not succeed (conclusion: $flake_conclusion)." >&2
               exit 1
             fi
 
-            if [ "$discover_conclusion" = "failure" ] || [ "$discover_conclusion" = "cancelled" ] || [ "$discover_conclusion" = "timed_out" ] || [ "$discover_conclusion" = "action_required" ] || [ "$discover_conclusion" = "startup_failure" ] || [ "$discover_conclusion" = "stale" ]; then
+            if [ -n "$discover_conclusion" ] && [ "$discover_conclusion" != "success" ]; then
               echo "Configuration Validation discovery did not succeed (conclusion: $discover_conclusion)." >&2
               exit 1
             fi
