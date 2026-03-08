@@ -1,0 +1,58 @@
+name: Recreate Lockfile
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 1 * *"
+
+concurrency:
+  group: update-lockfile-recreate
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  recreate-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH for private repositories
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
+
+      - name: Checkout main repository
+        uses: actions/checkout@v6.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v21
+
+      - name: Recreate flake.lock
+        run: nix flake update --recreate-lock-file
+
+      - name: Create Pull Request
+        id: create-pull-request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: update_flake_lock_recreate_action
+          commit-message: "🧹 chore(flake.lock): recreate lockfile"
+          title: "🧹 chore(flake.lock): recreate lockfile"
+          body: |
+            Monthly/manual full lockfile refresh using `nix flake update --recreate-lock-file`.
+
+            This complements the frequent incremental lockfile updates by periodically re-resolving the complete dependency graph.
+          labels: |
+            maintenance
+            auto-merge
+          delete-branch: true
+
+      - name: Enable auto-merge for recreate lockfile PR
+        if: ${{ steps.create-pull-request.outputs.pull-request-url != '' }}
+        env:
+          PR_URL: ${{ steps.create-pull-request.outputs.pull-request-url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --auto --merge "$PR_URL"
