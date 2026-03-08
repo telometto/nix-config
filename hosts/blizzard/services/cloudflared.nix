@@ -9,6 +9,7 @@
     # VM-specific tunnel routes are declared per-VM via cfTunnel in microvms.nix.
     # Only host-level services that are not managed by a MicroVM belong here.
     ingress = {
+      "dashboard.${VARS.domains.public}" = "http://localhost:80";
       "metrics.${VARS.domains.public}" = "http://localhost:80";
       "lingarr.${VARS.domains.public}" = "http://localhost:80";
     };
