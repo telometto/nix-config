@@ -13,6 +13,11 @@ _: {
       "rpool/unenc/media" = {
         autosnap = false;
       };
+
+      flash = {
+        useTemplate = [ "production" ];
+        recursive = true;
+      };
     };
   };
 }
