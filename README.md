@@ -51,6 +51,16 @@ sudo nixos-rebuild switch --flake .#<hostname>
 | `nix fmt` | Format repository |
 | `nix flake check` | Run checks |
 
+## Lockfile Maintenance
+
+- Incremental lock updates run automatically every 3 hours via
+  `.github/workflows/update-nix-lock.yml`.
+- Auto-merge for lockfile PRs is gated on successful `Flake Check` and
+  `Configuration Validation` checks.
+- Full lock recreation runs monthly (and manually) via
+  `.github/workflows/update-nix-lock-recreate.yml` using
+  `nix flake update --recreate-lock-file`.
+
 ## Hosts
 
 | Host | Role | Desktop |
