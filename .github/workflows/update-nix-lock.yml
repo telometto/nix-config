@@ -92,6 +92,77 @@ jobs:
             core.info(`Adding compare URLs to PR #${issueNumber}`)
             await comment({ github, context, header, body, issueNumber })
 
+      - name: Wait for required checks before auto-merge
+        if: ${{ steps.update-flake-lock.outputs.pull-request-url != '' }}
+        env:
+          PR_NUMBER: ${{ steps.update-flake-lock.outputs.pull-request-number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PR_NUMBER}" ]; then
+            {
+              echo "### Warning: Check gate skipped"
+              echo
+              echo "No PR number was provided by update-flake-lock."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          PR_SHA=$(gh pr view "$PR_NUMBER" --json headRefOid --jq '.headRefOid')
+          timeout_at=$(( $(date +%s) + 3600 ))
+
+          echo "Waiting for required checks on PR #${PR_NUMBER} (${PR_SHA})..."
+
+          while true; do
+            now=$(date +%s)
+            if [ "$now" -ge "$timeout_at" ]; then
+              echo "Timed out waiting for required checks." >&2
+              exit 1
+            fi
+
+            checks_json=$(gh api "/repos/${GITHUB_REPOSITORY}/commits/${PR_SHA}/check-runs")
+
+            flake_conclusion=$(echo "$checks_json" | jq -r '[.check_runs[] | select(.name == "flake-check") | .conclusion] | last // ""')
+            discover_conclusion=$(echo "$checks_json" | jq -r '[.check_runs[] | select(.name == "discover-hosts") | .conclusion] | last // ""')
+            validate_total=$(echo "$checks_json" | jq '[.check_runs[] | select(.name | startswith("validate ("))] | length')
+            validate_pending=$(echo "$checks_json" | jq '[.check_runs[] | select(.name | startswith("validate (")) | select(.status != "completed" or .conclusion == null)] | length')
+            validate_failed=$(echo "$checks_json" | jq '[.check_runs[] | select(.name | startswith("validate (")) | select(.status == "completed" and .conclusion != "success")] | length')
+
+            echo "flake-check=${flake_conclusion:-pending}, discover-hosts=${discover_conclusion:-pending}, validate jobs=${validate_total}, validate pending=${validate_pending}, validate failed=${validate_failed}"
+
+            if [ "$flake_conclusion" = "success" ] \
+              && [ "$discover_conclusion" = "success" ] \
+              && [ "$validate_total" -gt 0 ] \
+              && [ "$validate_pending" -eq 0 ] \
+              && [ "$validate_failed" -eq 0 ]; then
+              {
+                echo "### ✅ Required checks passed"
+                echo
+                echo "- Flake Check: success"
+                echo "- Configuration Validation: success for all hosts"
+              } >> "$GITHUB_STEP_SUMMARY"
+              break
+            fi
+
+            if [ "$flake_conclusion" = "failure" ] || [ "$flake_conclusion" = "cancelled" ] || [ "$flake_conclusion" = "timed_out" ] || [ "$flake_conclusion" = "action_required" ] || [ "$flake_conclusion" = "startup_failure" ] || [ "$flake_conclusion" = "stale" ]; then
+              echo "Flake Check did not succeed (conclusion: $flake_conclusion)." >&2
+              exit 1
+            fi
+
+            if [ "$discover_conclusion" = "failure" ] || [ "$discover_conclusion" = "cancelled" ] || [ "$discover_conclusion" = "timed_out" ] || [ "$discover_conclusion" = "action_required" ] || [ "$discover_conclusion" = "startup_failure" ] || [ "$discover_conclusion" = "stale" ]; then
+              echo "Configuration Validation discovery did not succeed (conclusion: $discover_conclusion)." >&2
+              exit 1
+            fi
+
+            if [ "$validate_failed" -gt 0 ]; then
+              echo "One or more host validation jobs failed." >&2
+              exit 1
+            fi
+
+            sleep 30
+          done
+
       - name: Auto-merge GitHub bot PRs
         if: ${{ steps.update-flake-lock.outputs.pull-request-url != '' }}
         run: |
