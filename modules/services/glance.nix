@@ -49,15 +49,14 @@ in
         services.glance = {
           enable = true;
           environmentFile = lib.mkIf (cfg.environmentFile != null) cfg.environmentFile;
-          settings = lib.recursiveUpdate cfg.settings {
+          settings = lib.recursiveUpdate {
             server = {
-              host = cfg.host;
-              port = cfg.port;
+              inherit (cfg) host port;
             }
             // lib.optionalAttrs cfg.reverseProxy.enable {
               proxied = true;
             };
-          };
+          } cfg.settings;
         };
 
         services.traefik.dynamic.files.glance = traefikLib.mkTraefikDynamicConfig {
