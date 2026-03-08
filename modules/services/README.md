@@ -30,6 +30,7 @@ Self-hosted service configurations with consistent option interfaces.
 | CrowdSec | [crowdsec.nix](crowdsec.nix) | Security automation | 8080 |
 | OpenSSH | [openssh.nix](openssh.nix) | SSH server | 22 |
 | **Applications** |
+| Glance | [glance.nix](glance.nix) | Self-hosted dashboard | 8080 |
 | Gitea | [gitea.nix](gitea.nix) | Git hosting | 3000 |
 | Immich | [immich.nix](immich.nix) | Photo management | 2283 |
 | Paperless | [paperless.nix](paperless.nix) | Document management | 28981 |

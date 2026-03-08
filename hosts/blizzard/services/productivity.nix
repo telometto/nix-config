@@ -3,6 +3,17 @@
   sys.services = {
     paperless.enable = false;
 
+    glance = {
+      enable = true;
+      port = 11009;
+
+      reverseProxy = {
+        enable = true;
+        domain = "dashboard.${VARS.domains.public}";
+        cfTunnel.enable = true;
+      };
+    };
+
     actual = {
       enable = false;
 
