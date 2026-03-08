@@ -16,7 +16,7 @@ in
           monthly = 6;
           weekly = 4;
           daily = 7;
-          hourly = 0;
+          hourly = 1;
         };
       };
       description = "Sanoid templates map";
