@@ -554,11 +554,11 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1772742184,
-        "narHash": "sha256-zGnRxJQZ8wZTwvSxF4SAGoefbta15/W032tK22uIF2E=",
+        "lastModified": 1772922713,
+        "narHash": "sha256-+dn2D7gNrrld3q/AapoZZ6HL8xnBS/pcV4Gye1Nfsg0=",
         "owner": "microvm-nix",
         "repo": "microvm.nix",
-        "rev": "a257ca90febb686c75826918f9f8876d74f875eb",
+        "rev": "6207a74a1ec31d3aa628cb98eb75795a10f49dea",
         "type": "github"
       },
       "original": {
