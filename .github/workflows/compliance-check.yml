@@ -96,6 +96,24 @@ jobs:
             echo "✅ No hardcoded passwords found" >> compliance-report.md
           fi
 
+          workflow_log_matches=$(
+            {
+              grep -Ern 'nix-options:\s*"--access-tokens' .github/workflows || true
+              grep -Ern 'nix (eval|build|flake check).*(2>&1).*(tee|head|grep)' .github/workflows || true
+              grep -Ern 'cat /tmp/flake-check-output\.txt >> \$GITHUB_STEP_SUMMARY' .github/workflows || true
+            } | sed '/^$/d'
+          )
+
+          if [ -n "$workflow_log_matches" ]; then
+            echo "❌ **Potential workflow secret leakage patterns detected**" >> compliance-report.md
+            echo "\`\`\`" >> compliance-report.md
+            echo "$workflow_log_matches" >> compliance-report.md
+            echo "\`\`\`" >> compliance-report.md
+            patterns_failed=1
+          else
+            echo "✅ Workflow logging avoids known secret leakage patterns" >> compliance-report.md
+          fi
+
           # Check for proper module structure
           echo "" >> compliance-report.md
           echo "### Module Structure" >> compliance-report.md

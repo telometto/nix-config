@@ -27,7 +27,7 @@ module.exports = async ({ github, context, header, body, issueNumber }) => {
 
         console.log(`${botComment ? 'Updated' : 'Created'} comment on PR #${issue_number}`);
     } catch (error) {
-        console.error('Error managing comment:', error);
+        console.error(`Error managing comment: ${error.message}`);
         throw error;
     }
 };
