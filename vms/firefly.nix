@@ -41,7 +41,7 @@ in
       "firefly/app_key" = {
         mode = "0440";
         owner = "firefly-iii";
-        group = "firefly-iii";
+        group = "nginx";
       };
     };
   };
