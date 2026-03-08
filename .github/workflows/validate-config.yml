@@ -70,12 +70,17 @@ jobs:
       - name: Evaluate configuration
         run: |
           echo "## 🔍 Configuration Validation for ${{ matrix.host }}" >> $GITHUB_STEP_SUMMARY
+          output_file=$(mktemp)
 
           echo "Evaluating NixOS configuration for ${{ matrix.host }}..."
-          if nix eval ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --raw 2>&1 | head -n 1; then
+          if nix eval ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --raw >"$output_file" 2>&1; then
+            bash .github/scripts/redact-secrets.sh < "$output_file" | head -n 1
             echo "✅ Configuration evaluation passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ Configuration evaluation failed" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            bash .github/scripts/redact-secrets.sh < "$output_file" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
@@ -91,4 +96,11 @@ jobs:
       - name: Check for evaluation warnings
         run: |
           echo "## ⚠️ Evaluation Warnings" >> $GITHUB_STEP_SUMMARY
-          nix eval ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --raw 2>&1 | grep -i warning || echo "✅ No warnings found" | tee -a $GITHUB_STEP_SUMMARY
+          warnings_file=$(mktemp)
+          nix eval ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --raw >"$warnings_file" 2>&1
+
+          if bash .github/scripts/redact-secrets.sh < "$warnings_file" | grep -i warning >> $GITHUB_STEP_SUMMARY; then
+            true
+          else
+            echo "✅ No warnings found" >> $GITHUB_STEP_SUMMARY
+          fi

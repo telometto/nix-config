@@ -106,11 +106,15 @@ jobs:
           echo "## 🏗️ Build Results - ${HOST}" >> $GITHUB_STEP_SUMMARY
 
           nix-collect-garbage -d || true
+          build_output=$(mktemp)
 
-          if nix build ".#nixosConfigurations.${HOST}.config.system.build.toplevel" --no-link --print-build-logs --max-jobs 2; then
+          if nix build ".#nixosConfigurations.${HOST}.config.system.build.toplevel" --no-link --print-build-logs --max-jobs 2 >"$build_output" 2>&1; then
             echo "✅ ${HOST}: Build successful" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ ${HOST}: Build failed" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            bash .github/scripts/redact-secrets.sh < "$build_output" | tail -n 200 >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 

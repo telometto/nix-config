@@ -42,13 +42,14 @@ jobs:
             - name: Run flake check
               run: |
                   echo "## 🔍 Flake Check Results" >> $GITHUB_STEP_SUMMARY
+                  output_file=$(mktemp)
 
-                  if nix flake check --no-build 2>&1 | tee /tmp/flake-check-output.txt; then
+                  if nix flake check --no-build >"$output_file" 2>&1; then
                     echo "✅ All flake outputs evaluate successfully" >> $GITHUB_STEP_SUMMARY
                   else
                     echo "❌ Flake check failed" >> $GITHUB_STEP_SUMMARY
                     echo '```' >> $GITHUB_STEP_SUMMARY
-                    cat /tmp/flake-check-output.txt >> $GITHUB_STEP_SUMMARY
+                    bash .github/scripts/redact-secrets.sh < "$output_file" >> $GITHUB_STEP_SUMMARY
                     echo '```' >> $GITHUB_STEP_SUMMARY
                     exit 1
                   fi
