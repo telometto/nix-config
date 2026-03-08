@@ -270,7 +270,7 @@ in
       enable = true;
 
       externalInterface = "enp8s0";
-      stateDir = "/rpool/unenc/vms";
+      stateDir = "/flash/enc/vms";
 
       instances = builtins.mapAttrs mkInstance vmSpecs;
     };
