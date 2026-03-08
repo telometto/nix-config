@@ -41,7 +41,6 @@ jobs:
             ```
           pr-title: "🧹 chore(flake.lock): update"
           pr-labels: auto-merge
-          nix-options: "--access-tokens github.com=${{ secrets.SECRETS_PAT }}"
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get commit message for compare URLs
