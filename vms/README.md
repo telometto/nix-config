@@ -161,9 +161,9 @@ host-side exposure paths are active.
 
 - `enable` opts a VM into the host
 - `autostart` defaults to the VM's `enable` value
-- `portForward.enable` defaults to `true` when port forwards are defined
-- `cfTunnel.enable` defaults to `true` when tunnel ingress is defined
-- `reverseProxy.enable` defaults to `true` when reverse-proxy metadata is defined
+- `portForward.enable` defaults to `true` when the VM is enabled and port forwards are defined
+- `cfTunnel.enable` defaults to `true` when the VM is enabled and tunnel ingress is defined
+- `reverseProxy.enable` defaults to `true` when both `subdomain` and `url` are set in reverse-proxy metadata
 
 Those exposure toggles remain overridable per host, so a VM can stay enabled
 while selectively disabling Cloudflare Tunnel or Traefik routing.
