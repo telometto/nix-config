@@ -6,6 +6,7 @@
 }:
 let
   reg = (import ./vm-registry.nix).paperless;
+  paperlessTmpDir = "/var/lib/paperless/tmp";
 in
 {
   imports = [
@@ -67,14 +68,19 @@ in
   systemd = {
     tmpfiles.rules = [
       "d /var/lib/paperless 0700 paperless paperless -"
+      "d ${paperlessTmpDir} 0700 paperless paperless -"
       "d /var/lib/postgresql 0700 postgres postgres -"
       "d /var/lib/protonmail-bridge 0700 protonmail-bridge protonmail-bridge -"
     ];
 
+    services.paperless-consumer.environment.TMPDIR = paperlessTmpDir;
     services.paperless-scheduler = {
       after = [ "sops-install-secrets.service" ];
       requires = [ "sops-install-secrets.service" ];
+      environment.TMPDIR = paperlessTmpDir;
     };
+    services.paperless-task-queue.environment.TMPDIR = paperlessTmpDir;
+    services.paperless-web.environment.TMPDIR = paperlessTmpDir;
   };
 
   sys = {
@@ -86,7 +92,7 @@ in
 
         mounts.paperless-consume = {
           server = "10.100.0.1";
-          export = "/rpool/enc/personal/paperless-consumption";
+          export = "/flash/enc/personal/paperless-consumption";
           target = "/var/lib/paperless/consume";
           # nolock avoids NFS lock contention; soft returns errors instead of hanging
           options = [
