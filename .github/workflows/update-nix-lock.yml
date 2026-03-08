@@ -156,6 +156,11 @@ jobs:
               exit 1
             fi
 
+            if [ "$discover_conclusion" = "success" ] && [ "$validate_total" -eq 0 ]; then
+              echo "Configuration Validation discovery succeeded, but no host validation jobs were found." >&2
+              exit 1
+            fi
+
             if [ "$validate_failed" -gt 0 ]; then
               echo "One or more host validation jobs failed." >&2
               exit 1
