@@ -63,6 +63,12 @@ in
     };
   };
 
+  # nb_NO.UTF-8 must be present on the host or Firefly III raises an "unsupported locale" warning
+  i18n.supportedLocales = [
+    "nb_NO.UTF-8/UTF-8"
+    "en_US.UTF-8/UTF-8"
+  ];
+
   sys.services.firefly = {
     enable = true;
 
@@ -76,6 +82,7 @@ in
       COOKIE_SECURE = "true";
       SEND_REGISTRATION_MAIL = true;
       SEND_LOGIN_NEW_IP_WARNING = true;
+      DEFAULT_LOCALE = "nb_NO";
     };
   };
 
