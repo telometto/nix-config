@@ -2,6 +2,7 @@
   lib,
   config,
   inputs,
+  VARS,
   ...
 }:
 let
@@ -65,7 +66,10 @@ in
   sys.services.firefly = {
     enable = true;
 
-    reverseProxy.enable = false;
+    reverseProxy = {
+      enable = true;
+      domain = "finance.${VARS.domains.public}";
+    };
 
     settings = {
       ALLOW_WEBHOOKS = false;
