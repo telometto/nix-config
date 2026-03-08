@@ -125,6 +125,14 @@ in
             requestHeaders.X-Forwarded-Proto = "https";
           };
 
+          firefly-headers = traefikLib.mkSecurityHeaders {
+            referrerPolicy = "strict-origin-when-cross-origin";
+            requestHeaders = {
+              X-Forwarded-Port = "443";
+              X-Forwarded-Proto = "https";
+            };
+          };
+
           firefox-headers = traefikLib.mkSecurityHeaders {
             xFrameOptions = null;
             csp = null;

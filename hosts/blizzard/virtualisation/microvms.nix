@@ -255,7 +255,7 @@ let
         subdomain = "finance";
         url = vmUrl "firefly";
         middlewares = [
-          "csrf-safe-headers"
+          "firefly-headers"
           "crowdsec"
         ];
       };
