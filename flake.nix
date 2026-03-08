@@ -7,6 +7,15 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
+    flake-compat = {
+      url = "github:NixOS/flake-compat";
+      flake = false;
+    };
+    gitignore = {
+      url = "github:hercules-ci/gitignore.nix";
+      flake = false;
+    };
+
     nur = {
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -23,6 +32,8 @@
       url = "github:nix-community/lanzaboote/master";
       inputs = {
         nixpkgs.follows = "nixpkgs";
+        pre-commit.inputs.flake-compat.follows = "flake-compat";
+        pre-commit.inputs.gitignore.follows = "gitignore";
       };
     };
 
@@ -46,7 +57,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    hyprland.url = "github:hyprwm/Hyprland";
+    hyprland = {
+      url = "github:hyprwm/Hyprland";
+      inputs = {
+        pre-commit-hooks.inputs.flake-compat.follows = "flake-compat";
+        pre-commit-hooks.inputs.gitignore.follows = "gitignore";
+      };
+    };
 
     nix-colors.url = "github:misterio77/nix-colors";
 
