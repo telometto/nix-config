@@ -28,6 +28,7 @@ for lightweight virtualization.
 | matrix-synapse-vm | [matrix-synapse.nix](matrix-synapse.nix) | Matrix Synapse homeserver |
 | paperless-vm | [paperless.nix](paperless.nix) | Paperless-ngx document management |
 | firefly-vm | [firefly.nix](firefly.nix) | Firefly III personal finance |
+| firefly-importer-vm | [firefly-importer.nix](firefly-importer.nix) | Firefly III data importer for bank sync |
 
 ### Architecture
 
@@ -56,6 +57,7 @@ MicroVMs provide isolated environments for services that benefit from:
          ├── adguard-vm
          ├── firefox-vm
          ├── firefly-vm
+         ├── firefly-importer-vm
          ├── gitea-vm
          ├── matrix-synapse-vm
          ├── overseerr-vm, ombi-vm, tautulli-vm
