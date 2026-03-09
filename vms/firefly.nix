@@ -86,7 +86,6 @@ in
     };
   };
 
-  # Outer Nginx listens on 11062 and proxies to Firefly's PHP-FPM Nginx on :80
   services.nginx.virtualHosts."firefly".listen = lib.mkForce [
     {
       addr = "0.0.0.0";
