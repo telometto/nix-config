@@ -14,6 +14,7 @@ let
     pkgs.envsubst
     pkgs.tree
     pkgs.ffmpeg
+    pkgs.jq
   ];
 
   networking = [
@@ -23,6 +24,7 @@ let
     pkgs.wget
     pkgs.wireguard-tools
     pkgs.bridge-utils
+    pkgs.nixos-firewall-tool
   ];
 
   system = [
