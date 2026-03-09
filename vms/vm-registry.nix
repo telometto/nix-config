@@ -230,16 +230,6 @@
     vcpu = 2;
   };
 
-  "firefly-importer" = {
-    name = "firefly-importer";
-    cid = 123;
-    mac = "02:00:00:00:00:18";
-    ip = "10.100.0.63";
-    port = 11063;
-    mem = 512;
-    vcpu = 1;
-  };
-
   brave = {
     name = "brave";
     cid = 122; # Fixed: was 116 (conflicted with wireguard)
@@ -249,5 +239,16 @@
     mem = 4096;
     vcpu = 4;
     gateway = "10.100.0.11";
+  };
+
+  "firefly-importer" = {
+    name = "firefly-importer";
+    cid = 123;
+    mac = "02:00:00:00:00:18";
+    ip = "10.100.0.63";
+    port = 11063;
+    mem = 512;
+    vcpu = 1;
+    tapId = "vm-ff-import";
   };
 }
