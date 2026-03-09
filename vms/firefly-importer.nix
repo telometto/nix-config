@@ -9,7 +9,7 @@
 let
   registry = import ./vm-registry.nix;
   reg = registry."firefly-importer";
-  fireflyReg = registry.firefly;
+  fireflyUrl = "https://finance.${VARS.domains.public}";
 in
 {
   imports = [
@@ -55,7 +55,6 @@ in
 
     extraCommands = ''
       ${pkgs.iptables}/bin/iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-      ${pkgs.iptables}/bin/iptables -A OUTPUT -d ${fireflyReg.ip} -p tcp --dport ${toString fireflyReg.port} -j ACCEPT
       ${pkgs.iptables}/bin/iptables -A OUTPUT -d 10.0.0.0/8 -m conntrack --ctstate NEW -j REJECT
       ${pkgs.iptables}/bin/iptables -A OUTPUT -d 172.16.0.0/12 -m conntrack --ctstate NEW -j REJECT
       ${pkgs.iptables}/bin/iptables -A OUTPUT -d 192.168.0.0/16 -m conntrack --ctstate NEW -j REJECT
@@ -63,7 +62,6 @@ in
 
     extraStopCommands = ''
       ${pkgs.iptables}/bin/iptables -D OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT || true
-      ${pkgs.iptables}/bin/iptables -D OUTPUT -d ${fireflyReg.ip} -p tcp --dport ${toString fireflyReg.port} -j ACCEPT || true
       ${pkgs.iptables}/bin/iptables -D OUTPUT -d 10.0.0.0/8 -m conntrack --ctstate NEW -j REJECT || true
       ${pkgs.iptables}/bin/iptables -D OUTPUT -d 172.16.0.0/12 -m conntrack --ctstate NEW -j REJECT || true
       ${pkgs.iptables}/bin/iptables -D OUTPUT -d 192.168.0.0/16 -m conntrack --ctstate NEW -j REJECT || true
@@ -81,8 +79,7 @@ in
     virtualHost = "firefly-importer";
 
     settings = {
-      FIREFLY_III_URL = "http://${fireflyReg.ip}:${toString fireflyReg.port}";
-      VANITY_URL = "https://finance.${VARS.domains.public}";
+      FIREFLY_III_URL = fireflyUrl;
       ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly-importer/enable_banking_app_id".path;
       ENABLE_BANKING_PRIVATE_KEY_FILE =
         config.sops.secrets."firefly-importer/enable_banking_private_key".path;
