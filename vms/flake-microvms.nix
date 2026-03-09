@@ -159,4 +159,10 @@ in
     sopsModule
     ./firefly.nix
   ];
+
+  firefly-importer-vm = mkMicrovm [
+    microvmModule
+    sopsModule
+    ./firefly-importer.nix
+  ];
 }
