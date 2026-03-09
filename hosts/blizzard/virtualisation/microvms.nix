@@ -260,6 +260,20 @@ let
         ];
       };
     };
+
+    "firefly-importer" = {
+      enable = false;
+      portForwards = [ (mkPortForward "tcp" 11063 null) ];
+      ingressHosts = [ "finance-import" ];
+      reverseProxy = {
+        subdomain = "finance-import";
+        url = vmUrl "firefly-importer";
+        middlewares = [
+          "firefly-headers"
+          "crowdsec"
+        ];
+      };
+    };
   };
 in
 {
