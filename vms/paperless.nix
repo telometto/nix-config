@@ -73,14 +73,17 @@ in
       "d /var/lib/protonmail-bridge 0700 protonmail-bridge protonmail-bridge -"
     ];
 
-    services.paperless-consumer.environment.TMPDIR = paperlessTmpDir;
-    services.paperless-scheduler = {
-      after = [ "sops-install-secrets.service" ];
-      requires = [ "sops-install-secrets.service" ];
-      environment.TMPDIR = paperlessTmpDir;
+    services = {
+      paperless-consumer.environment.TMPDIR = paperlessTmpDir;
+      paperless-task-queue.environment.TMPDIR = paperlessTmpDir;
+      paperless-web.environment.TMPDIR = paperlessTmpDir;
+
+      paperless-scheduler = {
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+        environment.TMPDIR = paperlessTmpDir;
+      };
     };
-    services.paperless-task-queue.environment.TMPDIR = paperlessTmpDir;
-    services.paperless-web.environment.TMPDIR = paperlessTmpDir;
   };
 
   sys = {
