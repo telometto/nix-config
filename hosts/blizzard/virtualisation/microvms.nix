@@ -248,7 +248,7 @@ let
     };
 
     firefly = {
-      enable = false;
+      enable = true;
       portForwards = [ (mkPortForward "tcp" 11062 null) ];
       ingressHosts = [ "finance" ];
       reverseProxy = {
@@ -262,11 +262,11 @@ let
     };
 
     "firefly-importer" = {
-      enable = false;
+      enable = true;
       portForwards = [ (mkPortForward "tcp" 11063 null) ];
-      ingressHosts = [ "finance-import" ];
+      ingressHosts = [ "finimport" ];
       reverseProxy = {
-        subdomain = "finance-import";
+        subdomain = "finimport";
         url = vmUrl "firefly-importer";
         middlewares = [
           "firefly-headers"

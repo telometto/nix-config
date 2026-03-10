@@ -38,13 +38,13 @@ in
     useSystemdActivation = true;
 
     secrets = {
-      "firefly-importer/enable_banking_app_id" = {
+      "firefly/eb_app_id" = {
         mode = "0400";
         owner = "firefly-iii-data-importer";
         group = "nginx";
       };
 
-      "firefly-importer/enable_banking_private_key" = {
+      "firefly/eb_key" = {
         mode = "0400";
         owner = "firefly-iii-data-importer";
         group = "nginx";
@@ -91,6 +91,8 @@ in
       TRUSTED_PROXIES = "**";
     };
   };
+
+  security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   # EnableBanking production callbacks need HTTPS, so this VM is ready for a dedicated ingress URL.
   services.nginx.virtualHosts.${importerDomain}.listen = lib.mkForce [
