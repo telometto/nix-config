@@ -264,9 +264,9 @@ let
     "firefly-importer" = {
       enable = true;
       portForwards = [ (mkPortForward "tcp" 11063 null) ];
-      ingressHosts = [ "finance-import" ];
+      ingressHosts = [ "finimport" ];
       reverseProxy = {
-        subdomain = "finance-import";
+        subdomain = "finimport";
         url = vmUrl "firefly-importer";
         middlewares = [
           "firefly-headers"

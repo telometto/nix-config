@@ -79,6 +79,7 @@ in
 
     settings = {
       FIREFLY_III_URL = fireflyUrl;
+      FIREFLY_III_CLIENT_ID = "6";
       ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly/eb_app_id".path;
       ENABLE_BANKING_PRIVATE_KEY_FILE = config.sops.secrets."firefly/eb_key".path;
       TRUSTED_PROXIES = "**";
