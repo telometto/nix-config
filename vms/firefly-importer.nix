@@ -85,6 +85,8 @@ in
     };
   };
 
+  security.sudo.wheelNeedsPassword = lib.mkForce false;
+
   # EnableBanking production callbacks need HTTPS, so this VM is ready for a dedicated ingress URL.
   services.nginx.virtualHosts."firefly-importer".listen = lib.mkForce [
     {

@@ -86,6 +86,8 @@ in
     };
   };
 
+  security.sudo.wheelNeedsPassword = lib.mkForce false;
+
   services.nginx.virtualHosts."firefly".listen = lib.mkForce [
     {
       addr = "0.0.0.0";
