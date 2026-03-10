@@ -7,8 +7,9 @@
   ...
 }:
 let
-  reg = (import ./vm-registry.nix)."firefly-importer";
-  fireflyReg = (import ./vm-registry.nix).firefly;
+  registry = import ./vm-registry.nix;
+  reg = registry."firefly-importer";
+  fireflyReg = registry.firefly;
   importerDomain = "finimport.${VARS.domains.public}";
   fireflyPublicUrl = "https://finance.${VARS.domains.public}";
   fireflyInternalUrl = "http://${fireflyReg.ip}:${toString fireflyReg.port}";
