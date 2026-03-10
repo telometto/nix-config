@@ -30,6 +30,11 @@ for lightweight virtualization.
 | firefly-vm | [firefly.nix](firefly.nix) | Firefly III personal finance |
 | firefly-importer-vm | [firefly-importer.nix](firefly-importer.nix) | Firefly III data importer for bank sync |
 
+The Firefly importer VM is configured to talk to Firefly III over the internal
+MicroVM network while keeping user-facing redirects on the public
+`finance.<domain>` URL. This avoids reverse-proxy and Cloudflare Access issues
+during the OAuth token exchange.
+
 ### Architecture
 
 MicroVMs provide isolated environments for services that benefit from:
