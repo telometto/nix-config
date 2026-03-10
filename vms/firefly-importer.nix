@@ -8,7 +8,10 @@
 }:
 let
   reg = (import ./vm-registry.nix)."firefly-importer";
-  fireflyUrl = "https://finance.${VARS.domains.public}";
+  fireflyReg = (import ./vm-registry.nix).firefly;
+  importerDomain = "finimport.${VARS.domains.public}";
+  fireflyPublicUrl = "https://finance.${VARS.domains.public}";
+  fireflyInternalUrl = "http://${fireflyReg.ip}:${toString fireflyReg.port}";
 in
 {
   imports = [
@@ -54,6 +57,7 @@ in
 
     extraCommands = ''
       ${pkgs.iptables}/bin/iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+      ${pkgs.iptables}/bin/iptables -A OUTPUT -p tcp -d ${fireflyReg.ip} --dport ${toString fireflyReg.port} -m conntrack --ctstate NEW -j ACCEPT
       ${pkgs.iptables}/bin/iptables -A OUTPUT -d 10.0.0.0/8 -m conntrack --ctstate NEW -j REJECT
       ${pkgs.iptables}/bin/iptables -A OUTPUT -d 172.16.0.0/12 -m conntrack --ctstate NEW -j REJECT
       ${pkgs.iptables}/bin/iptables -A OUTPUT -d 192.168.0.0/16 -m conntrack --ctstate NEW -j REJECT
@@ -61,6 +65,7 @@ in
 
     extraStopCommands = ''
       ${pkgs.iptables}/bin/iptables -D OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT || true
+      ${pkgs.iptables}/bin/iptables -D OUTPUT -p tcp -d ${fireflyReg.ip} --dport ${toString fireflyReg.port} -m conntrack --ctstate NEW -j ACCEPT || true
       ${pkgs.iptables}/bin/iptables -D OUTPUT -d 10.0.0.0/8 -m conntrack --ctstate NEW -j REJECT || true
       ${pkgs.iptables}/bin/iptables -D OUTPUT -d 172.16.0.0/12 -m conntrack --ctstate NEW -j REJECT || true
       ${pkgs.iptables}/bin/iptables -D OUTPUT -d 192.168.0.0/16 -m conntrack --ctstate NEW -j REJECT || true
@@ -75,19 +80,20 @@ in
   services.firefly-iii-data-importer = {
     enable = true;
     enableNginx = true;
-    virtualHost = "firefly-importer";
+    virtualHost = importerDomain;
 
     settings = {
-      FIREFLY_III_URL = fireflyUrl;
-      ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly-importer/enable_banking_app_id".path;
-      ENABLE_BANKING_PRIVATE_KEY_FILE =
-        config.sops.secrets."firefly-importer/enable_banking_private_key".path;
+      FIREFLY_III_URL = fireflyInternalUrl;
+      FIREFLY_III_CLIENT_ID = "8";
+      VANITY_URL = fireflyPublicUrl;
+      ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly/eb_app_id".path;
+      ENABLE_BANKING_PRIVATE_KEY_FILE = config.sops.secrets."firefly/eb_key".path;
       TRUSTED_PROXIES = "**";
     };
   };
 
   # EnableBanking production callbacks need HTTPS, so this VM is ready for a dedicated ingress URL.
-  services.nginx.virtualHosts."firefly-importer".listen = lib.mkForce [
+  services.nginx.virtualHosts.${importerDomain}.listen = lib.mkForce [
     {
       addr = "0.0.0.0";
       inherit (reg) port;
