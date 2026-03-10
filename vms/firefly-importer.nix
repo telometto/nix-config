@@ -35,13 +35,13 @@ in
     useSystemdActivation = true;
 
     secrets = {
-      "firefly-importer/enable_banking_app_id" = {
+      "firefly/eb_app_id" = {
         mode = "0400";
         owner = "firefly-iii-data-importer";
         group = "nginx";
       };
 
-      "firefly-importer/enable_banking_private_key" = {
+      "firefly/eb_key" = {
         mode = "0400";
         owner = "firefly-iii-data-importer";
         group = "nginx";
@@ -79,9 +79,9 @@ in
 
     settings = {
       FIREFLY_III_URL = fireflyUrl;
-      ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly-importer/enable_banking_app_id".path;
+      ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly/eb_app_id".path;
       ENABLE_BANKING_PRIVATE_KEY_FILE =
-        config.sops.secrets."firefly-importer/enable_banking_private_key".path;
+        config.sops.secrets."firefly/eb_key".path;
       TRUSTED_PROXIES = "**";
     };
   };
