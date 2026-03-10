@@ -27,5 +27,5 @@ let
   ];
 in
 {
-  environment.systemPackages = media ++ kubernetes ++ security ++ storage;
+  environment.systemPackages = media ++ security ++ storage;
 }
