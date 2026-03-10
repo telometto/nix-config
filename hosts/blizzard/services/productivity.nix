@@ -5,7 +5,7 @@
 
     glance = {
       enable = true;
-      port = 11063;
+      port = 11064;
 
       reverseProxy = {
         enable = true;
