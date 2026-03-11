@@ -6,6 +6,17 @@
   ...
 }:
 {
+  hardware.ksm = {
+    enable = true;
+    sleep = 50;
+  };
+
+  boot.kernelParams = [
+    "zswap.enabled=1"
+    "zswap.compressor=zstd"
+    "zswap.max_pool_percent=20"
+  ];
+
   networking = {
     hostName = lib.mkForce "blizzard";
     hostId = lib.mkForce "86bc16e3";
@@ -58,6 +69,8 @@
 
     services = {
       k3s.enable = false;
+
+      maintenance.zram.enable = lib.mkForce false;
 
       resolved = {
         enableDNS = false;
