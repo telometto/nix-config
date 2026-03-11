@@ -4,7 +4,7 @@ let
 in
 {
   options.sys.services.maintenance = {
-    enable = lib.mkEnableOption "Basic maintenance timers/services (fstrim, firmware updates, zram, removable-media helpers)";
+    enable = lib.mkEnableOption "Basic maintenance timers/services (always enables fstrim; optional subfeatures add firmware updates, zram, and removable-media helpers)";
 
     desktop.enable = lib.mkEnableOption "desktop-oriented removable-media helpers (devmon, gvfs, udisks2)";
 
@@ -38,8 +38,7 @@ in
 
     zramSwap = lib.mkIf cfg.zram.enable {
       enable = true;
-      algorithm = cfg.zram.algorithm;
-      memoryPercent = cfg.zram.memoryPercent;
+      inherit (cfg.zram) algorithm memoryPercent;
     };
   };
 }
