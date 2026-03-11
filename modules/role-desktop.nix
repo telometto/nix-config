@@ -49,7 +49,12 @@ in
 
         timesyncd.enable = true;
         resolved.enable = true;
-        maintenance.enable = true;
+        maintenance = {
+          enable = true;
+          desktop.enable = true;
+          firmware.enable = true;
+          zram.enable = true;
+        };
         autoUpgrade.enable = false;
         pipewire.enable = true;
         printing.enable = true;
