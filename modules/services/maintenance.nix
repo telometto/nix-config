@@ -4,8 +4,7 @@ let
 in
 {
   options.sys.services.maintenance = {
-    enable =
-      lib.mkEnableOption "Basic maintenance timers/services (fstrim, firmware updates, zram, removable-media helpers)";
+    enable = lib.mkEnableOption "Basic maintenance timers/services (fstrim, firmware updates, zram, removable-media helpers)";
 
     desktop.enable = lib.mkEnableOption "desktop-oriented removable-media helpers (devmon, gvfs, udisks2)";
 
