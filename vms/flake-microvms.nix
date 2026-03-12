@@ -165,4 +165,10 @@ in
     sopsModule
     ./firefly-importer.nix
   ];
+
+  immich-vm = mkMicrovm [
+    microvmModule
+    sopsModule
+    ./immich.nix
+  ];
 }

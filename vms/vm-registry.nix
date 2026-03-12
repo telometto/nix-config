@@ -251,4 +251,14 @@
     vcpu = 1;
     tapId = "vm-ff-import";
   };
+
+  immich = {
+    name = "immich";
+    cid = 124;
+    mac = "02:00:00:00:00:19";
+    ip = "10.100.0.70";
+    port = 11070;
+    mem = 8192;
+    vcpu = 4;
+  };
 }
