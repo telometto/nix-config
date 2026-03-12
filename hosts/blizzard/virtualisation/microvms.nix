@@ -274,6 +274,16 @@ let
         ];
       };
     };
+
+    immich = {
+      enable = true;
+      portForwards = [ (mkPortForward "tcp" 11070 null) ];
+      ingressHosts = [ "photos" ];
+      reverseProxy = {
+        subdomain = "photos";
+        url = vmUrl "immich";
+      };
+    };
   };
 in
 {
