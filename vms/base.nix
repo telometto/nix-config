@@ -65,8 +65,8 @@
     # Adds/removes contiguous memory blocks instead of page-level ballooning.
     # Better for large VMs that need elastic scaling (e.g. 4 GB → 32 GB),
     # but coarser granularity (128 MB blocks) makes it less suited for small VMs.
-    hotplugMem = 5120; # max additional memory in MB
-    hotpluggedMem = 0; # how much of hotplugMem is active at boot
+    # hotplugMem = 5120; # max additional memory in MB
+    # hotpluggedMem = 0; # how much of hotplugMem is active at boot
   };
 
   services = {
@@ -106,8 +106,6 @@
     };
   };
 
-  systemd.coredump.enable = false;
-
   security = {
     sudo.wheelNeedsPassword = true;
 
@@ -137,10 +135,6 @@
     logRefusedConnections = false;
   };
 
-  environment.etc."profile.local".text = ''
-    umask 027
-  '';
-
   time.timeZone = lib.mkDefault "UTC";
   i18n.defaultLocale = lib.mkDefault "en_US.UTF-8";
 
@@ -160,11 +154,17 @@
     nixos.enable = false;
   };
 
-  environment.systemPackages = with pkgs; [
+  environment = {
+    etc."profile.local".text = ''
+      umask 027
+    '';
+
+    systemPackages = with pkgs; [
     vim
     htop
     curl
   ];
+  };
 
   # Common VM user and persistence (shared by all MicroVMs)
   users.users.admin = {
@@ -175,9 +175,13 @@
     ];
   };
 
-  systemd.tmpfiles.rules = [
-    "d /persist/ssh 0700 root root -"
-  ];
+  systemd = {
+    coredump.enable = false;
+
+    tmpfiles.rules = [
+      "d /persist/ssh 0700 root root -"
+    ];
+  };
 
   system.stateVersion = "24.11";
 }

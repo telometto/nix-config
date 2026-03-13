@@ -60,11 +60,6 @@ in
     };
   };
 
-  sys.secrets = {
-    firefoxUser = config.sops.secrets."firefox/user".path;
-    firefoxPassword = config.sops.secrets."firefox/password".path;
-  };
-
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
   networking.firewall.allowedTCPPorts = [
@@ -88,6 +83,11 @@ in
   };
 
   sys = {
+    secrets = {
+      firefoxUser = config.sops.secrets."firefox/user".path;
+      firefoxPassword = config.sops.secrets."firefox/password".path;
+    };
+
     virtualisation.enable = true;
 
     services = {

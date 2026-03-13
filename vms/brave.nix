@@ -60,11 +60,6 @@ in
     };
   };
 
-  sys.secrets = {
-    braveUser = config.sops.secrets."brave/user".path;
-    bravePassword = config.sops.secrets."brave/password".path;
-  };
-
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
   networking.firewall.allowedTCPPorts = [
@@ -87,6 +82,11 @@ in
   };
 
   sys = {
+secrets = {
+    braveUser = config.sops.secrets."brave/user".path;
+    bravePassword = config.sops.secrets."brave/password".path;
+  };
+
     virtualisation.enable = true;
 
     services = {

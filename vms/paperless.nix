@@ -58,11 +58,6 @@ in
     };
   };
 
-  sys.secrets = {
-    paperlessKeyFile = config.sops.secrets."paperless/admin_password".path;
-    paperlessSecretKeyFile = config.sops.secrets."paperless/secret_key".path;
-  };
-
   networking.firewall.allowedTCPPorts = [ reg.port ];
 
   systemd = {
@@ -87,6 +82,11 @@ in
   };
 
   sys = {
+    secrets = {
+    paperlessKeyFile = config.sops.secrets."paperless/admin_password".path;
+    paperlessSecretKeyFile = config.sops.secrets."paperless/secret_key".path;
+  };
+  
     services = {
       protonmail-bridge.enable = true;
 
