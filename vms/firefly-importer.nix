@@ -78,7 +78,11 @@ in
     requires = [ "sops-install-secrets.service" ];
   };
 
-  services.firefly-iii-data-importer = {
+  security.sudo.wheelNeedsPassword = lib.mkForce false;
+
+  # EnableBanking production callbacks need HTTPS, so this VM is ready for a dedicated ingress URL.
+  services = {
+    firefly-iii-data-importer = {
     enable = true;
     enableNginx = true;
     virtualHost = importerDomain;
@@ -93,13 +97,10 @@ in
     };
   };
 
-  security.sudo.wheelNeedsPassword = lib.mkForce false;
-
-  # EnableBanking production callbacks need HTTPS, so this VM is ready for a dedicated ingress URL.
-  services.nginx.virtualHosts.${importerDomain}.listen = lib.mkForce [
+    nginx.virtualHosts.${importerDomain}.listen = lib.mkForce [
     {
       addr = "0.0.0.0";
       inherit (reg) port;
     }
-  ];
+  ];};
 }

@@ -51,8 +51,6 @@ in
     };
   };
 
-  sys.secrets.giteaLfsJwtSecretFile = config.sops.secrets."gitea/lfs_jwt_secret".path;
-
   networking.firewall.allowedTCPPorts = [
     reg.port
     2222
@@ -63,7 +61,10 @@ in
     "d /var/lib/postgresql 0700 postgres postgres -"
   ];
 
-  sys.services.gitea = {
+  sys = {
+    secrets.giteaLfsJwtSecretFile = config.sops.secrets."gitea/lfs_jwt_secret".path;
+    
+    services.gitea = {
     enable = true;
 
     inherit (reg) port;
@@ -108,5 +109,5 @@ in
 
       session.COOKIE_SECURE = true;
     };
-  };
+  };}
 }

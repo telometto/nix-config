@@ -268,7 +268,8 @@ in
   # --- Matrix Authentication Service (MAS) ---
   # MAS handles all auth flows (login, registration, OIDC) so
   # Element X and other MSC3861/OIDC-native clients can work.
-  sys.services.matrix-authentication-service = {
+  sys =  {
+    services = {matrix-authentication-service = {
     enable = true;
 
     port = 8081;
@@ -342,7 +343,7 @@ in
   };
 
   # --- Synapse ---
-  sys.services.matrix-synapse = {
+  matrix-synapse = {
     enable = true;
 
     port = 8008;
@@ -459,7 +460,7 @@ in
 
       caches.global_factor = 1.0;
     };
-  };
+  };};};
 
   # Nginx sits in front of Synapse (8008) and MAS (8081) on port 11060.
   # Routes auth-related paths to MAS, everything else to Synapse.

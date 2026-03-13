@@ -47,8 +47,6 @@ in
     };
   };
 
-  sys.secrets.fireflyAppKeyFile = config.sops.secrets."firefly/app_key".path;
-
   networking.firewall.allowedTCPPorts = [ reg.port ];
 
   systemd = {
@@ -69,7 +67,10 @@ in
     "en_US.UTF-8/UTF-8"
   ];
 
-  sys.services.firefly = {
+  sys = {
+    secrets.fireflyAppKeyFile = config.sops.secrets."firefly/app_key".path;
+
+    services.firefly = {
     enable = true;
 
     reverseProxy = {
@@ -84,7 +85,7 @@ in
       SEND_LOGIN_NEW_IP_WARNING = true;
       DEFAULT_LOCALE = "nb_NO";
     };
-  };
+  };};
 
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 
