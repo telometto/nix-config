@@ -63,51 +63,52 @@ in
 
   sys = {
     secrets.giteaLfsJwtSecretFile = config.sops.secrets."gitea/lfs_jwt_secret".path;
-    
+
     services.gitea = {
-    enable = true;
-
-    inherit (reg) port;
-    openFirewall = true;
-    stateDir = "/var/lib/gitea";
-    repositoryRoot = "/var/lib/gitea/repositories";
-
-    database = {
-      type = "postgres";
-      createDatabase = true;
-    };
-
-    lfs = {
       enable = true;
 
-      allowPureSSH = true;
+      inherit (reg) port;
+      openFirewall = true;
+      stateDir = "/var/lib/gitea";
+      repositoryRoot = "/var/lib/gitea/repositories";
 
-      s3Backend = {
-        enable = false;
-
-        endpoint = "${config.networking.hostName}.${consts.tailscale.suffix}:${toString config.sys.services.seaweedfs.s3.port}";
-        bucket = "gitea-lfs";
-        accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;
-        secretAccessKeyFile = config.sys.secrets.seaweedfsSecretAccessKeyFile;
-        serveDirect = false;
-      };
-    };
-
-    disableRegistration = true;
-
-    reverseProxy.enable = false;
-
-    settings = {
-      server = {
-        ROOT_URL = "https://git.${VARS.domains.public}/";
-        START_SSH_SERVER = true;
-
-        SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
-        SSH_LISTEN_HOST = "0.0.0.0";
-        SSH_LISTEN_PORT = 2222;
+      database = {
+        type = "postgres";
+        createDatabase = true;
       };
 
-      session.COOKIE_SECURE = true;
+      lfs = {
+        enable = true;
+
+        allowPureSSH = true;
+
+        s3Backend = {
+          enable = false;
+
+          endpoint = "${config.networking.hostName}.${consts.tailscale.suffix}:${toString config.sys.services.seaweedfs.s3.port}";
+          bucket = "gitea-lfs";
+          accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;
+          secretAccessKeyFile = config.sys.secrets.seaweedfsSecretAccessKeyFile;
+          serveDirect = false;
+        };
+      };
+
+      disableRegistration = true;
+
+      reverseProxy.enable = false;
+
+      settings = {
+        server = {
+          ROOT_URL = "https://git.${VARS.domains.public}/";
+          START_SSH_SERVER = true;
+
+          SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
+          SSH_LISTEN_HOST = "0.0.0.0";
+          SSH_LISTEN_PORT = 2222;
+        };
+
+        session.COOKIE_SECURE = true;
+      };
     };
-  };}
+  };
 }

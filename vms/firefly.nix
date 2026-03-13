@@ -71,21 +71,22 @@ in
     secrets.fireflyAppKeyFile = config.sops.secrets."firefly/app_key".path;
 
     services.firefly = {
-    enable = true;
-
-    reverseProxy = {
       enable = true;
-      domain = "finance.${VARS.domains.public}";
-    };
 
-    settings = {
-      ALLOW_WEBHOOKS = false;
-      COOKIE_SECURE = "true";
-      SEND_REGISTRATION_MAIL = true;
-      SEND_LOGIN_NEW_IP_WARNING = true;
-      DEFAULT_LOCALE = "nb_NO";
+      reverseProxy = {
+        enable = true;
+        domain = "finance.${VARS.domains.public}";
+      };
+
+      settings = {
+        ALLOW_WEBHOOKS = false;
+        COOKIE_SECURE = "true";
+        SEND_REGISTRATION_MAIL = true;
+        SEND_LOGIN_NEW_IP_WARNING = true;
+        DEFAULT_LOCALE = "nb_NO";
+      };
     };
-  };};
+  };
 
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 

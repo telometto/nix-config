@@ -160,10 +160,10 @@
     '';
 
     systemPackages = with pkgs; [
-    vim
-    htop
-    curl
-  ];
+      vim
+      htop
+      curl
+    ];
   };
 
   # Common VM user and persistence (shared by all MicroVMs)
