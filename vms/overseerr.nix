@@ -31,12 +31,13 @@ in
 
   systemd = {
     tmpfiles.rules = [
-    "d /var/lib/overseerr 0755 overseerr overseerr -"
-  ];
-  
+      "d /var/lib/overseerr 0755 overseerr overseerr -"
+    ];
+
     services.overseerr = {
-    serviceConfig = {
-      DynamicUser = lib.mkForce false;
+      serviceConfig = {
+        DynamicUser = lib.mkForce false;
+      };
     };
-  };};
+  };
 }

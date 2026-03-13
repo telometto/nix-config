@@ -82,10 +82,10 @@ in
   };
 
   sys = {
-secrets = {
-    braveUser = config.sops.secrets."brave/user".path;
-    bravePassword = config.sops.secrets."brave/password".path;
-  };
+    secrets = {
+      braveUser = config.sops.secrets."brave/user".path;
+      bravePassword = config.sops.secrets."brave/password".path;
+    };
 
     virtualisation.enable = true;
 
