@@ -65,8 +65,8 @@
     # Adds/removes contiguous memory blocks instead of page-level ballooning.
     # Better for large VMs that need elastic scaling (e.g. 4 GB → 32 GB),
     # but coarser granularity (128 MB blocks) makes it less suited for small VMs.
-    hotplugMem = 5120; # max additional memory in MB
-    hotpluggedMem = 0; # how much of hotplugMem is active at boot
+    # hotplugMem = 5120; # max additional memory in MB
+    # hotpluggedMem = 0; # how much of hotplugMem is active at boot
   };
 
   services = {
@@ -104,6 +104,12 @@
         ClientAliveCountMax = 2;
       };
     };
+  };
+
+  zramSwap = {
+    enable = lib.mkDefault true;
+    algorithm = lib.mkDefault "zstd";
+    memoryPercent = lib.mkDefault 25;
   };
 
   systemd.coredump.enable = false;
