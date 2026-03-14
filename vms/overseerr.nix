@@ -22,10 +22,6 @@ in
 
   networking.firewall.allowedTCPPorts = [ reg.port ];
 
-  systemd.tmpfiles.rules = [
-    "d /var/lib/overseerr 0755 overseerr overseerr -"
-  ];
-
   sys.services.overseerr = {
     enable = true;
     inherit (reg) port;
@@ -33,9 +29,15 @@ in
     reverseProxy.enable = false;
   };
 
-  systemd.services.overseerr = {
-    serviceConfig = {
-      DynamicUser = lib.mkForce false;
+  systemd = {
+    tmpfiles.rules = [
+      "d /var/lib/overseerr 0755 overseerr overseerr -"
+    ];
+
+    services.overseerr = {
+      serviceConfig = {
+        DynamicUser = lib.mkForce false;
+      };
     };
   };
 }
