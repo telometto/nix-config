@@ -65,6 +65,10 @@
     # Adds/removes contiguous memory blocks instead of page-level ballooning.
     # Better for large VMs that need elastic scaling (e.g. 4 GB → 32 GB),
     # but coarser granularity (128 MB blocks) makes it less suited for small VMs.
+    #
+    # Note: virtio-mem hotplug is intentionally disabled by default in this base
+    # module to keep MicroVMs simple and avoid implicit runtime memory scaling.
+    # MicroVMs that need elastic memory should explicitly set these options:
     # hotplugMem = 5120; # max additional memory in MB
     # hotpluggedMem = 0; # how much of hotplugMem is active at boot
   };
