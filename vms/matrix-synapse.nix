@@ -268,196 +268,200 @@ in
   # --- Matrix Authentication Service (MAS) ---
   # MAS handles all auth flows (login, registration, OIDC) so
   # Element X and other MSC3861/OIDC-native clients can work.
-  sys.services.matrix-authentication-service = {
-    enable = true;
+  sys = {
+    services = {
+      matrix-authentication-service = {
+        enable = true;
 
-    port = 8081;
-    healthPort = 8082;
+        port = 8081;
+        healthPort = 8082;
 
-    publicBaseUrl = "https://matrix.${VARS.domains.public}/";
-    issuer = "https://matrix.${VARS.domains.public}/";
+        publicBaseUrl = "https://matrix.${VARS.domains.public}/";
+        issuer = "https://matrix.${VARS.domains.public}/";
 
-    database.createLocally = true;
+        database.createLocally = true;
 
-    email = {
-      from = ''"Matrix" <matrix@${VARS.domains.public}>'';
-      replyTo = ''"Matrix" <matrix@${VARS.domains.public}>'';
-      transport = "smtp";
-      mode = "starttls";
-      hostname = "smtp.protonmail.ch";
-      smtpPort = 587;
-      username = "matrix@${VARS.domains.public}";
-      # password injected at runtime by mas-secret service
-    };
-
-    passwords = {
-      enabled = true;
-      minimumComplexity = 3;
-    };
-
-    matrix = {
-      homeserver = "${VARS.domains.public}";
-      endpoint = "http://localhost:8008/";
-    };
-
-    clientId = "0000000000000000000SYNAPSE";
-
-    runtimeConfigFile = "/run/mas-secret/config.json";
-
-    # Enable registration and account management in MAS.
-    # Without this, MAS only advertises "login" in prompt_values_supported
-    # and all registration attempts redirect to login.
-    settings = {
-      # Include bcrypt as scheme v1 so migrated Synapse password hashes
-      # (which are bcrypt) keep working after syn2mas import.  New
-      # registrations and re-logins will upgrade hashes to argon2id (v2).
-      passwords.schemes = [
-        {
-          version = 1;
-          algorithm = "bcrypt";
-          unicode_normalization = true;
-          # If Synapse had a password pepper, set it here:
-          # secret = "your-synapse-pepper";
-        }
-        {
-          version = 2;
-          algorithm = "argon2id";
-        }
-      ];
-      account = {
-        password_registration_enabled = true;
-        email_change_allowed = true;
-        displayname_change_allowed = true;
-        password_change_allowed = true;
-      };
-      # Allow dynamic client registration so Element X (and other
-      # OIDC-native clients) can register themselves as OAuth clients.
-      # Without this, MAS rejects the POST to /oauth2/registration
-      # and Element X reports "can't reach this homeserver".
-      policy.data.client_registration = {
-        allow_host_mismatch = true;
-        allow_insecure_uris = false;
-      };
-    };
-  };
-
-  # --- Synapse ---
-  sys.services.matrix-synapse = {
-    enable = true;
-
-    port = 8008;
-    serverName = VARS.domains.public;
-    openFirewall = false;
-
-    database.createLocally = true;
-    urlPreview.enable = true;
-
-    extraConfigFiles = [
-      "/run/matrix-synapse-secret/shared-secret.yaml"
-    ];
-
-    publicBaseUrl = "https://matrix.${VARS.domains.public}";
-
-    reverseProxy.enable = false;
-
-    # Delegate core login and registration flows to MAS; other auth-related
-    # endpoints (for example password changes) are still handled by Synapse.
-    authDelegation = {
-      enable = true;
-      issuer = "https://matrix.${VARS.domains.public}/";
-      clientId = "0000000000000000000SYNAPSE";
-      accountManagementUrl = "https://matrix.${VARS.domains.public}/account/";
-      masEndpoint = "http://localhost:${toString config.sys.services.matrix-authentication-service.port}/";
-    };
-
-    settings = {
-      # Let users browse other servers' public room directories
-      allow_public_rooms_over_federation = true;
-
-      # QR code device linking (MSC4108) — exposes /_synapse/client/rendezvous
-      # and advertises support in /versions for Element's "Link new device" flow
-      experimental_features.msc4108_enabled = true;
-
-      # Suppress warning about trusting the default matrix.org key server
-      suppress_key_server_warning = true;
-
-      # Auto-purge cached remote media after 90 days to save disk
-      media_retention.remote_media_lifetime = "90d";
-
-      # Allow uploads up to 90 MB
-      max_upload_size = "90M";
-
-      # Disable presence (online/offline tracking) to reduce resource usage
-      presence.enabled = false;
-
-      # Disable Synapse's built-in well-known — Nginx handles it
-      serve_server_wellknown = false;
-
-      # --- Access control ---
-      # Registration and password policy are now managed by MAS.
-      # These Synapse-side settings remain for non-auth access control.
-
-      allow_guest_access = false;
-      allow_public_rooms_without_auth = false;
-      require_auth_for_profile_requests = true;
-      limit_profile_requests_to_users_who_share_rooms = true;
-
-      # Email/SMTP config (including smtp_pass) is injected at runtime
-      # via /run/matrix-synapse-secret/shared-secret.yaml.
-
-      admin_contact = "mailto:matrix@${VARS.domains.public}";
-
-      # --- Federation hardening ---
-
-      federation_client_minimum_tls_version = "1.2";
-      allow_device_name_lookup_over_federation = false;
-
-      # --- Rate limiting ---
-
-      rc_message = {
-        per_second = 0.5;
-        burst_count = 15;
-      };
-
-      rc_registration = {
-        per_second = 0.05;
-        burst_count = 3;
-      };
-
-      rc_login = {
-        address = {
-          per_second = 0.1;
-          burst_count = 5;
+        email = {
+          from = ''"Matrix" <matrix@${VARS.domains.public}>'';
+          replyTo = ''"Matrix" <matrix@${VARS.domains.public}>'';
+          transport = "smtp";
+          mode = "starttls";
+          hostname = "smtp.protonmail.ch";
+          smtpPort = 587;
+          username = "matrix@${VARS.domains.public}";
+          # password injected at runtime by mas-secret service
         };
-        account = {
-          per_second = 0.1;
-          burst_count = 5;
+
+        passwords = {
+          enabled = true;
+          minimumComplexity = 3;
         };
-        failed_attempts = {
-          per_second = 0.05;
-          burst_count = 3;
+
+        matrix = {
+          homeserver = "${VARS.domains.public}";
+          endpoint = "http://localhost:8008/";
+        };
+
+        clientId = "0000000000000000000SYNAPSE";
+
+        runtimeConfigFile = "/run/mas-secret/config.json";
+
+        # Enable registration and account management in MAS.
+        # Without this, MAS only advertises "login" in prompt_values_supported
+        # and all registration attempts redirect to login.
+        settings = {
+          # Include bcrypt as scheme v1 so migrated Synapse password hashes
+          # (which are bcrypt) keep working after syn2mas import.  New
+          # registrations and re-logins will upgrade hashes to argon2id (v2).
+          passwords.schemes = [
+            {
+              version = 1;
+              algorithm = "bcrypt";
+              unicode_normalization = true;
+              # If Synapse had a password pepper, set it here:
+              # secret = "your-synapse-pepper";
+            }
+            {
+              version = 2;
+              algorithm = "argon2id";
+            }
+          ];
+          account = {
+            password_registration_enabled = true;
+            email_change_allowed = true;
+            displayname_change_allowed = true;
+            password_change_allowed = true;
+          };
+          # Allow dynamic client registration so Element X (and other
+          # OIDC-native clients) can register themselves as OAuth clients.
+          # Without this, MAS rejects the POST to /oauth2/registration
+          # and Element X reports "can't reach this homeserver".
+          policy.data.client_registration = {
+            allow_host_mismatch = true;
+            allow_insecure_uris = false;
+          };
         };
       };
 
-      rc_joins = {
-        local = {
-          per_second = 0.2;
-          burst_count = 10;
+      # --- Synapse ---
+      matrix-synapse = {
+        enable = true;
+
+        port = 8008;
+        serverName = VARS.domains.public;
+        openFirewall = false;
+
+        database.createLocally = true;
+        urlPreview.enable = true;
+
+        extraConfigFiles = [
+          "/run/matrix-synapse-secret/shared-secret.yaml"
+        ];
+
+        publicBaseUrl = "https://matrix.${VARS.domains.public}";
+
+        reverseProxy.enable = false;
+
+        # Delegate core login and registration flows to MAS; other auth-related
+        # endpoints (for example password changes) are still handled by Synapse.
+        authDelegation = {
+          enable = true;
+          issuer = "https://matrix.${VARS.domains.public}/";
+          clientId = "0000000000000000000SYNAPSE";
+          accountManagementUrl = "https://matrix.${VARS.domains.public}/account/";
+          masEndpoint = "http://localhost:${toString config.sys.services.matrix-authentication-service.port}/";
         };
-        remote = {
-          per_second = 0.03;
-          burst_count = 5;
+
+        settings = {
+          # Let users browse other servers' public room directories
+          allow_public_rooms_over_federation = true;
+
+          # QR code device linking (MSC4108) — exposes /_synapse/client/rendezvous
+          # and advertises support in /versions for Element's "Link new device" flow
+          experimental_features.msc4108_enabled = true;
+
+          # Suppress warning about trusting the default matrix.org key server
+          suppress_key_server_warning = true;
+
+          # Auto-purge cached remote media after 90 days to save disk
+          media_retention.remote_media_lifetime = "90d";
+
+          # Allow uploads up to 90 MB
+          max_upload_size = "90M";
+
+          # Disable presence (online/offline tracking) to reduce resource usage
+          presence.enabled = false;
+
+          # Disable Synapse's built-in well-known — Nginx handles it
+          serve_server_wellknown = false;
+
+          # --- Access control ---
+          # Registration and password policy are now managed by MAS.
+          # These Synapse-side settings remain for non-auth access control.
+
+          allow_guest_access = false;
+          allow_public_rooms_without_auth = false;
+          require_auth_for_profile_requests = true;
+          limit_profile_requests_to_users_who_share_rooms = true;
+
+          # Email/SMTP config (including smtp_pass) is injected at runtime
+          # via /run/matrix-synapse-secret/shared-secret.yaml.
+
+          admin_contact = "mailto:matrix@${VARS.domains.public}";
+
+          # --- Federation hardening ---
+
+          federation_client_minimum_tls_version = "1.2";
+          allow_device_name_lookup_over_federation = false;
+
+          # --- Rate limiting ---
+
+          rc_message = {
+            per_second = 0.5;
+            burst_count = 15;
+          };
+
+          rc_registration = {
+            per_second = 0.05;
+            burst_count = 3;
+          };
+
+          rc_login = {
+            address = {
+              per_second = 0.1;
+              burst_count = 5;
+            };
+            account = {
+              per_second = 0.1;
+              burst_count = 5;
+            };
+            failed_attempts = {
+              per_second = 0.05;
+              burst_count = 3;
+            };
+          };
+
+          rc_joins = {
+            local = {
+              per_second = 0.2;
+              burst_count = 10;
+            };
+            remote = {
+              per_second = 0.03;
+              burst_count = 5;
+            };
+          };
+
+          # --- Session management ---
+
+          delete_stale_devices_after = "180d";
+          forget_rooms_on_leave = true;
+
+          # --- Performance ---
+
+          caches.global_factor = 1.0;
         };
       };
-
-      # --- Session management ---
-
-      delete_stale_devices_after = "180d";
-      forget_rooms_on_leave = true;
-
-      # --- Performance ---
-
-      caches.global_factor = 1.0;
     };
   };
 

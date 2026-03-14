@@ -78,28 +78,30 @@ in
     requires = [ "sops-install-secrets.service" ];
   };
 
-  services.firefly-iii-data-importer = {
-    enable = true;
-    enableNginx = true;
-    virtualHost = importerDomain;
-
-    settings = {
-      FIREFLY_III_URL = fireflyInternalUrl;
-      FIREFLY_III_CLIENT_ID = "8";
-      VANITY_URL = fireflyPublicUrl;
-      ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly/eb_app_id".path;
-      ENABLE_BANKING_PRIVATE_KEY_FILE = config.sops.secrets."firefly/eb_key".path;
-      TRUSTED_PROXIES = "**";
-    };
-  };
-
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   # EnableBanking production callbacks need HTTPS, so this VM is ready for a dedicated ingress URL.
-  services.nginx.virtualHosts.${importerDomain}.listen = lib.mkForce [
-    {
-      addr = "0.0.0.0";
-      inherit (reg) port;
-    }
-  ];
+  services = {
+    firefly-iii-data-importer = {
+      enable = true;
+      enableNginx = true;
+      virtualHost = importerDomain;
+
+      settings = {
+        FIREFLY_III_URL = fireflyInternalUrl;
+        FIREFLY_III_CLIENT_ID = "8";
+        VANITY_URL = fireflyPublicUrl;
+        ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly/eb_app_id".path;
+        ENABLE_BANKING_PRIVATE_KEY_FILE = config.sops.secrets."firefly/eb_key".path;
+        TRUSTED_PROXIES = "**";
+      };
+    };
+
+    nginx.virtualHosts.${importerDomain}.listen = lib.mkForce [
+      {
+        addr = "0.0.0.0";
+        inherit (reg) port;
+      }
+    ];
+  };
 }
