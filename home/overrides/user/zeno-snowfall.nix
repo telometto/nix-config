@@ -23,6 +23,7 @@
     pkgs.rustdesk-flutter
     pkgs.lmstudio
     pkgs.podman-desktop
+    pkgs.zola
   ];
 
   hm = {
