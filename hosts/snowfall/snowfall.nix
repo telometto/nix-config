@@ -72,10 +72,10 @@ in
     };
 
     ## Pull specific packages from different nixpkgs inputs
-    # overlays.fromInputs = {
+    overlays.fromInputs = {
     # nixpkgs-unstable = [ "lutris" ];
-    #  nixpkgs-stable = [ "vesktop" ];
-    # };
+      nixpkgs-stable = [ "podman-desktop" "teams-for-linux" ];
+    };
     #
     ## Add custom overlays
     # overlays.custom = [
