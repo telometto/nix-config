@@ -25,7 +25,7 @@ jobs:
       - name: Checkout main repository
         uses: actions/checkout@v6.0.2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0
 
       - name: Install Nix
@@ -42,7 +42,7 @@ jobs:
             ```
           pr-title: "🧹 chore(flake.lock): update"
           pr-labels: auto-merge
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Get commit message for compare URLs
         if: steps.update-flake-lock.outputs.pull-request-operation == 'created' || steps.update-flake-lock.outputs.pull-request-operation == 'updated'
