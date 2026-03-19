@@ -54,7 +54,7 @@ let
     };
 
     actual = {
-      enable = true;
+      enable = false;
       ingressHosts = [ "actual" ];
       reverseProxy = {
         subdomain = "actual";
@@ -248,7 +248,7 @@ let
     };
 
     firefly = {
-      enable = true;
+      enable = false;
       portForwards = [ (mkPortForward "tcp" 11062 null) ];
       ingressHosts = [ "finance" ];
       reverseProxy = {
@@ -262,7 +262,7 @@ let
     };
 
     "firefly-importer" = {
-      enable = true;
+      enable = false;
       portForwards = [ (mkPortForward "tcp" 11063 null) ];
       ingressHosts = [ "finimport" ];
       reverseProxy = {
@@ -276,7 +276,7 @@ let
     };
 
     immich = {
-      enable = true;
+      enable = false;
       portForwards = [ (mkPortForward "tcp" 11070 null) ];
       ingressHosts = [ "photos" ];
       reverseProxy = {
