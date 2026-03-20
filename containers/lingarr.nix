@@ -1,10 +1,10 @@
 # Lingarr stack: automated subtitle translation with LibreTranslate + Ollama
 { lib, config, ... }:
 let
-  stackCfg = config.sys.virtualisation.podman.stacks.lingarr;
+  cfg = config.sys.containers.lingarr;
 in
 {
-  options.sys.virtualisation.podman.stacks.lingarr = {
+  options.sys.containers.lingarr = {
     mediaDir = lib.mkOption {
       type = lib.types.str;
       default = "/rpool/unenc/media/data/media";
@@ -29,9 +29,9 @@ in
           DB_HANGFIRE_SQLITE_PATH = "/app/config/Hangfire.db";
         };
         volumes = [
-          "${stackCfg.mediaDir}/movies:/data/media/movies"
-          "${stackCfg.mediaDir}/tv:/data/media/tv"
-          "${stackCfg.dataDir}/lingarr:/app/config"
+          "${cfg.mediaDir}/movies:/data/media/movies"
+          "${cfg.mediaDir}/tv:/data/media/tv"
+          "${cfg.dataDir}/lingarr:/app/config"
         ];
         dependsOn = [
           "libretranslate"
@@ -47,7 +47,7 @@ in
           LT_LOAD_ONLY = "en,it,nb";
         };
         volumes = [
-          "${stackCfg.dataDir}/libretranslate:/home/libretranslate/.local/share/argos-translate"
+          "${cfg.dataDir}/libretranslate:/home/libretranslate/.local/share/argos-translate"
         ];
         extraOptions = [ "--security-opt=apparmor:unconfined" ];
       };
@@ -56,7 +56,7 @@ in
         image = "ollama/ollama:latest";
         ports = [ "11434:11434" ];
         volumes = [
-          "${stackCfg.dataDir}/ollama:/root/.ollama"
+          "${cfg.dataDir}/ollama:/root/.ollama"
         ];
         extraOptions = [ "--security-opt=apparmor:unconfined" ];
       };
