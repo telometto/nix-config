@@ -114,13 +114,22 @@ let
     ) enabledStacks
   );
 
-  duplicateNames =
-    let
-      names = map (e: e.name) allContainerNames;
-    in
-    lib.unique (
-      lib.filter (n: builtins.length (lib.filter (candidate: candidate == n) names) > 1) names
-    );
+  stackContainerNames = map (e: e.name) allContainerNames;
+
+  duplicateNames = lib.unique (
+    lib.filter (n: builtins.length (lib.filter (candidate: candidate == n) stackContainerNames) > 1) stackContainerNames
+  );
+
+  # Detect collisions between stack containers and non-stack oci-containers
+  nonStackContainerNames = builtins.attrNames (
+    builtins.removeAttrs
+      (config.virtualisation.oci-containers.containers or { })
+      stackContainerNames
+  );
+
+  stackVsNonStackCollisions = lib.filter
+    (n: builtins.elem n nonStackContainerNames)
+    (lib.unique stackContainerNames);
 
   # Merge all enabled stack containers into a single attrset for oci-containers
   mergedContainers = lib.mkMerge (
@@ -168,6 +177,10 @@ in
       {
         assertion = duplicateNames == [ ];
         message = "sys.virtualisation.podman.stacks: duplicate container names across stacks: ${lib.concatStringsSep ", " duplicateNames}";
+      }
+      {
+        assertion = stackVsNonStackCollisions == [ ];
+        message = "sys.virtualisation.podman.stacks: container names collide with non-stack oci-containers: ${lib.concatStringsSep ", " stackVsNonStackCollisions}";
       }
     ];
 
