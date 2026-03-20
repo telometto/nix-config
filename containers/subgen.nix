@@ -1,10 +1,10 @@
 # Subgen: automatic subtitle generation via Whisper
 { lib, config, ... }:
 let
-  stackCfg = config.sys.virtualisation.podman.stacks.subgen;
+  cfg = config.sys.containers.subgen;
 in
 {
-  options.sys.virtualisation.podman.stacks.subgen = {
+  options.sys.containers.subgen = {
     mediaDir = lib.mkOption {
       type = lib.types.str;
       default = "/rpool/unenc/media/data/media";
@@ -44,16 +44,16 @@ in
           LRC_FOR_AUDIO_FILES = "True";
           CUSTOM_REGROUP = "cm_sl=84_sl=42++++++1";
           USE_PATH_MAPPING = "True";
-          PATH_MAPPING_FROM = lib.dirOf stackCfg.mediaDir;
+          PATH_MAPPING_FROM = lib.dirOf cfg.mediaDir;
           PATH_MAPPING_TO = "/data";
           # TODO: migrate these tokens to sops-nix environmentFiles
           PLEXSERVER = "https://192.168.2.100:32400";
           JELLYFINSERVER = "http://192.168.2.100:8096";
         };
         volumes = [
-          "${stackCfg.mediaDir}/tv:/data/media/tv"
-          "${stackCfg.mediaDir}/movies:/data/media/movies"
-          "${stackCfg.modelDir}:/subgen/models"
+          "${cfg.mediaDir}/tv:/data/media/tv"
+          "${cfg.mediaDir}/movies:/data/media/movies"
+          "${cfg.modelDir}:/subgen/models"
         ];
         extraOptions = [
           "--tty"
