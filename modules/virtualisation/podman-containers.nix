@@ -14,9 +14,9 @@ let
       };
 
       autoStart = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Whether to start this container automatically on boot.";
+        type = lib.types.nullOr lib.types.bool;
+        default = null;
+        description = "Whether to start this container automatically on boot. Defaults to the stack-level autoStart if unset.";
       };
 
       environment = lib.mkOption {
@@ -140,7 +140,7 @@ let
             labels
             cmd
             ;
-          autoStart = c.autoStart;
+          autoStart = if c.autoStart != null then c.autoStart else stack.autoStart;
         }
         // lib.optionalAttrs (c.entrypoint != null) { inherit (c) entrypoint; }
         // lib.optionalAttrs (c.user != null) { inherit (c) user; }
@@ -161,6 +161,10 @@ in
 
   config = lib.mkIf (enabledStacks != { }) {
     assertions = [
+      {
+        assertion = config.sys.virtualisation.enable;
+        message = "sys.virtualisation.podman.stacks: sys.virtualisation.enable must be true when container stacks are enabled.";
+      }
       {
         assertion = duplicateNames == [ ];
         message = "sys.virtualisation.podman.stacks: duplicate container names across stacks: ${lib.concatStringsSep ", " duplicateNames}";
