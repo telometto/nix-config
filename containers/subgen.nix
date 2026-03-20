@@ -44,7 +44,7 @@ in
           LRC_FOR_AUDIO_FILES = "True";
           CUSTOM_REGROUP = "cm_sl=84_sl=42++++++1";
           USE_PATH_MAPPING = "True";
-          PATH_MAPPING_FROM = "/rpool/unenc/media/data";
+          PATH_MAPPING_FROM = lib.dirOf stackCfg.mediaDir;
           PATH_MAPPING_TO = "/data";
           # TODO: migrate these tokens to sops-nix environmentFiles
           PLEXSERVER = "https://192.168.2.100:32400";
