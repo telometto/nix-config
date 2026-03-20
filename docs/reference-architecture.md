@@ -98,6 +98,20 @@ nix flake check
 - [vms/base.nix](../vms/base.nix): Shared hardened base config for all VMs.
   Includes SSH host keys, admin user, firewall, and stateVersion.
 
+## Podman Container Stacks
+
+- Module: [modules/virtualisation/podman-containers.nix](../modules/virtualisation/podman-containers.nix)
+- Container definitions: [containers/](../containers/) (not auto-loaded; imported
+  explicitly by hosts)
+- Options: `sys.virtualisation.podman.stacks.<name>`
+  - `enable` — opt a stack into the host
+  - `autoStart` — start containers on boot (default: `true`)
+  - `containers.<name>` — individual container specs (image, ports, volumes,
+    environment, dependsOn, extraOptions, etc.)
+- Enabled stacks are merged into `virtualisation.oci-containers.containers`.
+- Requires `sys.virtualisation.enable = true` on the host (provides Podman +
+  OCI backend via [modules/virtualisation/virtualisation.nix](../modules/virtualisation/virtualisation.nix)).
+
 ## Traefik Helpers (`lib/traefik.nix`)
 
 - `mkSecurityHeaders { ... }`: Generate Traefik middleware attrsets with

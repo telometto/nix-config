@@ -47,7 +47,8 @@ hosts/blizzard/
 │   ├── crowdsec.nix
 │   └── traefik.nix
 └── virtualisation/         # VMs and containers
-    └── microvms.nix
+    ├── microvms.nix
+    └── containers.nix
 ```
 
 All `.nix` files are auto-imported recursively by [host-loader.nix](../host-loader.nix) — no explicit
