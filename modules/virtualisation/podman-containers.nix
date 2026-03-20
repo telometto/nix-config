@@ -117,19 +117,19 @@ let
   stackContainerNames = map (e: e.name) allContainerNames;
 
   duplicateNames = lib.unique (
-    lib.filter (n: builtins.length (lib.filter (candidate: candidate == n) stackContainerNames) > 1) stackContainerNames
+    lib.filter (
+      n: builtins.length (lib.filter (candidate: candidate == n) stackContainerNames) > 1
+    ) stackContainerNames
   );
 
   # Detect collisions between stack containers and non-stack oci-containers
   nonStackContainerNames = builtins.attrNames (
-    builtins.removeAttrs
-      (config.virtualisation.oci-containers.containers or { })
-      stackContainerNames
+    builtins.removeAttrs (config.virtualisation.oci-containers.containers or { }) stackContainerNames
   );
 
-  stackVsNonStackCollisions = lib.filter
-    (n: builtins.elem n nonStackContainerNames)
-    (lib.unique stackContainerNames);
+  stackVsNonStackCollisions = lib.filter (n: builtins.elem n nonStackContainerNames) (
+    lib.unique stackContainerNames
+  );
 
   # Merge all enabled stack containers into a single attrset for oci-containers
   mergedContainers = lib.mkMerge (
