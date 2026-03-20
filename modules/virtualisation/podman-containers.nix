@@ -106,7 +106,11 @@ let
   # Collect all container names per stack for duplicate detection
   allContainerNames = lib.flatten (
     lib.mapAttrsToList (
-      stackName: stack: map (cName: { inherit stackName; name = cName; }) (builtins.attrNames stack.containers)
+      stackName: stack:
+      map (cName: {
+        inherit stackName;
+        name = cName;
+      }) (builtins.attrNames stack.containers)
     ) enabledStacks
   );
 
@@ -125,7 +129,17 @@ let
       builtins.mapAttrs (
         _: c:
         {
-          inherit (c) image environment environmentFiles volumes ports dependsOn extraOptions labels cmd;
+          inherit (c)
+            image
+            environment
+            environmentFiles
+            volumes
+            ports
+            dependsOn
+            extraOptions
+            labels
+            cmd
+            ;
           autoStart = c.autoStart;
         }
         // lib.optionalAttrs (c.entrypoint != null) { inherit (c) entrypoint; }
