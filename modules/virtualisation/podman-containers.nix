@@ -60,7 +60,7 @@ let
 
   mergedContainers = lib.mkMerge (
     lib.mapAttrsToList (
-      _: stack: builtins.mapAttrs (_: c: { autoStart = stack.autoStart; } // c) stack.containers
+      _: stack: builtins.mapAttrs (_: c: { inherit (stack) autoStart; } // c) stack.containers
     ) enabledStacks
   );
 in
