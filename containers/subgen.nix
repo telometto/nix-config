@@ -1,5 +1,8 @@
 # Subgen: automatic subtitle generation via Whisper
-{ lib, ... }:
+{ lib, config, ... }:
+let
+  stackCfg = config.sys.virtualisation.podman.stacks.subgen;
+in
 {
   options.sys.virtualisation.podman.stacks.subgen = {
     mediaDir = lib.mkOption {
@@ -48,9 +51,9 @@
           JELLYFINSERVER = "http://192.168.2.100:8096";
         };
         volumes = [
-          "/rpool/unenc/media/data/media/tv:/data/media/tv"
-          "/rpool/unenc/media/data/media/movies:/data/media/movies"
-          "/rpool/unenc/apps/docker/subgen/models:/subgen/models"
+          "${stackCfg.mediaDir}/tv:/data/media/tv"
+          "${stackCfg.mediaDir}/movies:/data/media/movies"
+          "${stackCfg.modelDir}:/subgen/models"
         ];
         extraOptions = [
           "--tty"
