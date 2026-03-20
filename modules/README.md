@@ -22,7 +22,7 @@ create a module and it becomes available.
 | [security/](security/) | Security hardening | SSH hardening, secrets management |
 | [services/](services/) | Self-hosted services | `sys.services.grafana.enable` |
 | [storage/](storage/) | Storage: ZFS, NFS, sanoid | `sys.storage.zfs.enable` |
-| [virtualisation/](virtualisation/) | VM and container support | `sys.virtualisation.enable` |
+| [virtualisation/](virtualisation/) | VM and container support | `sys.virtualisation.enable`, `sys.virtualisation.podman.stacks.*` |
 
 ### Roles
 
