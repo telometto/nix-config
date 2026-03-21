@@ -11,7 +11,7 @@ let
   hasCredentials = cfg.customUserFile != null && cfg.passwordFile != null;
   credentialsEnvFile = "/run/firefox/credentials.env";
 
-  environment = {
+  environments = {
     TZ = cfg.timeZone;
     TITLE = cfg.title;
   }
@@ -21,16 +21,10 @@ let
     CUSTOM_HTTPS_PORT = toString cfg.httpsPort;
   };
 
-  ports = lib.optionals (!isHost) [
+  publishPorts = lib.optionals (!isHost) [
     "${toString cfg.httpPort}:3000"
     "${toString cfg.httpsPort}:3001"
   ];
-
-  extraOptions = [
-    "--shm-size=4g"
-  ]
-  ++ lib.optional cfg.enableDri "--device=/dev/dri"
-  ++ lib.optional isHost "--network=host";
 
   preStartScript = pkgs.writeShellScript "firefox-credentials" ''
     set -euo pipefail
@@ -129,7 +123,7 @@ in
       "d ${cfg.dataDir} 0750 root root -"
     ];
 
-    systemd.services.podman-firefox = lib.mkIf hasCredentials {
+    systemd.services.firefox = lib.mkIf hasCredentials {
       after = [ "sops-install-secrets.service" ];
       requires = [ "sops-install-secrets.service" ];
       serviceConfig = {
@@ -139,12 +133,17 @@ in
       };
     };
 
-    virtualisation.oci-containers.containers.firefox = {
-      inherit (cfg) image;
+    virtualisation.quadlet.containers.firefox = {
       autoStart = true;
-      inherit environment ports extraOptions;
-      volumes = [ "${cfg.dataDir}:/config" ];
-      environmentFiles = lib.optionals hasCredentials [ credentialsEnvFile ];
+      containerConfig = {
+        inherit (cfg) image;
+        inherit environments publishPorts;
+        shmSize = "4g";
+        volumes = [ "${cfg.dataDir}:/config" ];
+        networks = lib.optionals isHost [ "host" ];
+        devices = lib.optionals cfg.enableDri [ "/dev/dri" ];
+        environmentFiles = lib.optionals hasCredentials [ credentialsEnvFile ];
+      };
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
