@@ -31,7 +31,10 @@ let
     lingarr = {
       subdomain = "lingarr";
       url = "http://127.0.0.1:11025";
-      middlewares = [ "lingarr-headers" "crowdsec" ];
+      middlewares = [
+        "lingarr-headers"
+        "crowdsec"
+      ];
     };
   };
   generated = traefikLib.mkRoutes { domain = VARS.domains.public; } (generatedVmRoutes // hostRoutes);
