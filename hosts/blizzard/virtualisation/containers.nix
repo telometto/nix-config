@@ -1,13 +1,22 @@
-# Podman container stacks running on blizzard
-{ ... }:
+# Rootless Podman containers on blizzard (managed via quadlet-nix + Home Manager)
+{ VARS, ... }:
+let
+  username = VARS.users.zeno.user;
+in
 {
-  imports = [
-    ../../../containers/lingarr.nix
-    ../../../containers/subgen.nix
-  ];
+  users.users.${username} = {
+    linger = true;
+    autoSubUidGidRange = true;
+  };
 
-  sys.virtualisation.podman.stacks = {
-    lingarr.enable = true;
-    subgen.enable = true;
+  home-manager.users.${username} = {
+    imports = [
+      ../../../containers/subtitle-stack.nix
+    ];
+
+    services = {
+      lingarr.enable = true;
+      subgen.enable = true;
+    };
   };
 }
