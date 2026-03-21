@@ -67,6 +67,8 @@
 
     nix-colors.url = "github:misterio77/nix-colors";
 
+    quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
+
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -100,6 +102,7 @@
             inputs.sops-nix.nixosModules.sops
             inputs.lanzaboote.nixosModules.lanzaboote
             inputs.microvm.nixosModules.host
+            inputs.quadlet-nix.nixosModules.quadlet
           ]
           ++ extraModules;
           specialArgs = {
