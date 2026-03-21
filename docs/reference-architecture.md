@@ -98,19 +98,18 @@ nix flake check
 - [vms/base.nix](../vms/base.nix): Shared hardened base config for all VMs.
   Includes SSH host keys, admin user, firewall, and stateVersion.
 
-## Podman Container Stacks
+## Podman Containers (quadlet-nix)
 
-- Module: [modules/virtualisation/podman-containers.nix](../modules/virtualisation/podman-containers.nix)
-- Container definitions: [containers/](../containers/) (not auto-loaded; imported
-  explicitly by hosts)
-- Options: `sys.virtualisation.podman.stacks.<name>`
-  - `enable` — opt a stack into the host
-  - `autoStart` — start containers on boot (default: `true`)
-  - `containers.<name>` — individual container specs (image, ports, volumes,
-    environment, dependsOn, extraOptions, etc.)
-- Enabled stacks are merged into `virtualisation.oci-containers.containers`.
+- Backend: [quadlet-nix](https://github.com/SEIAROTg/quadlet-nix) — Podman
+  Quadlet systemd integration.
+- Container definitions: [containers/](../containers/) (Home Manager modules;
+  imported explicitly by hosts into `home-manager.users.<user>`)
+- Rootless containers use `virtualisation.quadlet.containers` in HM config.
+  The owning user needs `linger = true` and `autoSubUidGidRange = true`.
+- Rootful containers (e.g., inside MicroVMs) use `virtualisation.quadlet.containers`
+  at the NixOS system level.
 - Requires `sys.virtualisation.enable = true` on the host (provides Podman +
-  OCI backend via [modules/virtualisation/virtualisation.nix](../modules/virtualisation/virtualisation.nix)).
+  quadlet via [modules/virtualisation/virtualisation.nix](../modules/virtualisation/virtualisation.nix)).
 
 ## Traefik Helpers (`lib/traefik.nix`)
 
