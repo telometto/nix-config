@@ -7,10 +7,10 @@ specific user via `virtualisation.quadlet.containers`.
 
 ### Available Containers
 
-| Module | File | Containers | Purpose |
+| Option | File | Containers | Purpose |
 |--------|------|------------|---------|
-| lingarr | [lingarr.nix](lingarr.nix) | lingarr, libretranslate, ollama | Automated subtitle translation |
-| subgen | [subgen.nix](subgen.nix) | subgen | Whisper-based subtitle generation |
+| services.lingarr.enable | [subtitle-stack.nix](subtitle-stack.nix) | lingarr, libretranslate, ollama | Automated subtitle translation |
+| services.subgen.enable | [subtitle-stack.nix](subtitle-stack.nix) | subgen | Whisper-based subtitle generation |
 
 ### Architecture
 
