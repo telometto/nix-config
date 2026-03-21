@@ -31,6 +31,7 @@ let
     lingarr = {
       subdomain = "lingarr";
       url = "http://127.0.0.1:11025";
+      middlewares = [ "lingarr-headers" "crowdsec" ];
     };
   };
   generated = traefikLib.mkRoutes { domain = VARS.domains.public; } (generatedVmRoutes // hostRoutes);
@@ -115,6 +116,10 @@ in
           };
 
           security-headers = traefikLib.mkSecurityHeaders { };
+
+          lingarr-headers = traefikLib.mkSecurityHeaders {
+            csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:;";
+          };
 
           gitea-xfp-https.headers.customRequestHeaders.X-Forwarded-Proto = "https";
 
