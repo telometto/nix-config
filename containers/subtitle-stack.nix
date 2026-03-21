@@ -38,6 +38,18 @@ in
       default = "/rpool/unenc/apps/docker/subgen/models";
       description = "Path for Whisper model storage.";
     };
+
+    plexServer = lib.mkOption {
+      type = lib.types.str;
+      default = "https://192.168.2.100:32400";
+      description = "Plex server URL (including port).";
+    };
+
+    jellyfinServer = lib.mkOption {
+      type = lib.types.str;
+      default = "http://192.168.2.100:8096";
+      description = "Jellyfin server URL (including port).";
+    };
   };
 
   config = lib.mkIf anyEnabled {
@@ -153,8 +165,8 @@ in
                 USE_PATH_MAPPING = "True";
                 PATH_MAPPING_FROM = lib.dirOf cfgSubgen.mediaDir;
                 PATH_MAPPING_TO = "/data";
-                PLEXSERVER = "https://192.168.2.100:32400";
-                JELLYFINSERVER = "http://192.168.2.100:8096";
+                PLEXSERVER = cfgSubgen.plexServer;
+                JELLYFINSERVER = cfgSubgen.jellyfinServer;
               };
               volumes = [
                 "${cfgSubgen.mediaDir}/tv:/data/media/tv"
