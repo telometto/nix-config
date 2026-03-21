@@ -20,7 +20,7 @@
     pkgs.kdePackages.krdc
     pkgs.teams-for-linux
     pkgs.meld
-    pkgs.rustdesk-flutter
+    # pkgs.rustdesk-flutter
     pkgs.lmstudio
     pkgs.podman-desktop
     pkgs.zola
