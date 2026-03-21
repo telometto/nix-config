@@ -30,7 +30,7 @@ let
   hostRoutes = {
     lingarr = {
       subdomain = "lingarr";
-      url = "http://localhost:11025";
+      url = "http://127.0.0.1:11025";
     };
   };
   generated = traefikLib.mkRoutes { domain = VARS.domains.public; } (generatedVmRoutes // hostRoutes);
