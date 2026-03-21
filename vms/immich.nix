@@ -52,7 +52,7 @@ in
   sys.services.immich = {
     enable = true;
     host = "0.0.0.0";
-    port = reg.port;
+    inherit (reg) port;
     openFirewall = true;
   };
 }

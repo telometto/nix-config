@@ -24,6 +24,7 @@ in
     ../modules/services/brave.nix
     ../modules/virtualisation/virtualisation.nix
     inputs.sops-nix.nixosModules.sops
+    inputs.quadlet-nix.nixosModules.quadlet
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -78,7 +79,7 @@ in
       "d /var/lib/containers/tmp 0750 root root -"
     ];
 
-    services.podman-brave.environment.TMPDIR = "/var/lib/containers/tmp";
+    services.brave.environment.TMPDIR = "/var/lib/containers/tmp";
   };
 
   sys = {

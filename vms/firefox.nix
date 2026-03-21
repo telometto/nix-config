@@ -24,6 +24,7 @@ in
     ../modules/services/firefox.nix
     ../modules/virtualisation/virtualisation.nix
     inputs.sops-nix.nixosModules.sops
+    inputs.quadlet-nix.nixosModules.quadlet
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -79,7 +80,7 @@ in
     ];
 
     # Use persistent storage for image pull temp files instead of tmpfs
-    services.podman-firefox.environment.TMPDIR = "/var/lib/containers/tmp";
+    services.firefox.environment.TMPDIR = "/var/lib/containers/tmp";
   };
 
   sys = {
