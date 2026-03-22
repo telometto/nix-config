@@ -68,8 +68,8 @@ in
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         User = cfg.user;
-        Group = cfg.group;
-        SupplementaryGroups = [ "users" ];
+        Group = "users";
+        SupplementaryGroups = [ cfg.group ];
         ExecStart = execStart;
         Restart = "on-failure";
         UMask = "002";
