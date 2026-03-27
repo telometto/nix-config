@@ -31,6 +31,7 @@ in
       userDirs = {
         enable = lib.mkDefault true;
         inherit (cfg) createDirectories;
+        setSessionVariables = true;
       };
 
       autostart = {
