@@ -117,6 +117,8 @@ in
       git = {
         enable = lib.mkDefault true;
 
+        signing.format = "ssh";
+
         settings = {
           user = {
             name = cfg.git.userName;
