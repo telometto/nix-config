@@ -46,6 +46,7 @@ in
 
       systemPackages = [
         pkgs.kdePackages.ksshaskpass
+        pkgs.kdePackages.yakuake
         pkgs.kdePackages.kwallet
         pkgs.kdePackages.kwalletmanager
         # pkgs.kdePackages.kwallet-pam
