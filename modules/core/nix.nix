@@ -33,6 +33,4 @@
 
     extraOptions = lib.mkDefault "!include ${config.sops.templates."access-tokens".path}";
   };
-
-  systemd.services.nix-daemon.serviceConfig.LimitNOFILE = lib.mkDefault 1048576;
 }
