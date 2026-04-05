@@ -22,6 +22,18 @@ in
       default = "/rpool/unenc/apps/docker";
       description = "Base path for persistent application data.";
     };
+
+    libretranslate.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Run LibreTranslate in the subtitle-stack pod.";
+    };
+
+    ollama.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Run Ollama in the subtitle-stack pod. Disable when using a remote instance.";
+    };
   };
 
   options.services.subgen = {
@@ -71,7 +83,11 @@ in
         podConfig.publishPorts =
           lib.optionals cfgLingarr.enable [
             "11025:9876"
+          ]
+          ++ lib.optionals (cfgLingarr.enable && cfgLingarr.libretranslate.enable) [
             "11026:5000"
+          ]
+          ++ lib.optionals (cfgLingarr.enable && cfgLingarr.ollama.enable) [
             "11434:11434"
           ]
           ++ lib.optionals cfgSubgen.enable [
@@ -98,17 +114,17 @@ in
               pod = pods.subtitle-stack.ref;
             };
             unitConfig = {
-              Requires = [
-                containers.libretranslate.ref
-                containers.ollama.ref
-              ];
-              After = [
-                containers.libretranslate.ref
-                containers.ollama.ref
-              ];
+              Requires =
+                lib.optional cfgLingarr.libretranslate.enable containers.libretranslate.ref
+                ++ lib.optional cfgLingarr.ollama.enable containers.ollama.ref;
+              After =
+                lib.optional cfgLingarr.libretranslate.enable containers.libretranslate.ref
+                ++ lib.optional cfgLingarr.ollama.enable containers.ollama.ref;
             };
           };
+        })
 
+        (lib.mkIf (cfgLingarr.enable && cfgLingarr.libretranslate.enable) {
           libretranslate = {
             autoStart = true;
             containerConfig = {
@@ -122,7 +138,9 @@ in
               pod = pods.subtitle-stack.ref;
             };
           };
+        })
 
+        (lib.mkIf (cfgLingarr.enable && cfgLingarr.ollama.enable) {
           ollama = {
             autoStart = true;
             containerConfig = {
