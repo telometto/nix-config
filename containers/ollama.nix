@@ -34,6 +34,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    systemd.user.tmpfiles.rules = [
+      "d ${cfg.dataDir} 0755 - - -"
+    ];
+
     virtualisation.quadlet.containers.ollama = {
       autoStart = true;
       containerConfig = {
