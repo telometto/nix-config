@@ -67,6 +67,7 @@ in
 
     virtualisation.quadlet = {
       pods.subtitle-stack = {
+        podConfig.userns = "keep-id";
         podConfig.publishPorts =
           lib.optionals cfgLingarr.enable [
             "11025:9876"
@@ -94,7 +95,6 @@ in
                 "${cfgLingarr.mediaDir}/tv:/data/media/tv"
                 "${cfgLingarr.dataDir}/lingarr:/app/config"
               ];
-              userns = "keep-id";
               pod = pods.subtitle-stack.ref;
             };
             unitConfig = {
@@ -119,7 +119,6 @@ in
               volumes = [
                 "${cfgLingarr.dataDir}/libretranslate:/home/libretranslate/.local/share/argos-translate"
               ];
-              userns = "keep-id";
               pod = pods.subtitle-stack.ref;
             };
           };
@@ -131,7 +130,6 @@ in
               volumes = [
                 "${cfgLingarr.dataDir}/ollama:/root/.ollama"
               ];
-              userns = "keep-id";
               pod = pods.subtitle-stack.ref;
             };
           };
@@ -177,7 +175,6 @@ in
                 config.sops.templates."subgen-tokens".path
               ];
               podmanArgs = [ "--tty" ];
-              userns = "keep-id";
               pod = pods.subtitle-stack.ref;
             };
           };
