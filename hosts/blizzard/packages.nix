@@ -3,7 +3,7 @@ let
   media = [
     pkgs.jellyfin-ffmpeg # Conversion tools
     pkgs.jellyfin-web # Web client
-    pkgs.jellyseerr # Fork of Overseerr
+    pkgs.seerr # Fork of Overseerr
   ];
 
   kubernetes = [
