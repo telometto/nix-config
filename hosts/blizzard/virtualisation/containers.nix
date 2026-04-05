@@ -15,7 +15,10 @@ in
     ];
 
     services = {
-      lingarr.enable = true;
+      lingarr = {
+        enable = true;
+        ollama.enable = false;
+      };
       subgen.enable = true;
     };
   };
