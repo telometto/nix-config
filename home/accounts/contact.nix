@@ -102,8 +102,7 @@ in
           }
           {
             assertion =
-              acct.remote != null
-              || (acct.passwordSopsSecret == null && acct.passwordCommand == null);
+              acct.remote != null || (acct.passwordSopsSecret == null && acct.passwordCommand == null);
             message = "hm.accounts.contact.accounts.${name}: passwordSopsSecret and passwordCommand require remote to be configured.";
           }
         ]) cfg.accounts
