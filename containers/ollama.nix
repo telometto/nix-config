@@ -64,7 +64,7 @@ in
         ];
         environments = {
           OLLAMA_HOST = "0.0.0.0";
-          OLLAMA_MODELS = "/home/ollama/.ollama";
+          OLLAMA_MODELS = "/home/ollama/.ollama/models";
           HOME = "/home/ollama";
         }
         // cfg.extraEnvironments;
