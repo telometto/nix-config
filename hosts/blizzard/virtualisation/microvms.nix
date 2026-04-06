@@ -248,7 +248,7 @@ let
     };
 
     firefly = {
-      enable = false;
+      enable = true;
       portForwards = [ (mkPortForward "tcp" 11062 null) ];
       ingressHosts = [ "finance" ];
       reverseProxy = {
@@ -262,7 +262,7 @@ let
     };
 
     "firefly-importer" = {
-      enable = false;
+      enable = true;
       portForwards = [ (mkPortForward "tcp" 11063 null) ];
       ingressHosts = [ "finimport" ];
       reverseProxy = {
