@@ -1,8 +1,12 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 {
   hardware.cpu.intel.updateMicrocode = true;
 
   boot = {
+    # ZFS 2.4.x + kernel 6.18 causes swap cgroup crashes (lookup_swap_cgroup_id oops).
+    # Pin to latest ZFS-compatible LTS kernel until upstream fixes land.
+    kernelPackages = pkgs.linuxPackages_6_12;
+
     supportedFilesystems = [ "zfs" ];
     initrd.supportedFilesystems.zfs = true;
 
