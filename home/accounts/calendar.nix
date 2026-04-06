@@ -105,6 +105,16 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions =
+      lib.mapAttrsToList (name: acct: {
+        assertion = !(acct.passwordSopsSecret != null && acct.passwordCommand != null);
+        message = "hm.accounts.calendar.accounts.${name}: passwordSopsSecret and passwordCommand are mutually exclusive.";
+      }) cfg.accounts
+      ++ lib.optional (accountsWithSops != { }) {
+        assertion = config.hm.security.sops.enable;
+        message = "hm.accounts.calendar: passwordSopsSecret requires hm.security.sops.enable = true.";
+      };
+
     accounts.calendar = {
       basePath = lib.mkDefault cfg.basePath;
 
