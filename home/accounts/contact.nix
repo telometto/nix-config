@@ -94,10 +94,20 @@ in
 
   config = lib.mkIf cfg.enable {
     assertions =
-      lib.mapAttrsToList (name: acct: {
-        assertion = !(acct.passwordSopsSecret != null && acct.passwordCommand != null);
-        message = "hm.accounts.contact.accounts.${name}: passwordSopsSecret and passwordCommand are mutually exclusive.";
-      }) cfg.accounts
+      lib.flatten (
+        lib.mapAttrsToList (name: acct: [
+          {
+            assertion = !(acct.passwordSopsSecret != null && acct.passwordCommand != null);
+            message = "hm.accounts.contact.accounts.${name}: passwordSopsSecret and passwordCommand are mutually exclusive.";
+          }
+          {
+            assertion =
+              acct.remote != null
+              || (acct.passwordSopsSecret == null && acct.passwordCommand == null);
+            message = "hm.accounts.contact.accounts.${name}: passwordSopsSecret and passwordCommand require remote to be configured.";
+          }
+        ]) cfg.accounts
+      )
       ++ lib.optional (accountsWithSops != { }) {
         assertion = config.hm.security.sops.enable;
         message = "hm.accounts.contact: passwordSopsSecret requires hm.security.sops.enable = true.";
@@ -108,22 +118,23 @@ in
 
       accounts = lib.mapAttrs (
         name: acct:
-        { }
-        // lib.optionalAttrs (acct.local != { }) { inherit (acct) local; }
-        // lib.optionalAttrs (acct.remote != null) {
-          remote =
-            acct.remote
-            // lib.optionalAttrs (acct.passwordSopsSecret != null) {
-              passwordCommand = [
-                "cat"
-                config.sops.secrets.${acct.passwordSopsSecret}.path
-              ];
-            }
-            // lib.optionalAttrs (acct.passwordSopsSecret == null && acct.passwordCommand != null) {
-              inherit (acct) passwordCommand;
-            };
-        }
-        // acct.extraConfig
+        lib.recursiveUpdate acct.extraConfig (
+          { }
+          // lib.optionalAttrs (acct.local != { }) { inherit (acct) local; }
+          // lib.optionalAttrs (acct.remote != null) {
+            remote =
+              acct.remote
+              // lib.optionalAttrs (acct.passwordSopsSecret != null) {
+                passwordCommand = [
+                  "cat"
+                  config.sops.secrets.${acct.passwordSopsSecret}.path
+                ];
+              }
+              // lib.optionalAttrs (acct.passwordSopsSecret == null && acct.passwordCommand != null) {
+                inherit (acct) passwordCommand;
+              };
+          }
+        )
       ) cfg.accounts;
     };
 
