@@ -151,7 +151,7 @@ in
       realName = lib.mkOption {
         type = lib.types.str;
         default = "";
-        description = "Default display name applied to all accounts via mkDefault.";
+        description = "Default display name for email accounts.";
       };
 
       gpg = lib.mkOption {
