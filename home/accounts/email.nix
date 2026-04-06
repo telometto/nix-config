@@ -190,34 +190,35 @@ in
 
       accounts = lib.mapAttrs (
         name: acct:
-        {
-          inherit (acct)
-            enable
-            primary
-            flavor
-            address
-            realName
-            aliases
-            ;
-        }
-        // lib.optionalAttrs (acct.userName != null) { inherit (acct) userName; }
-        // lib.optionalAttrs (acct.imap != null) { inherit (acct) imap; }
-        // lib.optionalAttrs (acct.smtp != null) { inherit (acct) smtp; }
-        // lib.optionalAttrs (acct.jmap != null) { inherit (acct) jmap; }
-        // lib.optionalAttrs (acct.gpg != null) { inherit (acct) gpg; }
-        // lib.optionalAttrs (acct.signature != { }) { inherit (acct) signature; }
-        // lib.optionalAttrs (acct.folders != { }) { inherit (acct) folders; }
-        // lib.optionalAttrs (acct.maildir != null) { inherit (acct) maildir; }
-        // lib.optionalAttrs (acct.passwordSopsSecret != null) {
-          passwordCommand = [
-            "cat"
-            config.sops.secrets.${acct.passwordSopsSecret}.path
-          ];
-        }
-        // lib.optionalAttrs (acct.passwordSopsSecret == null && acct.passwordCommand != null) {
-          inherit (acct) passwordCommand;
-        }
-        // acct.extraConfig
+        lib.recursiveUpdate acct.extraConfig (
+          {
+            inherit (acct)
+              enable
+              primary
+              flavor
+              address
+              realName
+              aliases
+              ;
+          }
+          // lib.optionalAttrs (acct.userName != null) { inherit (acct) userName; }
+          // lib.optionalAttrs (acct.imap != null) { inherit (acct) imap; }
+          // lib.optionalAttrs (acct.smtp != null) { inherit (acct) smtp; }
+          // lib.optionalAttrs (acct.jmap != null) { inherit (acct) jmap; }
+          // lib.optionalAttrs (acct.gpg != null) { inherit (acct) gpg; }
+          // lib.optionalAttrs (acct.signature != { }) { inherit (acct) signature; }
+          // lib.optionalAttrs (acct.folders != { }) { inherit (acct) folders; }
+          // lib.optionalAttrs (acct.maildir != null) { inherit (acct) maildir; }
+          // lib.optionalAttrs (acct.passwordSopsSecret != null) {
+            passwordCommand = [
+              "cat"
+              config.sops.secrets.${acct.passwordSopsSecret}.path
+            ];
+          }
+          // lib.optionalAttrs (acct.passwordSopsSecret == null && acct.passwordCommand != null) {
+            inherit (acct) passwordCommand;
+          }
+        )
       ) cfg.accounts;
     };
 
