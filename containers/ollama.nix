@@ -21,15 +21,23 @@ in
     };
 
     image = lib.mkOption {
-      type = lib.types.str;
-      default = "ollama/ollama:latest";
-      description = "Container image to use.";
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Container image to use. Defaults to ollama/ollama:rocm when gpu.enable is true, ollama/ollama:latest otherwise.";
     };
 
     extraEnvironments = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
       description = "Additional environment variables for the Ollama container.";
+    };
+
+    gpu = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Pass through AMD GPU (/dev/dri, /dev/kfd) for hardware acceleration.";
+      };
     };
   };
 
@@ -41,17 +49,32 @@ in
     virtualisation.quadlet.containers.ollama = {
       autoStart = true;
       containerConfig = {
-        image = cfg.image;
+        image =
+          if cfg.image != null then
+            cfg.image
+          else if cfg.gpu.enable then
+            "ollama/ollama:rocm"
+          else
+            "ollama/ollama:latest";
         publishPorts = [
           "${toString cfg.port}:11434"
         ];
         volumes = [
-          "${cfg.dataDir}:/root/.ollama"
+          "${cfg.dataDir}:/home/ollama/.ollama"
         ];
         environments = {
           OLLAMA_HOST = "0.0.0.0";
+          OLLAMA_MODELS = "/home/ollama/.ollama/models";
+          HOME = "/home/ollama";
         }
         // cfg.extraEnvironments;
+        devices = lib.optionals cfg.gpu.enable [
+          "/dev/dri"
+          "/dev/kfd"
+        ];
+        addGroups = lib.optionals cfg.gpu.enable [
+          "keep-groups"
+        ];
         userns = "keep-id";
       };
     };
