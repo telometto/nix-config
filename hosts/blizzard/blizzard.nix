@@ -47,7 +47,7 @@
     };
 
     overlays.fromInputs = {
-      nixpkgs-unstable = [ "firefly-iii-data-importer" ];
+      # nixpkgs-unstable = [ "firefly-iii-data-importer" ];
       # nixpkgs-stable = [ "searxng" ];
       # nixpkgs-stable-latest = [ "beets" ];
     };
