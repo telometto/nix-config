@@ -17,6 +17,7 @@ in
     services.ollama-container = {
       enable = true;
       dataDir = "/home/${username}/.local/share/ollama";
+      gpu.enable = true;
     };
   };
 }
