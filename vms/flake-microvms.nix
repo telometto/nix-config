@@ -16,6 +16,7 @@ let
       nixpkgs-unstable = [
         "libreoffice"
         "libreoffice-still"
+        "firefly-iii-data-importer"
       ];
       # nixpkgs-stable = [ "cloud-hypervisor" ];
     };
