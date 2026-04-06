@@ -175,6 +175,16 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions =
+      lib.mapAttrsToList (name: acct: {
+        assertion = !(acct.passwordSopsSecret != null && acct.passwordCommand != null);
+        message = "hm.accounts.email.accounts.${name}: passwordSopsSecret and passwordCommand are mutually exclusive.";
+      }) cfg.accounts
+      ++ lib.optional (accountsWithSops != { }) {
+        assertion = config.hm.security.sops.enable;
+        message = "hm.accounts.email: passwordSopsSecret requires hm.security.sops.enable = true.";
+      };
+
     accounts.email = {
       maildirBasePath = lib.mkDefault cfg.maildirBasePath;
 
