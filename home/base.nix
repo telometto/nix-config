@@ -70,6 +70,12 @@ in
       security = {
         sops.enable = lib.mkDefault true;
       };
+
+      accounts = {
+        email.enable = lib.mkDefault false;
+        calendar.enable = lib.mkDefault false;
+        contact.enable = lib.mkDefault false;
+      };
     };
 
     home = {
