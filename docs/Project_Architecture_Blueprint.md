@@ -528,7 +528,7 @@ nixos-rebuild dry-run --flake .          # Show what would change
 
 ### MicroVM Hardening
 
-- Hardened kernel (`linuxPackages` with sysctl hardening)
+- Runtime kernel hardening (`linuxPackages` with sysctl hardening)
 - Restrictive sysctl settings
 - Disabled unnecessary services
 - Blacklisted kernel modules (bluetooth, uvcvideo)
