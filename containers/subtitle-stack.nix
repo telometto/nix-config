@@ -5,6 +5,8 @@ let
   cfgLingarr = config.services.lingarr;
   cfgSubgen = config.services.subgen;
   anyEnabled = cfgLingarr.enable || cfgSubgen.enable;
+  hasPlex = cfgSubgen.enable && cfgSubgen.plexServer != null;
+  hasJellyfin = cfgSubgen.enable && cfgSubgen.jellyfinServer != null;
   inherit (config.virtualisation.quadlet) pods containers;
 in
 {
@@ -52,29 +54,29 @@ in
     };
 
     plexServer = lib.mkOption {
-      type = lib.types.str;
-      default = "https://192.168.2.100:32400";
-      description = "Plex server URL (including port).";
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Plex server URL. Set to null to disable Plex integration.";
     };
 
     jellyfinServer = lib.mkOption {
-      type = lib.types.str;
-      default = "http://192.168.2.100:8096";
-      description = "Jellyfin server URL (including port).";
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Jellyfin server URL. Set to null to disable Jellyfin integration.";
     };
   };
 
   config = lib.mkIf anyEnabled {
-    sops = lib.mkIf cfgSubgen.enable {
-      secrets = {
-        "plex/server_token" = { };
-        "jellyfin/server_token" = { };
-      };
+    sops = lib.mkIf (hasPlex || hasJellyfin) {
+      secrets = lib.mkMerge [
+        (lib.mkIf hasPlex { "plex/server_token" = { }; })
+        (lib.mkIf hasJellyfin { "jellyfin/server_token" = { }; })
+      ];
 
-      templates."subgen-tokens".content = ''
-        PLEXTOKEN=${config.sops.placeholder."plex/server_token"}
-        JELLYFINTOKEN=${config.sops.placeholder."jellyfin/server_token"}
-      '';
+      templates."subgen-tokens".content = lib.concatStrings (
+        lib.optional hasPlex "PLEXTOKEN=${config.sops.placeholder."plex/server_token"}\n"
+        ++ lib.optional hasJellyfin "JELLYFINTOKEN=${config.sops.placeholder."jellyfin/server_token"}\n"
+      );
     };
 
     virtualisation.quadlet = {
@@ -181,7 +183,11 @@ in
                 USE_PATH_MAPPING = "True";
                 PATH_MAPPING_FROM = lib.dirOf cfgSubgen.mediaDir;
                 PATH_MAPPING_TO = "/data";
+              }
+              // lib.optionalAttrs hasPlex {
                 PLEXSERVER = cfgSubgen.plexServer;
+              }
+              // lib.optionalAttrs hasJellyfin {
                 JELLYFINSERVER = cfgSubgen.jellyfinServer;
               };
               volumes = [
@@ -189,7 +195,7 @@ in
                 "${cfgSubgen.mediaDir}/movies:/data/media/movies"
                 "${cfgSubgen.modelDir}:/subgen/models"
               ];
-              environmentFiles = [
+              environmentFiles = lib.optionals (hasPlex || hasJellyfin) [
                 config.sops.templates."subgen-tokens".path
               ];
               podmanArgs = [ "--tty" ];

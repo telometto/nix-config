@@ -19,7 +19,10 @@ in
         enable = true;
         ollama.enable = false;
       };
-      subgen.enable = true;
+      subgen = {
+        enable = true;
+        plexServer = "https://192.168.2.100:32400";
+      };
     };
   };
 }
