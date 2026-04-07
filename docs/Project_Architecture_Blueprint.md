@@ -321,7 +321,7 @@ The flake supports MicroVMs for isolated services:
          ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  vms/base.nix                                                           │
-│  ├── Hardened kernel (linuxPackages_hardened)                           │
+│  ├── Standard kernel (linuxPackages) + sysctl hardening                │
 │  ├── Kernel security sysctl settings                                    │
 │  ├── Minimal attack surface                                             │
 │  └── Restricted services                                                │
@@ -528,7 +528,7 @@ nixos-rebuild dry-run --flake .          # Show what would change
 
 ### MicroVM Hardening
 
-- Hardened kernel (`linuxPackages_hardened`)
+- Runtime kernel hardening (`linuxPackages` with sysctl hardening)
 - Restrictive sysctl settings
 - Disabled unnecessary services
 - Blacklisted kernel modules (bluetooth, uvcvideo)
