@@ -5,8 +5,8 @@ let
   cfgLingarr = config.services.lingarr;
   cfgSubgen = config.services.subgen;
   anyEnabled = cfgLingarr.enable || cfgSubgen.enable;
-  hasPlex = cfgSubgen.plexServer != null;
-  hasJellyfin = cfgSubgen.jellyfinServer != null;
+  hasPlex = cfgSubgen.enable && cfgSubgen.plexServer != null;
+  hasJellyfin = cfgSubgen.enable && cfgSubgen.jellyfinServer != null;
   inherit (config.virtualisation.quadlet) pods containers;
 in
 {
@@ -55,7 +55,7 @@ in
 
     plexServer = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = "https://192.168.2.100:32400";
+      default = null;
       description = "Plex server URL. Set to null to disable Plex integration.";
     };
 
@@ -67,7 +67,7 @@ in
   };
 
   config = lib.mkIf anyEnabled {
-    sops = lib.mkIf (cfgSubgen.enable && (hasPlex || hasJellyfin)) {
+    sops = lib.mkIf (hasPlex || hasJellyfin) {
       secrets = lib.mkMerge [
         (lib.mkIf hasPlex { "plex/server_token" = { }; })
         (lib.mkIf hasJellyfin { "jellyfin/server_token" = { }; })
