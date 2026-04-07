@@ -46,11 +46,11 @@ let
     };
 in
 {
-  # adguard-vm = mkMicrovm [
-  #   microvmModule
-  #   ./adguard.nix
-  #   sopsModule
-  # ];
+  adguard-vm = mkMicrovm [
+    microvmModule
+    ./adguard.nix
+    sopsModule
+  ];
 
   actual-vm = mkMicrovm [
     microvmModule
@@ -67,10 +67,10 @@ in
     ./overseerr.nix
   ];
 
-  # scrutiny-vm = mkMicrovm [
-  #   microvmModule
-  #   ./scrutiny.nix
-  # ];
+  scrutiny-vm = mkMicrovm [
+    microvmModule
+    ./scrutiny.nix
+  ];
 
   ombi-vm = mkMicrovm [
     microvmModule
