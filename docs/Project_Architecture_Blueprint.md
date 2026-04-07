@@ -321,7 +321,7 @@ The flake supports MicroVMs for isolated services:
          ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  vms/base.nix                                                           │
-│  ├── Hardened kernel (linuxPackages + sysctl hardening)                 │
+│  ├── Standard kernel (linuxPackages) + sysctl hardening                │
 │  ├── Kernel security sysctl settings                                    │
 │  ├── Minimal attack surface                                             │
 │  └── Restricted services                                                │
