@@ -12,10 +12,12 @@
     ../modules/services/traefik.nix
   ];
 
-  # Minimal hardened configuration for service VMs
-  # Import this module for any MicroVM that should have minimal attack surface
+  # Minimal security-focused baseline for service VMs
+  # Import this module for any MicroVM that should have a minimal attack surface.
+  # Note: this module intentionally uses the standard kernel packages for
+  # compatibility; it does not provide the hardened kernel variant by default.
   boot = {
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_hardened;
+    kernelPackages = lib.mkDefault pkgs.linuxPackages;
 
     kernelParams = [
       "quiet"
