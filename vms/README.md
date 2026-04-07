@@ -77,7 +77,7 @@ MicroVMs provide isolated environments for services that benefit from:
 
 [base.nix](base.nix) provides a hardened foundation:
 
-- **Hardened kernel** (`linuxPackages` with sysctl hardening)
+- **Standard kernel** (`linuxPackages`) + **sysctl hardening**
 - **Security sysctl settings** — IP spoofing prevention, disabled ICMP redirects
 - **Blacklisted modules** — Bluetooth, webcam drivers
 - **Restricted SSH** — No root login, key-only authentication
