@@ -15,7 +15,7 @@
   # Minimal hardened configuration for service VMs
   # Import this module for any MicroVM that should have minimal attack surface
   boot = {
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_hardened;
+    kernelPackages = lib.mkDefault pkgs.linuxPackages;
 
     kernelParams = [
       "quiet"
