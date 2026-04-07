@@ -74,10 +74,8 @@ in
       ];
 
       templates."subgen-tokens".content = lib.concatStrings (
-        lib.optional hasPlex
-          "PLEXTOKEN=${config.sops.placeholder."plex/server_token"}\n"
-        ++ lib.optional hasJellyfin
-          "JELLYFINTOKEN=${config.sops.placeholder."jellyfin/server_token"}\n"
+        lib.optional hasPlex "PLEXTOKEN=${config.sops.placeholder."plex/server_token"}\n"
+        ++ lib.optional hasJellyfin "JELLYFINTOKEN=${config.sops.placeholder."jellyfin/server_token"}\n"
       );
     };
 
@@ -185,9 +183,11 @@ in
                 USE_PATH_MAPPING = "True";
                 PATH_MAPPING_FROM = lib.dirOf cfgSubgen.mediaDir;
                 PATH_MAPPING_TO = "/data";
-              } // lib.optionalAttrs hasPlex {
+              }
+              // lib.optionalAttrs hasPlex {
                 PLEXSERVER = cfgSubgen.plexServer;
-              } // lib.optionalAttrs hasJellyfin {
+              }
+              // lib.optionalAttrs hasJellyfin {
                 JELLYFINSERVER = cfgSubgen.jellyfinServer;
               };
               volumes = [
