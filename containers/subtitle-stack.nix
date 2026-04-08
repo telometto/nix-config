@@ -201,6 +201,11 @@ in
               podmanArgs = [ "--tty" ];
               pod = pods.subtitle-stack.ref;
             };
+
+            unitConfig = lib.mkIf (hasPlex || hasJellyfin) {
+              Requires = [ "sops-nix.service" ];
+              After = [ "sops-nix.service" ];
+            };
           };
         })
       ];
