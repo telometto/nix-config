@@ -27,7 +27,7 @@ in
           {
             mountPoint = "/var/lib/postgresql";
             image = "postgresql-state.img";
-            size = 10240;
+            size = 102400;
           }
           {
             mountPoint = "/var/lib/mas";
@@ -353,6 +353,7 @@ in
 
         database.createLocally = true;
         urlPreview.enable = true;
+        autoCompressor.enable = true;
 
         extraConfigFiles = [
           "/run/matrix-synapse-secret/shared-secret.yaml"
