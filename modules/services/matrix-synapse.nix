@@ -270,16 +270,13 @@ in
       serviceConfig = {
         Type = "oneshot";
         User = "matrix-synapse";
-        ExecStart = toString [
-          "${pkgs.rust-synapse-compress-state}/bin/synapse_auto_compressor"
-          "-p"
-          "host=/run/postgresql user=matrix-synapse dbname=matrix-synapse"
-          "-c"
-          (toString cfg.autoCompressor.chunksToCompress)
-          "-n"
-          (toString cfg.autoCompressor.chunkSize)
-        ];
       };
+      script = ''
+        ${pkgs.rust-synapse-compress-state}/bin/synapse_auto_compressor \
+          -p ${lib.escapeShellArg "host=/run/postgresql user=matrix-synapse dbname=matrix-synapse"} \
+          -c ${toString cfg.autoCompressor.chunksToCompress} \
+          -n ${toString cfg.autoCompressor.chunkSize}
+      '';
     };
 
     systemd.timers.synapse-auto-compressor = lib.mkIf cfg.autoCompressor.enable {
@@ -304,6 +301,10 @@ in
       {
         assertion = !cfg.authDelegation.enable || cfg.extraConfigFiles != [ ];
         message = "sys.services.matrix-synapse.extraConfigFiles must contain at least one secrets file when authDelegation is enabled";
+      }
+      {
+        assertion = !cfg.autoCompressor.enable || cfg.database.createLocally;
+        message = "sys.services.matrix-synapse.autoCompressor requires database.createLocally = true (local PostgreSQL)";
       }
       (traefikLib.mkCfTunnelAssertion {
         name = "matrix-synapse";
