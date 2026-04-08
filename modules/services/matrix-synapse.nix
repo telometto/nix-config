@@ -109,6 +109,29 @@ in
       };
     };
 
+    autoCompressor = {
+      enable = lib.mkEnableOption "periodic Synapse state compressor (reclaims DB space)";
+
+      interval = lib.mkOption {
+        type = lib.types.str;
+        default = "weekly";
+        description = "systemd calendar expression for how often to run the compressor.";
+        example = "daily";
+      };
+
+      chunksToCompress = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 500;
+        description = "Number of state groups to work on per run.";
+      };
+
+      chunkSize = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 500;
+        description = "Number of state groups per compression chunk.";
+      };
+    };
+
     settings = lib.mkOption {
       type = lib.types.attrs;
       default = { };
@@ -237,6 +260,35 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
+    systemd.services.synapse-auto-compressor = lib.mkIf cfg.autoCompressor.enable {
+      description = "Compress Synapse room state to reclaim database space";
+      after = [
+        "matrix-synapse.service"
+        "postgresql.service"
+      ];
+      requires = [ "postgresql.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        User = "matrix-synapse";
+      };
+      script = ''
+        ${pkgs.rust-synapse-compress-state}/bin/synapse_auto_compressor \
+          -p ${lib.escapeShellArg "host=/run/postgresql user=matrix-synapse dbname=matrix-synapse"} \
+          -c ${toString cfg.autoCompressor.chunksToCompress} \
+          -n ${toString cfg.autoCompressor.chunkSize}
+      '';
+    };
+
+    systemd.timers.synapse-auto-compressor = lib.mkIf cfg.autoCompressor.enable {
+      description = "Run Synapse state compressor periodically";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = cfg.autoCompressor.interval;
+        Persistent = true;
+        RandomizedDelaySec = "4h";
+      };
+    };
+
     assertions = [
       {
         assertion = !cfg.reverseProxy.enable || cfg.reverseProxy.domain != null;
@@ -249,6 +301,10 @@ in
       {
         assertion = !cfg.authDelegation.enable || cfg.extraConfigFiles != [ ];
         message = "sys.services.matrix-synapse.extraConfigFiles must contain at least one secrets file when authDelegation is enabled";
+      }
+      {
+        assertion = !cfg.autoCompressor.enable || cfg.database.createLocally;
+        message = "sys.services.matrix-synapse.autoCompressor requires database.createLocally = true (local PostgreSQL)";
       }
       (traefikLib.mkCfTunnelAssertion {
         name = "matrix-synapse";
