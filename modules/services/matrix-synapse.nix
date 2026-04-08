@@ -120,13 +120,13 @@ in
       };
 
       chunksToCompress = lib.mkOption {
-        type = lib.types.int;
+        type = lib.types.ints.positive;
         default = 500;
         description = "Number of state groups to work on per run.";
       };
 
       chunkSize = lib.mkOption {
-        type = lib.types.int;
+        type = lib.types.ints.positive;
         default = 500;
         description = "Number of state groups per compression chunk.";
       };
