@@ -95,7 +95,7 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = !(config.services.subgen.enable or false);
+        assertion = !(lib.attrByPath [ "services" "subgen" "enable" ] false config);
         message = "services.subgen-container and services.subgen (subtitle-stack) cannot both be enabled — they define conflicting Subgen containers.";
       }
     ];
