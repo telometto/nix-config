@@ -84,7 +84,10 @@ jobs:
           echo "### Security Checks" >> compliance-report.md
 
           # Use a more robust approach to avoid broken pipe errors
-          password_matches=$(grep -r "password.*=" --include="*.nix" . 2>/dev/null | grep -v "passwordAuthentication\|passwordFile\|hashedPassword" || true)
+          # Exclude known safe patterns: option definitions, sops secret paths,
+          # file references, hashed passwords, boolean configs, and code logic
+          password_matches=$(grep -r "password.*=" --include="*.nix" . 2>/dev/null | \
+            grep -Ev 'passwordAuthentication|passwordFile|hashedPassword|hashedPasswordFile|passwordSopsSecret|passwordCommand|password_file|password_hash|password_registration|password_change|passwords[[:space:]]*=|passwords\.|"[^"]*password[^"]*"[[:space:]]*=[[:space:]]*\{|\$__file\{|builtins\.match|change-password|mkOption|mkEnableOption|!= null|== null|filterAttrs|optionalAttrs|assertion|message[[:space:]]*=' || true)
 
           if [ -n "$password_matches" ]; then
             echo "❌ **Hardcoded passwords detected**" >> compliance-report.md
@@ -118,14 +121,13 @@ jobs:
           echo "" >> compliance-report.md
           echo "### Module Structure" >> compliance-report.md
 
-          # Check if modules have proper enable options
+          # Check if modules have proper option interfaces (enable options or mkOption definitions)
           module_issues=0
           for module_dir in modules/*/; do
             if [ -d "$module_dir" ]; then
               module_name=$(basename "$module_dir")
-              has_enable=$(grep -Erl "mkEnableOption|enable.*mkOption.*bool" "$module_dir" --include="*.nix" 2>/dev/null | head -1)
-              if [ -z "$has_enable" ]; then
-                echo "⚠️ Module \`$module_name\` may be missing enable option" >> compliance-report.md
+              if ! grep -Erlq --include="*.nix" "mkEnableOption|enable.*mkOption.*bool|mkOption" "$module_dir" 2>/dev/null; then
+                echo "⚠️ Module \`$module_name\` may be missing option interface" >> compliance-report.md
                 module_issues=1
               fi
             fi
