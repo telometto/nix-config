@@ -105,30 +105,29 @@ in
           "${cfg.mediaDir}/movies:/data/media/movies"
           "${cfg.modelDir}:/subgen/models"
         ];
-        environments =
-          {
-            WHISPER_MODEL = cfg.whisperModel;
-            WHISPER_THREADS = toString cfg.whisperThreads;
-            CONCURRENT_TRANSCRIPTIONS = toString cfg.concurrentTranscriptions;
-            WEBHOOKPORT = "9000";
-            TRANSCRIBE_DEVICE = if cfg.gpu.enable then "cuda" else "cpu";
-            CLEAR_VRAM_ON_COMPLETE = "True";
-            MODEL_PATH = "./models";
-            DEBUG = "True";
-          }
-          // lib.optionalAttrs (cfg.gpu.enable) {
-            CT2_CUDA_ALLOCATOR = "cub_caching";
-          }
-          // lib.optionalAttrs (cfg.gpu.enable && cfg.gpu.hsaOverrideGfxVersion != null) {
-            HSA_OVERRIDE_GFX_VERSION = cfg.gpu.hsaOverrideGfxVersion;
-          }
-          // lib.optionalAttrs hasPlex {
-            PLEXSERVER = cfg.plexServer;
-          }
-          // lib.optionalAttrs hasJellyfin {
-            JELLYFINSERVER = cfg.jellyfinServer;
-          }
-          // cfg.extraEnvironments;
+        environments = {
+          WHISPER_MODEL = cfg.whisperModel;
+          WHISPER_THREADS = toString cfg.whisperThreads;
+          CONCURRENT_TRANSCRIPTIONS = toString cfg.concurrentTranscriptions;
+          WEBHOOKPORT = "9000";
+          TRANSCRIBE_DEVICE = if cfg.gpu.enable then "cuda" else "cpu";
+          CLEAR_VRAM_ON_COMPLETE = "True";
+          MODEL_PATH = "./models";
+          DEBUG = "True";
+        }
+        // lib.optionalAttrs (cfg.gpu.enable) {
+          CT2_CUDA_ALLOCATOR = "cub_caching";
+        }
+        // lib.optionalAttrs (cfg.gpu.enable && cfg.gpu.hsaOverrideGfxVersion != null) {
+          HSA_OVERRIDE_GFX_VERSION = cfg.gpu.hsaOverrideGfxVersion;
+        }
+        // lib.optionalAttrs hasPlex {
+          PLEXSERVER = cfg.plexServer;
+        }
+        // lib.optionalAttrs hasJellyfin {
+          JELLYFINSERVER = cfg.jellyfinServer;
+        }
+        // cfg.extraEnvironments;
         devices = lib.optionals cfg.gpu.enable [
           "/dev/dri"
           "/dev/kfd"
