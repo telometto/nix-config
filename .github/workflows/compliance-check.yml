@@ -126,8 +126,7 @@ jobs:
           for module_dir in modules/*/; do
             if [ -d "$module_dir" ]; then
               module_name=$(basename "$module_dir")
-              has_options=$(grep -Erl --include="*.nix" "mkEnableOption|enable.*mkOption.*bool|mkOption" "$module_dir" 2>/dev/null | head -1)
-              if [ -z "$has_options" ]; then
+              if ! grep -Erlq --include="*.nix" "mkEnableOption|enable.*mkOption.*bool|mkOption" "$module_dir" 2>/dev/null; then
                 echo "⚠️ Module \`$module_name\` may be missing option interface" >> compliance-report.md
                 module_issues=1
               fi
