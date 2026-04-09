@@ -93,7 +93,14 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    virtualisation.quadlet.containers.subgen = {
+    assertions = [
+      {
+        assertion = !(config.services.subgen.enable or false);
+        message = "services.subgen-container and services.subgen (subtitle-stack) cannot both be enabled — they define conflicting Subgen containers.";
+      }
+    ];
+
+    virtualisation.quadlet.containers.subgen-standalone = {
       autoStart = true;
       containerConfig = {
         image =
@@ -134,7 +141,7 @@ in
           JELLYFINSERVER = cfg.jellyfinServer;
         }
         // cfg.extraEnvironments;
-        environmentFiles = cfg.environmentFiles;
+        inherit (cfg) environmentFiles;
         devices = lib.optionals cfg.gpu.enable [
           "/dev/dri"
           "/dev/kfd"
@@ -144,6 +151,11 @@ in
         ];
         podmanArgs = [ "--tty" ];
         userns = "keep-id";
+      };
+
+      unitConfig = lib.mkIf (cfg.environmentFiles != [ ]) {
+        Requires = [ "sops-nix.service" ];
+        After = [ "sops-nix.service" ];
       };
     };
   };
