@@ -71,6 +71,12 @@ in
       description = "Additional environment variables for the Subgen container.";
     };
 
+    environmentFiles = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Paths to environment files (e.g. SOPS-rendered templates) containing secrets like PLEXTOKEN or JELLYFINTOKEN.";
+    };
+
     gpu = {
       enable = lib.mkOption {
         type = lib.types.bool;
@@ -115,7 +121,7 @@ in
           MODEL_PATH = "./models";
           DEBUG = "True";
         }
-        // lib.optionalAttrs (cfg.gpu.enable) {
+        // lib.optionalAttrs cfg.gpu.enable {
           CT2_CUDA_ALLOCATOR = "cub_caching";
         }
         // lib.optionalAttrs (cfg.gpu.enable && cfg.gpu.hsaOverrideGfxVersion != null) {
@@ -128,13 +134,13 @@ in
           JELLYFINSERVER = cfg.jellyfinServer;
         }
         // cfg.extraEnvironments;
+        environmentFiles = cfg.environmentFiles;
         devices = lib.optionals cfg.gpu.enable [
           "/dev/dri"
           "/dev/kfd"
         ];
         addGroups = lib.optionals cfg.gpu.enable [
-          "video"
-          "render"
+          "keep-groups"
         ];
         podmanArgs = [ "--tty" ];
         userns = "keep-id";
