@@ -87,14 +87,7 @@ jobs:
           # Exclude known safe patterns: option definitions, sops secret paths,
           # file references, hashed passwords, boolean configs, and code logic
           password_matches=$(grep -r "password.*=" --include="*.nix" . 2>/dev/null | \
-            grep -v 'passwordAuthentication\|passwordFile\|hashedPassword\|hashedPasswordFile' | \
-            grep -v 'passwordSopsSecret\|passwordCommand' | \
-            grep -v 'password_file\|password_hash\|password_registration\|password_change' | \
-            grep -v 'passwords[[:space:]]*=\|passwords\.' | \
-            grep -v '"[^"]*password[^"]*"[[:space:]]*=[[:space:]]*{' | \
-            grep -v '\$__file{\|builtins\.match\|change-password' | \
-            grep -v 'mkOption\|mkEnableOption\|!= null\|== null' | \
-            grep -v 'filterAttrs\|optionalAttrs\|assertion\|message[[:space:]]*=' || true)
+            grep -Ev 'passwordAuthentication|passwordFile|hashedPassword|hashedPasswordFile|passwordSopsSecret|passwordCommand|password_file|password_hash|password_registration|password_change|passwords[[:space:]]*=|passwords\.|"[^"]*password[^"]*"[[:space:]]*=[[:space:]]*\{|\$__file\{|builtins\.match|change-password|mkOption|mkEnableOption|!= null|== null|filterAttrs|optionalAttrs|assertion|message[[:space:]]*=' || true)
 
           if [ -n "$password_matches" ]; then
             echo "❌ **Hardcoded passwords detected**" >> compliance-report.md
@@ -133,7 +126,7 @@ jobs:
           for module_dir in modules/*/; do
             if [ -d "$module_dir" ]; then
               module_name=$(basename "$module_dir")
-              has_options=$(grep -Erl "mkEnableOption|enable.*mkOption.*bool|mkOption" "$module_dir" --include="*.nix" 2>/dev/null | head -1)
+              has_options=$(grep -Erl --include="*.nix" "mkEnableOption|enable.*mkOption.*bool|mkOption" "$module_dir" 2>/dev/null | head -1)
               if [ -z "$has_options" ]; then
                 echo "⚠️ Module \`$module_name\` may be missing option interface" >> compliance-report.md
                 module_issues=1
