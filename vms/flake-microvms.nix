@@ -67,11 +67,6 @@ in
     ./overseerr.nix
   ];
 
-  scrutiny-vm = mkMicrovm [
-    microvmModule
-    ./scrutiny.nix
-  ];
-
   ombi-vm = mkMicrovm [
     microvmModule
     ./ombi.nix
