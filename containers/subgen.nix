@@ -153,7 +153,10 @@ in
         userns = "keep-id";
       };
 
-      unitConfig = lib.mkIf (cfg.environmentFiles != [ ]) {
+      unitConfig = lib.mkIf (
+        (cfg.environmentFiles != [ ])
+        && (lib.attrByPath [ "hm" "security" "sops" "enable" ] false config)
+      ) {
         Requires = [ "sops-nix.service" ];
         After = [ "sops-nix.service" ];
       };
