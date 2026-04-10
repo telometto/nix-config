@@ -13,8 +13,6 @@
   ];
 
   hm = {
-    security.sops.enable = true;
-
     programs = {
       fastfetch = {
         enable = true;
