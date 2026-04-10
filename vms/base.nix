@@ -19,6 +19,10 @@
   boot = {
     kernelPackages = lib.mkDefault pkgs.linuxPackages;
 
+    # MicroVMs don't use ZFS; disable it to prevent the ZFS module from
+    # probing fileSystems."/nix/store" (which virtiofs doesn't define).
+    supportedFilesystems.zfs = lib.mkForce false;
+
     kernelParams = [
       "quiet"
       "mitigations=auto"
