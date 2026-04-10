@@ -16,11 +16,15 @@
   # Import this module for any MicroVM that should have a minimal attack surface.
   # Note: this module intentionally uses the standard kernel packages for
   # compatibility; it does not provide the hardened kernel variant by default.
+  # microvm.nix creates a bind mount for /nix/store (from /nix/.ro-store) without
+  # setting fsType. Since nixpkgs commit f8ed5f30 removed the default "auto" value
+  # from fileSystems.<name>.fsType, this must be set explicitly.
+  fileSystems."/nix/store".fsType = lib.mkDefault "none";
+
   boot = {
     kernelPackages = lib.mkDefault pkgs.linuxPackages;
 
-    # MicroVMs don't use ZFS; disable it to prevent the ZFS module from
-    # probing fileSystems."/nix/store" (which virtiofs doesn't define).
+    # MicroVMs don't use ZFS; disable to avoid pulling the kernel module.
     supportedFilesystems.zfs = lib.mkForce false;
 
     kernelParams = [
