@@ -27,6 +27,7 @@ in
           hashedPassword
           group
           ;
+        uid = lib.mkIf (userData ? uid) userData.uid;
         shell = lib.mkForce pkgs.zsh;
         extraGroups = lib.mkDefault userData.extraGroups;
         openssh.authorizedKeys.keys = [
