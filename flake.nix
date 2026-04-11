@@ -48,7 +48,7 @@
     };
 
     microvm = {
-      url = "github:microvm-nix/microvm.nix/pull/502/head";
+      url = "github:microvm-nix/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
