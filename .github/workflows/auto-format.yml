@@ -37,7 +37,7 @@ jobs:
       - name: Detect format-relevant changes
         id: changed-files
         if: github.event_name != 'workflow_dispatch'
-        uses: tj-actions/changed-files@v47.0.5
+        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323
         with:
           files: |
             **/*.nix
