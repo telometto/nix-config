@@ -7,10 +7,13 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+
     flake-compat = {
       url = "github:NixOS/flake-compat";
       flake = false;
     };
+
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
       flake = false;
@@ -20,8 +23,6 @@
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
     home-manager = {
       url = "github:nix-community/home-manager/master";
