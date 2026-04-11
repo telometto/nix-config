@@ -1,27 +1,17 @@
 name: Auto Format
+
 on:
   workflow_dispatch:
   pull_request:
-    types: [opened, synchronize]
-    paths:
-      - "**.nix"
-      - "**.sh"
-      - "**.yml"
-      - "**.yaml"
-      - "**.md"
-      - "**.json"
+    types: [opened, synchronize, reopened]
   push:
-    paths:
-      - "**.nix"
-      - "**.sh"
-      - "**.yml"
-      - "**.yaml"
-      - "**.md"
-      - "**.json"
+    branches:
+      - main
+      - testing
 
 concurrency:
-  group: auto-format-${{ github.ref }}
-  cancel-in-progress: true
+  group: auto-format-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'pull_request' }}
 
 permissions:
   contents: write
@@ -29,6 +19,7 @@ permissions:
 
 jobs:
   format:
+    name: format
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -43,16 +34,36 @@ jobs:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
           fetch-depth: 0
 
+      - name: Detect format-relevant changes
+        id: changed-files
+        if: github.event_name != 'workflow_dispatch'
+        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323
+        with:
+          files: |
+            **/*.nix
+            **/*.sh
+            **/*.yml
+            **/*.yaml
+            **/*.md
+            **/*.json
+
+      - name: No relevant files changed
+        if: github.event_name != 'workflow_dispatch' && steps.changed-files.outputs.any_changed != 'true'
+        run: echo "No format-relevant files changed; nothing to do."
+
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v21
+        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
+        uses: DeterminateSystems/nix-installer-action@v22
 
       - name: Setup Nix cache
+        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
         uses: DeterminateSystems/magic-nix-cache-action@v13
         with:
           use-flakehub: false
 
       - name: Check and format files
         id: check-formatting
+        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
         env:
           EVENT_NAME: ${{ github.event_name }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
@@ -90,8 +101,8 @@ jobs:
           fi
 
       - name: Comment on PR if formatted
-        if: steps.check-formatting.outputs.formatted == 'true' && github.event_name == 'pull_request'
-        uses: actions/github-script@v8
+        if: github.event_name == 'pull_request' && steps.check-formatting.outputs.formatted == 'true'
+        uses: actions/github-script@v9.0.0
         env:
           FORMATTED_FILES: ${{ steps.check-formatting.outputs.formatted-files }}
         with:
@@ -113,8 +124,8 @@ jobs:
             await comment({ github, context, header, body });
 
       - name: Enable auto-merge for formatted PR
-        if: steps.check-formatting.outputs.formatted == 'true' && github.event_name == 'pull_request'
-        run: gh pr merge $PR_NUMBER --auto --merge
+        if: github.event_name == 'pull_request' && steps.check-formatting.outputs.formatted == 'true'
+        run: gh pr merge "$PR_NUMBER" --auto --merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
