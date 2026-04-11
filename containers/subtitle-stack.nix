@@ -64,9 +64,54 @@ in
       default = null;
       description = "Jellyfin server URL. Set to null to disable Jellyfin integration.";
     };
+
+    whisperModel = lib.mkOption {
+      type = lib.types.str;
+      default = "medium";
+      description = "Whisper model to use (tiny, base, small, medium, large-v3, large-v3-turbo, etc.). large-v3-turbo does not support translation.";
+    };
+
+    transcribeOrTranslate = lib.mkOption {
+      type = lib.types.enum [
+        "transcribe"
+        "translate"
+      ];
+      default = "transcribe";
+      description = "Whether to transcribe (keep original language) or translate foreign audio to English.";
+    };
+
+    subtitleLanguageName = lib.mkOption {
+      type = lib.types.str;
+      default = "aa";
+      description = "Language code used in the output subtitle filename (e.g., en, no).";
+    };
+
+    preferredAudioLanguages = lib.mkOption {
+      type = lib.types.str;
+      default = "eng";
+      description = "Pipe-separated ISO 639-2 codes. Prefer transcribing these audio tracks when multiple exist.";
+    };
+
+    forceDetectedLanguageTo = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      description = "Force Whisper to a specific 2-letter language code if auto-detection is unreliable.";
+    };
   };
 
   config = lib.mkIf anyEnabled {
+    assertions = [
+      {
+        assertion =
+          !(
+            cfgSubgen.enable
+            && cfgSubgen.transcribeOrTranslate == "translate"
+            && lib.hasSuffix "turbo" cfgSubgen.whisperModel
+          );
+        message = "large-v3-turbo does not support translation — use large-v3 or another model when transcribeOrTranslate is 'translate'.";
+      }
+    ];
+
     sops = lib.mkIf (hasPlex || hasJellyfin) {
       secrets = lib.mkMerge [
         (lib.mkIf hasPlex { "plex/server_token" = { }; })
@@ -161,11 +206,13 @@ in
             containerConfig = {
               image = "mccloud/subgen";
               environments = {
-                WHISPER_MODEL = "medium";
+                WHISPER_MODEL = cfgSubgen.whisperModel;
                 WHISPER_THREADS = "6";
                 PROCADDEDMEDIA = "True";
                 PROCMEDIAONPLAY = "False";
-                NAMESUBLANG = "eng";
+                TRANSCRIBE_OR_TRANSLATE = cfgSubgen.transcribeOrTranslate;
+                SUBTITLE_LANGUAGE_NAME = cfgSubgen.subtitleLanguageName;
+                PREFERRED_AUDIO_LANGUAGES = cfgSubgen.preferredAudioLanguages;
                 SKIPIFINTERNALSUBLANG = "eng";
                 WEBHOOKPORT = "9000";
                 CONCURRENT_TRANSCRIPTIONS = "2";
@@ -183,6 +230,9 @@ in
                 USE_PATH_MAPPING = "True";
                 PATH_MAPPING_FROM = lib.dirOf cfgSubgen.mediaDir;
                 PATH_MAPPING_TO = "/data";
+              }
+              // lib.optionalAttrs (cfgSubgen.forceDetectedLanguageTo != "") {
+                FORCE_DETECTED_LANGUAGE_TO = cfgSubgen.forceDetectedLanguageTo;
               }
               // lib.optionalAttrs hasPlex {
                 PLEXSERVER = cfgSubgen.plexServer;

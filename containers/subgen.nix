@@ -38,7 +38,34 @@ in
     whisperModel = lib.mkOption {
       type = lib.types.str;
       default = "medium";
-      description = "Whisper model to use (tiny, base, small, medium, large-v3, large-v3-turbo, etc.).";
+      description = "Whisper model to use (tiny, base, small, medium, large-v3, large-v3-turbo, etc.). large-v3-turbo does not support translation.";
+    };
+
+    transcribeOrTranslate = lib.mkOption {
+      type = lib.types.enum [
+        "transcribe"
+        "translate"
+      ];
+      default = "transcribe";
+      description = "Whether to transcribe (keep original language) or translate foreign audio to English.";
+    };
+
+    subtitleLanguageName = lib.mkOption {
+      type = lib.types.str;
+      default = "aa";
+      description = "Language code used in the output subtitle filename (e.g., en, no).";
+    };
+
+    preferredAudioLanguages = lib.mkOption {
+      type = lib.types.str;
+      default = "eng";
+      description = "Pipe-separated ISO 639-2 codes. Prefer transcribing these audio tracks when multiple exist.";
+    };
+
+    forceDetectedLanguageTo = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      description = "Force Whisper to a specific 2-letter language code if auto-detection is unreliable.";
     };
 
     whisperThreads = lib.mkOption {
@@ -98,6 +125,10 @@ in
         assertion = !(lib.attrByPath [ "services" "subgen" "enable" ] false config);
         message = "services.subgen-container and services.subgen (subtitle-stack) cannot both be enabled — they define conflicting Subgen containers.";
       }
+      {
+        assertion = !(cfg.transcribeOrTranslate == "translate" && lib.hasSuffix "turbo" cfg.whisperModel);
+        message = "large-v3-turbo does not support translation — use large-v3 or another model when transcribeOrTranslate is 'translate'.";
+      }
     ];
 
     virtualisation.quadlet.containers.subgen-standalone = {
@@ -122,11 +153,17 @@ in
           WHISPER_MODEL = cfg.whisperModel;
           WHISPER_THREADS = toString cfg.whisperThreads;
           CONCURRENT_TRANSCRIPTIONS = toString cfg.concurrentTranscriptions;
+          TRANSCRIBE_OR_TRANSLATE = cfg.transcribeOrTranslate;
+          SUBTITLE_LANGUAGE_NAME = cfg.subtitleLanguageName;
+          PREFERRED_AUDIO_LANGUAGES = cfg.preferredAudioLanguages;
           WEBHOOKPORT = "9000";
           TRANSCRIBE_DEVICE = if cfg.gpu.enable then "cuda" else "cpu";
           CLEAR_VRAM_ON_COMPLETE = "True";
           MODEL_PATH = "./models";
           DEBUG = "True";
+        }
+        // lib.optionalAttrs (cfg.forceDetectedLanguageTo != "") {
+          FORCE_DETECTED_LANGUAGE_TO = cfg.forceDetectedLanguageTo;
         }
         // lib.optionalAttrs cfg.gpu.enable {
           CT2_CUDA_ALLOCATOR = "cub_caching";
