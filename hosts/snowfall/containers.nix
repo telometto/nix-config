@@ -25,6 +25,12 @@ in
       subgen-container = {
         enable = true;
         gpu.enable = true;
+        whisperModel = "large-v3";
+
+        plexServer = "https://192.168.2.100:32400";
+        transcribeOrTranslate = "translate";
+        subtitleLanguageName = "en";
+        preferredAudioLanguages = "eng|nor";
       };
     };
   };
