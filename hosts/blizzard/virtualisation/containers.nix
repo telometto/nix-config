@@ -19,9 +19,13 @@ in
         enable = true;
         ollama.enable = false;
       };
+
       subgen = {
-        enable = true;
+        enable = false;
         plexServer = "https://192.168.2.100:32400";
+        transcribeOrTranslate = "translate";
+        subtitleLanguageName = "en";
+        preferredAudioLanguages = "eng|nor";
       };
     };
   };
