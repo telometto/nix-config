@@ -252,6 +252,16 @@ in
 
   services.rpcbind.enable = lib.mkDefault true;
 
+  fileSystems."/home/zeno/pools/rpool/unenc/media/data/media" = {
+    device = "192.168.2.100:/rpool/unenc/media/data/media";
+    fsType = "nfs";
+    options = [
+      "nofail"
+      "x-systemd.automount"
+      "x-systemd.idle-timeout=600"
+    ];
+  };
+
   hardware = {
     cpu.amd.updateMicrocode = lib.mkDefault true;
 
