@@ -108,7 +108,7 @@ in
             && cfgSubgen.transcribeOrTranslate == "translate"
             && lib.hasSuffix "turbo" cfgSubgen.whisperModel
           );
-        message = "large-v3-turbo does not support translation — use large-v3 or another model when transcribeOrTranslate is 'translate'.";
+        message = "Whisper models ending in 'turbo' do not support translation — use a non-turbo model when transcribeOrTranslate is 'translate'.";
       }
     ];
 
