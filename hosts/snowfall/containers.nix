@@ -15,10 +15,16 @@ in
       ../../containers/subgen.nix
     ];
 
+    xdg.configFile."containers/storage.conf".text = ''
+      [storage]
+      driver = "overlay"
+      graphroot = "/run/media/${username}/personal/container-storage"
+    '';
+
     services = {
       ollama-container = {
         enable = true;
-        dataDir = "/home/${username}/.local/share/ollama";
+        dataDir = "/run/media/${username}/personal/container-models/ollama/";
         gpu.enable = true;
       };
 
@@ -27,6 +33,7 @@ in
         gpu.enable = true;
         whisperModel = "large-v3";
         mediaDir = "/home/${username}/pools/rpool/unenc/media/data/media";
+        modelDir = "/run/media/${username}/personal/container-models/subgen";
 
         plexServer = "https://192.168.2.100:32400";
         transcribeOrTranslate = "translate";
