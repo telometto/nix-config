@@ -53,19 +53,19 @@ in
     subtitleLanguageName = lib.mkOption {
       type = lib.types.str;
       default = "aa";
-      description = "Language code used in the output subtitle filename (e.g., en, no).";
+      description = "ISO 639-1 two-letter code used in the output subtitle filename (e.g., en, no). Defaults to 'aa' to float to the top of Plex's list.";
     };
 
     preferredAudioLanguages = lib.mkOption {
       type = lib.types.str;
       default = "eng";
-      description = "Pipe-separated ISO 639-2 codes. Prefer transcribing these audio tracks when multiple exist.";
+      description = "Pipe-separated ISO 639-2 three-letter codes (e.g., eng|nor). Prefer transcribing these audio tracks when multiple exist.";
     };
 
     forceDetectedLanguageTo = lib.mkOption {
       type = lib.types.str;
       default = "";
-      description = "Force Whisper to a specific 2-letter language code if auto-detection is unreliable.";
+      description = "Force Whisper to a specific ISO 639-1 two-letter code (e.g., en, no) if auto-detection is unreliable.";
     };
 
     whisperThreads = lib.mkOption {
