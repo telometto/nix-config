@@ -13,7 +13,7 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 9000;
+      default = 11027;
       description = "Host port to expose the Subgen webhook listener on.";
     };
 
@@ -147,7 +147,7 @@ in
         volumes = [
           "${cfg.mediaDir}/tv:/data/media/tv"
           "${cfg.mediaDir}/movies:/data/media/movies"
-          "${cfg.modelDir}:/subgen/models"
+          "${cfg.modelDir}:/cache"
         ];
         environments = {
           WHISPER_MODEL = cfg.whisperModel;
