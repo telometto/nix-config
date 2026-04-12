@@ -18,7 +18,10 @@ in
     services = {
       podman = {
         settings = {
-          storage.storage.graphroot = "/run/media/${username}/personal/container-storage";
+          storage.storage = {
+            driver = "btrfs";
+            graphroot = "/run/media/${username}/personal/container-storage";
+          };
         };
       };
 
