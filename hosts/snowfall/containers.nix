@@ -15,13 +15,13 @@ in
       ../../containers/subgen.nix
     ];
 
-    xdg.configFile."containers/storage.conf".text = ''
-      [storage]
-      driver = "overlay"
-      graphroot = "/run/media/${username}/personal/container-storage"
-    '';
-
     services = {
+      podman = {
+        settings = {
+          storage.storage.graphroot = "/run/media/${username}/personal/container-storage";
+        };
+      };
+
       ollama-container = {
         enable = true;
         dataDir = "/run/media/${username}/personal/container-models/ollama/";
