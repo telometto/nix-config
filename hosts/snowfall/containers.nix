@@ -26,7 +26,7 @@ in
         enable = true;
         gpu.enable = true;
         whisperModel = "large-v3";
-        mediaDir = "/home/zeno/pools/rpool/unenc/media/data/media";
+        mediaDir = "/home/${username}/pools/rpool/unenc/media/data/media";
 
         plexServer = "https://192.168.2.100:32400";
         transcribeOrTranslate = "translate";
