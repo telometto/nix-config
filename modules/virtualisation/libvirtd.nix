@@ -1,3 +1,6 @@
+# NOTE: OVMF (UEFI firmware, including Secure Boot + TPM variants) is
+# automatically provided by the upstream NixOS module via the QEMU package.
+# No explicit ovmf configuration is needed.
 {
   lib,
   config,
@@ -25,20 +28,24 @@ in
         package = pkgs.qemu_kvm;
         runAsRoot = false;
         swtpm.enable = true;
+        vhostUserPackages = [ pkgs.virtiofsd ];
       };
     };
 
-    # Add virsh and virt-manager tools
-    environment.systemPackages = with pkgs; [
-      libvirt
-      virt-manager
-      virt-viewer
+    programs.virt-manager.enable = true;
+
+    # swtpm_localca needs a writable state directory owned by tss:tss
+    systemd.tmpfiles.rules = [
+      "d /var/lib/swtpm-localca 0750 tss tss -"
     ];
 
-    # Allow users in libvirtd group to manage VMs
-    users.groups.libvirtd.members = [ ];
+    environment.systemPackages = with pkgs; [
+      libvirt
+      virt-viewer
+      dnsmasq
+      virtio-win
+    ];
 
-    # Firewall rules for VM networking
     networking.firewall.trustedInterfaces = [ cfg.networkBridge ];
   };
 }
