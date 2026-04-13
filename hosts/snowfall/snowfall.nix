@@ -66,6 +66,8 @@ in
       ];
     };
 
+    virtualisation.libvirtd.enable = true;
+
     programs = {
       nix-ld.enable = true;
       python-venv.enable = true;
@@ -248,7 +250,10 @@ in
     };
   };
 
-  users.users.${VARS.users.zeno.user}.extraGroups = VARS.users.zeno.extraGroups ++ [ "openrazer" ];
+  users.users.${VARS.users.zeno.user}.extraGroups = VARS.users.zeno.extraGroups ++ [
+    "libvirtd"
+    "openrazer"
+  ];
 
   services.rpcbind.enable = lib.mkDefault true;
 
@@ -274,8 +279,6 @@ in
       enable32Bit = lib.mkDefault true;
     };
   };
-
-  programs.virt-manager.enable = true;
 
   system.stateVersion = "24.05";
 }
