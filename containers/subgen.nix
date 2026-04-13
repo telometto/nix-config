@@ -13,7 +13,7 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 11027;
+      default = 9000;
       description = "Host port to expose the Subgen webhook listener on.";
     };
 
