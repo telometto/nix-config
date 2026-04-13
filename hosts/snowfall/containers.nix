@@ -1,5 +1,5 @@
 # Rootless Podman containers on snowfall (managed via quadlet-nix + Home Manager)
-{ VARS, ... }:
+{ VARS, pkgs, ... }:
 let
   username = VARS.users.zeno.user;
 in
@@ -16,23 +16,14 @@ in
     ];
 
     services = {
-      podman = {
-        settings = {
-          storage.storage = {
-            driver = "btrfs";
-            graphroot = "/run/media/${username}/personal/container-storage";
-          };
-        };
-      };
-
-      ollama-container = {
+       ollama-container = {
         enable = true;
         dataDir = "/run/media/${username}/personal/container-models/ollama/";
         gpu.enable = true;
       };
 
       subgen-container = {
-        enable = true;
+        enable = false;
         gpu.enable = true;
         whisperModel = "large-v3";
         mediaDir = "/home/${username}/pools/rpool/unenc/media/data/media";
