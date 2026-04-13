@@ -16,7 +16,7 @@ in
     ];
 
     services = {
-       ollama-container = {
+      ollama-container = {
         enable = true;
         dataDir = "/run/media/${username}/personal/container-models/ollama/";
         gpu.enable = true;
