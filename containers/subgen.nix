@@ -147,7 +147,7 @@ in
         volumes = [
           "${cfg.mediaDir}/tv:/data/media/tv"
           "${cfg.mediaDir}/movies:/data/media/movies"
-          "${cfg.modelDir}:/cache"
+          "${cfg.modelDir}:/subgen/models"
         ];
         environments = {
           WHISPER_MODEL = cfg.whisperModel;
