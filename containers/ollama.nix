@@ -46,7 +46,7 @@ in
       "d ${cfg.dataDir} 0755 - - -"
     ];
 
-    virtualisation.quadlet.containers.ollama = {
+    virtualisation.quadlet.containers.ollama-standalone = {
       autoStart = true;
       containerConfig = {
         image =
