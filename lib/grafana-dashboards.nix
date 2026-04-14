@@ -19,8 +19,8 @@ rec {
   community = {
     node-exporter-full = fetchGrafanaDashboard {
       gnetId = 1860;
-      revision = 43;
-      hash = "sha256-mEWSdsTn1EKpW6xoJv/s0XST46EOoUPbDugQwyngIss=";
+      revision = 45;
+      hash = "sha256-GExrdAnzBtp1Ul13cvcZRbEM6iOtFrXXjEaY6g6lGYY=";
     };
 
     kubernetes-cluster = fetchGrafanaDashboard {
