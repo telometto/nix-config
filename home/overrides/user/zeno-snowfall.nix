@@ -24,6 +24,7 @@
     pkgs.lmstudio
     pkgs.podman-desktop
     pkgs.zola
+    pkgs.rendercv
   ];
 
   hm = {
