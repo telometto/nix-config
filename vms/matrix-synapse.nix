@@ -492,7 +492,9 @@ in
         # --- MAS compatibility layer ---
         # Route Synapse login/logout/refresh to MAS so legacy and OIDC
         # clients both work through the same endpoints.
-        "~ ^/_matrix/client/(r0|v1|v3)/login$" = {
+        # No trailing $ — sub-paths like /login/sso/redirect must also
+        # reach MAS for SSO/compat login flows (e.g. mobile Element).
+        "~ ^/_matrix/client/(r0|v1|v3)/login" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
             proxy_set_header X-Forwarded-Proto https;
