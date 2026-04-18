@@ -20,10 +20,10 @@ let
   updateScript = pkgs.writeShellScript "cloudflare-access-ip-updater" ''
     set -euo pipefail
 
-    # Configuration
-    ACCOUNT_ID="${cfg.accountId}"
+    # Read secrets from files at runtime
+    ACCOUNT_ID=$(${pkgs.coreutils}/bin/cat "${cfg.accountIdFile}" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
     ${lib.optionalString (cfg.appId != null) ''APP_ID="${cfg.appId}"''}
-    POLICY_ID="${cfg.policyId}"
+    POLICY_ID=$(${pkgs.coreutils}/bin/cat "${cfg.policyIdFile}" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
     API_TOKEN_FILE="${cfg.apiTokenFile}"
     STATE_FILE="/var/lib/cloudflare-access-ip-updater/last-ip"
     API_ENDPOINT="${apiEndpoint}"
@@ -117,10 +117,13 @@ in
   options.sys.services.cloudflareAccessIpUpdater = {
     enable = lib.mkEnableOption "Cloudflare Access IP Updater";
 
-    accountId = lib.mkOption {
-      type = lib.types.str;
-      description = "Cloudflare Account ID";
-      example = "abcdef1234567890abcdef1234567890";
+    accountIdFile = lib.mkOption {
+      type = lib.types.path;
+      description = ''
+        Path to file containing the Cloudflare Account ID.
+        Use sops.secrets.*.path for secure storage.
+      '';
+      example = "/run/secrets/cloudflare-account-id";
     };
 
     appId = lib.mkOption {
@@ -134,10 +137,13 @@ in
       example = "12345678-1234-1234-1234-123456789012";
     };
 
-    policyId = lib.mkOption {
-      type = lib.types.str;
-      description = "Cloudflare Access Policy ID to update with dynamic IP";
-      example = "87654321-4321-4321-4321-210987654321";
+    policyIdFile = lib.mkOption {
+      type = lib.types.path;
+      description = ''
+        Path to file containing the Cloudflare Access Policy ID to update with dynamic IP.
+        Use sops.secrets.*.path for secure storage.
+      '';
+      example = "/run/secrets/cloudflare-policy-id";
     };
 
     apiTokenFile = lib.mkOption {
