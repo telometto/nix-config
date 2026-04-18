@@ -162,6 +162,24 @@
       '';
     };
 
+    cloudflareAccountIdFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the Cloudflare Account ID.
+        Used by cloudflare-access-ip-updater service. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    cloudflarePolicyIdFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the Cloudflare Access Policy ID.
+        Used by cloudflare-access-ip-updater service. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
     upsmonPasswordFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
