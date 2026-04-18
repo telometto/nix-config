@@ -10,11 +10,11 @@ let
   # Determine API endpoint based on whether appId is provided
   # Reusable policy: /accounts/{account_id}/access/policies/{policy_id}
   # App-specific:    /accounts/{account_id}/access/apps/{app_id}/policies/{policy_id}
-  apiEndpoint =
+  apiEndpointTemplate =
     if cfg.appId == null then
-      "https://api.cloudflare.com/client/v4/accounts/\$ACCOUNT_ID/access/policies/\$POLICY_ID"
+      "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/access/policies/$POLICY_ID"
     else
-      "https://api.cloudflare.com/client/v4/accounts/\$ACCOUNT_ID/access/apps/\$APP_ID/policies/\$POLICY_ID";
+      "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/access/apps/$APP_ID/policies/$POLICY_ID";
 
   # Script to update Cloudflare Access policy with current IP
   updateScript = pkgs.writeShellScript "cloudflare-access-ip-updater" ''
@@ -34,7 +34,7 @@ let
     POLICY_ID=$(${pkgs.coreutils}/bin/cat "${cfg.policyIdFile}" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
     API_TOKEN=$(${pkgs.coreutils}/bin/cat "${cfg.apiTokenFile}" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
     STATE_FILE="/var/lib/cloudflare-access-ip-updater/last-ip"
-    API_ENDPOINT="${apiEndpoint}"
+    API_ENDPOINT="${apiEndpointTemplate}"
 
     # Get current public IP
     CURRENT_IP=$(${pkgs.curl}/bin/curl -sf ${lib.escapeShellArg cfg.ipService} | ${pkgs.coreutils}/bin/tr -d '[:space:]')
