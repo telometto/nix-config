@@ -1,0 +1,99 @@
+name: Cloudflare IP Staleness Check
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 1 * *"
+
+concurrency:
+  group: cloudflare-ip-check
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-cloudflare-ips:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          sparse-checkout: hosts/blizzard/security/traefik.nix
+          sparse-checkout-cone-mode: false
+
+      - name: Compare hardcoded IPs against Cloudflare API
+        id: check
+        run: |
+          echo "## ☁️ Cloudflare IP Staleness Check" >> $GITHUB_STEP_SUMMARY
+
+          # Fetch current Cloudflare IPv4 ranges
+          cf_ips=$(curl -sf https://www.cloudflare.com/ips-v4 | sort)
+          if [ -z "$cf_ips" ]; then
+            echo "❌ Failed to fetch Cloudflare IP ranges" >> $GITHUB_STEP_SUMMARY
+            echo "stale=error" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          # Extract hardcoded IPs from traefik.nix (skip 127.0.0.1/32)
+          hardcoded_ips=$(grep -oP '"\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+' \
+            hosts/blizzard/security/traefik.nix \
+            | grep -v '^127\.' \
+            | sort)
+
+          # Diff
+          missing_from_config=$(comm -23 <(echo "$cf_ips") <(echo "$hardcoded_ips"))
+          extra_in_config=$(comm -13 <(echo "$cf_ips") <(echo "$hardcoded_ips"))
+
+          if [ -z "$missing_from_config" ] && [ -z "$extra_in_config" ]; then
+            echo "✅ Cloudflare IP ranges are up to date" >> $GITHUB_STEP_SUMMARY
+            echo "stale=false" >> $GITHUB_OUTPUT
+          else
+            echo "🚨 Cloudflare IP ranges are **stale**" >> $GITHUB_STEP_SUMMARY
+            if [ -n "$missing_from_config" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Missing from config (new Cloudflare ranges):**" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              echo "$missing_from_config" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+            if [ -n "$extra_in_config" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**In config but no longer in Cloudflare (stale ranges):**" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              echo "$extra_in_config" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+            echo "stale=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create issue if stale
+        if: steps.check.outputs.stale == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Cloudflare IP ranges are stale in traefik.nix';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security',
+            });
+            const exists = issues.some(i => i.title === title);
+            if (!exists) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body: [
+                  'The hardcoded Cloudflare IP ranges in `hosts/blizzard/security/traefik.nix`',
+                  'no longer match the live ranges from https://www.cloudflare.com/ips-v4.',
+                  '',
+                  'Please update `forwardedHeadersTrustedIPs` and consider adding IPv6 ranges',
+                  'from https://www.cloudflare.com/ips-v6.',
+                  '',
+                  'See the workflow run for details.',
+                ].join('\n'),
+                labels: ['security'],
+              });
+            }
