@@ -20,20 +20,21 @@ let
   updateScript = pkgs.writeShellScript "cloudflare-access-ip-updater" ''
     set -euo pipefail
 
+    # Validate secret files exist before reading
+    for secret_file in "${cfg.accountIdFile}" "${cfg.policyIdFile}" "${cfg.apiTokenFile}"; do
+      if [[ ! -f "$secret_file" ]]; then
+        echo "Error: Required secret file not found: $secret_file"
+        exit 1
+      fi
+    done
+
     # Read secrets from files at runtime
     ACCOUNT_ID=$(${pkgs.coreutils}/bin/cat "${cfg.accountIdFile}" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
     ${lib.optionalString (cfg.appId != null) ''APP_ID="${cfg.appId}"''}
     POLICY_ID=$(${pkgs.coreutils}/bin/cat "${cfg.policyIdFile}" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
-    API_TOKEN_FILE="${cfg.apiTokenFile}"
+    API_TOKEN=$(${pkgs.coreutils}/bin/cat "${cfg.apiTokenFile}" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
     STATE_FILE="/var/lib/cloudflare-access-ip-updater/last-ip"
     API_ENDPOINT="${apiEndpoint}"
-
-    # Read API token
-    if [[ ! -f "$API_TOKEN_FILE" ]]; then
-      echo "Error: API token file not found: $API_TOKEN_FILE"
-      exit 1
-    fi
-    API_TOKEN=$(${pkgs.coreutils}/bin/cat "$API_TOKEN_FILE" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
 
     # Get current public IP
     CURRENT_IP=$(${pkgs.curl}/bin/curl -sf ${lib.escapeShellArg cfg.ipService} | ${pkgs.coreutils}/bin/tr -d '[:space:]')
