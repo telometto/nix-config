@@ -35,9 +35,15 @@ jobs:
             exit 1
           fi
 
-          # Extract hardcoded IPs from traefik.nix (skip 127.0.0.1/32)
-          hardcoded_ips=$(grep -oP '"\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+' \
-            hosts/blizzard/security/traefik.nix \
+          # Extract Cloudflare IPs from the forwardedHeadersTrustedIPs block only (skip 127.0.0.1/32)
+          hardcoded_ips=$(awk '
+            /forwardedHeadersTrustedIPs[[:space:]]*=/ { in_block=1 }
+            in_block {
+              print
+              if (/\][[:space:]]*;/) exit
+            }
+          ' hosts/blizzard/security/traefik.nix \
+            | grep -oP '"\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+' \
             | grep -v '^127\.' \
             | sort)
 
