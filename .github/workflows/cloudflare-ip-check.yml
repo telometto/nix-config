@@ -73,13 +73,10 @@ jobs:
         with:
           script: |
             const title = 'Cloudflare IP ranges are stale in traefik.nix';
-            const { data: issues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              labels: 'security',
+            const { data: { items } } = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open in:title "${title}"`,
             });
-            const exists = issues.some(i => i.title === title);
+            const exists = items.some(i => i.title === title);
             if (!exists) {
               await github.rest.issues.create({
                 owner: context.repo.owner,
