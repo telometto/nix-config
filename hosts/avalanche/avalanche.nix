@@ -84,7 +84,8 @@ in
 
       cloudflareAccessIpUpdater = {
         enable = true;
-        inherit (consts.cloudflare) accountId policyId;
+        accountIdFile = config.sops.secrets."cloudflare/accountId".path;
+        policyIdFile = config.sops.secrets."cloudflare/policyId".path;
         apiTokenFile = config.sops.secrets."cloudflare/access_api_token".path;
         interval = "30min";
       };

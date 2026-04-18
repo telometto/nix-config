@@ -2,9 +2,12 @@
   description = "NixOS configuration with auto-imported modules";
 
   inputs = {
+    # Primary channel - most packages come from here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Stable fallbacks for packages broken on unstable
     nixpkgs-stable-latest.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+    # Bleeding-edge channel for packages that need the latest commits
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";

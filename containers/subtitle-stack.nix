@@ -217,7 +217,7 @@ in
                 WEBHOOKPORT = "9000";
                 CONCURRENT_TRANSCRIPTIONS = "2";
                 WORD_LEVEL_HIGHLIGHT = "False";
-                DEBUG = "True";
+                DEBUG = "False";
                 TRANSCRIBE_DEVICE = "cpu";
                 CLEAR_VRAM_ON_COMPLETE = "True";
                 MODEL_PATH = "./models";
