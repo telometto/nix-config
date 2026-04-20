@@ -50,6 +50,12 @@ in
         owner = "firefly-iii-data-importer";
         group = "nginx";
       };
+
+      "firefly/importer_token" = {
+        mode = "0400";
+        owner = "firefly-iii-data-importer";
+        group = "nginx";
+      };
     };
   };
 
@@ -89,6 +95,7 @@ in
 
       settings = {
         FIREFLY_III_URL = fireflyInternalUrl;
+        FIREFLY_III_ACCESS_TOKEN_FILE = config.sops.secrets."firefly/importer_token".path;
         FIREFLY_III_CLIENT_ID = "8";
         VANITY_URL = fireflyPublicUrl;
         ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly/eb_app_id".path;
