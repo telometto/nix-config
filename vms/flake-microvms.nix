@@ -14,9 +14,7 @@ let
 
     sys.overlays.fromInputs = {
       nixpkgs-unstable = [
-        "libreoffice"
-        "libreoffice-still"
-        "firefly-iii-data-importer"
+        "firefly-iii"
       ];
       # nixpkgs-stable = [ "cloud-hypervisor" ];
     };
