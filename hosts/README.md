@@ -51,7 +51,7 @@ hosts/blizzard/
     └── containers.nix
 ```
 
-All `.nix` files are auto-imported recursively by [host-loader.nix](../host-loader.nix) — no explicit
+All `.nix` files are auto-imported recursively by [host-loader.nix](../host-loader.nix) - no explicit
 `imports` list needed for local files. External modules (e.g. `nixos-hardware`) still
 require an `imports` block.
 
@@ -59,7 +59,7 @@ require an `imports` block.
 
 All `.nix` files under `hosts/<hostname>/` are auto-imported by
 [host-loader.nix](../host-loader.nix). The main `<hostname>.nix` only needs to
-set host-specific configuration — no imports block for local files:
+set host-specific configuration - no imports block for local files:
 
 ```nix
 # hosts/<hostname>/<hostname>.nix
@@ -144,8 +144,8 @@ head -c 4 /dev/urandom | od -A none -t x4 | tr -d ' '
 
 - [Tutorial: Provision a Host](../docs/tutorial-provision-host.md)
 - [How to Add Hosts and Users](../docs/how-to-add-host-and-users.md)
-- [Role Desktop](../modules/role-desktop.nix) — Desktop role defaults
-- [Role Server](../modules/role-server.nix) — Server role defaults
+- [Role Desktop](../modules/role-desktop.nix) - Desktop role defaults
+- [Role Server](../modules/role-server.nix) - Server role defaults
 
 ______________________________________________________________________
 
