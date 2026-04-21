@@ -100,6 +100,8 @@ in
       }
       // whenEnabled hasCloudflareAccessIpUpdater {
         "cloudflare/access_api_token" = { };
+        "cloudflare/accountId" = { };
+        "cloudflare/policyId" = { };
       }
       # UPS monitoring password (for NUT upsmon)
       // whenEnabled hasUps {
@@ -226,6 +228,8 @@ in
     }
     // whenEnabled hasCloudflareAccessIpUpdater {
       cloudflareAccessApiTokenFile = toString config.sops.secrets."cloudflare/access_api_token".path;
+      cloudflareAccountIdFile = toString config.sops.secrets."cloudflare/accountId".path;
+      cloudflarePolicyIdFile = toString config.sops.secrets."cloudflare/policyId".path;
     }
     # UPS monitoring password
     // whenEnabled hasUps {

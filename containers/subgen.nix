@@ -160,7 +160,7 @@ in
           TRANSCRIBE_DEVICE = if cfg.gpu.enable then "cuda" else "cpu";
           CLEAR_VRAM_ON_COMPLETE = "True";
           MODEL_PATH = "./models";
-          DEBUG = "True";
+          DEBUG = "False";
         }
         // lib.optionalAttrs (cfg.forceDetectedLanguageTo != "") {
           FORCE_DETECTED_LANGUAGE_TO = cfg.forceDetectedLanguageTo;
