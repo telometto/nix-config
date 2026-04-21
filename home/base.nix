@@ -80,7 +80,6 @@ in
 
     home = {
       stateVersion = lib.mkDefault "24.05";
-      enableDebugInfo = lib.mkDefault true;
       preferXdgDirectories = lib.mkDefault true;
 
       language = {
