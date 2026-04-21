@@ -107,9 +107,9 @@ in
 
       cloudflareAccessIpUpdater = {
         enable = true;
-        accountIdFile = config.sops.secrets."cloudflare/accountId".path;
-        policyIdFile = config.sops.secrets."cloudflare/policyId".path;
-        apiTokenFile = config.sops.secrets."cloudflare/access_api_token".path;
+        accountIdFile = config.sys.secrets.cloudflareAccountIdFile;
+        policyIdFile = config.sys.secrets.cloudflarePolicyIdFile;
+        apiTokenFile = config.sys.secrets.cloudflareAccessApiTokenFile;
         interval = "30min";
       };
 
