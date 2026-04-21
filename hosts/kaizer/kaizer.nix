@@ -57,11 +57,6 @@ in
 
     boot.lanzaboote.enable = lib.mkForce false;
 
-    # overlays.fromInputs = {
-    #   nixpkgs-unstable = [ "firefox" "discord" ];
-    #   nixpkgs-stable = [ "vesktop" ];
-    # };
-
     hardware.nvidia = {
       enable = true;
 
@@ -82,20 +77,25 @@ in
     #   mtr.enable = true;
     # };
 
-    # # Pull specific packages from different nixpkgs inputs
-    # overlays.fromInputs = {
-    #   nixpkgs-unstable = [ "firefox" "discord" ];
-    #   nixpkgs-stable = [ "thunderbird" ];
+    ## Pull specific packages from different nixpkgs inputs
+    # overlays = {
+    #   fromInputs = {
+    #     nixpkgs-unstable = [
+    #       "firefox"
+    #       "discord"
+    #     ];
+    #     nixpkgs-stable = [ "thunderbird" ];
+    #   };
+
+    ## Add custom overlays
+    #   custom = [
+    #     (final: prev: {
+    #       firefox = prev.firefox.override {
+    #         enablePlasmaBrowserIntegration = true;
+    #       };
+    #     })
+    #   ];
     # };
-    #
-    # Add custom overlays
-    # overlays.custom = [
-    #   (final: prev: {
-    #     firefox = prev.firefox.override {
-    #       enablePlasmaBrowserIntegration = true;
-    #     };
-    #   })
-    # ];
 
     services = {
       resolved = {

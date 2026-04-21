@@ -74,22 +74,24 @@ in
     };
 
     ## Pull specific packages from different nixpkgs inputs
-    overlays.fromInputs = {
-      # nixpkgs-unstable = [ "lutris" ];
-      nixpkgs-stable = [
-        "podman-desktop"
-        "teams-for-linux"
-      ];
-    };
-    #
+    # overlays = {
+    #   fromInputs = {
+    #     nixpkgs-unstable = [
+    #       "firefox"
+    #       "discord"
+    #     ];
+    #     nixpkgs-stable = [ "thunderbird" ];
+    #   };
+
     ## Add custom overlays
-    # overlays.custom = [
-    #   (final: prev: {
-    #     firefox = prev.firefox.override {
-    #       enablePlasmaBrowserIntegration = true;
-    #     };
-    #   })
-    # ];
+    #   custom = [
+    #     (final: prev: {
+    #       firefox = prev.firefox.override {
+    #         enablePlasmaBrowserIntegration = true;
+    #       };
+    #     })
+    #   ];
+    # };
 
     services = {
       resolved = {

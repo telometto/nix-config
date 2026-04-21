@@ -46,11 +46,25 @@
       ];
     };
 
-    overlays.fromInputs = {
-      # nixpkgs-unstable = [ "firefly-iii-data-importer" ];
-      # nixpkgs-stable = [ "searxng" ];
-      # nixpkgs-stable-latest = [ "beets" ];
-    };
+    ## Pull specific packages from different nixpkgs inputs
+    # overlays = {
+    #   fromInputs = {
+    #     nixpkgs-unstable = [
+    #       "firefox"
+    #       "discord"
+    #     ];
+    #     nixpkgs-stable = [ "thunderbird" ];
+    #   };
+
+    ## Add custom overlays
+    #   custom = [
+    #     (final: prev: {
+    #       firefox = prev.firefox.override {
+    #         enablePlasmaBrowserIntegration = true;
+    #       };
+    #     })
+    #   ];
+    # };
 
     services = {
       k3s.enable = false;
