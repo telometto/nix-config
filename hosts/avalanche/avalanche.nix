@@ -63,10 +63,10 @@ in
     };
 
     # Pull specific packages from different nixpkgs inputs
-    # overlays.fromInputs = {
-    #   nixpkgs-unstable = [ "vscode" ];
-    #   nixpkgs-stable = [ "vesktop" ];
-    # };
+    overlays.fromInputs = {
+      nixpkgs-unstable = [ "apparmor" ];
+      # nixpkgs-stable = [ "vesktop" ];
+    };
 
     services = {
       resolved = {
