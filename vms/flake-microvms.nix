@@ -35,7 +35,11 @@ let
     modules:
     nixpkgs.lib.nixosSystem {
       inherit system;
-      modules = [ fromInputsOverlays ] ++ modules;
+      modules = [
+        fromInputsOverlays
+        ../modules/core/nixpkgs-module-overrides.nix
+      ]
+      ++ modules;
 
       specialArgs = {
         inherit inputs system VARS;
