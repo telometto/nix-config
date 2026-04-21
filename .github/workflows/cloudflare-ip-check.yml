@@ -47,6 +47,11 @@ jobs:
             | grep -oP '"\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+' \
             | grep -v '^127\.' \
             | sort)
+          if [ -z "$hardcoded_ips" ]; then
+            echo "❌ Failed to extract hardcoded Cloudflare IP ranges from hosts/blizzard/security/traefik.nix" >> $GITHUB_STEP_SUMMARY
+            echo "stale=error" >> $GITHUB_OUTPUT
+            exit 1
+          fi
 
           # Diff
           missing_from_config=$(comm -23 <(echo "$cf_ips") <(echo "$hardcoded_ips"))
@@ -76,7 +81,7 @@ jobs:
 
       - name: Create issue if stale
         if: steps.check.outputs.stale == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const title = 'Cloudflare IP ranges are stale in traefik.nix';
