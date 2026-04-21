@@ -25,10 +25,11 @@ jobs:
       - name: Compare hardcoded IPs against Cloudflare API
         id: check
         run: |
+          set -euo pipefail
           echo "## ☁️ Cloudflare IP Staleness Check" >> $GITHUB_STEP_SUMMARY
 
           # Fetch current Cloudflare IPv4 ranges
-          cf_ips=$(curl -sf https://www.cloudflare.com/ips-v4 | sort)
+          cf_ips=$(curl -sf --max-time 30 --connect-timeout 10 --retry 3 --retry-delay 2 --location https://www.cloudflare.com/ips-v4 | sort)
           if [ -z "$cf_ips" ]; then
             echo "❌ Failed to fetch Cloudflare IP ranges" >> $GITHUB_STEP_SUMMARY
             echo "stale=error" >> $GITHUB_OUTPUT
