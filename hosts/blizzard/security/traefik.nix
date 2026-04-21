@@ -164,7 +164,7 @@ in
             };
           };
 
-          # Plex-adjacent services (Overseerr, Tautulli) — relaxed referrer + Plex CSP
+          # Plex-adjacent services (Overseerr, Tautulli) - relaxed referrer + Plex CSP
           plex-headers = traefikLib.mkSecurityHeaders {
             referrerPolicy = "no-referrer-when-downgrade";
             csp = plexCsp;
@@ -211,7 +211,7 @@ in
     # Copy the bouncer token into Traefik's RuntimeDirectory so the
     # DynamicUser can read it without making the SOPS source world-readable.
     # The directory is 0750 (only root + dynamic user), so 0444 on the copy
-    # is safe — no other user can even enter the directory.
+    # is safe - no other user can even enter the directory.
     RuntimeDirectory = "traefik";
     RuntimeDirectoryMode = "0750";
     ExecStartPre = [
