@@ -38,7 +38,8 @@ let
       modules = [
         fromInputsOverlays
         ../modules/core/nixpkgs-module-overrides.nix
-      ] ++ modules;
+      ]
+      ++ modules;
 
       specialArgs = {
         inherit inputs system VARS;
