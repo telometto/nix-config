@@ -11,6 +11,12 @@ in
   options.hm.programs.terminal = {
     enable = lib.mkEnableOption "Terminal tools and shell configuration";
 
+    atuin.settings = lib.mkOption {
+      type = lib.types.attrs;
+      default = { };
+      description = "User overrides for Atuin settings merged on top of the module defaults.";
+    };
+
     zellij = {
       enable = lib.mkEnableOption "zellij multiplexer";
 
@@ -44,21 +50,24 @@ in
         enableBashIntegration = lib.mkDefault true;
         enableZshIntegration = lib.mkDefault true;
 
-        settings = {
-          auto_sync = lib.mkDefault true;
-          update_check = lib.mkDefault false;
+        settings = lib.mkMerge [
+          {
+            auto_sync = true;
+            update_check = false;
 
-          # Prefer history discovery that works well in big git repos.
-          search_mode = lib.mkDefault "daemon-fuzzy";
-          filter_mode = lib.mkDefault "workspace";
-          workspaces = lib.mkDefault true;
+            # Prefer history discovery that works well in big git repos.
+            search_mode = "daemon-fuzzy";
+            filter_mode = "workspace";
+            workspaces = true;
 
-          style = lib.mkDefault "compact";
-          inline_height = lib.mkDefault 20;
-          show_preview = lib.mkDefault true;
-          show_help = lib.mkDefault false;
-          enter_accept = lib.mkDefault true;
-        };
+            style = "compact";
+            inline_height = 20;
+            show_preview = true;
+            show_help = false;
+            enter_accept = true;
+          }
+          cfg.atuin.settings
+        ];
       };
 
       bash = {
