@@ -122,7 +122,8 @@ in
       type = lib.types.str; # runtime path string (do not coerce into store)
       description = ''
         Path to file containing the Cloudflare Account ID.
-        Use sops.secrets.*.path for secure storage.
+        Use config.sys.secrets.cloudflareAccountIdFile (preferred) or
+        toString config.sops.secrets."cloudflare/accountId".path.
       '';
       example = "/run/secrets/cloudflare-account-id";
     };
@@ -142,7 +143,8 @@ in
       type = lib.types.str; # runtime path string (do not coerce into store)
       description = ''
         Path to file containing the Cloudflare Access Policy ID to update with dynamic IP.
-        Use sops.secrets.*.path for secure storage.
+        Use config.sys.secrets.cloudflarePolicyIdFile (preferred) or
+        toString config.sops.secrets."cloudflare/policyId".path.
       '';
       example = "/run/secrets/cloudflare-policy-id";
     };
@@ -152,7 +154,8 @@ in
       description = ''
         Path to file containing Cloudflare API token.
         Token needs "Zero Trust: Edit" permission.
-        Use sops.secrets.*.path for secure storage.
+        Use config.sys.secrets.cloudflareAccessApiTokenFile (preferred) or
+        toString config.sops.secrets."cloudflare/access_api_token".path.
       '';
       example = "/run/secrets/cloudflare-access-api-token";
     };
