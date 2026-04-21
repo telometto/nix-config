@@ -119,7 +119,7 @@ in
     enable = lib.mkEnableOption "Cloudflare Access IP Updater";
 
     accountIdFile = lib.mkOption {
-      type = lib.types.path;
+      type = lib.types.str; # runtime path string (do not coerce into store)
       description = ''
         Path to file containing the Cloudflare Account ID.
         Use sops.secrets.*.path for secure storage.
@@ -139,7 +139,7 @@ in
     };
 
     policyIdFile = lib.mkOption {
-      type = lib.types.path;
+      type = lib.types.str; # runtime path string (do not coerce into store)
       description = ''
         Path to file containing the Cloudflare Access Policy ID to update with dynamic IP.
         Use sops.secrets.*.path for secure storage.
@@ -148,7 +148,7 @@ in
     };
 
     apiTokenFile = lib.mkOption {
-      type = lib.types.path;
+      type = lib.types.str; # runtime path string (do not coerce into store)
       description = ''
         Path to file containing Cloudflare API token.
         Token needs "Zero Trust: Edit" permission.
@@ -198,8 +198,12 @@ in
       # Main service
       services.cloudflare-access-ip-updater = {
         description = "Update Cloudflare Access policy with current public IP";
-        after = [ "network-online.target" ];
+        after = [
+          "network-online.target"
+          "sops-install-secrets.service"
+        ];
         wants = [ "network-online.target" ];
+        requires = [ "sops-install-secrets.service" ];
 
         serviceConfig = {
           Type = "oneshot";
