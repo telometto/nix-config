@@ -2,7 +2,31 @@
 let
   cfg = config.sys.services.openssh;
 
+  defaultBanner = builtins.toFile "openssh-banner" ''
+    ╔═══════════════════════════════════════════════════════════════════════╗
+    ║                                                                       ║
+    ║                 ███╗   ██╗██╗██╗  ██╗ ██████╗ ███████╗                ║
+    ║                 ████╗  ██║██║╚██╗██╔╝██╔═══██╗██╔════╝                ║
+    ║                 ██╔██╗ ██║██║ ╚███╔╝ ██║   ██║███████╗                ║
+    ║                 ██║╚██╗██║██║ ██╔██╗ ██║   ██║╚════██║                ║
+    ║                 ██║ ╚████║██║██╔╝ ██╗╚██████╔╝███████║                ║
+    ║                 ╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝                ║
+    ║                                                                       ║
+    ║              🔒 Secured by NixOS • Hardened by Design 🔒             ║
+    ║                                                                       ║
+    ║   ┌─────────────────────────────────────────────────────────────┐     ║
+    ║   │  Welcome back to the Matrix!                                │     ║
+    ║   │                                                             │     ║
+    ║   │    • All connections are monitored and logged               │     ║
+    ║   │    • Unauthorized access attempts will be prosecuted        │     ║
+    ║   │    • This system is protected by AppArmor MAC               │     ║
+    ║   └─────────────────────────────────────────────────────────────┘     ║
+    ║                                                                       ║
+    ╚═══════════════════════════════════════════════════════════════════════╝
+  '';
+
   defaultSettings = {
+    Banner = lib.mkDefault defaultBanner;
     X11Forwarding = lib.mkDefault false;
     PermitRootLogin = lib.mkDefault "no";
     PasswordAuthentication = lib.mkDefault false;
@@ -35,34 +59,13 @@ in
   config = lib.mkIf cfg.enable {
     services.openssh = {
       enable = true;
-      banner = lib.mkDefault ''
-        ╔═══════════════════════════════════════════════════════════════════════╗
-        ║                                                                       ║
-        ║                 ███╗   ██╗██╗██╗  ██╗ ██████╗ ███████╗                ║
-        ║                 ████╗  ██║██║╚██╗██╔╝██╔═══██╗██╔════╝                ║
-        ║                 ██╔██╗ ██║██║ ╚███╔╝ ██║   ██║███████╗                ║
-        ║                 ██║╚██╗██║██║ ██╔██╗ ██║   ██║╚════██║                ║
-        ║                 ██║ ╚████║██║██╔╝ ██╗╚██████╔╝███████║                ║
-        ║                 ╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝                ║
-        ║                                                                       ║
-        ║              🔒 Secured by NixOS • Hardened by Design 🔒              ║
-        ║                                                                       ║
-        ║   ┌─────────────────────────────────────────────────────────────┐     ║
-        ║   │  Welcome back to the Matrix!                                │     ║
-        ║   │                                                             │     ║
-        ║   │    • All connections are monitored and logged               │     ║
-        ║   │    • Unauthorized access attempts will be prosecuted        │     ║
-        ║   │    • This system is protected by AppArmor MAC               │     ║
-        ║   └─────────────────────────────────────────────────────────────┘     ║
-        ║                                                                       ║
-        ╚═══════════════════════════════════════════════════════════════════════╝
 
-      '';
+      inherit (cfg) extraConfig openFirewall;
+
       settings = lib.mkMerge [
         defaultSettings
         cfg.extraSettings
       ];
-      inherit (cfg) extraConfig openFirewall;
     };
   };
 }
