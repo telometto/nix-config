@@ -24,12 +24,12 @@ set of MicroVMs. It uses:
 
 Hosts live under `hosts/`:
 
-| Host      | Role    | Desktop  |
+| Host | Role | Desktop |
 | --------- | ------- | -------- |
-| snowfall  | Desktop | KDE      |
-| blizzard  | Server  | —        |
-| avalanche | Desktop | GNOME    |
-| kaizer    | Desktop | KDE      |
+| snowfall | Desktop | KDE |
+| blizzard | Server | — |
+| avalanche | Desktop | GNOME |
+| kaizer | Desktop | KDE |
 
 MicroVMs are merged into `nixosConfigurations` from
 [`vms/flake-microvms.nix`](../vms/flake-microvms.nix).
@@ -143,6 +143,7 @@ it is already imported. Conversely, creating a new file in those trees is
 enough to activate it; there is no registry file to update.
 
 Files that are deliberately excluded from auto-loading:
+
 - `home/overrides/host/**` and `home/overrides/user/**` — picked up
   conditionally by `modules/core/home-users.nix`.
 
@@ -221,9 +222,9 @@ Auto-merge for lockfile PRs is gated on `Flake Check` and
 
 1. Create `modules/<category>/<name>.nix` using the module pattern above
    with options under `sys.<category>.<name>.*`.
-2. Do **not** add it to any `imports` list.
-3. Enable it per host from `hosts/<hostname>/<hostname>.nix`.
-4. Update `docs/reference-architecture.md` if the option is user-facing.
+1. Do **not** add it to any `imports` list.
+1. Enable it per host from `hosts/<hostname>/<hostname>.nix`.
+1. Update `docs/reference-architecture.md` if the option is user-facing.
 
 ### Add a new host
 
@@ -231,7 +232,7 @@ Follow `docs/how-to-add-host-and-users.md`:
 
 1. `hosts/<hostname>/<hostname>.nix` + `hardware-configuration.nix`
    (+ `disko.nix`, `packages.nix` as needed).
-2. Add `<hostname> = mkHost "<hostname>" [ ];` to `nixosConfigurations` in
+1. Add `<hostname> = mkHost "<hostname>" [ ];` to `nixosConfigurations` in
    `flake.nix`. The `validate-config.yml` workflow discovers hosts by
    grepping for `mkHost` — keep the spacing `name = mkHost` intact so the
    regex `^\s+\K\w+(?=\s*=\s*mkHost)` still matches.
@@ -239,7 +240,7 @@ Follow `docs/how-to-add-host-and-users.md`:
 ### Add a new Home Manager module
 
 1. Create `home/<category>/<name>.nix` under `hm.<category>.<name>`.
-2. Opt-in from `home/base.nix` or from a host/user override under
+1. Opt-in from `home/base.nix` or from a host/user override under
    `home/overrides/`.
 
 ### Update inputs
