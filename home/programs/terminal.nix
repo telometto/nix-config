@@ -40,8 +40,25 @@ in
     programs = {
       atuin = {
         enable = lib.mkDefault true;
+
         enableBashIntegration = lib.mkDefault true;
         enableZshIntegration = lib.mkDefault true;
+
+        settings = {
+          auto_sync = lib.mkDefault true;
+          update_check = lib.mkDefault false;
+
+          # Prefer history discovery that works well in big git repos.
+          search_mode = lib.mkDefault "daemon-fuzzy";
+          filter_mode = lib.mkDefault "workspace";
+          workspaces = lib.mkDefault true;
+
+          style = lib.mkDefault "compact";
+          inline_height = lib.mkDefault 20;
+          show_preview = lib.mkDefault true;
+          show_help = lib.mkDefault false;
+          enter_accept = lib.mkDefault true;
+        };
       };
 
       bash = {
