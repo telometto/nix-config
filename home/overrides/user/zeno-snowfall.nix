@@ -25,6 +25,7 @@
     pkgs.podman-desktop
     pkgs.zola
     pkgs.rendercv
+    pkgs.claude-code
   ];
 
   hm = {
