@@ -1,5 +1,8 @@
 {
   config,
+  pkgs,
+  lib,
+  system,
   inputs,
   VARS,
   consts,
@@ -7,6 +10,23 @@
 }:
 let
   reg = (import ./vm-registry.nix).gitea;
+
+  # TEMP: pin gitea to the nixpkgs commit that bumped it to 1.26.0, so we get
+  # chunked LFS upload responses (go-gitea/gitea#36380, shipped in v1.26.0).
+  # No new flake input; fetchTarball pins an exact rev in-tree.
+  # DELETE this block (and the assertion below) once `nix flake update nixpkgs`
+  # locks a commit at-or-past 836f421fca0b8e112393a929852cd39d6073a723:
+  #   gh api repos/NixOS/nixpkgs/compare/836f421fca0b8e112393a929852cd39d6073a723...<new-rev> --jq '.status'
+  #   -> want "ahead" or "identical"
+  giteaPinRev = "836f421fca0b8e112393a929852cd39d6073a723";
+  giteaPinnedNixpkgs = builtins.fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/${giteaPinRev}.tar.gz";
+    sha256 = "0sw830n4n2cx1hn6aqr9yxdyp34s67raxap6s5ir9v5bkzjd3d7y";
+  };
+  giteaPinnedPkgs = import giteaPinnedNixpkgs {
+    inherit system;
+    inherit (config.nixpkgs) config;
+  };
 in
 {
   imports = [
@@ -30,6 +50,15 @@ in
         ];
       }
     ))
+  ];
+
+  nixpkgs.overlays = [ (_: _: { inherit (giteaPinnedPkgs) gitea; }) ];
+
+  assertions = [
+    {
+      assertion = lib.versionAtLeast pkgs.gitea.version "1.26.0";
+      message = "gitea-pin: expected >= 1.26.0 from nixpkgs@${giteaPinRev}, got ${pkgs.gitea.version}. Delete the overlay when unstable catches up.";
+    }
   ];
 
   # SOPS configuration for this MicroVM
