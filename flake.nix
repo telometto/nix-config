@@ -9,6 +9,8 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     # Bleeding-edge channel for packages that need the latest commits
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+    # Master branch for packages that need to track ahead of any channel
+    nixpkgs-master.url = "github:NixOS/nixpkgs/master";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
