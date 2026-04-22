@@ -1,5 +1,7 @@
 {
   config,
+  pkgs,
+  lib,
   inputs,
   VARS,
   consts,
@@ -33,6 +35,13 @@ in
   ];
 
   sys.overlays.fromInputs.nixpkgs-master = [ "gitea" ];
+
+  assertions = [
+    {
+      assertion = lib.hasPrefix "1.26" pkgs.gitea.version;
+      message = "Gitea version patch: expected 1.26.x but got ${pkgs.gitea.version}. The nixpkgs-master pin may need updating.";
+    }
+  ];
 
   # SOPS configuration for this MicroVM
   # After first boot, get the VM's age key with:
