@@ -2,6 +2,7 @@
   config,
   pkgs,
   lib,
+  system,
   inputs,
   VARS,
   consts,
@@ -23,7 +24,7 @@ let
     sha256 = "0sw830n4n2cx1hn6aqr9yxdyp34s67raxap6s5ir9v5bkzjd3d7y";
   };
   giteaPinnedPkgs = import giteaPinnedNixpkgs {
-    inherit (pkgs) system;
+    inherit system;
     inherit (config.nixpkgs) config;
   };
 in
@@ -55,8 +56,8 @@ in
 
   assertions = [
     {
-      assertion = lib.hasPrefix "1.26" pkgs.gitea.version;
-      message = "gitea-pin: expected 1.26.x (1.26.0+) from nixpkgs@${giteaPinRev}, got ${pkgs.gitea.version}. Delete the overlay when unstable catches up.";
+      assertion = lib.versionAtLeast pkgs.gitea.version "1.26.0";
+      message = "gitea-pin: expected >= 1.26.0 from nixpkgs@${giteaPinRev}, got ${pkgs.gitea.version}. Delete the overlay when unstable catches up.";
     }
   ];
 
