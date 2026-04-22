@@ -90,9 +90,6 @@ in
         description = ''
           Allow LFS transfers over pure SSH. Disable this to force HTTP-based LFS,
           which is useful when SSH goes through a tunnel with size limits (e.g., Cloudflare).
-          On Gitea >= 1.26.0, HTTP LFS uploads use chunked transfer encoding
-          (go-gitea/gitea#36380), so HTTP is a viable path for large files even
-          through reverse proxies that would otherwise buffer a >100 MB body.
         '';
       };
 
