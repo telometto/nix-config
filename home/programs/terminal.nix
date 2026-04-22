@@ -50,6 +50,8 @@ in
         enableBashIntegration = lib.mkDefault true;
         enableZshIntegration = lib.mkDefault true;
 
+        daemon.enable = lib.mkDefault true;
+
         settings = lib.mkMerge [
           {
             auto_sync = true;
