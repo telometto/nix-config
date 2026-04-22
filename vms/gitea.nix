@@ -32,6 +32,8 @@ in
     ))
   ];
 
+  sys.overlays.fromInputs.nixpkgs-master = [ "gitea" ];
+
   # SOPS configuration for this MicroVM
   # After first boot, get the VM's age key with:
   #   ssh admin@10.100.0.50 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
