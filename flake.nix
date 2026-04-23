@@ -132,5 +132,16 @@
 
       formatter.${system} = treefmtEval.config.build.wrapper;
       checks.${system}.formatting = treefmtEval.config.build.check inputs.self;
+
+      devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {
+        packages = with nixpkgs.legacyPackages.${system}; [
+          nil
+          nixfmt-rfc-style
+          deadnix
+          statix
+          sops
+          ssh-to-age
+        ];
+      };
     };
 }
