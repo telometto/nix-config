@@ -84,18 +84,6 @@ in
         default = true;
       };
 
-      allowPureSSH = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = ''
-          Allow LFS transfers over pure SSH. Disable this to force HTTP-based LFS,
-          which is useful when SSH goes through a tunnel with size limits (e.g., Cloudflare).
-          On Gitea >= 1.26.0, HTTP LFS uploads use chunked transfer encoding
-          (go-gitea/gitea#36380), so HTTP is a viable path for large files even
-          through reverse proxies that would otherwise buffer a >100 MB body.
-        '';
-      };
-
       s3Backend = {
         enable = lib.mkOption {
           type = lib.types.bool;
@@ -204,8 +192,7 @@ in
             HTTP_PORT = cfg.port;
 
             LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
-            LFS_ALLOW_PURE_SSH = lib.mkIf cfg.lfs.enable cfg.lfs.allowPureSSH;
-            LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
+            LFS_ALLOW_PURE_SSH = lib.mkIf cfg.lfs.enable true;
           };
 
           repository = {
