@@ -109,8 +109,6 @@ in
       lfs = {
         enable = true;
 
-        allowPureSSH = true;
-
         s3Backend = {
           enable = false;
 
