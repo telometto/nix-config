@@ -7,7 +7,7 @@
 let
   flavor = config.sys.desktop.flavor or "none";
   is = v: flavor == v;
-  SDDM_THEME = "hyprland_kath";
+  SDDM_THEME = "pixel_sakura";
 in
 {
   config = lib.mkIf (is "kde") {
