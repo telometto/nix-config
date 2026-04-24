@@ -360,6 +360,8 @@ in
           };
           script = ''
             ${config.services.postgresql.package}/bin/psql \
+              --no-psqlrc \
+              --set=ON_ERROR_STOP=1 \
               -h /run/postgresql \
               -d matrix-synapse \
               -c "VACUUM (ANALYZE);"
