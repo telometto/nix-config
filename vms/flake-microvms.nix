@@ -13,13 +13,12 @@ let
     imports = [ ../modules/core/overlays.nix ];
 
     sys.overlays.fromInputs = {
-      nixpkgs-unstable = [
-        "firefly-iii"
-      ];
+      # nixpkgs-unstable = [ "firefly-iii" ];
       # nixpkgs-stable = [ "cloud-hypervisor" ];
     };
   };
 
+  /*
   paperlessBuildWorkaround = {
     nixpkgs.overlays = [
       (_final: prev: {
@@ -30,6 +29,7 @@ let
       })
     ];
   };
+  */
 
   mkMicrovm =
     modules:
