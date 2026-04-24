@@ -333,6 +333,8 @@ in
       };
       script = ''
         ${config.services.postgresql.package}/bin/psql \
+          --no-psqlrc \
+          --set=ON_ERROR_STOP=1 \
           -h /run/postgresql \
           -d matrix-synapse \
           -c "ALTER TABLE state_groups_state SET (autovacuum_vacuum_scale_factor = 0.02);" \
@@ -360,7 +362,7 @@ in
             ${config.services.postgresql.package}/bin/psql \
               -h /run/postgresql \
               -d matrix-synapse \
-              -c "VACUUM (ANALYZE, VERBOSE);"
+              -c "VACUUM (ANALYZE);"
           '';
         };
 
@@ -388,6 +390,8 @@ in
           };
           script = ''
             ${config.services.postgresql.package}/bin/psql \
+              --no-psqlrc \
+              --set=ON_ERROR_STOP=1 \
               -h /run/postgresql \
               -d matrix-synapse \
               -c "SELECT pg_size_pretty(pg_database_size('matrix-synapse')) AS db_size;" \
