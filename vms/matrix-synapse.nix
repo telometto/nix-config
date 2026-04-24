@@ -353,7 +353,15 @@ in
 
         database.createLocally = true;
         urlPreview.enable = true;
-        autoCompressor.enable = true;
+
+        autoCompressor = {
+          enable = true;
+          interval = "daily";
+          chunksToCompress = 1000;
+        };
+
+        vacuumTimer.enable = true;
+        dbSizeLogger.enable = true;
 
         extraConfigFiles = [
           "/run/matrix-synapse-secret/shared-secret.yaml"
@@ -384,8 +392,38 @@ in
           # Suppress warning about trusting the default matrix.org key server
           suppress_key_server_warning = true;
 
-          # Auto-purge cached remote media after 90 days to save disk
-          media_retention.remote_media_lifetime = "90d";
+          # Auto-purge media after inactivity: remote 90d, local uploads 2y
+          media_retention = {
+            remote_media_lifetime = "90d";
+            local_media_lifetime = "2y";
+          };
+
+          # Server-wide event retention: purge messages older than 2y.
+          # Does not affect state events; federated servers enforce their own policy.
+          retention = {
+            enabled = true;
+            default_policy = {
+              min_lifetime = "1d";
+              max_lifetime = "2y";
+            };
+            allowed_lifetime_min = "1d";
+            allowed_lifetime_max = "10y";
+            purge_jobs = [
+              {
+                longest_max_lifetime = "3d";
+                interval = "12h";
+              }
+              {
+                shortest_max_lifetime = "3d";
+                longest_max_lifetime = "1w";
+                interval = "1d";
+              }
+              {
+                shortest_max_lifetime = "1w";
+                interval = "2d";
+              }
+            ];
+          };
 
           # Allow uploads up to 90 MB
           max_upload_size = "90M";
