@@ -148,7 +148,7 @@ in
   paperless-vm = mkMicrovm [
     microvmModule
     sopsModule
-    paperlessBuildWorkaround
+    # paperlessBuildWorkaround
     ./paperless.nix
   ];
 
