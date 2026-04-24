@@ -19,16 +19,16 @@ let
   };
 
   /*
-  paperlessBuildWorkaround = {
-    nixpkgs.overlays = [
-      (_final: prev: {
-        "paperless-ngx" = prev."paperless-ngx".overrideAttrs (_old: {
-          doCheck = false;
-          doInstallCheck = false;
-        });
-      })
-    ];
-  };
+    paperlessBuildWorkaround = {
+      nixpkgs.overlays = [
+        (_final: prev: {
+          "paperless-ngx" = prev."paperless-ngx".overrideAttrs (_old: {
+            doCheck = false;
+            doInstallCheck = false;
+          });
+        })
+      ];
+    };
   */
 
   mkMicrovm =
