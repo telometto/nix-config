@@ -18,15 +18,15 @@ let
   # locks a commit at-or-past 836f421fca0b8e112393a929852cd39d6073a723:
   #   gh api repos/NixOS/nixpkgs/compare/836f421fca0b8e112393a929852cd39d6073a723...<new-rev> --jq '.status'
   #   -> want "ahead" or "identical"
-  giteaPinRev = "836f421fca0b8e112393a929852cd39d6073a723";
-  giteaPinnedNixpkgs = builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/${giteaPinRev}.tar.gz";
-    sha256 = "0sw830n4n2cx1hn6aqr9yxdyp34s67raxap6s5ir9v5bkzjd3d7y";
-  };
-  giteaPinnedPkgs = import giteaPinnedNixpkgs {
-    inherit system;
-    inherit (config.nixpkgs) config;
-  };
+  # giteaPinRev = "836f421fca0b8e112393a929852cd39d6073a723";
+  # giteaPinnedNixpkgs = builtins.fetchTarball {
+  #  url = "https://github.com/NixOS/nixpkgs/archive/${giteaPinRev}.tar.gz";
+  #  sha256 = "0sw830n4n2cx1hn6aqr9yxdyp34s67raxap6s5ir9v5bkzjd3d7y";
+  # };
+  # giteaPinnedPkgs = import giteaPinnedNixpkgs {
+  #  inherit system;
+  #  inherit (config.nixpkgs) config;
+  # };
 in
 {
   imports = [
@@ -52,14 +52,14 @@ in
     ))
   ];
 
-  nixpkgs.overlays = [ (_: _: { inherit (giteaPinnedPkgs) gitea; }) ];
+  # nixpkgs.overlays = [ (_: _: { inherit (giteaPinnedPkgs) gitea; }) ];
 
-  assertions = [
-    {
-      assertion = lib.versionAtLeast pkgs.gitea.version "1.26.0";
-      message = "gitea-pin: expected >= 1.26.0 from nixpkgs@${giteaPinRev}, got ${pkgs.gitea.version}. Delete the overlay when unstable catches up.";
-    }
-  ];
+  # assertions = [
+  #  {
+  #    assertion = lib.versionAtLeast pkgs.gitea.version "1.26.0";
+  #    message = "gitea-pin: expected >= 1.26.0 from nixpkgs@${giteaPinRev}, got ${pkgs.gitea.version}. Delete the overlay when unstable catches up.";
+  #  }
+  # ];
 
   # SOPS configuration for this MicroVM
   # After first boot, get the VM's age key with:
