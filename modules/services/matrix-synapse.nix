@@ -132,6 +132,27 @@ in
       };
     };
 
+    vacuumTimer = {
+      enable = lib.mkEnableOption "periodic VACUUM ANALYZE on the Synapse DB";
+
+      interval = lib.mkOption {
+        type = lib.types.str;
+        default = "monthly";
+        description = "systemd calendar expression for how often to run VACUUM ANALYZE.";
+        example = "weekly";
+      };
+    };
+
+    dbSizeLogger = {
+      enable = lib.mkEnableOption "periodic DB size logging to the journal";
+
+      interval = lib.mkOption {
+        type = lib.types.str;
+        default = "weekly";
+        description = "systemd calendar expression for how often to log DB size.";
+      };
+    };
+
     settings = lib.mkOption {
       type = lib.types.attrs;
       default = { };
@@ -152,6 +173,14 @@ in
                  LC_COLLATE = "C"
                  LC_CTYPE = "C";
         '';
+
+        settings = {
+          autovacuum_vacuum_scale_factor = 0.05;
+          autovacuum_analyze_scale_factor = 0.02;
+          autovacuum_naptime = "30s";
+          autovacuum_max_workers = 4;
+          autovacuum_vacuum_cost_limit = 2000;
+        };
       };
 
       matrix-synapse = {
@@ -289,6 +318,95 @@ in
       };
     };
 
+    systemd.services.matrix-synapse-pg-tuning = lib.mkIf cfg.database.createLocally {
+      description = "Apply per-table autovacuum settings for Synapse hot tables";
+      wantedBy = [ "multi-user.target" ];
+      after = [
+        "matrix-synapse.service"
+        "postgresql.service"
+      ];
+      requires = [ "postgresql.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        User = "matrix-synapse";
+      };
+      script = ''
+        ${config.services.postgresql.package}/bin/psql \
+          -h /run/postgresql \
+          -d matrix-synapse \
+          -c "ALTER TABLE state_groups_state SET (autovacuum_vacuum_scale_factor = 0.02);" \
+          -c "ALTER TABLE event_json SET (autovacuum_vacuum_scale_factor = 0.05);" \
+          -c "ALTER TABLE event_edges SET (autovacuum_vacuum_scale_factor = 0.05);" \
+          -c "ALTER TABLE event_auth SET (autovacuum_vacuum_scale_factor = 0.05);" \
+          -c "ALTER TABLE events SET (autovacuum_vacuum_scale_factor = 0.05);"
+      '';
+    };
+
+    systemd.services.matrix-synapse-vacuum =
+      lib.mkIf (cfg.vacuumTimer.enable && cfg.database.createLocally)
+        {
+          description = "VACUUM ANALYZE the Synapse PostgreSQL database";
+          after = [
+            "matrix-synapse.service"
+            "postgresql.service"
+          ];
+          requires = [ "postgresql.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            User = "matrix-synapse";
+          };
+          script = ''
+            ${config.services.postgresql.package}/bin/psql \
+              -h /run/postgresql \
+              -d matrix-synapse \
+              -c "VACUUM (ANALYZE, VERBOSE);"
+          '';
+        };
+
+    systemd.timers.matrix-synapse-vacuum =
+      lib.mkIf (cfg.vacuumTimer.enable && cfg.database.createLocally)
+        {
+          description = "Run VACUUM ANALYZE on the Synapse DB periodically";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = cfg.vacuumTimer.interval;
+            Persistent = true;
+            RandomizedDelaySec = "1h";
+          };
+        };
+
+    systemd.services.matrix-synapse-db-size =
+      lib.mkIf (cfg.dbSizeLogger.enable && cfg.database.createLocally)
+        {
+          description = "Log Synapse PostgreSQL database size to the journal";
+          after = [ "postgresql.service" ];
+          requires = [ "postgresql.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            User = "matrix-synapse";
+          };
+          script = ''
+            ${config.services.postgresql.package}/bin/psql \
+              -h /run/postgresql \
+              -d matrix-synapse \
+              -c "SELECT pg_size_pretty(pg_database_size('matrix-synapse')) AS db_size;" \
+              -c "SELECT relname, pg_size_pretty(pg_total_relation_size(oid)) AS total_size FROM pg_class WHERE relkind = 'r' ORDER BY pg_total_relation_size(oid) DESC LIMIT 10;"
+          '';
+        };
+
+    systemd.timers.matrix-synapse-db-size =
+      lib.mkIf (cfg.dbSizeLogger.enable && cfg.database.createLocally)
+        {
+          description = "Log Synapse DB size to the journal periodically";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = cfg.dbSizeLogger.interval;
+            Persistent = true;
+            RandomizedDelaySec = "1h";
+          };
+        };
+
     assertions = [
       {
         assertion = !cfg.reverseProxy.enable || cfg.reverseProxy.domain != null;
@@ -305,6 +423,14 @@ in
       {
         assertion = !cfg.autoCompressor.enable || cfg.database.createLocally;
         message = "sys.services.matrix-synapse.autoCompressor requires database.createLocally = true (local PostgreSQL)";
+      }
+      {
+        assertion = !cfg.vacuumTimer.enable || cfg.database.createLocally;
+        message = "sys.services.matrix-synapse.vacuumTimer requires database.createLocally = true";
+      }
+      {
+        assertion = !cfg.dbSizeLogger.enable || cfg.database.createLocally;
+        message = "sys.services.matrix-synapse.dbSizeLogger requires database.createLocally = true";
       }
       (traefikLib.mkCfTunnelAssertion {
         name = "matrix-synapse";
