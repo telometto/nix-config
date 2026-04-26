@@ -172,13 +172,15 @@
     ];
   };
 
-  # Common VM user and persistence (shared by all MicroVMs)
-  users.users.admin = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keys = [
-      VARS.users.zeno.sshPubKey
-    ];
+  users = {
+    mutableUsers = false;
+    users.admin = {
+      isNormalUser = true;
+      extraGroups = [ "wheel" ];
+      openssh.authorizedKeys.keys = [
+        VARS.users.zeno.sshPubKey
+      ];
+    };
   };
 
   systemd = {
