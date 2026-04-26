@@ -13,7 +13,7 @@ in
       podman = {
         enable = lib.mkDefault true;
         dockerCompat = lib.mkDefault true;
-        dockerSocket.enable = lib.mkDefault true;
+        dockerSocket.enable = lib.mkDefault false;
         autoPrune.enable = lib.mkDefault true;
         defaultNetwork.settings.dns_enabled = lib.mkDefault true;
       };
