@@ -74,24 +74,24 @@ in
     };
 
     ## Pull specific packages from different nixpkgs inputs
-    # overlays = {
-    #   fromInputs = {
-    #     nixpkgs-unstable = [
-    #       "firefox"
-    #       "discord"
-    #     ];
-    #     nixpkgs-stable = [ "thunderbird" ];
-    #   };
+    overlays = {
+      #   fromInputs = {
+      #     nixpkgs-unstable = [
+      #       "firefox"
+      #       "discord"
+      #     ];
+      #     nixpkgs-stable = [ "lutris" ];
+      #   };
 
-    ## Add custom overlays
-    #   custom = [
-    #     (final: prev: {
-    #       firefox = prev.firefox.override {
-    #         enablePlasmaBrowserIntegration = true;
-    #       };
-    #     })
-    #   ];
-    # };
+      ## Add custom overlays
+      custom = [
+        (final: prev: {
+          openldap = prev.openldap.overrideAttrs {
+            doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
+          };
+        })
+      ];
+    };
 
     services = {
       resolved = {
