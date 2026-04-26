@@ -37,7 +37,7 @@ let
       inherit system;
       modules = [
         fromInputsOverlays
-        ../modules/core/nixpkgs-module-overrides.nix
+        # ../modules/core/nixpkgs-module-overrides.nix
       ]
       ++ modules;
 
