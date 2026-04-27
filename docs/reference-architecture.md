@@ -81,7 +81,7 @@ All Home Manager options are defined under the `hm.*` namespace in `home/`.
 
 | Namespace | Defined in | Purpose |
 |-----------|-----------|---------|
-| `hm.langs` | `home/base.nix` | Language toolchain options |
+| `hm.langs` | `home/base.nix` | Default locale |
 | `hm.desktop.{gnome,kde,hyprland,xdg}.enable` | `home/desktop/` | Desktop environment integration |
 | `hm.programs.{browsers,development,terminal,media,social,gaming,gpg,tools,beets,fastfetch,packages}.enable` | `home/programs/` | User program bundles |
 | `hm.services.{gpgAgent,sshAgent}.enable` | `home/services/` | User-level background services |
@@ -99,11 +99,13 @@ Home Manager config is assembled in layers. Lower layers supply defaults; higher
 |-------|-----------------|-------|
 | 1. Module defaults | Individual `home/*.nix` option defaults | All users, all hosts |
 | 2. HM loader modules | All files under `home/` (via hm-loader) | All users, all hosts |
-| 3. Base template | `sys.home.template` in host file | All users on that host |
-| 4. Auto desktop | `hm.desktop.<flavor>.enable = true` from `sys.desktop.flavor` (via `lib.mkDefault`) | All users on hosts with a desktop flavor |
-| 5. Host override | `home/overrides/host/<hostname>.nix` | All users on that specific host |
-| 6. User@host override | `home/overrides/user/<username>-<hostname>.nix` | Specific user on specific host |
-| 7. `extraConfig` | `sys.home.users.<username>.extraConfig` in host file | Specific user on that host |
+| 3. Host-wide extra modules | `sys.home.extraModules` in host file | All users on that host |
+| 4. Base template | `sys.home.template` in host file | All users on that host |
+| 5. Auto desktop | `hm.desktop.<flavor>.enable = true` from `sys.desktop.flavor` (via `lib.mkDefault`) | All users on hosts with a desktop flavor |
+| 6. Host override | `home/overrides/host/<hostname>.nix` | All users on that specific host |
+| 7. User@host override | `home/overrides/user/<username>-<hostname>.nix` | Specific user on specific host |
+| 8. User extra modules | `sys.home.users.<username>.extraModules` in host file | Specific user on that host |
+| 9. `extraConfig` | `sys.home.users.<username>.extraConfig` in host file | Specific user on that host |
 
 `lib.mkForce` in any override file always wins regardless of layer.
 
