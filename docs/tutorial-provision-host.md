@@ -78,7 +78,7 @@ These files live in the **private `nix-secrets` repository**, not in this repo.
 1. Derive the age public key from the host's SSH host key:
 
 ```bash
-ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
+ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key | ssh-to-age
 ```
 
 2. In the `nix-secrets` repository, add the resulting age key to `.sops.yaml`
