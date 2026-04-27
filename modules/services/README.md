@@ -47,15 +47,15 @@ ______________________________________________________________________
 | [firefly.nix](firefly.nix) | `sys.services.firefly` | MicroVM | Firefly III personal finance |
 | [actual.nix](actual.nix) | `sys.services.actual` | MicroVM | Actual Budget (personal finance) |
 | [paperless.nix](paperless.nix) | `sys.services.paperless` | MicroVM | Document management |
-| [protonmail-bridge.nix](protonmail-bridge.nix) | `sys.services.protonmailBridge` | Host | Proton Mail IMAP/SMTP bridge |
+| [protonmail-bridge.nix](protonmail-bridge.nix) | `sys.services.protonmail-bridge` | Host | Proton Mail IMAP/SMTP bridge |
 | [glance.nix](glance.nix) | `sys.services.glance` | MicroVM | Self-hosted dashboard |
 
 #### Identity and Matrix
 
 | Module file | Option prefix | Typical location | Purpose |
 |-------------|--------------|-----------------|---------|
-| [matrix-synapse.nix](matrix-synapse.nix) | `sys.services.matrixSynapse` | MicroVM | Matrix homeserver |
-| [matrix-authentication-service.nix](matrix-authentication-service.nix) | `sys.services.matrixAuthenticationService` | MicroVM | OIDC provider for Matrix |
+| [matrix-synapse.nix](matrix-synapse.nix) | `sys.services.matrix-synapse` | MicroVM | Matrix homeserver |
+| [matrix-authentication-service.nix](matrix-authentication-service.nix) | `sys.services.matrix-authentication-service` | MicroVM | OIDC provider for Matrix |
 
 #### Observability
 
