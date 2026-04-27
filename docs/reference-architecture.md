@@ -11,7 +11,7 @@ Information reference for this repo's moving parts, options, and commands.
 | Output | Description |
 |--------|-------------|
 | `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}` | The four physical hosts |
-| `nixosConfigurations.<vm-name>` (×24) | MicroVM guests defined in `vms/` |
+| `nixosConfigurations.<vm-name>` (×23) | MicroVM guests defined in `vms/` |
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
 | `checks.x86_64-linux.formatting` | Formatting check (`nix flake check`) |
 | `devShells.x86_64-linux.default` | Dev shell with nil, nixfmt, deadnix, statix, sops, ssh-to-age |
