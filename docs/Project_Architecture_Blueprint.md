@@ -10,7 +10,7 @@ ______________________________________________________________________
 
 ## 1. Executive Summary
 
-This repository implements a modular NixOS flake configuration for 4 physical hosts and 24 MicroVMs.
+This repository implements a modular NixOS flake configuration for 4 physical hosts and 23 MicroVMs.
 The design centres on three auto-loading mechanisms that eliminate manual `imports` lists, a
 two-namespace option system (`sys.*` / `hm.*`), role files that bundle machine-class defaults,
 and a layered Home Manager precedence stack that allows fine-grained per-user overrides without
@@ -27,7 +27,7 @@ flowchart TD
     SL -->|"imports every .nix"| MOD["modules/**"]
     HL -->|"imports every .nix"| HOST["hosts/<hostname>/**"]
     HML -->|"imports every .nix\nexcluding overrides/"| HOME["home/**"]
-    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(24 MicroVMs)"]
+    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(23 MicroVMs)"]
     F --> HOSTS["nixosConfigurations\nsnowfall · blizzard · avalanche · kaizer"]
 ```
 
@@ -39,7 +39,7 @@ ______________________________________________________________________
 
 | Output | Value |
 |--------|-------|
-| `nixosConfigurations` | 4 named hosts + 24 `-vm` entries (merged from `vms/flake-microvms.nix`) |
+| `nixosConfigurations` | 4 named hosts + 23 `-vm` entries (merged from `vms/flake-microvms.nix`) |
 | `formatter.x86_64-linux` | treefmt wrapper (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
@@ -97,7 +97,7 @@ flowchart LR
     Build --> F
     Secrets --> F
     Dev --> F
-    F --> OUT1[nixosConfigurations\n4 hosts + 24 VMs]
+    F --> OUT1[nixosConfigurations\n4 hosts + 23 VMs]
     F --> OUT2[formatter / checks / devShells]
 ```
 
@@ -117,7 +117,7 @@ modules/
 ├── programs/       gaming+Steam, GnuPG, ssh, java, nix-ld
 ├── security/       secrets option declarations (sys.secrets.*), SSH hardening
 ├── services/       ~60 service modules (grafana, tailscale, traefik, etc.)
-├── storage/        ZFS, sanoid, NFS server, Samba
+├── storage/        filesystem modules (e.g., filesystems.nix)
 ├── virtualisation/ microvm host integration
 ├── role-desktop.nix  desktop role defaults
 └── role-server.nix   server role defaults
@@ -185,7 +185,7 @@ flowchart LR
         SN[sys.networking\nbase / networkd / networkmanager]
         SP[sys.programs\ngaming / java / ssh / nix-ld / gnupg]
         SS[sys.services\n~60 service options]
-        ST[sys.storage\nZFS / sanoid / NFS / samba]
+        ST[sys.storage\nfilesystem mounts]
         SV[sys.virtualisation]
         SHRD[sys.hardware]
         SD[sys.desktop\nflavor enum]
@@ -362,7 +362,7 @@ flowchart TD
     MK["vms/mkMicrovmConfig.nix\nTransforms registry attrs into NixOS module:\nmicrovm.hypervisor = cloud-hypervisor\nmicrovm.vsock.cid\nmicrovm.mem / vcpu\nmicrovm.interfaces / volumes\nnetworking + systemd.network\nAuto-appends /persist volume\nand /nix/store virtiofs share"]
     SVC["vms/<name>.nix\nPer-VM service module\n(actual application config)"]
     FM["vms/flake-microvms.nix\nmkMicrovm helper\nwraps each VM"]
-    OUT["nixosConfigurations.*-vm\n(24 entries merged into flake outputs)"]
+    OUT["nixosConfigurations.*-vm\n(23 entries merged into flake outputs)"]
 
     REG --> MK
     BASE --> FM
@@ -431,7 +431,7 @@ flowchart TD
     WG --> FF
     WG --> BR
 
-    ADG -->|"DNS for WG-routed VMs\ndns = 10.100.0.10"| QB
+    ADG -->|"DNS for WG-routed VMs\ndns = 10.100.0.11"| QB
     ADG --> SAB
 
     TS["Tailscale subnet router\nblizzard advertises\n192.168.2.0/24 + 10.100.0.0/24"]
@@ -439,7 +439,7 @@ flowchart TD
 ```
 
 WG-routed VMs (qbittorrent, sabnzbd, firefox, brave) set `gateway = 10.100.0.11` in the
-vm-registry. qbittorrent and sabnzbd also use `dns = 10.100.0.10` (adguard).
+vm-registry. qbittorrent and sabnzbd also use `dns = 10.100.0.11` (wireguard-vm).
 
 ______________________________________________________________________
 
