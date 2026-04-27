@@ -43,5 +43,6 @@ in
   sys.services.arrExporter.readarr = {
     enable = true;
     openFirewall = true;
+    arrPort = reg.port;
   };
 }
