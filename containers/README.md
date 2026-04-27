@@ -21,7 +21,7 @@ flowchart LR
 
     subgraph Containers["Containers (containers/*.nix)"]
         direction TB
-        ct1["Rootless Podman\nProcess isolation\nHost network namespace\nHome Manager module\nRootless user namespaces\nState: Podman volumes"]
+        ct1["Rootless Podman\nProcess isolation\nPort publishing (slirp4netns)\nHome Manager module\nRootless user namespaces\nState: Podman volumes"]
     end
 
     subgraph Host
@@ -37,7 +37,7 @@ flowchart LR
 | Aspect | MicroVMs | Containers |
 |--------|----------|------------|
 | Isolation | Full VM (cloud-hypervisor) | Rootless Podman pod/container |
-| Network | Dedicated TAP, `10.100.0.0/24` IP | Host network namespace sharing |
+| Network | Dedicated TAP, `10.100.0.0/24` IP | Port publishing (slirp4netns/bridge) |
 | Config | System NixOS module (`vms/*.nix`) | Home Manager module (`containers/*.nix`) |
 | Privilege | Runs as root inside VM | Rootless (user namespaces) |
 | State | `/persist` volume (virtiofs) | Podman volumes |
