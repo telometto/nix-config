@@ -6,7 +6,7 @@
 >
 > **Architecture Pattern:** Modular Auto-Loading with Role-Based Composition
 
----
+______________________________________________________________________
 
 ## 1. Executive Summary
 
@@ -31,7 +31,7 @@ flowchart TD
     F --> HOSTS["nixosConfigurations\nsnowfall · blizzard · avalanche · kaizer"]
 ```
 
----
+______________________________________________________________________
 
 ## 2. Flake Structure
 
@@ -101,7 +101,7 @@ flowchart LR
     F --> OUT2[formatter / checks / devShells]
 ```
 
----
+______________________________________________________________________
 
 ## 3. Module Architecture
 
@@ -167,7 +167,7 @@ flowchart TD
 The override files (`home/overrides/host/` and `home/overrides/user/`) are **not** auto-imported;
 they are injected explicitly by `modules/core/home-users.nix` per user per host.
 
----
+______________________________________________________________________
 
 ## 4. Option Namespaces
 
@@ -203,7 +203,7 @@ flowchart LR
     end
 ```
 
----
+______________________________________________________________________
 
 ## 5. Role Architecture
 
@@ -247,7 +247,7 @@ Key differences between roles:
 | Virtualisation (containers/VMs) | yes | no |
 | Auto-upgrade | explicitly disabled | monthly |
 
----
+______________________________________________________________________
 
 ## 6. Desktop Flavors
 
@@ -276,7 +276,7 @@ flowchart LR
     HS -->|"mkDefault"| HHM[hm.desktop.hyprland.enable = true]
 ```
 
----
+______________________________________________________________________
 
 ## 7. Home Manager Configuration
 
@@ -323,7 +323,7 @@ not named after a hostname and therefore bypasses the auto-override path.
 | `hm.accounts` | email, calendar, contact |
 | `hm.files` | managed dotfiles |
 
----
+______________________________________________________________________
 
 ## 8. Secrets Architecture
 
@@ -349,7 +349,7 @@ flowchart TD
 The `whenEnabled` guard in `sops.nix` means no `sops.secrets` entry is created (and no `/run/secrets/`
 path is expected at runtime) unless the corresponding service is actually enabled.
 
----
+______________________________________________________________________
 
 ## 9. MicroVM Architecture
 
@@ -403,7 +403,7 @@ and therefore do not inherit host-only modules.
 | firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Firefly data import |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Photo library |
 
----
+______________________________________________________________________
 
 ## 10. Network Topology
 
@@ -441,7 +441,7 @@ flowchart TD
 WG-routed VMs (qbittorrent, sabnzbd, firefox, brave) set `gateway = 10.100.0.11` in the
 vm-registry. qbittorrent and sabnzbd also use `dns = 10.100.0.10` (adguard).
 
----
+______________________________________________________________________
 
 ## 11. Library Helpers
 
@@ -454,7 +454,7 @@ vm-registry. qbittorrent and sabnzbd also use `dns = 10.100.0.10` (adguard).
 
 See `lib/README.md` for the full API reference.
 
----
+______________________________________________________________________
 
 ## 12. Host Reference
 
@@ -487,7 +487,7 @@ Every `.nix` file under `hosts/<hostname>/` is auto-imported by `host-loader.nix
 }
 ```
 
----
+______________________________________________________________________
 
 ## 13. Security Architecture
 
@@ -528,7 +528,7 @@ Every `.nix` file under `hosts/<hostname>/` is auto-imported by `host-loader.nix
   exists and it is commented out as "on hold". Disks are managed manually via
   `hardware-configuration.nix`.
 
----
+______________________________________________________________________
 
 ## 14. Build and Validation
 
@@ -566,51 +566,51 @@ Excluded paths: `.github/workflows/`, `*.lock`, `result*`, `images/`, `.direnv/`
 `devShells.x86_64-linux.default` provides: `nil`, `nixfmt`, `deadnix`, `statix`, `sops`,
 `ssh-to-age`.
 
----
+______________________________________________________________________
 
 ## 15. Extension Patterns
 
 ### Add a system module
 
 1. Create `modules/<category>/<name>.nix`.
-2. Define `options.sys.<category>.<name>.enable = lib.mkEnableOption "...";` (and any other options).
-3. Implement `config = lib.mkIf cfg.enable { ... };`.
-4. Done — `system-loader.nix` picks it up automatically.
+1. Define `options.sys.<category>.<name>.enable = lib.mkEnableOption "...";` (and any other options).
+1. Implement `config = lib.mkIf cfg.enable { ... };`.
+1. Done — `system-loader.nix` picks it up automatically.
 
 ### Add a Home Manager module
 
 1. Create `home/<category>/<name>.nix`.
-2. Define `options.hm.<category>.<name>.enable = lib.mkEnableOption "...";`.
-3. Implement `config = lib.mkIf cfg.enable { ... };`.
-4. Done — `hm-loader.nix` picks it up automatically.
+1. Define `options.hm.<category>.<name>.enable = lib.mkEnableOption "...";`.
+1. Implement `config = lib.mkIf cfg.enable { ... };`.
+1. Done — `hm-loader.nix` picks it up automatically.
 
 ### Add a new host
 
 1. Create `hosts/<hostname>/`.
-2. Add `hardware-configuration.nix` (from `nixos-generate-config`).
-3. Add `<hostname>.nix` with `sys.role.*`, user enables, and any service toggles.
-4. Optionally add `packages.nix` for host-specific packages.
-5. Register in `flake.nix`: `<hostname> = mkHost "<hostname>" [];`
+1. Add `hardware-configuration.nix` (from `nixos-generate-config`).
+1. Add `<hostname>.nix` with `sys.role.*`, user enables, and any service toggles.
+1. Optionally add `packages.nix` for host-specific packages.
+1. Register in `flake.nix`: `<hostname> = mkHost "<hostname>" [];`
 
 ### Add a user
 
 1. Add the user to `nix-secrets` (`VARS.users.<username>`).
-2. Enable per-host: `sys.users.<username>.enable = true;` in the host file.
-3. Optionally add `home/overrides/user/<username>-<hostname>.nix` for per-user HM tweaks.
+1. Enable per-host: `sys.users.<username>.enable = true;` in the host file.
+1. Optionally add `home/overrides/user/<username>-<hostname>.nix` for per-user HM tweaks.
 
 ### Add a service VM
 
 1. Add an entry to `vms/vm-registry.nix` (CID, MAC, IP, port, mem, vcpu, gateway).
-2. Create `vms/<name>.nix` with the service NixOS config.
-3. Register the VM in `vms/flake-microvms.nix`.
-4. If the VM needs secrets, add a `whenEnabled has<Name>` block in `modules/core/sops.nix`.
+1. Create `vms/<name>.nix` with the service NixOS config.
+1. Register the VM in `vms/flake-microvms.nix`.
+1. If the VM needs secrets, add a `whenEnabled has<Name>` block in `modules/core/sops.nix`.
 
 ### Add host-wide HM overrides
 
 1. Create `home/overrides/host/<hostname>.nix`.
-2. Any `hm.*` options set there apply to every user on that host.
-3. Use `lib.mkForce` when you need to override a value set at a lower precedence layer.
+1. Any `hm.*` options set there apply to every user on that host.
+1. Use `lib.mkForce` when you need to override a value set at a lower precedence layer.
 
----
+______________________________________________________________________
 
 *Last verified against source: 2026-04-27*

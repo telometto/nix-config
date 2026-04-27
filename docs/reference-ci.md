@@ -3,7 +3,7 @@
 GitHub Actions automation for the nix-config repository. The pipelines handle
 formatting, validation, compliance, security, and automatic flake lock updates.
 
----
+______________________________________________________________________
 
 ### Introduction
 
@@ -15,15 +15,15 @@ fails because Nix cannot fetch the private repository.
 `webfactory/ssh-agent@v0.9.1` with `secrets.SSH_DEPLOY_KEY`. To set this up:
 
 1. Generate a dedicated SSH key pair: `ssh-keygen -t ed25519 -C "github-actions"`
-2. Add the **public key** as a deploy key on the `nix-secrets` repository
+1. Add the **public key** as a deploy key on the `nix-secrets` repository
    (Settings → Deploy keys, read-only is sufficient).
-3. Add the **private key** as a repository secret named `SSH_DEPLOY_KEY` on
+1. Add the **private key** as a repository secret named `SSH_DEPLOY_KEY` on
    this repository (Settings → Secrets and variables → Actions).
 
 Without this secret, any workflow that evaluates the flake will fail with an
 SSH authentication error.
 
----
+______________________________________________________________________
 
 ### Auto-Merge Chain
 
@@ -50,7 +50,7 @@ flowchart TD
     K[update-nix-lock-recreate.yml\ncron 1st of month] -->|opens separate PR| L[manual review\nor auto-merge]
 ```
 
----
+______________________________________________________________________
 
 ### Full Workflow Reference
 
@@ -70,7 +70,7 @@ flowchart TD
 | `update-nix-lock-recreate.yml` | cron 1st of month 03:00 / manual | `nix flake update --recreate-lock-file`, opens PR via `peter-evans/create-pull-request@v7`, auto-merge | Yes — lock file |
 | `update-dashboards.yml` | cron Mon 09:00 / manual | Polls Grafana.com API for new revisions of dashboards 1860 and 315, opens PR if newer revision found | No (opens PR) |
 
----
+______________________________________________________________________
 
 ### Scheduled Workflows
 
@@ -105,7 +105,7 @@ These run on a cron schedule without a PR trigger:
   scratch (not just an incremental update), as a safety net for any inputs that
   the incremental updater might have pinned to a stale state.
 
----
+______________________________________________________________________
 
 ### PR Workflows
 
@@ -125,7 +125,7 @@ The `update-nix-lock.yml` workflow explicitly waits for `flake-check`,
 enables auto-merge on lock-file PRs. Adding a new host to `flake.nix` therefore
 automatically extends the gate — no workflow file changes needed.
 
----
+______________________________________________________________________
 
 ### Adding a New Host
 
@@ -133,4 +133,3 @@ When a new host is registered in `flake.nix` via `mkHost`, the CI matrix
 workflows (`validate-config.yml`, `health-check.yml`, `update-nix-lock.yml`)
 discover it automatically via a `grep mkHost flake.nix` step. No workflow file
 edits are required.
-

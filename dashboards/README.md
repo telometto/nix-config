@@ -21,7 +21,7 @@ dashboards/
 
 | Dashboard | Description | Data Source |
 |-----------|-------------|-------------|
-| [arr-services.json](shared/arr-services.json) | *arr stack service metrics (Sonarr/Radarr/Prowlarr/etc.) | arr-exporter |
+| [arr-services.json](shared/arr-services.json) | \*arr stack service metrics (Sonarr/Radarr/Prowlarr/etc.) | arr-exporter |
 | [electricity-prices.json](shared/electricity-prices.json) | Energy pricing visualization | Electricity price exporter |
 | [power-consumption.json](shared/power-consumption.json) | Real-time power usage | Smart plug metrics |
 

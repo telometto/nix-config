@@ -18,7 +18,7 @@ let cfg = config.sys.services.<name>; in
 Most modules expose additional options (port, openFirewall, data directory,
 secrets references, etc.) alongside the mandatory `enable` flag.
 
----
+______________________________________________________________________
 
 ### Service catalog
 
@@ -142,7 +142,7 @@ secrets references, etc.) alongside the mandatory `enable` flag.
 |-------------|--------------|-----------------|---------|
 | [gitea.nix](gitea.nix) | `sys.services.gitea` | MicroVM | Self-hosted Git forge |
 
----
+______________________________________________________________________
 
 ### MicroVM deployment note
 
@@ -155,7 +155,7 @@ network.
 See [vms/README.md](../../vms/README.md) for the full VM inventory, IP
 addressing, network topology, and deployment details.
 
----
+______________________________________________________________________
 
 ### Related
 
