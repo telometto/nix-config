@@ -96,7 +96,7 @@ in
         owner = "root";
         group = "matrix-shared";
       };
-      # OIDC client secret — same value in MAS clients[] and Synapse msc3861
+      # OIDC client secret - same value in MAS clients[] and Synapse msc3861
       "matrix-authentication-service/client_secret" = {
         mode = "0440";
         owner = "root";
@@ -385,7 +385,7 @@ in
           # Let users browse other servers' public room directories
           allow_public_rooms_over_federation = true;
 
-          # QR code device linking (MSC4108) — exposes /_synapse/client/rendezvous
+          # QR code device linking (MSC4108) - exposes /_synapse/client/rendezvous
           # and advertises support in /versions for Element's "Link new device" flow
           experimental_features.msc4108_enabled = true;
 
@@ -431,7 +431,7 @@ in
           # Disable presence (online/offline tracking) to reduce resource usage
           presence.enabled = false;
 
-          # Disable Synapse's built-in well-known — Nginx handles it
+          # Disable Synapse's built-in well-known - Nginx handles it
           serve_server_wellknown = false;
 
           # --- Access control ---
