@@ -58,50 +58,48 @@ let
     };
   };
 
-  mkOptions =
-    name: spec:
-    {
-      enable = lib.mkEnableOption "${name} Prometheus exporter (exportarr)";
+  mkOptions = name: spec: {
+    enable = lib.mkEnableOption "${name} Prometheus exporter (exportarr)";
 
-      port = lib.mkOption {
-        type = lib.types.port;
-        default = spec.defaultPort;
-        description = "Port the exportarr exporter for ${name} listens on.";
-      };
+    port = lib.mkOption {
+      type = lib.types.port;
+      default = spec.defaultPort;
+      description = "Port the exportarr exporter for ${name} listens on.";
+    };
 
-      listenAddress = lib.mkOption {
-        type = lib.types.str;
-        default = "0.0.0.0";
-        description = "Address the exporter binds to inside the VM.";
-      };
+    listenAddress = lib.mkOption {
+      type = lib.types.str;
+      default = "0.0.0.0";
+      description = "Address the exporter binds to inside the VM.";
+    };
 
-      arrPort = lib.mkOption {
-        type = lib.types.port;
-        default = spec.defaultArrPort;
-        description = "Port the ${name} service listens on (used to build the exporter URL). Must be set explicitly when using a non-default port.";
-      };
+    arrPort = lib.mkOption {
+      type = lib.types.port;
+      default = spec.defaultArrPort;
+      description = "Port the ${name} service listens on (used to build the exporter URL). Must be set explicitly when using a non-default port.";
+    };
 
-      configFile = lib.mkOption {
-        type = lib.types.str;
-        default = "/var/lib/${name}/${spec.configSubPath}";
-        description = "Absolute path to the ${name} config file containing the API key.";
-      };
+    configFile = lib.mkOption {
+      type = lib.types.str;
+      default = "/var/lib/${name}/${spec.configSubPath}";
+      description = "Absolute path to the ${name} config file containing the API key.";
+    };
 
-      extraEnvironment = lib.mkOption {
-        type = lib.types.attrsOf lib.types.str;
-        default = { };
-        description = "Extra environment variables for the exporter (e.g. ENABLE_ADDITIONAL_METRICS=true).";
-        example = {
-          ENABLE_ADDITIONAL_METRICS = "true";
-        };
-      };
-
-      openFirewall = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Open a firewall port for the exporter so Prometheus can scrape it.";
+    extraEnvironment = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = "Extra environment variables for the exporter (e.g. ENABLE_ADDITIONAL_METRICS=true).";
+      example = {
+        ENABLE_ADDITIONAL_METRICS = "true";
       };
     };
+
+    openFirewall = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Open a firewall port for the exporter so Prometheus can scrape it.";
+    };
+  };
 
   mkConfig =
     name: spec:
