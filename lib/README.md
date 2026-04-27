@@ -1,7 +1,8 @@
 ## Library Functions
 
-Reusable Nix functions and data shared across the configuration. All four files
-are passed into hosts and VMs as `specialArgs` from `flake.nix`.
+Reusable Nix functions and data shared across the configuration.
+`constants.nix` is passed into hosts and VMs as `consts` via `specialArgs` from
+`flake.nix`, while the other helper files are imported directly where needed.
 
 ______________________________________________________________________
 
