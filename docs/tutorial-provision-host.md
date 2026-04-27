@@ -2,35 +2,60 @@
 
 Goal: Bring a new machine under this repo, with auto-loaded system and Home Manager modules, a desktop flavor (optional), and enabled users from `VARS`.
 
+## Provisioning Flow
+
+```mermaid
+sequenceDiagram
+    participant M as Target Machine
+    participant R as Repo
+    participant S as nix-secrets
+
+    M->>R: git clone
+    M->>M: nixos-generate-config (hardware-configuration.nix)
+    R->>R: create hosts/<hostname>/
+    R->>R: register in flake.nix
+    M->>S: configure SOPS age key
+    M->>M: nixos-rebuild switch --flake .#<hostname>
+    M-->>M: system built, users created, HM active
+```
+
 ## Prerequisites
 
 - NixOS installed on the target machine.
-- Access to this repo and the private secrets repo providing `VARS`.
+- SSH access to this repo (`github.com/telometto/nix-config`).
+- SSH access to the private `nix-secrets` repo (provides `VARS`).
 
-## Steps
-
-1. Clone the repo on the target machine:
+## Step 1: Clone the Repo
 
 ```bash
-git clone https://github.com/yourusername/nix-config.git
+git clone https://github.com/telometto/nix-config.git
 cd nix-config
 ```
 
-2. Create a host directory or reuse one under `hosts/`:
+## Step 2: Generate Hardware Config
 
-- Copy an existing host (e.g., `hosts/avalanche/`) as a template, or create a new `<hostname>/` with:
-  - `<hostname>.nix`
-  - `hardware-configuration.nix` (from `nixos-generate-config`)
-  - `packages.nix` (optional per-host packages)
+Run on the target machine and place the output in the new host directory:
 
-3. Define basics in `<hostname>.nix`:
+```bash
+nixos-generate-config --show-hardware-config > hosts/<hostname>/hardware-configuration.nix
+```
+
+## Step 3: Create Host Directory
+
+Create `hosts/<hostname>/` and populate it with at minimum:
+
+- `hardware-configuration.nix` — generated above
+- `packages.nix` — optional per-host package list
+- `<hostname>.nix` — role, desktop flavor, and user toggles
+
+Example `<hostname>.nix`:
 
 ```nix
 { lib, ... }:
 {
   networking.hostName = lib.mkForce "<hostname>";
 
-  sys.role.desktop.enable = true;      # or server
+  sys.role.desktop.enable = true;      # or sys.role.server.enable
   sys.desktop.flavor = "gnome";       # kde | gnome | hyprland | omit for servers
 
   sys.users.zeno.enable = true;
@@ -42,31 +67,62 @@ and `packages.nix`) are auto-imported by
 [host-loader.nix](../host-loader.nix) — no explicit `imports` needed for local
 files.
 
-4. Switch to the configuration:
+## Step 4: Configure SOPS
+
+Any service that uses secrets (Tailscale, borgbackup, etc.) requires the
+host's age key to be registered in `.sops.yaml` before secrets will decrypt.
+
+1. Derive the age public key from the host's SSH host key:
+
+```bash
+ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
+```
+
+2. Add the resulting age key to `.sops.yaml` under the appropriate host entry.
+
+3. Re-encrypt all affected secret files:
+
+```bash
+sops updatekeys secrets.yaml
+```
+
+Until this step is complete, any secrets-enabled service will fail to start
+with a SOPS decryption error.
+
+## Step 5: Register in flake.nix
+
+Add an entry to `nixosConfigurations` in `flake.nix`:
+
+```nix
+nixosConfigurations = {
+  # ... existing hosts ...
+  <hostname> = mkHost "<hostname>" [ ];
+};
+```
+
+## Step 6: Build and Switch
 
 ```bash
 sudo nixos-rebuild switch --flake .#<hostname>
 ```
 
-This builds the system with all modules auto-imported and sets up Home Manager for enabled users.
-
-## Optional: Home Manager Overrides
-
-- Host-wide HM overrides: `home/overrides/host/<hostname>.nix`.
-- User@host HM overrides: `home/overrides/user/<user>-<hostname>.nix`.
-
-These are automatically included via the HM integration logic.
+This builds the system with all modules auto-imported and sets up Home Manager
+for enabled users.
 
 ## Verify
 
 - Desktop flavor applies (if enabled): KDE/GNOME/Hyprland HM bits auto-enable.
-- Users exist and can login; HM profiles are active.
-- Services enabled via `sys.services.*` run as expected.
+- Users exist and can log in; HM profiles are active.
+- Services enabled via `sys.services.*` are running:
+  ```bash
+  systemctl status tailscaled   # example
+  journalctl -u <service> -n 50
+  ```
+- Check that secrets decrypted correctly — no `sops` errors in the journal.
 
-You've provisioned a host. Continue with service enablement and secrets as
-needed.
+## Next Steps
 
-______________________________________________________________________
-
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*
+- Add host-wide HM overrides: `home/overrides/host/<hostname>.nix`
+- Add user-specific overrides: `home/overrides/user/<user>-<hostname>.nix`
+- Enable additional services via `sys.services.*` in the host file or
+  dedicated files under `hosts/<hostname>/`
