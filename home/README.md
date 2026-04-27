@@ -105,25 +105,24 @@ Layers are applied from lowest priority (bottom) to highest (top):
 
 ```mermaid
 flowchart TD
-    A["1. home/base.nix defaults (lib.mkDefault)"] --> B
-    B["2. autoDesktopConfig (kde/gnome/hyprland only, mkDefault)"] --> C
-    C["3. Auto-imported HM modules (hm-loader output)"] --> D
-    D["4. sys.home.template"] --> E
-    E["5. home/overrides/host/<hostname>.nix (if exists)"] --> F
-    F["6. home/overrides/user/<user>-<host>.nix (if exists)"] --> G
-    G["7. sys.home.users.<name>.extraModules / extraConfig"]
-    H["lib.mkForce (anywhere)"] -.->|"always wins"| G
+    A["1. hm-loader output\nauto-imported home/** modules\n(includes home/base.nix mkDefaults)"] --> B
+    B["2. sys.home.template\nhost-wide base template for all users"] --> C
+    C["3. home/overrides/host/<hostname>.nix (if exists)"] --> D
+    D["4. home/overrides/user/<user>-<host>.nix (if exists)"] --> E
+    E["5. sys.home.users.<name>.extraModules / extraConfig"]
+    AD["autoDesktopConfig\nlib.mkDefault hm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"] -.->|"merged separately"| E
+    H["lib.mkForce (anywhere)"] -.->|"always wins"| E
 ```
 
 As a numbered list (low → high):
 
-1. Module defaults (`lib.mkDefault`) in `home/base.nix`
-1. `autoDesktopConfig` — desktop module auto-enablement (`kde`/`gnome`/`hyprland` only, `mkDefault`)
-1. Auto-imported HM modules (output of `hm-loader.nix`)
+1. Auto-imported HM modules (output of `hm-loader.nix`, includes `home/base.nix` with `lib.mkDefault` values)
 1. Base HM template (`sys.home.template`)
 1. Host overrides (`home/overrides/host/<hostname>.nix`)
 1. User overrides (`home/overrides/user/<user>-<host>.nix`)
 1. Per-user `extraModules` / `extraConfig` (`sys.home.users.<name>.*`)
+
+`autoDesktopConfig` (`hm.desktop.<flavor>.enable = lib.mkDefault true`) is merged separately — it uses `lib.mkDefault` so any explicit `hm.desktop.*.enable` setting in any layer takes precedence.
 
 `lib.mkForce` overrides everything regardless of layer.
 
