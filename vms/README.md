@@ -1,8 +1,8 @@
 ## MicroVM Configurations
 
 Isolated service VMs using [microvm.nix](https://github.com/astro/microvm.nix)
-for lightweight virtualization. All 24 VMs run on the `blizzard` host inside
-a `10.100.0.0/24` tap bridge.
+for lightweight virtualization. The flake currently defines 23 MicroVM
+configurations for the `blizzard` host on a `10.100.0.0/24` tap bridge.
 
 ______________________________________________________________________
 
@@ -62,7 +62,7 @@ ______________________________________________________________________
 ### VM inventory
 
 | VM | IP | Service port | RAM | vCPU | Network | Purpose |
-|----|----|----------- |-----|------|---------|---------|
+|----|----|-----------|-----|------|---------|---------|
 | adguard | 10.100.0.10 | 11010 | 3 GB | 1 | Direct | DNS sinkhole / ad blocker |
 | actual | 10.100.0.51 | 11051 | 1 GB | 1 | Direct | Actual Budget (personal finance) |
 | bazarr | 10.100.0.23 | 11023 | 1 GB | 1 | Direct | Subtitle management |
