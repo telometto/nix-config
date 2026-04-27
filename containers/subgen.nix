@@ -1,5 +1,5 @@
-# Standalone Subgen container — can run on any host independently
-# Home Manager module — runs rootless via quadlet-nix
+# Standalone Subgen container - can run on any host independently
+# Home Manager module - runs rootless via quadlet-nix
 # Uses mccloud/subgen:cpu by default, mccloud/subgen:amd when gpu.enable is true
 { lib, config, ... }:
 let
@@ -123,11 +123,11 @@ in
     assertions = [
       {
         assertion = !(lib.attrByPath [ "services" "subgen" "enable" ] false config);
-        message = "services.subgen-container and services.subgen (subtitle-stack) cannot both be enabled — they define conflicting Subgen containers.";
+        message = "services.subgen-container and services.subgen (subtitle-stack) cannot both be enabled - they define conflicting Subgen containers.";
       }
       {
         assertion = !(cfg.transcribeOrTranslate == "translate" && lib.hasSuffix "turbo" cfg.whisperModel);
-        message = "Whisper models ending in 'turbo' do not support translation — use a non-turbo model when transcribeOrTranslate is 'translate'.";
+        message = "Whisper models ending in 'turbo' do not support translation - use a non-turbo model when transcribeOrTranslate is 'translate'.";
       }
     ];
 
