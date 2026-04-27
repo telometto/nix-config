@@ -44,9 +44,9 @@ nixosConfigurations = {
    ```
 
    b. In the private `nix-secrets` repository (not this repo), add that public
-      key to the appropriate host entry in `.sops.yaml`.
+   key to the appropriate host entry in `.sops.yaml`.
    c. Still in `nix-secrets`, re-encrypt each affected secret file using its
-      actual path there:
+   actual path there:
 
    ```bash
    cd ../nix-secrets
