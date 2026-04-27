@@ -8,6 +8,7 @@
 {
   imports = [
     ../modules/security/secrets.nix
+    ../modules/services/arr-exporter.nix
     ../modules/services/nfs.nix
     ../modules/services/traefik.nix
   ];
