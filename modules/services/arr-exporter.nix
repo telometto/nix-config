@@ -110,6 +110,13 @@ let
       keyFile = "/run/${name}-exporter/api-key";
     in
     lib.mkIf scfg.enable {
+      assertions = [
+        {
+          assertion = config.services.${name}.enable;
+          message = "sys.services.arrExporter.${name} requires the ${name} service to be enabled (services.${name}.enable = true).";
+        }
+      ];
+
       # Oneshot that reads the API key from the *arr config file into a root-owned
       # tmpfs path. LoadCredential (run by PID 1) can read it regardless of
       # DynamicUser; the key never touches the Nix store.
@@ -130,6 +137,10 @@ let
               [ -s "${scfg.configFile}" ] && break
               sleep 1
             done
+            [ -s "${scfg.configFile}" ] || {
+              echo "Timed out waiting for ${scfg.configFile} to appear" >&2
+              exit 1
+            }
             key=$(${spec.extractKey scfg.configFile})
             [ -n "$key" ] || {
               echo "No API key found in ${scfg.configFile}" >&2
