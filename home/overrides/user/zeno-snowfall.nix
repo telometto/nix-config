@@ -26,6 +26,7 @@
     pkgs.zola
     pkgs.rendercv
     pkgs.claude-code
+    pkgs.uv
   ];
 
   hm = {
