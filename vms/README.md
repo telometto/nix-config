@@ -61,8 +61,8 @@ ______________________________________________________________________
 
 ### VM inventory
 
-| VM | IP | SSH port | RAM | vCPU | Network | Purpose |
-|----|----|----------|-----|------|---------|---------|
+| VM | IP | Service port | RAM | vCPU | Network | Purpose |
+|----|----|-----------   |-----|------|---------|---------|
 | adguard | 10.100.0.10 | 11010 | 3 GB | 1 | Direct | DNS sinkhole / ad blocker |
 | actual | 10.100.0.51 | 11051 | 1 GB | 1 | Direct | Actual Budget (personal finance) |
 | bazarr | 10.100.0.23 | 11023 | 1 GB | 1 | Direct | Subtitle management |
@@ -161,7 +161,7 @@ ______________________________________________________________________
 ### Creating a new VM
 
 1. Add an entry to [vm-registry.nix](vm-registry.nix) with a unique CID, MAC,
-   IP, SSH port, memory, and vCPU count.
+   IP, service port, memory, and vCPU count.
 1. Create `vms/<service>.nix` importing `./base.nix` and adding the
    service-specific NixOS config.
 1. Wire it up in [flake-microvms.nix](flake-microvms.nix) using `mkMicrovm`.
