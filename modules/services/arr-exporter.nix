@@ -142,8 +142,8 @@ let
       # DynamicUser process receives the key securely via $CREDENTIALS_DIRECTORY.
       services.prometheus.exporters."exportarr-${name}" = {
         enable = true;
-        port = scfg.port;
-        listenAddress = scfg.listenAddress;
+
+        inherit (scfg) port listenAddress;
         url = "http://127.0.0.1:${toString scfg.arrPort}";
         apiKeyFile = keyFile;
         environment = scfg.extraEnvironment;
