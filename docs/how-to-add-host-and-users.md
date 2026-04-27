@@ -43,12 +43,18 @@ nixosConfigurations = {
    ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
    ```
 
-   b. Add the key to `.sops.yaml` under the new host entry.
-   c. Re-encrypt all affected secret files:
+   b. In the private `nix-secrets` repository (not this repo), add that public
+      key to the appropriate host entry in `.sops.yaml`.
+   c. Still in `nix-secrets`, re-encrypt each affected secret file using its
+      actual path there:
 
    ```bash
-   sops updatekeys secrets.yaml
+   cd ../nix-secrets
+   sops updatekeys path/to/affected-secret.yaml
    ```
+
+   Repeat `sops updatekeys` for any other secret files that should be readable
+   by the new host.
 
 1. (Optional) Add Home Manager overrides:
 
@@ -120,5 +126,6 @@ sys.services.grafana.enable = true;
   roles) and check overrides file names match the expected pattern.
 - **Service secrets**: Enable the service option first; `modules/core/sops.nix`
   defines secrets only when the service is on.
-- **SOPS decryption fails**: Ensure the host's age key is in `.sops.yaml` and
-  that all secret files have been re-encrypted with `sops updatekeys secrets.yaml`.
+- **SOPS decryption fails**: Ensure the host's age key is in `.sops.yaml` in
+  the private `nix-secrets` repository, and that all affected secret files
+  there have been re-encrypted with `sops updatekeys <path>`.
