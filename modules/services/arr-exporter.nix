@@ -93,7 +93,7 @@ let
 
       openFirewall = lib.mkOption {
         type = lib.types.bool;
-        default = true;
+        default = false;
         description = "Open a firewall port for the exporter so Prometheus can scrape it.";
       };
     };
