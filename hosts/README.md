@@ -4,12 +4,12 @@ Per-machine NixOS configurations defining hardware, roles, users, and services.
 
 ### Hosts Overview
 
-| Host | Role | Desktop | Description |
-|------|------|---------|-------------|
-| [snowfall/](snowfall/) | Desktop | KDE | Primary workstation, distributed builds client |
-| [blizzard/](blizzard/) | Server | None | Home server: Grafana, NFS, Samba, Tailscale router |
-| [avalanche/](avalanche/) | Desktop | GNOME | Secondary workstation (ThinkPad P51) |
-| [kaizer/](kaizer/) | Desktop | KDE | External access machine |
+| Host | Role | Desktop | Standout Features |
+|------|------|---------|------------------|
+| [snowfall/](snowfall/) | Desktop | KDE | AMD GPU, distributed builds server, openrazer (RGB), Prometheus+Grafana+Traefik+Cloudflare tunnel, RAPL + electricity-price exporters |
+| [blizzard/](blizzard/) | Server | None | ZFS+NFS+Samba, full observability stack, 24 MicroVM host, Tailscale subnet router (192.168.2.0/24 + 10.100.0.0/24), CrowdSec, k3s, VictoriaMetrics |
+| [avalanche/](avalanche/) | Desktop | GNOME | ThinkPad P51, nixos-hardware module, iwlwifi+BT coexistence workaround, VictoriaMetrics remote-write to blizzard |
+| [kaizer/](kaizer/) | Desktop | KDE | Two users (gianluca+frankie), Lanzaboote disabled, NVIDIA GPU (legacy open=false), Java Temurin 8/17/21 for Minecraft, Italian locale |
 
 ### Host Structure
 
@@ -23,35 +23,40 @@ hosts/<hostname>/
 └── [optional subdirectories]   # Domain-specific configs (for complex hosts)
 ```
 
-For complex hosts like servers, you can organize configuration into subdirectories:
+For complex hosts like servers, configuration is organized into subdirectories:
 
 ```
 hosts/blizzard/
-├── blizzard.nix            # Main: networking, role, users (~80 lines)
+├── blizzard.nix            # Main: networking, role, users, Tailscale subnet routing
 ├── hardware-configuration.nix
 ├── packages.nix
-├── boot.nix                # ZFS, kernel, sysctl
-├── networking.nix          # systemd-networkd
+├── boot.nix                # ZFS kernel, sysctl hardening
+├── networking.nix          # systemd-networkd static config
+├── monitoring/             # Observability stack
+│   ├── prometheus.nix
+│   ├── grafana.nix
+│   ├── victoriametrics.nix
+│   └── exporters.nix       # node, ZFS, power, arr, electricity-price exporters
 ├── storage/                # Storage services
 │   ├── zfs.nix
 │   ├── nfs.nix
 │   └── samba.nix
-├── monitoring/             # Observability stack
-│   ├── prometheus.nix
-│   ├── grafana.nix
-│   └── exporters.nix
-├── services/               # Application services
-│   ├── media.nix
-│   └── k3s.nix
 ├── security/               # Security infrastructure
 │   ├── crowdsec.nix
 │   └── traefik.nix
+├── services/               # Application services
+│   ├── backup.nix
+│   ├── cloudflared.nix
+│   ├── media.nix
+│   ├── productivity.nix
+│   ├── seaweedfs.nix
+│   └── system.nix
 └── virtualisation/         # VMs and containers
     ├── microvms.nix
     └── containers.nix
 ```
 
-All `.nix` files are auto-imported recursively by [host-loader.nix](../host-loader.nix) - no explicit
+All `.nix` files are auto-imported recursively by [host-loader.nix](../host-loader.nix) — no explicit
 `imports` list needed for local files. External modules (e.g. `nixos-hardware`) still
 require an `imports` block.
 
@@ -59,7 +64,7 @@ require an `imports` block.
 
 All `.nix` files under `hosts/<hostname>/` are auto-imported by
 [host-loader.nix](../host-loader.nix). The main `<hostname>.nix` only needs to
-set host-specific configuration - no imports block for local files:
+set host-specific configuration — no imports block for local files:
 
 ```nix
 # hosts/<hostname>/<hostname>.nix
@@ -144,10 +149,5 @@ head -c 4 /dev/urandom | od -A none -t x4 | tr -d ' '
 
 - [Tutorial: Provision a Host](../docs/tutorial-provision-host.md)
 - [How to Add Hosts and Users](../docs/how-to-add-host-and-users.md)
-- [Role Desktop](../modules/role-desktop.nix) - Desktop role defaults
-- [Role Server](../modules/role-server.nix) - Server role defaults
-
-______________________________________________________________________
-
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*
+- [Role Desktop](../modules/role-desktop.nix) — Desktop role defaults
+- [Role Server](../modules/role-server.nix) — Server role defaults
