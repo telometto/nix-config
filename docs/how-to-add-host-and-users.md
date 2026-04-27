@@ -1,6 +1,6 @@
 # How-to: Add a Host and Enable Users
 
-Problem: Add a new machine to the flake and enable specific users’ accounts and Home Manager profiles on that machine.
+Problem: Add a new machine to the flake and enable specific users' accounts and Home Manager profiles on that machine.
 
 ## Steps
 
@@ -25,16 +25,82 @@ sys.desktop.flavor = "kde";     # kde | gnome | hyprland
 sys.users.<username>.enable = true;  # e.g., zeno
 ```
 
-4. (Optional) Add Home Manager overrides:
+4. Register the host in `flake.nix`:
+
+```nix
+nixosConfigurations = {
+  # ... existing hosts ...
+  <hostname> = mkHost "<hostname>" [ ];
+};
+```
+
+5. Configure SOPS for the new host (required if any secrets-enabled services
+   are on — Tailscale, borgbackup, etc.):
+
+   a. Derive the host's age public key from its SSH host key:
+   ```bash
+   ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
+   ```
+   b. Add the key to `.sops.yaml` under the new host entry.
+   c. Re-encrypt all affected secret files:
+   ```bash
+   sops updatekeys secrets.yaml
+   ```
+
+6. (Optional) Add Home Manager overrides:
 
 - Host-wide: `home/overrides/host/<hostname>.nix`
 - User@host specific: `home/overrides/user/<user>-<hostname>.nix`
 
-5. Build or switch:
+7. Build or switch:
 
 ```bash
 nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel
 sudo nixos-rebuild switch --flake .#<hostname>
+```
+
+## Recipes
+
+**Enable a VM on blizzard:**
+
+```nix
+# In hosts/blizzard/virtualisation/microvms.nix
+sys.virtualisation.microvm.instances.searx = {
+  enable = true;
+  # VM options
+};
+```
+
+**Add a per-host HM override:**
+
+```nix
+# home/overrides/host/<hostname>.nix
+{ ... }:
+{
+  hm.programs.terminal.enable = true;
+  programs.git.extraConfig.core.autocrlf = false;
+}
+```
+
+**Add a per-user override:**
+
+```nix
+# home/overrides/user/<username>-<hostname>.nix
+{ ... }:
+{
+  hm.desktop.kde.enable = true;
+  programs.ssh.matchBlocks."internal" = {
+    hostname = "192.168.2.10";
+    user = "admin";
+  };
+}
+```
+
+**Add a service to a host:**
+
+```nix
+# In the host's .nix file or a service-specific file under hosts/<hostname>/
+sys.services.grafana.enable = true;
 ```
 
 ## Notes
@@ -45,14 +111,11 @@ sudo nixos-rebuild switch --flake .#<hostname>
 
 ## Troubleshooting
 
-- User missing: Ensure `sys.users.<username>.enable = true` and that the user
-  exists in `VARS.users`.
-- HM not applying: Confirm `sys.home.enable = true` (defaults to true under
-  roles) and check overrides file names.
-- Service secrets: Enable the service option first; `modules/core/sops.nix`
+- **User missing**: Ensure `sys.users.<username>.enable = true` and that the
+  user exists in `VARS.users`.
+- **HM not applying**: Confirm `sys.home.enable = true` (defaults to true under
+  roles) and check overrides file names match the expected pattern.
+- **Service secrets**: Enable the service option first; `modules/core/sops.nix`
   defines secrets only when the service is on.
-
-______________________________________________________________________
-
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*
+- **SOPS decryption fails**: Ensure the host's age key is in `.sops.yaml` and
+  that all secret files have been re-encrypted with `sops updatekeys secrets.yaml`.
