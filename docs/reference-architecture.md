@@ -98,9 +98,9 @@ Home Manager config is assembled in layers. Lower layers supply defaults; higher
 | Layer | File / mechanism | Scope |
 |-------|-----------------|-------|
 | 1. Module defaults | Individual `home/*.nix` option defaults | All users, all hosts |
-| 2. Base template | `sys.home.template` in host file | All users on that host |
-| 3. HM loader modules | All files under `home/` (via hm-loader) | All users, all hosts |
-| 4. Auto desktop | `hm.desktop.<flavor>.enable = true` from `sys.desktop.flavor` | All users on hosts with a desktop flavor |
+| 2. HM loader modules | All files under `home/` (via hm-loader) | All users, all hosts |
+| 3. Base template | `sys.home.template` in host file | All users on that host |
+| 4. Auto desktop | `hm.desktop.<flavor>.enable = true` from `sys.desktop.flavor` (via `lib.mkDefault`) | All users on hosts with a desktop flavor |
 | 5. Host override | `home/overrides/host/<hostname>.nix` | All users on that specific host |
 | 6. User@host override | `home/overrides/user/<username>-<hostname>.nix` | Specific user on specific host |
 | 7. `extraConfig` | `sys.home.users.<username>.extraConfig` in host file | Specific user on that host |
