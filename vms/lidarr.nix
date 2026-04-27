@@ -40,5 +40,8 @@ in
     reverseProxy.enable = false;
   };
 
-  sys.services.arrExporter.lidarr.enable = true;
+  sys.services.arrExporter.lidarr = {
+    enable = true;
+    openFirewall = true;
+  };
 }
