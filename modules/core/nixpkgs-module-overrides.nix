@@ -6,8 +6,7 @@
 #   imports = [ "${inputs.<input>}/nixos/modules/<relative/path>.nix" ];
 #
 # Remove each entry once `nix flake update` picks up the upstream fix.
-{ _ }:
-{
+_: {
   #   # https://github.com/NixOS/nixpkgs/issues/511465
   #   # pam.nix generates non-absolute PAM module paths (e.g. "login") in
   #   # security.apparmor.includes; AppArmor rejects them.
