@@ -58,7 +58,7 @@ ______________________________________________________________________
 |----------|---------|---------|--------------|
 | `auto-format.yml` | PR / push to main / manual | Runs `nix fmt`, commits formatted changes back to the branch, comments on PR, enables auto-merge | Yes — formats in-place |
 | `flake-check.yml` | PR / push to main / manual (paths: `**.nix`, `flake.lock`, `treefmt.nix`) | Runs `nix flake check --no-build`, redacts secrets in failure output | No |
-| `validate-config.yml` | PR / push to main / manual | Discovers hosts via `mkHost` grep, runs `nix build` eval per host in a matrix | No |
+| `validate-config.yml` | PR / push to main / manual | Discovers hosts via `mkHost` grep, evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix, and evaluates the Home Manager users attrset | No |
 | `change-impact-analysis.yml` | PR | Diffs changed files under `hosts/`, `modules/`, `home/`, `vms/`, `lib/`, `flake.*`, posts impact report as a PR comment | No |
 | `compliance-check.yml` | PR / push / cron Mon 09:00 | Runs `deadnix` and other Nix linters, comments results | No |
 | `doc-drift.yml` | PR | Warns if code changes ship without any `docs/*.md` or `*.md` updates | No |
@@ -115,7 +115,7 @@ These run on every pull request:
 |----------|---------------|
 | `auto-format.yml` | Formats all files and commits back; if this commits, the PR diff is automatically clean |
 | `flake-check.yml` | Evaluates the flake for Nix errors (paths filter: only runs when `.nix`, `flake.lock`, or `treefmt.nix` files change) |
-| `validate-config.yml` | Builds the NixOS system closure for every host in a matrix |
+| `validate-config.yml` | Evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix (does not perform a full build) |
 | `change-impact-analysis.yml` | Posts a comment summarising which layer (hosts, modules, home, vms, lib, flake) is affected |
 | `compliance-check.yml` | Dead-code linting and other Nix hygiene checks |
 | `doc-drift.yml` | Warns when code changes land without documentation updates |
