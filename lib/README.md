@@ -260,4 +260,4 @@ ______________________________________________________________________
 
 - [Grafana service module](../modules/services/grafana.nix)
 - [Dashboard files](../dashboards/)
-- [Traefik service module](../vms/traefik.nix)
+- [Traefik service module](../modules/services/traefik.nix)
