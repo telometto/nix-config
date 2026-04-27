@@ -289,65 +289,60 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
-    systemd.services.synapse-auto-compressor = lib.mkIf cfg.autoCompressor.enable {
-      description = "Compress Synapse room state to reclaim database space";
-      after = [
-        "matrix-synapse.service"
-        "postgresql.service"
-      ];
-      requires = [ "postgresql.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        User = "matrix-synapse";
-      };
-      script = ''
-        ${pkgs.rust-synapse-compress-state}/bin/synapse_auto_compressor \
-          -p ${lib.escapeShellArg "host=/run/postgresql user=matrix-synapse dbname=matrix-synapse"} \
-          -c ${toString cfg.autoCompressor.chunksToCompress} \
-          -n ${toString cfg.autoCompressor.chunkSize}
-      '';
-    };
+    systemd = {
+      timers = {
+        synapse-auto-compressor = lib.mkIf cfg.autoCompressor.enable {
+          description = "Run Synapse state compressor periodically";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = cfg.autoCompressor.interval;
+            Persistent = true;
+            RandomizedDelaySec = "4h";
+          };
+        };
 
-    systemd.timers.synapse-auto-compressor = lib.mkIf cfg.autoCompressor.enable {
-      description = "Run Synapse state compressor periodically";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnCalendar = cfg.autoCompressor.interval;
-        Persistent = true;
-        RandomizedDelaySec = "4h";
-      };
-    };
+        matrix-synapse-vacuum = lib.mkIf (cfg.vacuumTimer.enable && cfg.database.createLocally) {
+          description = "Run VACUUM ANALYZE on the Synapse DB periodically";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = cfg.vacuumTimer.interval;
+            Persistent = true;
+            RandomizedDelaySec = "1h";
+          };
+        };
 
-    systemd.services.matrix-synapse-pg-tuning = lib.mkIf cfg.database.createLocally {
-      description = "Apply per-table autovacuum settings for Synapse hot tables";
-      wantedBy = [ "multi-user.target" ];
-      after = [
-        "matrix-synapse.service"
-        "postgresql.service"
-      ];
-      requires = [ "postgresql.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        User = "matrix-synapse";
+        matrix-synapse-db-size = lib.mkIf (cfg.dbSizeLogger.enable && cfg.database.createLocally) {
+          description = "Log Synapse DB size to the journal periodically";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = cfg.dbSizeLogger.interval;
+            Persistent = true;
+            RandomizedDelaySec = "1h";
+          };
+        };
       };
-      script = ''
-        ${config.services.postgresql.package}/bin/psql \
-          --no-psqlrc \
-          --set=ON_ERROR_STOP=1 \
-          -h /run/postgresql \
-          -d matrix-synapse \
-          -c "ALTER TABLE state_groups_state SET (autovacuum_vacuum_scale_factor = 0.02);" \
-          -c "ALTER TABLE event_json SET (autovacuum_vacuum_scale_factor = 0.05);" \
-          -c "ALTER TABLE event_edges SET (autovacuum_vacuum_scale_factor = 0.05);" \
-          -c "ALTER TABLE event_auth SET (autovacuum_vacuum_scale_factor = 0.05);" \
-          -c "ALTER TABLE events SET (autovacuum_vacuum_scale_factor = 0.05);"
-      '';
-    };
 
-    systemd.services.matrix-synapse-vacuum =
-      lib.mkIf (cfg.vacuumTimer.enable && cfg.database.createLocally)
-        {
+      services = {
+        synapse-auto-compressor = lib.mkIf cfg.autoCompressor.enable {
+          description = "Compress Synapse room state to reclaim database space";
+          after = [
+            "matrix-synapse.service"
+            "postgresql.service"
+          ];
+          requires = [ "postgresql.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            User = "matrix-synapse";
+          };
+          script = ''
+            ${pkgs.rust-synapse-compress-state}/bin/synapse_auto_compressor \
+              -p ${lib.escapeShellArg "host=/run/postgresql user=matrix-synapse dbname=matrix-synapse"} \
+              -c ${toString cfg.autoCompressor.chunksToCompress} \
+              -n ${toString cfg.autoCompressor.chunkSize}
+          '';
+        };
+
+        matrix-synapse-vacuum = lib.mkIf (cfg.vacuumTimer.enable && cfg.database.createLocally) {
           description = "VACUUM ANALYZE the Synapse PostgreSQL database";
           after = [
             "matrix-synapse.service"
@@ -368,21 +363,7 @@ in
           '';
         };
 
-    systemd.timers.matrix-synapse-vacuum =
-      lib.mkIf (cfg.vacuumTimer.enable && cfg.database.createLocally)
-        {
-          description = "Run VACUUM ANALYZE on the Synapse DB periodically";
-          wantedBy = [ "timers.target" ];
-          timerConfig = {
-            OnCalendar = cfg.vacuumTimer.interval;
-            Persistent = true;
-            RandomizedDelaySec = "1h";
-          };
-        };
-
-    systemd.services.matrix-synapse-db-size =
-      lib.mkIf (cfg.dbSizeLogger.enable && cfg.database.createLocally)
-        {
+        matrix-synapse-db-size = lib.mkIf (cfg.dbSizeLogger.enable && cfg.database.createLocally) {
           description = "Log Synapse PostgreSQL database size to the journal";
           after = [ "postgresql.service" ];
           requires = [ "postgresql.service" ];
@@ -401,17 +382,34 @@ in
           '';
         };
 
-    systemd.timers.matrix-synapse-db-size =
-      lib.mkIf (cfg.dbSizeLogger.enable && cfg.database.createLocally)
-        {
-          description = "Log Synapse DB size to the journal periodically";
-          wantedBy = [ "timers.target" ];
-          timerConfig = {
-            OnCalendar = cfg.dbSizeLogger.interval;
-            Persistent = true;
-            RandomizedDelaySec = "1h";
+        matrix-synapse-pg-tuning = lib.mkIf cfg.database.createLocally {
+          description = "Apply per-table autovacuum settings for Synapse hot tables";
+          wantedBy = [ "multi-user.target" ];
+          after = [
+            "matrix-synapse.service"
+            "postgresql.service"
+          ];
+          requires = [ "postgresql.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            User = "matrix-synapse";
           };
+          script = ''
+            ${config.services.postgresql.package}/bin/psql \
+              --no-psqlrc \
+              --set=ON_ERROR_STOP=1 \
+              -h /run/postgresql \
+              -d matrix-synapse \
+              -c "ALTER TABLE state_groups_state SET (autovacuum_vacuum_scale_factor = 0.02);" \
+              -c "ALTER TABLE event_json SET (autovacuum_vacuum_scale_factor = 0.05);" \
+              -c "ALTER TABLE event_edges SET (autovacuum_vacuum_scale_factor = 0.05);" \
+              -c "ALTER TABLE event_auth SET (autovacuum_vacuum_scale_factor = 0.05);" \
+              -c "ALTER TABLE events SET (autovacuum_vacuum_scale_factor = 0.05);"
+          '';
         };
+      };
+    };
 
     assertions = [
       {
