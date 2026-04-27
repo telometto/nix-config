@@ -7,6 +7,7 @@ JSON dashboard definitions for Grafana provisioning.
 ```
 dashboards/
 ├── shared/              # Dashboards usable across hosts
+│   ├── arr-services.json
 │   ├── electricity-prices.json
 │   └── power-consumption.json
 └── host/
@@ -20,6 +21,7 @@ dashboards/
 
 | Dashboard | Description | Data Source |
 |-----------|-------------|-------------|
+| [arr-services.json](shared/arr-services.json) | *arr stack service metrics (Sonarr/Radarr/Prowlarr/etc.) | arr-exporter |
 | [electricity-prices.json](shared/electricity-prices.json) | Energy pricing visualization | Electricity price exporter |
 | [power-consumption.json](shared/power-consumption.json) | Real-time power usage | Smart plug metrics |
 
@@ -88,8 +90,3 @@ in
 - [Grafana service module](../modules/services/grafana.nix)
 - [Grafana dashboards library](../lib/grafana-dashboards.nix)
 - [Prometheus exporters](../modules/services/prometheus-exporters.nix)
-
-______________________________________________________________________
-
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*
