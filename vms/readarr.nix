@@ -39,4 +39,6 @@ in
     dataDir = "/var/lib/readarr";
     reverseProxy.enable = false;
   };
+
+  sys.services.arrExporter.readarr.enable = true;
 }
