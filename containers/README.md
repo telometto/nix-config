@@ -5,7 +5,7 @@ Declarative Podman container definitions using
 directory are **Home Manager modules** designed for rootless operation under a
 specific user via `virtualisation.quadlet.containers`.
 
----
+______________________________________________________________________
 
 ### Containers vs MicroVMs
 
@@ -44,7 +44,7 @@ flowchart LR
 | Best for | Isolated services needing a full OS | Desktop apps, lightweight services, upstream images |
 | Host requirement | `sys.virtualisation.microvm.*` | `sys.virtualisation.enable` |
 
----
+______________________________________________________________________
 
 ### Available Containers
 
@@ -68,7 +68,7 @@ Spawns four containers together: `lingarr` (subtitle manager), `libretranslate`
 The two options (`services.lingarr.enable` and `services.subgen.enable`) control
 whether to include the stack.
 
----
+______________________________________________________________________
 
 ### Architecture
 
@@ -105,7 +105,7 @@ as rootless Podman Quadlet systemd user services.
              └── subgen         (:11027)  ← services.subgen.enable
 ```
 
----
+______________________________________________________________________
 
 ### Creating a New Container Module
 
@@ -166,7 +166,7 @@ in
 sudo nixos-rebuild switch --flake .#<hostname>
 ```
 
----
+______________________________________________________________________
 
 ### Container Options (quadlet-nix)
 
@@ -189,11 +189,10 @@ Each container in `virtualisation.quadlet.containers.<name>` supports:
 See [quadlet-nix options](https://seiarotg.github.io/quadlet-nix) for the
 full reference.
 
----
+______________________________________________________________________
 
 ### Related Documentation
 
 - [System Modules](../modules/README.md) — Module conventions
 - [MicroVM Configurations](../vms/README.md) — VM-based alternative
 - [Blizzard host](../hosts/blizzard/) — Server running both VMs and containers
-

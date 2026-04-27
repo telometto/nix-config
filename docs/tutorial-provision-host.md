@@ -80,7 +80,7 @@ ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
 
 2. Add the resulting age key to `.sops.yaml` under the appropriate host entry.
 
-3. Re-encrypt all affected secret files:
+1. Re-encrypt all affected secret files:
 
 ```bash
 sops updatekeys secrets.yaml

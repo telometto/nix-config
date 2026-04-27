@@ -38,16 +38,19 @@ nixosConfigurations = {
    are on — Tailscale, borgbackup, etc.):
 
    a. Derive the host's age public key from its SSH host key:
+
    ```bash
    ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
    ```
+
    b. Add the key to `.sops.yaml` under the new host entry.
    c. Re-encrypt all affected secret files:
+
    ```bash
    sops updatekeys secrets.yaml
    ```
 
-6. (Optional) Add Home Manager overrides:
+1. (Optional) Add Home Manager overrides:
 
 - Host-wide: `home/overrides/host/<hostname>.nix`
 - User@host specific: `home/overrides/user/<user>-<hostname>.nix`

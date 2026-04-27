@@ -3,7 +3,7 @@
 Reusable Nix functions and data shared across the configuration. All four files
 are passed into hosts and VMs as `specialArgs` from `flake.nix`.
 
----
+______________________________________________________________________
 
 ### constants.nix
 
@@ -31,7 +31,7 @@ places.
 |-----|-------|---------|
 | `tailscale.suffix` | `"mole-delta.ts.net"` | Tailscale network domain suffix for building service FQDNs |
 
----
+______________________________________________________________________
 
 ### traefik.nix
 
@@ -103,7 +103,7 @@ Each call adds these options under `sys.services.<name>.reverseProxy`:
 { subdomain, url, entryPoints?, middlewares? }
 ```
 
----
+______________________________________________________________________
 
 ### grafana-dashboards.nix
 
@@ -178,7 +178,7 @@ custom = {
 };
 ```
 
----
+______________________________________________________________________
 
 ### grafana.nix
 
@@ -244,7 +244,7 @@ g.mkDashboard {
 | `mkTarget` | `{ expr, legendFormat?, refId, instant?, exemplar? }` | Prometheus query target |
 | `mkDashboard` | `{ title, uid?, panels, variables?, links?, tags?, annotations? }` | Assembles full Grafana dashboard JSON |
 
----
+______________________________________________________________________
 
 ### Adding Things
 
@@ -261,4 +261,3 @@ g.mkDashboard {
 - [Grafana service module](../modules/services/grafana.nix)
 - [Dashboard files](../dashboards/)
 - [Traefik service module](../vms/traefik.nix)
-

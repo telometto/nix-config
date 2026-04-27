@@ -31,7 +31,7 @@ Every physical host built with `mkHost` automatically receives:
 
 `specialArgs` available in every module: `inputs`, `system`, `VARS`, `consts`, `self`, `hostname`.
 
----
+______________________________________________________________________
 
 ## Loaders
 
@@ -49,7 +49,7 @@ Recursively imports every `.nix` file under `./hosts/${hostname}/`. The `hostnam
 
 Recursively imports every `.nix` file under `./home/`, **excluding** any path containing `/overrides/host/` or `/overrides/user/`. Overrides are excluded so they must be opted into explicitly per host or user — they do not bleed across machines. See [HM Override System](#hm-override-system) below.
 
----
+______________________________________________________________________
 
 ## System Options (`sys.*`)
 
@@ -73,7 +73,7 @@ All NixOS-level options are defined under the `sys.*` namespace in `modules/`.
 | `sys.nix.distributedBuilds.*` | `modules/core/distributed-builds.nix` | Remote build targets |
 | `sys.overlays.*` | `modules/core/overlays.nix` | Nixpkgs overlays (`fromInputs`, `custom`) |
 
----
+______________________________________________________________________
 
 ## Home Manager Options (`hm.*`)
 
@@ -89,7 +89,7 @@ All Home Manager options are defined under the `hm.*` namespace in `home/`.
 | `hm.accounts.{email,calendar,contact}.enable` | `home/accounts/` | PIM accounts (email, calendar, contacts) |
 | `hm.files.enable` | `home/files/files.nix` | Managed dotfiles |
 
----
+______________________________________________________________________
 
 ## HM Override System
 
@@ -111,7 +111,7 @@ Home Manager config is assembled in layers. Lower layers supply defaults; higher
 
 `home/overrides/host/ssh-common.nix` is a shared SSH match-block config that is **not** named after a hostname. It is imported manually by individual host override files (e.g. `home/overrides/host/blizzard.nix` imports it). It is **not** auto-imported by `hm-loader.nix` (overrides are excluded from the loader) nor is it picked up automatically by `home-users.nix`. To share SSH config across multiple hosts, each relevant host override file imports `ssh-common.nix` explicitly.
 
----
+______________________________________________________________________
 
 ## Roles
 
@@ -141,7 +141,7 @@ Neither role is a sealed abstraction — any setting it enables can be overridde
 
 Config files: [`modules/role-desktop.nix`](../modules/role-desktop.nix), [`modules/role-server.nix`](../modules/role-server.nix).
 
----
+______________________________________________________________________
 
 ## Stack
 
@@ -163,7 +163,7 @@ Operational tools used across the repo.
 
 `nix flake check` only runs the `checks.formatting` check. Full host evaluation (build testing) is done by the `validate-config.yml` CI workflow, not as a flake check.
 
----
+______________________________________________________________________
 
 ## Secrets Flow
 
@@ -175,7 +175,7 @@ The `whenEnabled` pattern ties secret definitions to service enablement. A secre
 
 See also: [Architecture Blueprint — Section 8: Secrets Architecture](Project_Architecture_Blueprint.md#section-8---secrets-architecture) for a full diagram.
 
----
+______________________________________________________________________
 
 ## VM Registry & MicroVM Helper
 
@@ -187,7 +187,7 @@ VMs do **not** use `system-loader.nix`. They are built with a minimal module set
 
 See [`vms/README.md`](../vms/README.md) for the full VM list and per-VM details.
 
----
+______________________________________________________________________
 
 ## Podman Containers (quadlet-nix)
 
@@ -197,7 +197,7 @@ See [`vms/README.md`](../vms/README.md) for the full VM list and per-VM details.
 - Rootful containers (e.g., inside MicroVMs) use `virtualisation.quadlet.containers` at the NixOS system level.
 - Requires `sys.virtualisation.enable = true` on the host (provides Podman + quadlet via [`modules/virtualisation/virtualisation.nix`](../modules/virtualisation/virtualisation.nix)).
 
----
+______________________________________________________________________
 
 ## Traefik Helpers (`lib/traefik.nix`)
 
@@ -205,13 +205,13 @@ See [`vms/README.md`](../vms/README.md) for the full VM list and per-VM details.
 - `mkRoutes { domain; defaultMiddlewares? }`: Generate `{ routers; services; }` from a concise routing table mapping service names to subdomains and URLs.
 - `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`: Per-service reverse proxy options used by `modules/services/*.nix`.
 
----
+______________________________________________________________________
 
 ## Constants (`lib/constants.nix`)
 
 Centralises shared magic strings: Tailscale domain suffix, Cloudflare account/policy IDs. Imported directly where needed.
 
----
+______________________________________________________________________
 
 ## Commands
 
@@ -239,7 +239,7 @@ nix flake check --no-build   # skip builds
 nix develop
 ```
 
----
+______________________________________________________________________
 
 ## Conventions
 
@@ -252,7 +252,7 @@ nix develop
 - Keep sensitive data out of this repo; extend `nix-secrets` (`VARS`) when needed.
 - Module pattern: `options.sys.<category>.<name>.enable = lib.mkEnableOption "..."` with `config = lib.mkIf cfg.enable { ... }`.
 
----
+______________________________________________________________________
 
 ## See Also
 

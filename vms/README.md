@@ -4,7 +4,7 @@ Isolated service VMs using [microvm.nix](https://github.com/astro/microvm.nix)
 for lightweight virtualization. All 24 VMs run on the `blizzard` host inside
 a `10.100.0.0/24` tap bridge.
 
----
+______________________________________________________________________
 
 ### VM build pipeline
 
@@ -24,7 +24,7 @@ flowchart TD
     E --> F
 ```
 
----
+______________________________________________________________________
 
 ### Network topology
 
@@ -57,7 +57,7 @@ flowchart TB
     wg --> w4
 ```
 
----
+______________________________________________________________________
 
 ### VM inventory
 
@@ -88,7 +88,7 @@ flowchart TB
 | tautulli | 10.100.0.42 | 11042 | 1 GB | 1 | Direct | Plex statistics |
 | wireguard | 10.100.0.11 | 56943 | 512 MB | 1 | Direct | VPN gateway (routes qb/sabnzbd/firefox/brave) |
 
----
+______________________________________________________________________
 
 ### Base configuration (vms/base.nix)
 
@@ -111,7 +111,7 @@ flowchart TB
 - **coredump** — systemd coredump disabled
 - **stateVersion** — `"24.11"`
 
----
+______________________________________________________________________
 
 ### Architecture
 
@@ -127,7 +127,7 @@ nixosConfigurations = {
 } // microvmConfigurations;
 ```
 
----
+______________________________________________________________________
 
 ### Host-side enablement
 
@@ -147,7 +147,7 @@ sys.virtualisation.microvm.instances.<name> = {
 Each instance toggle is independent, so a VM can remain active while
 selectively disabling its Cloudflare Tunnel or Traefik routing.
 
----
+______________________________________________________________________
 
 ### WG-routed VMs
 
@@ -156,18 +156,18 @@ through `wireguard-vm` (10.100.0.11). This ensures downloads and browser
 sessions exit via the VPN rather than the host's public IP. Their default
 gateway is set to 10.100.0.11 in the registry.
 
----
+______________________________________________________________________
 
 ### Creating a new VM
 
 1. Add an entry to [vm-registry.nix](vm-registry.nix) with a unique CID, MAC,
    IP, SSH port, memory, and vCPU count.
-2. Create `vms/<service>.nix` importing `./base.nix` and adding the
+1. Create `vms/<service>.nix` importing `./base.nix` and adding the
    service-specific NixOS config.
-3. Wire it up in [flake-microvms.nix](flake-microvms.nix) using `mkMicrovm`.
-4. Enable on the host: `sys.virtualisation.microvm.instances.<name>.enable = true`.
+1. Wire it up in [flake-microvms.nix](flake-microvms.nix) using `mkMicrovm`.
+1. Enable on the host: `sys.virtualisation.microvm.instances.<name>.enable = true`.
 
----
+______________________________________________________________________
 
 ### Security considerations
 
@@ -179,7 +179,7 @@ gateway is set to 10.100.0.11 in the registry.
   possible where explicitly configured (e.g. firefly-importer → firefly over
   the internal bridge).
 
----
+______________________________________________________________________
 
 ### Related documentation
 

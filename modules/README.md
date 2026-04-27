@@ -25,7 +25,7 @@ let cfg = config.sys.<category>.<name>; in
 Additional typed options (port, data directory, secret references, etc.) sit
 alongside the mandatory `enable` flag.
 
----
+______________________________________________________________________
 
 ### Directory structure
 
@@ -50,7 +50,7 @@ Top-level files (not in a subdirectory):
 | [role-server.nix](role-server.nix) | Bundles server defaults: Secure Boot, networkd, auto-upgrade, Tailscale, Home Manager |
 | [home-manager-integration.nix](home-manager-integration.nix) | Wires Home Manager into the NixOS module system at the system level |
 
----
+______________________________________________________________________
 
 ### Roles
 
@@ -68,16 +68,16 @@ Tailscale, Home Manager.
 `role-server.nix` enables: Secure Boot, networkd, auto-upgrade, Tailscale,
 Home Manager.
 
----
+______________________________________________________________________
 
 ### Adding a new module
 
 1. Create `modules/<category>/<name>.nix`.
-2. Define options under `options.sys.<category>.<name>.*`.
-3. Implement `config = lib.mkIf cfg.enable { ... };`.
-4. Done — the module auto-loads, no registration needed.
+1. Define options under `options.sys.<category>.<name>.*`.
+1. Implement `config = lib.mkIf cfg.enable { ... };`.
+1. Done — the module auto-loads, no registration needed.
 
----
+______________________________________________________________________
 
 ### Related documentation
 
