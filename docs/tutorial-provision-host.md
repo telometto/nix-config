@@ -37,6 +37,7 @@ cd nix-config
 Run on the target machine and place the output in the new host directory:
 
 ```bash
+mkdir -p hosts/<hostname>
 nixos-generate-config --show-hardware-config > hosts/<hostname>/hardware-configuration.nix
 ```
 
@@ -72,19 +73,26 @@ files.
 Any service that uses secrets (Tailscale, borgbackup, etc.) requires the
 host's age key to be registered in `.sops.yaml` before secrets will decrypt.
 
+These files live in the **private `nix-secrets` repository**, not in this repo.
+
 1. Derive the age public key from the host's SSH host key:
 
 ```bash
 ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
 ```
 
-2. Add the resulting age key to `.sops.yaml` under the appropriate host entry.
+2. In the `nix-secrets` repository, add the resulting age key to `.sops.yaml`
+   under the new host entry.
 
-1. Re-encrypt all affected secret files:
+1. Still in `nix-secrets`, re-encrypt all affected secret files:
 
 ```bash
-sops updatekeys secrets.yaml
+cd ../nix-secrets
+sops updatekeys path/to/affected-secret.yaml
 ```
+
+Repeat `sops updatekeys` for any other secret files that should be readable
+by the new host.
 
 Until this step is complete, any secrets-enabled service will fail to start
 with a SOPS decryption error.
