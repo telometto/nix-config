@@ -7,35 +7,42 @@
 let
   cfg = config.sys.services.arrExporter;
 
-  # Per-service static metadata: default port, config file sub-path, and a
-  # function that produces the shell expression to extract the API key.
+  # Per-service static metadata: exporter port, upstream *arr default port,
+  # config file sub-path, and a function that extracts the API key from the config.
+  # defaultArrPort is the upstream service default — each VM must override arrPort
+  # with the actual port from vm-registry since non-standard ports are used.
   serviceSpecs = {
     sonarr = {
       defaultPort = 9707;
+      defaultArrPort = 8989;
       configSubPath = "config.xml";
       extractKey =
         configFile: ''${pkgs.gnused}/bin/sed -n 's|.*<ApiKey>\(.*\)</ApiKey>.*|\1|p' "${configFile}"'';
     };
     radarr = {
       defaultPort = 9708;
+      defaultArrPort = 7878;
       configSubPath = "config.xml";
       extractKey =
         configFile: ''${pkgs.gnused}/bin/sed -n 's|.*<ApiKey>\(.*\)</ApiKey>.*|\1|p' "${configFile}"'';
     };
     lidarr = {
       defaultPort = 9709;
+      defaultArrPort = 8686;
       configSubPath = "config.xml";
       extractKey =
         configFile: ''${pkgs.gnused}/bin/sed -n 's|.*<ApiKey>\(.*\)</ApiKey>.*|\1|p' "${configFile}"'';
     };
     readarr = {
       defaultPort = 9710;
+      defaultArrPort = 8787;
       configSubPath = "config.xml";
       extractKey =
         configFile: ''${pkgs.gnused}/bin/sed -n 's|.*<ApiKey>\(.*\)</ApiKey>.*|\1|p' "${configFile}"'';
     };
     bazarr = {
       defaultPort = 9711;
+      defaultArrPort = 6767;
       # Bazarr stores settings in an INI file, not config.xml
       configSubPath = "config/config.ini";
       extractKey =
@@ -44,6 +51,7 @@ let
     };
     prowlarr = {
       defaultPort = 9712;
+      defaultArrPort = 9696;
       configSubPath = "config.xml";
       extractKey =
         configFile: ''${pkgs.gnused}/bin/sed -n 's|.*<ApiKey>\(.*\)</ApiKey>.*|\1|p' "${configFile}"'';
@@ -52,9 +60,6 @@ let
 
   mkOptions =
     name: spec:
-    let
-      svcCfg = config.sys.services.${name};
-    in
     {
       enable = lib.mkEnableOption "${name} Prometheus exporter (exportarr)";
 
@@ -72,13 +77,13 @@ let
 
       arrPort = lib.mkOption {
         type = lib.types.port;
-        default = svcCfg.port;
-        description = "Port the ${name} service listens on (used to build the exporter URL).";
+        default = spec.defaultArrPort;
+        description = "Port the ${name} service listens on (used to build the exporter URL). Must be set explicitly when using a non-default port.";
       };
 
       configFile = lib.mkOption {
         type = lib.types.str;
-        default = "${svcCfg.dataDir}/${spec.configSubPath}";
+        default = "/var/lib/${name}/${spec.configSubPath}";
         description = "Absolute path to the ${name} config file containing the API key.";
       };
 
