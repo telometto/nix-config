@@ -37,7 +37,7 @@ flowchart LR
 | [modules/](modules/) | System modules (`sys.*` options) — auto-loaded |
 | [home/](home/) | Home Manager modules (`hm.*` options) — auto-loaded |
 | [hosts/](hosts/) | Host configurations — auto-loaded per host |
-| [vms/](vms/) | MicroVM definitions (24 VMs) |
+| [vms/](vms/) | MicroVM definitions (23 VMs) |
 | [containers/](containers/) | Rootless Podman containers (Home Manager modules) |
 | [lib/](lib/) | Shared helpers (Traefik, Grafana, constants) |
 | [dashboards/](dashboards/) | Grafana dashboard JSON files |
@@ -60,7 +60,7 @@ flowchart LR
 | Host | Role | Desktop | Description |
 |------|------|---------|-------------|
 | snowfall | Desktop | KDE | Primary workstation; AMD GPU, distributed builds, monitoring stack |
-| blizzard | Server | — | Home server; ZFS, NFS, 24 MicroVMs, Tailscale subnet router |
+| blizzard | Server | — | Home server; ZFS, NFS, MicroVM host, Tailscale subnet router |
 | avalanche | Desktop | GNOME | ThinkPad P51; nixos-hardware module, iwlwifi+BT workaround |
 | kaizer | Desktop | KDE | External access; NVIDIA GPU, multi-user (gianluca+frankie), Java |
 
