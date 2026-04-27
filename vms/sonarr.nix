@@ -39,4 +39,6 @@ in
     dataDir = "/var/lib/sonarr";
     reverseProxy.enable = false;
   };
+
+  sys.services.arrExporter.sonarr.enable = true;
 }

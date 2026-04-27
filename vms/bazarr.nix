@@ -39,4 +39,6 @@ in
     dataDir = "/var/lib/bazarr";
     reverseProxy.enable = false;
   };
+
+  sys.services.arrExporter.bazarr.enable = true;
 }

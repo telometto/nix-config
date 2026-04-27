@@ -39,4 +39,6 @@ in
     dataDir = "/var/lib/radarr";
     reverseProxy.enable = false;
   };
+
+  sys.services.arrExporter.radarr.enable = true;
 }
