@@ -126,7 +126,6 @@ home/
 ├── base.nix          shared mkDefaults for all users
 ├── desktop/          gnome, kde, hyprland, xdg modules
 ├── files/            managed dotfiles and themes
-├── langs/            language toolchains (hm.langs.*)
 ├── programs/         browsers, development, terminal, media, social, gaming, gpg, tools, beets, fastfetch, packages
 ├── security/         sops HM integration
 ├── services/         gpgAgent, sshAgent
@@ -558,7 +557,7 @@ treefmt-nix orchestrates the following formatters in one pass:
 | `jsonfmt` | `*.json` |
 | `ruff` | `*.py` |
 
-Excluded paths: `.github/workflows/`, `*.lock`, `result*`, `images/`, `.direnv/`.
+Excluded paths: `.github/workflows/`, `*.lock`, `result*`, `.direnv/`.
 
 ### Dev shell
 
