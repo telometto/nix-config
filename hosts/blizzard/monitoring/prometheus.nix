@@ -63,6 +63,35 @@
         ];
       }
       {
+        job_name = "arr-exporter";
+        static_configs = [
+          {
+            targets = [ "10.100.0.21:9707" ];
+            labels.arr_service = "sonarr";
+          }
+          {
+            targets = [ "10.100.0.22:9708" ];
+            labels.arr_service = "radarr";
+          }
+          {
+            targets = [ "10.100.0.26:9709" ];
+            labels.arr_service = "lidarr";
+          }
+          {
+            targets = [ "10.100.0.24:9710" ];
+            labels.arr_service = "readarr";
+          }
+          {
+            targets = [ "10.100.0.23:9711" ];
+            labels.arr_service = "bazarr";
+          }
+          {
+            targets = [ "10.100.0.20:9712" ];
+            labels.arr_service = "prowlarr";
+          }
+        ];
+      }
+      {
         job_name = "ups";
         metrics_path = "/ups_metrics";
         static_configs = [
