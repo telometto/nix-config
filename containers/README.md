@@ -138,8 +138,9 @@ in
 }
 ```
 
-2. Import and enable in a user's HM config (typically via a host override or
-   user override file):
+2. Wire into the host NixOS config by adding the import to
+   `home-manager.users.<name>.imports` (typically in
+   `hosts/<hostname>/virtualisation/containers.nix`):
 
 ```nix
 # hosts/<hostname>/virtualisation/containers.nix
