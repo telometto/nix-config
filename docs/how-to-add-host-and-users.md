@@ -37,10 +37,10 @@ nixosConfigurations = {
 5. Configure SOPS for the new host (required if any secrets-enabled services
    are on — Tailscale, borgbackup, etc.):
 
-   a. Derive the host's age public key from its SSH host key:
+   a. Derive the host's age recipient from its SSH host key:
 
    ```bash
-   ssh-to-age -i /etc/ssh/ssh_host_ed25519_key.pub
+   ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key | ssh-to-age
    ```
 
    b. In the private `nix-secrets` repository (not this repo), add that public
@@ -56,7 +56,7 @@ nixosConfigurations = {
    Repeat `sops updatekeys` for any other secret files that should be readable
    by the new host.
 
-1. (Optional) Add Home Manager overrides:
+6. (Optional) Add Home Manager overrides:
 
 - Host-wide: `home/overrides/host/<hostname>.nix`
 - User@host specific: `home/overrides/user/<user>-<hostname>.nix`
