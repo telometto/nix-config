@@ -17,6 +17,7 @@ in
     domain = "metrics.${VARS.domains.public}";
 
     provision.dashboards = {
+      "arr-services" = grafanaDashboards.custom.arr-services;
       "kubernetes-cluster" = grafanaDashboards.community.kubernetes-cluster;
       "zfs-overview" = grafanaDashboards.custom.zfs-overview;
       "power-consumption" = grafanaDashboards.custom.power-consumption;
