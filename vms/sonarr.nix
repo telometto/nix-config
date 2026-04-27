@@ -43,5 +43,6 @@ in
   sys.services.arrExporter.sonarr = {
     enable = true;
     openFirewall = true;
+    arrPort = reg.port;
   };
 }
