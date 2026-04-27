@@ -106,17 +106,19 @@ Layers are applied from lowest priority (bottom) to highest (top):
 ```mermaid
 flowchart TD
     A["1. hm-loader output\nauto-imported home/** modules\n(includes home/base.nix mkDefaults)"] --> B
-    B["2. sys.home.template\nhost-wide base template for all users"] --> C
-    C["3. home/overrides/host/<hostname>.nix (if exists)"] --> D
-    D["4. home/overrides/user/<user>-<host>.nix (if exists)"] --> E
-    E["5. sys.home.users.<name>.extraModules / extraConfig"]
-    AD["autoDesktopConfig\nlib.mkDefault hm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"] -.->|"merged separately"| E
-    H["lib.mkForce (anywhere)"] -.->|"always wins"| E
+    B["2. sys.home.extraModules\nhost-wide extra modules for all users"] --> C
+    C["3. sys.home.template\nhost-wide base template for all users"] --> D
+    D["4. home/overrides/host/<hostname>.nix (if exists)"] --> E
+    E["5. home/overrides/user/<user>-<host>.nix (if exists)"] --> F
+    F["6. sys.home.users.<name>.extraModules / extraConfig"]
+    AD["autoDesktopConfig\nlib.mkDefault hm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"] -.->|"merged separately"| F
+    H["lib.mkForce (anywhere)"] -.->|"always wins"| F
 ```
 
 As a numbered list (low → high):
 
 1. Auto-imported HM modules (output of `hm-loader.nix`, includes `home/base.nix` with `lib.mkDefault` values)
+1. Host-wide extra modules (`sys.home.extraModules`)
 1. Base HM template (`sys.home.template`)
 1. Host overrides (`home/overrides/host/<hostname>.nix`)
 1. User overrides (`home/overrides/user/<user>-<host>.nix`)
