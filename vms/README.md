@@ -62,7 +62,7 @@ ______________________________________________________________________
 ### VM inventory
 
 | VM | IP | Service port | RAM | vCPU | Network | Purpose |
-|----|----|-----------   |-----|------|---------|---------|
+|----|----|----------- |-----|------|---------|---------|
 | adguard | 10.100.0.10 | 11010 | 3 GB | 1 | Direct | DNS sinkhole / ad blocker |
 | actual | 10.100.0.51 | 11051 | 1 GB | 1 | Direct | Actual Budget (personal finance) |
 | bazarr | 10.100.0.23 | 11023 | 1 GB | 1 | Direct | Subtitle management |
