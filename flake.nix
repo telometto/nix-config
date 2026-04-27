@@ -136,7 +136,7 @@
       devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {
         packages = with nixpkgs.legacyPackages.${system}; [
           nil
-          nixfmt-rfc-style
+          nixfmt
           deadnix
           statix
           sops
