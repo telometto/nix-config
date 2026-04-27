@@ -43,5 +43,8 @@ in
     port = flaresolverrPort;
   };
 
-  sys.services.arrExporter.prowlarr.enable = true;
+  sys.services.arrExporter.prowlarr = {
+    enable = true;
+    openFirewall = true;
+  };
 }
