@@ -93,8 +93,8 @@ modules/                      # System (NixOS) modules, sys.* namespace
 home/                         # Home Manager modules, hm.* namespace
   base.nix                    # shared HM defaults
   accounts/ desktop/ files/ programs/ security/ services/
-  overrides/host/<host>.nix   # optional host-wide HM override
-  overrides/user/<user>-<host>.nix  # optional user@host HM override
+  overrides/host/<host>.nix   # optional host-wide HM override (excl. from auto-load)
+  overrides/user/<user>-<host>.nix  # optional user@host HM override (excl. from auto-load)
 
 hosts/<hostname>/             # Per-host config
   <hostname>.nix              # toggles roles, users, services
@@ -103,8 +103,10 @@ hosts/<hostname>/             # Per-host config
   packages.nix (optional)
   containers.nix (optional)
 
-vms/                          # MicroVM definitions, merged into nixosConfigurations
+vms/                          # MicroVM definitions (24 VMs), merged into nixosConfigurations
+containers/                   # Rootless Podman containers (Home Manager modules)
 lib/                          # Shared helpers (constants, traefik, grafana)
+dashboards/                   # Grafana dashboard JSON (shared/ + host/blizzard/)
 docs/                         # Human documentation (see docs/README.md)
 .github/workflows/            # CI: flake-check, validate-config, auto-format, etc.
 .github/scripts/              # Shared workflow helpers (redact-secrets.sh, comment.js)
@@ -167,8 +169,9 @@ existing users per host with `sys.users.<username>.enable = true;` in
   `sys.desktop.flavor`, `sys.services.tailscale.enable`,
   `sys.users.<name>.enable`).
 - Home Manager options: `hm.*`.
-- Desktop flavor values: `"kde" | "gnome" | "hyprland"`. Setting
-  `sys.desktop.flavor` auto-enables the matching `hm.desktop.<flavor>`.
+- Desktop flavor values: `"none" | "kde" | "gnome" | "hyprland" | "cosmic"`. Setting
+  `sys.desktop.flavor` auto-enables `hm.desktop.<flavor>` for `kde`, `gnome`, and
+  `hyprland`; `cosmic` has no HM auto-mapping yet.
 
 ## 5. Formatting, linting, validation
 
@@ -274,9 +277,8 @@ maintainer instead of guessing lock hashes.
 - `paperless-ngx` has a build workaround in `vms/flake-microvms.nix`
   (`doCheck = false; doInstallCheck = false;`). Preserve it unless you
   are deliberately re-testing upstream.
-- Documentation is LLM-assisted (see footers in `README.md` and
-  `modules/README.md`) — prefer verifying against code before trusting a
-  doc claim.
+- Documentation was last audited and verified against the codebase on 2026-04-27.
+  When in doubt, prefer verifying against the source files over trusting a doc claim.
 
 ## 9. Where to look first
 
@@ -287,6 +289,7 @@ maintainer instead of guessing lock hashes.
 - Design rationale: [`docs/explanation-design.md`](../docs/explanation-design.md)
 - Module index: [`modules/README.md`](../modules/README.md),
   [`home/README.md`](../home/README.md)
+- CI workflows: [`docs/reference-ci.md`](../docs/reference-ci.md)
 
 Keep changes small, follow the module pattern, and trust the CI workflows
 to validate evaluation. When in doubt, read the loader you're about to
