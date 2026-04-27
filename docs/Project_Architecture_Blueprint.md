@@ -292,20 +292,19 @@ ______________________________________________________________________
 `modules/core/home-users.nix` discovers every `sys.users.<name>.enable = true` user and builds
 a per-user config from the 7-layer precedence stack below.
 
-### 7-layer precedence stack (lowest to highest)
+### Home Manager merge order (verified from `modules/core/home-users.nix`)
 
 ```mermaid
 flowchart TD
-    L1["1. home/base.nix\nlib.mkDefaults — shared baseline"]
-    L2["2. autoDesktopConfig\nlib.mkDefault hm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"]
-    L3["3. hm-loader output\nauto-imported home/** modules"]
-    L4["4. sys.home.template\nhost-wide base template for all users"]
-    L5["5. home/overrides/host/<hostname>.nix\n(if file exists)"]
-    L6["6. home/overrides/user/<username>-<hostname>.nix\n(if file exists)"]
-    L7["7. sys.home.users.<name>.extraModules\n+ extraConfig per user"]
-    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7
-    L7 --> OUT[Merged HM config for user]
-    NOTE["lib.mkForce in any layer\nsidesteps the ordering entirely"]
+    L1["1. hm-loader output\nauto-imported home/** modules\n(includes shared modules such as home/base.nix)"]
+    L2["2. sys.home.template\nhost-wide base template imports for all users"]
+    L3["3. home/overrides/host/<hostname>.nix\n(if file exists)"]
+    L4["4. home/overrides/user/<username>-<hostname>.nix\n(if file exists)"]
+    L5["5. sys.home.users.<name>.extraModules\n+ extraConfig per user"]
+    AD["autoDesktopConfig\nmerged separately with lib.mkDefault\nhm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"]
+    L1 --> L2 --> L3 --> L4 --> L5 --> OUT[Merged HM config for user]
+    AD --> OUT
+    NOTE["lib.mkForce in any layer\nsidesteps normal precedence ordering"]
 ```
 
 `home/overrides/host/ssh-common.nix` is a shared SSH config fragment imported manually — it is
