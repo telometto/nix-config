@@ -38,7 +38,7 @@ flowchart TB
     wg["wireguard-vm\n10.100.0.11\n(VPN gateway)"]
 
     subgraph direct["Direct-routed VMs (via bridge)"]
-        d1["actual · bazarr · firefly · firefly-importer\nflaresolverr · gitea · immich · lidarr\nmatrix-synapse · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli"]
+        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · lidarr\nmatrix-synapse · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli"]
     end
 
     subgraph wgrouted["WG-routed VMs (traffic via wireguard-vm)"]
@@ -70,7 +70,6 @@ ______________________________________________________________________
 | firefly | 10.100.0.62 | 11062 | 2 GB | 2 | Direct | Firefly III finance |
 | firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Direct | Firefly data importer |
 | firefox | 10.100.0.52 | 11052 | 4 GB | 4 | Via WG | Containerized Firefox browser |
-| flaresolverr | 10.100.0.13 | 11013 | 512 MB | 1 | Direct | Cloudflare bypass for indexers |
 | gitea | 10.100.0.50 | 11050 | 2 GB | 2 | Direct | Self-hosted git forge |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Direct | Photo library |
 | lidarr | 10.100.0.26 | 11028 | 1 GB | 1 | Direct | Music PVR |
