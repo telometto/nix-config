@@ -169,4 +169,10 @@ in
     sopsModule
     ./immich.nix
   ];
+
+  mealie-vm = mkMicrovm [
+    microvmModule
+    sopsModule
+    ./mealie.nix
+  ];
 }

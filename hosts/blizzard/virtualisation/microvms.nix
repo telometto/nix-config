@@ -284,6 +284,20 @@ let
         url = vmUrl "immich";
       };
     };
+
+    mealie = {
+      enable = false;
+      portForwards = [ (mkPortForward "tcp" 11071 null) ];
+      ingressHosts = [ "recipes" ];
+      reverseProxy = {
+        subdomain = "recipes";
+        url = vmUrl "mealie";
+        middlewares = [
+          "security-headers"
+          "crowdsec"
+        ];
+      };
+    };
   };
 in
 {
