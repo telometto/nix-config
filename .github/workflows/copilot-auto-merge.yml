@@ -36,7 +36,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           REVIEW_ID: ${{ github.event.review.id }}
         run: |
-          n=$(gh api "repos/${REPO}/pulls/${PR}/reviews/${REVIEW_ID}/comments" --jq 'length')
+          n=$(gh api "repos/${REPO}/pulls/${PR}/reviews/${REVIEW_ID}/comments?per_page=100" --jq 'length')
           echo "count=${n}" >> "$GITHUB_OUTPUT"
           if [ "$n" -eq 0 ]; then
             echo "clean=true" >> "$GITHUB_OUTPUT"
@@ -46,6 +46,7 @@ jobs:
 
       - name: Enable auto-merge
         if: steps.count.outputs.clean == 'true'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ github.event.pull_request.number }}
