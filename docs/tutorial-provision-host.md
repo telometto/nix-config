@@ -57,7 +57,7 @@ Example `<hostname>.nix`:
   networking.hostName = lib.mkForce "<hostname>";
 
   sys.role.desktop.enable = true;      # or sys.role.server.enable
-  sys.desktop.flavor = "gnome";       # kde | gnome | hyprland | omit for servers
+  sys.desktop.flavor = "gnome";       # none | kde | gnome | cosmic | hyprland; `none` is the default for servers/headless installs
 
   sys.users.zeno.enable = true;
 }
