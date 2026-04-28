@@ -1,0 +1,79 @@
+name: Copilot Auto-Merge
+
+on:
+  pull_request_review:
+    types: [ submitted ]
+
+concurrency:
+  group: copilot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  pull-requests: write
+  contents: write
+  issues: write
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    if: |
+      github.event.review.user.login == 'copilot-pull-request-reviewer[bot]' &&
+      github.event.review.user.type == 'Bot' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.review.commit_id == github.event.pull_request.head.sha
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Count inline comments on this review
+        id: count
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          REVIEW_ID: ${{ github.event.review.id }}
+        run: |
+          n=$(gh api "repos/${REPO}/pulls/${PR}/reviews/${REVIEW_ID}/comments" --jq 'length')
+          echo "count=${n}" >> "$GITHUB_OUTPUT"
+          if [ "$n" -eq 0 ]; then
+            echo "clean=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "clean=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Enable auto-merge
+        if: steps.count.outputs.clean == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr merge "$PR" --auto --merge
+
+      - name: Upsert status comment
+        uses: actions/github-script@v9.0.0
+        env:
+          INLINE_COUNT: ${{ steps.count.outputs.count }}
+          CLEAN: ${{ steps.count.outputs.clean }}
+          REVIEW_SHA: ${{ github.event.review.commit_id }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comment = require('.github/scripts/comment');
+            const count = process.env.INLINE_COUNT;
+            const clean = process.env.CLEAN === 'true';
+            const sha = (process.env.REVIEW_SHA || '').slice(0, 7);
+
+            const verdict = clean
+              ? `:white_check_mark: Latest review on \`${sha}\` left **no inline comments**. Auto-merge armed.`
+              : `:speech_balloon: Latest review on \`${sha}\` left **${count}** inline comment(s). Auto-merge not armed yet — push fixes and resolve threads.`;
+
+            const header = '🤖 **Copilot review status**';
+            const body = [
+              verdict,
+              '',
+              'Merge still gated by branch protection: required checks `format` + `flake-check` and conversation resolution.',
+            ].join('\n');
+
+            await comment({ github, context, header, body });
