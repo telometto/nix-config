@@ -16,7 +16,7 @@ have different isolation and management models:
 flowchart LR
     subgraph MicroVMs["MicroVMs (vms/*.nix)"]
         direction TB
-        vm1["cloud-hypervisor\nFull VM isolation\nDedicated TAP NIC\n10.100.0.0/24 IP\nNixOS system module\nRuns as root inside VM\nState: /persist virtiofs"]
+        vm1["cloud-hypervisor\nFull VM isolation\nDedicated TAP NIC\n10.100.0.0/24 IP\nNixOS system module\nRuns as root inside VM\nState: disk image (microvm.volumes)"]
     end
 
     subgraph Containers["Containers (containers/*.nix)"]
@@ -40,7 +40,7 @@ flowchart LR
 | Network | Dedicated TAP, `10.100.0.0/24` IP | Port publishing (slirp4netns/bridge) |
 | Config | System NixOS module (`vms/*.nix`) | Home Manager module (`containers/*.nix`) |
 | Privilege | Runs as root inside VM | Rootless (user namespaces) |
-| State | `/persist` volume (virtiofs) | Podman volumes |
+| State | disk image (`microvm.volumes`) | Podman volumes |
 | Best for | Isolated services needing a full OS | Desktop apps, lightweight services, upstream images |
 | Host requirement | `sys.virtualisation.microvm.*` | `sys.virtualisation.enable` |
 

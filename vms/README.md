@@ -131,7 +131,9 @@ ______________________________________________________________________
 
 ### Host-side enablement
 
-On `blizzard`, each VM is enabled and exposed via:
+On `blizzard`, VMs are managed via `sys.virtualisation.microvm.instances.<name>` toggles.
+Some instances are currently disabled (e.g. `adguard`, `actual`, `lidarr`, `brave`, `immich`).
+Enabled instances are exposed via:
 
 ```nix
 sys.virtualisation.microvm.instances.<name> = {
@@ -171,7 +173,7 @@ ______________________________________________________________________
 
 ### Security considerations
 
-- Each VM has an isolated filesystem; the host shares volumes via virtiofs.
+- Each VM has an isolated filesystem; the host shares directories via virtiofs (`microvm.shares`), and VM state is stored in per-VM disk images (`microvm.volumes`).
 - Secrets are injected per-VM via sops-nix. Services that read
   `/run/secrets/*` at startup should declare `after` and `requires` on
   `sops-install-secrets.service` to avoid boot-order races.

@@ -284,7 +284,7 @@ ______________________________________________________________________
 `modules/home-manager-integration.nix` sets global HM options:
 
 - `useGlobalPkgs = true`, `useUserPackages = true`
-- `backupFileExtension = "backup"`
+- `backupFileExtension = "hm-backup-<timestamp>"`
 - `sharedModules`: sops-nix HM, hyprland HM, quadlet-nix HM
 - `extraSpecialArgs`: `inputs`, `VARS`, `hostName`
 
