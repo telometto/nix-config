@@ -10,7 +10,6 @@ concurrency:
 
 permissions:
   pull-requests: write
-  contents: write
   issues: write
 
 jobs:
@@ -25,9 +24,6 @@ jobs:
       github.event.review.commit_id == github.event.pull_request.head.sha
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
-
       - name: Count inline comments on this review
         id: count
         env:
@@ -72,7 +68,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const comment = require('.github/scripts/comment');
             const count = process.env.INLINE_COUNT;
             const clean = process.env.CLEAN === 'true';
             const sha = (process.env.REVIEW_SHA || '').slice(0, 7);
@@ -88,10 +83,27 @@ jobs:
             }
 
             const header = '🤖 **Copilot review status**';
-            const body = [
-              verdict,
-              '',
-              'Merge still gated by branch protection: required checks and conversation resolution.',
-            ].join('\n');
+            const fullBody = [header, verdict, '', 'Merge still gated by branch protection: required checks and conversation resolution.'].join('\n\n');
 
-            await comment({ github, context, header, body });
+            const { data: existing } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const prior = existing.find(c => c.user.id === 41898282 && c.body.startsWith(header));
+
+            if (prior) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: prior.id,
+                body: fullBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: fullBody,
+              });
+            }
