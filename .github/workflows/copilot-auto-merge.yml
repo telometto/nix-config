@@ -36,7 +36,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           REVIEW_ID: ${{ github.event.review.id }}
         run: |
-          n=$(gh api "repos/${REPO}/pulls/${PR}/reviews/${REVIEW_ID}/comments?per_page=100" --jq 'length')
+          n=$(gh api --paginate --slurp "repos/${REPO}/pulls/${PR}/reviews/${REVIEW_ID}/comments?per_page=100" --jq 'map(length) | add // 0')
           echo "count=${n}" >> "$GITHUB_OUTPUT"
           if [ "$n" -eq 0 ]; then
             echo "clean=true" >> "$GITHUB_OUTPUT"
@@ -45,6 +45,7 @@ jobs:
           fi
 
       - name: Enable auto-merge
+        id: enable-auto-merge
         if: steps.count.outputs.clean == 'true'
         continue-on-error: true
         env:
@@ -58,6 +59,7 @@ jobs:
           INLINE_COUNT: ${{ steps.count.outputs.count }}
           CLEAN: ${{ steps.count.outputs.clean }}
           REVIEW_SHA: ${{ github.event.review.commit_id }}
+          MERGE_OUTCOME: ${{ steps.enable-auto-merge.outcome }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -65,16 +67,22 @@ jobs:
             const count = process.env.INLINE_COUNT;
             const clean = process.env.CLEAN === 'true';
             const sha = (process.env.REVIEW_SHA || '').slice(0, 7);
+            const mergeOutcome = process.env.MERGE_OUTCOME;
 
-            const verdict = clean
-              ? `:white_check_mark: Latest review on \`${sha}\` left **no inline comments**. Auto-merge armed.`
-              : `:speech_balloon: Latest review on \`${sha}\` left **${count}** inline comment(s). Auto-merge not armed yet — push fixes and resolve threads.`;
+            let verdict;
+            if (!clean) {
+              verdict = `:speech_balloon: Latest review on \`${sha}\` left **${count}** inline comment(s). Auto-merge not armed yet — push fixes and resolve threads.`;
+            } else if (mergeOutcome === 'success') {
+              verdict = `:white_check_mark: Latest review on \`${sha}\` left **no inline comments**. Auto-merge armed.`;
+            } else {
+              verdict = `:white_check_mark: Latest review on \`${sha}\` left **no inline comments**, but auto-merge could not be enabled — check repo settings or permissions.`;
+            }
 
             const header = '🤖 **Copilot review status**';
             const body = [
               verdict,
               '',
-              'Merge still gated by branch protection: required checks `format` + `flake-check` and conversation resolution.',
+              'Merge still gated by branch protection: required checks and conversation resolution.',
             ].join('\n');
 
             await comment({ github, context, header, body });
