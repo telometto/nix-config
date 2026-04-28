@@ -1,6 +1,6 @@
 ## MicroVM Configurations
 
-Isolated service VMs using [microvm.nix](https://github.com/astro/microvm.nix)
+Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
 for lightweight virtualization. The flake currently defines 23 MicroVM
 configurations for the `blizzard` host on a `10.100.0.0/24` tap bridge.
 
@@ -184,7 +184,7 @@ ______________________________________________________________________
 
 ### Related documentation
 
-- [microvm.nix upstream](https://github.com/astro/microvm.nix)
+- [microvm.nix upstream](https://github.com/microvm-nix/microvm.nix)
 - [modules/services/README.md](../modules/services/README.md) — Service module catalog
 - [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
 - [vm-registry.nix](vm-registry.nix) — Single source of truth for all VM parameters
