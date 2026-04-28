@@ -53,6 +53,15 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: gh pr merge "$PR" --auto --merge
 
+      - name: Disable auto-merge
+        id: disable-auto-merge
+        if: steps.count.outputs.clean == 'false'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr merge "$PR" --disable-auto
+
       - name: Upsert status comment
         uses: actions/github-script@v9.0.0
         env:
