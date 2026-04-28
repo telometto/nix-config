@@ -7,12 +7,18 @@ ______________________________________________________________________
 
 ### Introduction
 
-All workflows that run `nix` commands against the flake require access to the
-private `nix-secrets` SSH flake input. Without the deploy key, `nix flake check`
-fails because Nix cannot fetch the private repository.
+Workflows that evaluate the flake or `nixosConfigurations` require access to
+the private `nix-secrets` SSH flake input. Without the deploy key,
+`nix flake check` fails because Nix cannot fetch the private repository.
 
-**SSH_DEPLOY_KEY requirement:** Every `nix`-touching workflow uses
-`webfactory/ssh-agent@v0.9.1` with `secrets.SSH_DEPLOY_KEY`. To set this up:
+Note: not every workflow that runs a `nix` command needs this key. `auto-format.yml`
+runs `nix fmt` (formatting only, no evaluation), and `update-dashboards.yml` uses
+`nix-hash` only — neither requires the SSH deploy key.
+
+**SSH_DEPLOY_KEY requirement:** Workflows that evaluate the flake —
+`flake-check`, `validate-config`, `update-nix-lock`, `health-check`, and
+`update-nix-lock-recreate` — use `webfactory/ssh-agent@v0.9.1` with
+`secrets.SSH_DEPLOY_KEY`. To set this up:
 
 1. Generate a dedicated SSH key pair: `ssh-keygen -t ed25519 -C "github-actions"`
 1. Add the **public key** as a deploy key on the `nix-secrets` repository

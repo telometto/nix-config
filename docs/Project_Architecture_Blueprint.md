@@ -380,7 +380,6 @@ and therefore do not inherit host-only modules.
 | adguard | 10.100.0.10 | 11010 | 3 GB | 1 | DNS sinkhole |
 | wireguard | 10.100.0.11 | 56943 | 512 MB | 1 | VPN gateway |
 | searx | 10.100.0.12 | 11012 | 2 GB | 1 | Meta-search |
-| flaresolverr | 10.100.0.13 | 11013 | 512 MB | 1 | Cloudflare bypass |
 | prowlarr | 10.100.0.20 | 11020 | 1 GB | 1 | Indexer aggregator |
 | sonarr | 10.100.0.21 | 11021 | 1 GB | 1 | TV PVR |
 | radarr | 10.100.0.22 | 11022 | 1 GB | 1 | Movie PVR |

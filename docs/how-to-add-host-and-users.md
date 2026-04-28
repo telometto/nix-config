@@ -56,7 +56,7 @@ nixosConfigurations = {
    Repeat `sops updatekeys` for any other secret files that should be readable
    by the new host.
 
-1. (Optional) Add Home Manager overrides:
+6. (Optional) Add Home Manager overrides:
 
 - Host-wide: `home/overrides/host/<hostname>.nix`
 - User@host specific: `home/overrides/user/<user>-<hostname>.nix`
