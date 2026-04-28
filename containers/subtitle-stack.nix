@@ -1,5 +1,5 @@
 # Subtitle processing pod: Lingarr (+ LibreTranslate, Ollama) and Subgen
-# Home Manager module — containers run rootless via quadlet-nix in a shared pod
+# Home Manager module - containers run rootless via quadlet-nix in a shared pod
 { lib, config, ... }:
 let
   cfgLingarr = config.services.lingarr;
@@ -108,7 +108,7 @@ in
             && cfgSubgen.transcribeOrTranslate == "translate"
             && lib.hasSuffix "turbo" cfgSubgen.whisperModel
           );
-        message = "Whisper models ending in 'turbo' do not support translation — use a non-turbo model when transcribeOrTranslate is 'translate'.";
+        message = "Whisper models ending in 'turbo' do not support translation - use a non-turbo model when transcribeOrTranslate is 'translate'.";
       }
     ];
 

@@ -10,7 +10,7 @@ in
     assertions = [
       {
         assertion = !config.sys.networking.networkd.enable;
-        message = "sys.networking.networkmanager.enable and sys.networking.networkd.enable are mutually exclusive — enable only one.";
+        message = "sys.networking.networkmanager.enable and sys.networking.networkd.enable are mutually exclusive - enable only one.";
       }
     ];
 

@@ -1,17 +1,17 @@
 # Central registry of MicroVM network and resource allocations.
-# Single source of truth — referenced by VM definitions, host expose config, and reverse proxy.
+# Single source of truth - referenced by VM definitions, host expose config, and reverse proxy.
 #
 # Fields:
-#   name     — VM short name (used for hostname "${name}-vm" and tap "vm-${name}")
-#   cid      — vsock CID (must be unique, ≥ 3)
-#   mac      — TAP interface MAC address (must be unique)
-#   ip       — Static IP on the 10.100.0.0/24 bridge network
-#   port     — Primary service port (used by firewall, traefik, expose)
-#   mem      — RAM in MiB
-#   vcpu     — Virtual CPU count (default: 1)
-#   gateway  — Default gateway (default: 10.100.0.1; VPN-routed VMs use 10.100.0.11)
-#   dns      — DNS server (default: 1.1.1.1; some VMs use internal resolver 10.100.0.11)
-#   tapId    — Override TAP interface name (default: "vm-${name}", needed when name is too long)
+#   name     - VM short name (used for hostname "${name}-vm" and tap "vm-${name}")
+#   cid      - vsock CID (must be unique, ≥ 3)
+#   mac      - TAP interface MAC address (must be unique)
+#   ip       - Static IP on the 10.100.0.0/24 bridge network
+#   port     - Primary service port (used by firewall, traefik, expose)
+#   mem      - RAM in MiB
+#   vcpu     - Virtual CPU count (default: 1)
+#   gateway  - Default gateway (default: 10.100.0.1; VPN-routed VMs use 10.100.0.11)
+#   dns      - DNS server (default: 1.1.1.1; some VMs use internal resolver 10.100.0.11)
+#   tapId    - Override TAP interface name (default: "vm-${name}", needed when name is too long)
 {
   adguard = {
     name = "adguard";

@@ -1,194 +1,190 @@
 ## MicroVM Configurations
 
 Isolated service VMs using [microvm.nix](https://github.com/astro/microvm.nix)
-for lightweight virtualization.
-
-### Available VMs
-
-| VM | Module | Purpose |
-|----|--------|---------|
-| adguard-vm | [adguard.nix](adguard.nix) | AdGuard Home DNS filtering |
-| actual-vm | [actual.nix](actual.nix) | Actual Budget management |
-| searx-vm | [searx.nix](searx.nix) | SearXNG metasearch engine |
-| overseerr-vm | [overseerr.nix](overseerr.nix) | Media request management |
-| ombi-vm | [ombi.nix](ombi.nix) | Media requests |
-| tautulli-vm | [tautulli.nix](tautulli.nix) | Plex monitoring |
-| gitea-vm | [gitea.nix](gitea.nix) | Git hosting |
-| sonarr-vm | [sonarr.nix](sonarr.nix) | TV show management |
-| radarr-vm | [radarr.nix](radarr.nix) | Movie management |
-| prowlarr-vm | [prowlarr.nix](prowlarr.nix) | Indexer management |
-| bazarr-vm | [bazarr.nix](bazarr.nix) | Subtitle management |
-| readarr-vm | [readarr.nix](readarr.nix) | Book management |
-| lidarr-vm | [lidarr.nix](lidarr.nix) | Music management |
-| qbittorrent-vm | [qbittorrent.nix](qbittorrent.nix) | BitTorrent client |
-| sabnzbd-vm | [sabnzbd.nix](sabnzbd.nix) | Usenet downloader |
-| firefox-vm | [firefox.nix](firefox.nix) | Isolated Firefox browser |
-| brave-vm | [brave.nix](brave.nix) | Isolated Brave browser |
-| wireguard-vm | [wireguard.nix](wireguard.nix) | WireGuard VPN |
-| matrix-synapse-vm | [matrix-synapse.nix](matrix-synapse.nix) | Matrix Synapse homeserver |
-| paperless-vm | [paperless.nix](paperless.nix) | Paperless-ngx document management |
-| firefly-vm | [firefly.nix](firefly.nix) | Firefly III personal finance |
-| firefly-importer-vm | [firefly-importer.nix](firefly-importer.nix) | Firefly III data importer for bank sync |
-
-The Firefly importer VM is configured to talk to Firefly III over the internal
-MicroVM network while keeping user-facing redirects on the public
-`finance.<domain>` URL. This avoids reverse-proxy and Cloudflare Access issues
-during the OAuth token exchange.
-
-### Architecture
-
-MicroVMs provide isolated environments for services that benefit from:
-
-- Minimal attack surface
-- Resource isolation
-- Independent updates
-- Security boundaries
-
-```
-┌─────────────────────────────────────────┐
-│  Host (blizzard)                        │
-│  └── microvm.nixosModules.host          │
-└─────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────┐
-│  vms/base.nix (hardened base)           │
-│  ├── Hardened kernel                    │
-│  ├── Restrictive sysctl                 │
-│  └── Minimal services                   │
-└─────────────────────────────────────────┘
-         │
-         ├── actual-vm
-         ├── adguard-vm
-         ├── firefox-vm
-         ├── firefly-vm
-         ├── firefly-importer-vm
-         ├── gitea-vm
-         ├── matrix-synapse-vm
-         ├── overseerr-vm, ombi-vm, tautulli-vm
-         ├── paperless-vm
-         ├── qbittorrent-vm, sabnzbd-vm
-         ├── searx-vm
-         ├── sonarr-vm, radarr-vm, prowlarr-vm, bazarr-vm, ...
-         └── wireguard-vm
-```
-
-### Base Configuration
-
-[base.nix](base.nix) provides a hardened foundation:
-
-- **Standard kernel** (`linuxPackages`) + **sysctl hardening**
-- **Security sysctl settings** — IP spoofing prevention, disabled ICMP redirects
-- **Blacklisted modules** — Bluetooth, webcam drivers
-- **Restricted SSH** — No root login, key-only authentication
-- **Disabled core dumps** — Prevent sensitive data leaks
-- **Journal limits** — Constrained log storage
-
-### Key Differences from Hosts
-
-MicroVMs do **not** use `system-loader.nix` to avoid importing host-only
-modules. Their outputs are centralized in [vms/flake-microvms.nix](flake-microvms.nix)
-and merged into `nixosConfigurations` from [flake.nix](../flake.nix):
-
-```nix
-# In flake.nix
-microvmConfigurations = import ./vms/flake-microvms.nix { inherit inputs system VARS; };
-
-nixosConfigurations = {
-  # hosts...
-} // microvmConfigurations;
-```
-
-### Creating a New VM
-
-1. Create `vms/<service>.nix`:
-
-```nix
-{ lib, pkgs, ... }:
-{
-  imports = [ ./base.nix ];
-
-  microvm = {
-    hypervisor = "qemu";
-    vcpu = 2;
-    mem = 1024;
-
-    interfaces = [{
-      type = "tap";
-      id = "vm-<service>";
-      mac = "02:00:00:00:00:01";
-    }];
-
-    shares = [{
-      source = "/var/lib/<service>";
-      mountPoint = "/data";
-      tag = "<service>-data";
-      proto = "virtiofs";
-    }];
-  };
-
-  # Service configuration
-  services.<service>.enable = true;
-}
-```
-
-2. Register in [flake.nix](../flake.nix):
-
-```nix
-<service>-vm = nixpkgs.lib.nixosSystem {
-  inherit system;
-  modules = [
-    inputs.microvm.nixosModules.microvm
-    ./vms/<service>.nix
-  ];
-  specialArgs = { inherit inputs system VARS; };
-};
-```
-
-### Running VMs
-
-On the host with microvm.nixosModules.host enabled:
-
-```bash
-# Start a VM
-microvm -c <vm-name>
-
-# List running VMs
-microvm -l
-
-# Stop a VM
-microvm -k <vm-name>
-```
-
-### Host-level enablement and exposure
-
-Hosts enable MicroVMs through `sys.virtualisation.microvm.instances.<name>`.
-Each instance entry controls whether the VM is present on that host and which
-host-side exposure paths are active.
-
-- `enable` opts a VM into the host
-- `autostart` defaults to the VM's `enable` value
-- `portForward.enable` defaults to `true` when the VM is enabled and port forwards are defined
-- `cfTunnel.enable` defaults to `true` when the VM is enabled and tunnel ingress is defined
-- `reverseProxy.enable` defaults to `true` when both `subdomain` and `url` are set in reverse-proxy metadata
-
-Those exposure toggles remain overridable per host, so a VM can stay enabled
-while selectively disabling Cloudflare Tunnel or Traefik routing.
-
-### Security Considerations
-
-- VMs run with minimal privileges
-- Network access controlled via tap interfaces
-- Filesystem shares use virtiofs for performance
-- Each VM has isolated secrets via sops-nix
-- Services that read `/run/secrets/*` at startup should declare `after` and `requires` on `sops-install-secrets.service` to avoid boot-order race/failure
-
-### Related Documentation
-
-- [microvm.nix documentation](https://github.com/astro/microvm.nix)
-- [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
+for lightweight virtualization. The flake currently defines 23 MicroVM
+configurations for the `blizzard` host on a `10.100.0.0/24` tap bridge.
 
 ______________________________________________________________________
 
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*
+### VM build pipeline
+
+```mermaid
+flowchart TD
+    A["vms/vm-registry.nix\n(CID · MAC · IP · port · mem · vcpu · gateway)"]
+    B["vms/mkMicrovmConfig.nix\n(NixOS module: microvm + networking)"]
+    C["vms/base.nix\n(standard kernel · sysctl · AppArmor\nOpenSSH · admin user · firewall)"]
+    D["vms/<name>.nix\n(service-specific config)"]
+    E["vms/flake-microvms.nix\nmkMicrovm helper"]
+    F["nixosConfigurations.*-vm"]
+
+    A --> B
+    B --> D
+    C --> D
+    D --> E
+    E --> F
+```
+
+______________________________________________________________________
+
+### Network topology
+
+```mermaid
+flowchart TB
+    subgraph host["blizzard — 10.100.0.1 (bridge)"]
+        bridge["10.100.0.0/24 tap bridge"]
+    end
+
+    adguard["adguard-vm\n10.100.0.10\n(DNS)"]
+    wg["wireguard-vm\n10.100.0.11\n(VPN gateway)"]
+
+    subgraph direct["Direct-routed VMs (via bridge)"]
+        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · lidarr\nmatrix-synapse · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli"]
+    end
+
+    subgraph wgrouted["WG-routed VMs (traffic via wireguard-vm)"]
+        w1["qbittorrent 10.100.0.30"]
+        w2["sabnzbd 10.100.0.31"]
+        w3["firefox 10.100.0.52"]
+        w4["brave 10.100.0.54"]
+    end
+
+    bridge --> adguard
+    bridge --> wg
+    bridge --> direct
+    wg -->|"all traffic"| w1
+    wg --> w2
+    wg --> w3
+    wg --> w4
+```
+
+______________________________________________________________________
+
+### VM inventory
+
+| VM | IP | Service port | RAM | vCPU | Network | Purpose |
+|----|----|-----------|-----|------|---------|---------|
+| adguard | 10.100.0.10 | 11010 | 3 GB | 1 | Direct | DNS sinkhole / ad blocker |
+| actual | 10.100.0.51 | 11051 | 1 GB | 1 | Direct | Actual Budget (personal finance) |
+| bazarr | 10.100.0.23 | 11023 | 1 GB | 1 | Direct | Subtitle management |
+| brave | 10.100.0.54 | 11054 | 4 GB | 4 | Via WG | Containerized Brave browser |
+| firefly | 10.100.0.62 | 11062 | 2 GB | 2 | Direct | Firefly III finance |
+| firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Direct | Firefly data importer |
+| firefox | 10.100.0.52 | 11052 | 4 GB | 4 | Via WG | Containerized Firefox browser |
+| gitea | 10.100.0.50 | 11050 | 2 GB | 2 | Direct | Self-hosted git forge |
+| immich | 10.100.0.70 | 11070 | 8 GB | 4 | Direct | Photo library |
+| lidarr | 10.100.0.26 | 11028 | 1 GB | 1 | Direct | Music PVR |
+| matrix-synapse | 10.100.0.60 | 11060 | 4 GB | 4 | Direct | Matrix homeserver |
+| ombi | 10.100.0.41 | 11041 | 1 GB | 1 | Direct | Media request portal (legacy) |
+| overseerr | 10.100.0.40 | 11040 | 1 GB | 1 | Direct | Media request portal |
+| paperless | 10.100.0.61 | 11061 | 8 GB | 4 | Direct | Document management |
+| prowlarr | 10.100.0.20 | 11020 | 1 GB | 1 | Direct | Indexer aggregator |
+| qbittorrent | 10.100.0.30 | 11030 | 2 GB | 1 | Via WG | Torrent client |
+| radarr | 10.100.0.22 | 11022 | 1 GB | 1 | Direct | Movie PVR |
+| readarr | 10.100.0.24 | 11024 | 1 GB | 1 | Direct | Books PVR |
+| sabnzbd | 10.100.0.31 | 11031 | 1 GB | 1 | Via WG | Usenet client |
+| searx | 10.100.0.12 | 11012 | 2 GB | 1 | Direct | Meta-search engine |
+| sonarr | 10.100.0.21 | 11021 | 1 GB | 1 | Direct | TV PVR |
+| tautulli | 10.100.0.42 | 11042 | 1 GB | 1 | Direct | Plex statistics |
+| wireguard | 10.100.0.11 | 56943 | 512 MB | 1 | Direct | VPN gateway (routes qb/sabnzbd/firefox/brave) |
+
+______________________________________________________________________
+
+### Base configuration (vms/base.nix)
+
+[base.nix](base.nix) provides a hardened-but-compatible foundation for every VM:
+
+- **Standard kernel** (`pkgs.linuxPackages`) — intentionally not the hardened
+  variant; chosen for broad driver compatibility. The comment at line 19 of
+  `base.nix` makes this explicit.
+- **sysctl hardening** — rp_filter=1, no ICMP redirects/broadcasts, no source
+  routing, kptr_restrict=2, dmesg_restrict=1, core dumps disabled
+  (`kernel.core_pattern = "|/bin/false"`)
+- **Kernel module blacklist** — bluetooth, btusb, uvcvideo
+- **AppArmor** — enabled with `apparmor-profiles`, killUnconfinedConfinables=true
+- **Hardened OpenSSH** — no root, password-only auth disabled, no X11/agent/TCP
+  forwarding, MaxAuthTries=3, host keys at `/persist/ssh/`
+- **Immutable users** — single `admin` account (wheel group) with
+  `VARS.users.zeno.sshPubKey`; sudo requires a password
+- **Firewall** — enabled, allowPing=false, logRefusedConnections=false
+- **journald caps** — SystemMaxUse=100M, RuntimeMaxUse=50M
+- **coredump** — systemd coredump disabled
+- **stateVersion** — `"24.11"`
+
+______________________________________________________________________
+
+### Architecture
+
+MicroVMs do **not** use `system-loader.nix` (which would pull in host-only
+modules). Their outputs are assembled in [vms/flake-microvms.nix](flake-microvms.nix)
+and merged into `nixosConfigurations` from [flake.nix](../flake.nix):
+
+```nix
+microvmConfigurations = import ./vms/flake-microvms.nix { inherit inputs system VARS; };
+
+nixosConfigurations = {
+  # hosts ...
+} // microvmConfigurations;
+```
+
+______________________________________________________________________
+
+### Host-side enablement
+
+On `blizzard`, VMs are managed via `sys.virtualisation.microvm.instances.<name>` toggles.
+Some instances are currently disabled (e.g. `adguard`, `actual`, `lidarr`, `brave`, `immich`).
+Enabled instances are exposed via:
+
+```nix
+sys.virtualisation.microvm.instances.<name> = {
+  enable = true;
+  # Optional overrides:
+  autostart = true;
+  portForward.enable = true;
+  cfTunnel.enable = true;
+  reverseProxy.enable = true;
+};
+```
+
+Each instance toggle is independent, so a VM can remain active while
+selectively disabling its Cloudflare Tunnel or Traefik routing.
+
+______________________________________________________________________
+
+### WG-routed VMs
+
+`qbittorrent`, `sabnzbd`, `firefox`, and `brave` route all outbound traffic
+through `wireguard-vm` (10.100.0.11). This ensures downloads and browser
+sessions exit via the VPN rather than the host's public IP. Their default
+gateway is set to 10.100.0.11 in the registry.
+
+______________________________________________________________________
+
+### Creating a new VM
+
+1. Add an entry to [vm-registry.nix](vm-registry.nix) with a unique CID, MAC,
+   IP, service port, memory, and vCPU count.
+1. Create `vms/<service>.nix` importing `./base.nix` and adding the
+   service-specific NixOS config.
+1. Wire it up in [flake-microvms.nix](flake-microvms.nix) using `mkMicrovm`.
+1. Enable on the host: `sys.virtualisation.microvm.instances.<name>.enable = true`.
+
+______________________________________________________________________
+
+### Security considerations
+
+- Each VM has an isolated filesystem; the host shares directories via virtiofs (`microvm.shares`), and VM state is stored in per-VM disk images (`microvm.volumes`).
+- Secrets are injected per-VM via sops-nix. Services that read
+  `/run/secrets/*` at startup should declare `after` and `requires` on
+  `sops-install-secrets.service` to avoid boot-order races.
+- Network access is limited to the tap bridge; inter-VM traffic is only
+  possible where explicitly configured (e.g. firefly-importer → firefly over
+  the internal bridge).
+
+______________________________________________________________________
+
+### Related documentation
+
+- [microvm.nix upstream](https://github.com/astro/microvm.nix)
+- [modules/services/README.md](../modules/services/README.md) — Service module catalog
+- [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
+- [vm-registry.nix](vm-registry.nix) — Single source of truth for all VM parameters

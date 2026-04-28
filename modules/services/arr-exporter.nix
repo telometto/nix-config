@@ -9,7 +9,7 @@ let
 
   # Per-service static metadata: exporter port, upstream *arr default port,
   # config file sub-path, and a function that extracts the API key from the config.
-  # defaultArrPort is the upstream service default — each VM must override arrPort
+  # defaultArrPort is the upstream service default - each VM must override arrPort
   # with the actual port from vm-registry since non-standard ports are used.
   serviceSpecs = {
     sonarr = {

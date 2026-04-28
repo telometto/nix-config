@@ -1,5 +1,5 @@
-# Standalone Ollama container — can run on any host independently
-# Home Manager module — runs rootless via quadlet-nix
+# Standalone Ollama container - can run on any host independently
+# Home Manager module - runs rootless via quadlet-nix
 { lib, config, ... }:
 let
   cfg = config.services.ollama-container;
