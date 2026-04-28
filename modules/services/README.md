@@ -48,7 +48,7 @@ ______________________________________________________________________
 | [actual.nix](actual.nix) | `sys.services.actual` | MicroVM | Actual Budget (personal finance) |
 | [paperless.nix](paperless.nix) | `sys.services.paperless` | MicroVM | Document management |
 | [protonmail-bridge.nix](protonmail-bridge.nix) | `sys.services.protonmail-bridge` | Host | Proton Mail IMAP/SMTP bridge |
-| [glance.nix](glance.nix) | `sys.services.glance` | MicroVM | Self-hosted dashboard |
+| [glance.nix](glance.nix) | `sys.services.glance` | Not currently deployed | Self-hosted dashboard |
 
 #### Identity and Matrix
 

@@ -211,7 +211,7 @@ ______________________________________________________________________
 
 ## Constants (`lib/constants.nix`)
 
-Centralises shared magic strings: Tailscale domain suffix, Cloudflare account/policy IDs. Imported directly where needed.
+Centralises shared magic strings: Tailscale domain suffix, Cloudflare account/policy IDs. Imported once in `flake.nix` and passed into modules as `consts` via `specialArgs` (and similarly for MicroVMs in `vms/flake-microvms.nix`). Prefer the injected `consts` argument over ad-hoc direct imports.
 
 ______________________________________________________________________
 
