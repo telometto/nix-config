@@ -52,10 +52,10 @@ in
     services = {
       mealie = {
         enable = true;
-        port = cfg.port;
-        listenAddress = cfg.listenAddress;
+
+        inherit (cfg) port listenAddress credentialsFile;
+
         database.createLocally = cfg.database.createLocally;
-        credentialsFile = cfg.credentialsFile;
 
         settings = {
           ALLOW_SIGNUP = "false";
