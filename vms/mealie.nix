@@ -51,7 +51,7 @@ in
 
   systemd = {
     tmpfiles.rules = [
-      "d /var/lib/mealie 0755 root root -"
+      "d /var/lib/mealie 0750 mealie mealie -"
       "d /var/lib/postgresql 0700 postgres postgres -"
     ];
 
