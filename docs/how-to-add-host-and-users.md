@@ -40,7 +40,7 @@ nixosConfigurations = {
    a. Derive the host's age recipient from its SSH host key:
 
    ```bash
-   ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key | ssh-to-age
+   ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key | nix run nixpkgs#ssh-to-age --
    ```
 
    b. In the private `nix-secrets` repository (not this repo), add that public
