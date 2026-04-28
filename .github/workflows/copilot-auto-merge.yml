@@ -10,6 +10,7 @@ concurrency:
 
 permissions:
   pull-requests: write
+  contents: write
   issues: write
 
 jobs:
@@ -85,10 +86,11 @@ jobs:
             const header = '🤖 **Copilot review status**';
             const fullBody = [header, verdict, '', 'Merge still gated by branch protection: required checks and conversation resolution.'].join('\n\n');
 
-            const { data: existing } = await github.rest.issues.listComments({
+            const existing = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
+              per_page: 100,
             });
             const prior = existing.find(c => c.user.id === 41898282 && c.body.startsWith(header));
 
