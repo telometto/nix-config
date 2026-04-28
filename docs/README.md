@@ -12,6 +12,26 @@ Project documentation organized using the
 | **Reference** | Information-oriented, accurate | Users needing details |
 | **Explanation** | Understanding-oriented, context | Users wanting deeper knowledge |
 
+### Doc Map
+
+```mermaid
+flowchart LR
+    subgraph Learning["Learning-Oriented"]
+        T["Tutorial: Provision Host\ntutorial-provision-host.md"]
+    end
+    subgraph Task["Task-Oriented"]
+        HT["How-To: Add Hosts & Users\nhow-to-add-host-and-users.md"]
+    end
+    subgraph Reference["Information-Oriented"]
+        RA["Reference: Architecture\nreference-architecture.md"]
+        RC["Reference: CI\nreference-ci.md"]
+        BP["Architecture Blueprint\nProject_Architecture_Blueprint.md"]
+    end
+    subgraph Understanding["Understanding-Oriented"]
+        EX["Explanation: Design\nexplanation-design.md"]
+    end
+```
+
 ### Available Documentation
 
 #### Tutorials
@@ -28,6 +48,8 @@ Project documentation organized using the
 
 - [reference-architecture.md](reference-architecture.md) —
   Quick reference for options and patterns
+- [reference-ci.md](reference-ci.md) —
+  CI workflows, checks, and automation
 - [Project_Architecture_Blueprint.md](Project_Architecture_Blueprint.md) —
   Comprehensive architecture documentation
 
@@ -55,6 +77,7 @@ Additional documentation is embedded in key directories:
 - [home/README.md](../home/README.md) — Home Manager modules
 - [hosts/README.md](../hosts/README.md) — Host configurations
 - [vms/README.md](../vms/README.md) — MicroVM configurations
+- [containers/README.md](../containers/README.md) — Container definitions
 - [lib/README.md](../lib/README.md) — Library functions
 - [dashboards/README.md](../dashboards/README.md) — Grafana dashboards
 
@@ -67,8 +90,3 @@ When updating documentation:
 1. **Keep it current** — Update docs when code changes
 1. **Test instructions** — Verify commands and examples work
 1. **Link related docs** — Help users discover relevant information
-
-______________________________________________________________________
-
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*
