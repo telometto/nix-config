@@ -1,4 +1,5 @@
 {
+  lib,
   config,
   inputs,
   VARS,
@@ -47,6 +48,16 @@ in
     };
   };
 
+  users = {
+    users.mealie = {
+      isSystemUser = true;
+      description = "Mealie service user";
+      group = "mealie";
+      home = "/var/lib/mealie";
+    };
+    groups.mealie = { };
+  };
+
   networking.firewall.allowedTCPPorts = [ reg.port ];
 
   systemd = {
@@ -58,6 +69,7 @@ in
     services.mealie = {
       after = [ "sops-install-secrets.service" ];
       requires = [ "sops-install-secrets.service" ];
+      serviceConfig.DynamicUser = lib.mkForce false;
     };
   };
 
