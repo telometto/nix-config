@@ -51,7 +51,9 @@ in
   users = {
     users.mealie = {
       isSystemUser = true;
+      description = "Mealie service user";
       group = "mealie";
+      home = "/var/lib/mealie";
     };
     groups.mealie = { };
   };
