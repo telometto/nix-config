@@ -286,7 +286,7 @@ let
     };
 
     mealie = {
-      enable = false;
+      enable = true;
       portForwards = [ (mkPortForward "tcp" 11071 null) ];
       ingressHosts = [ "recipes" ];
       reverseProxy = {
