@@ -234,7 +234,7 @@ let
     };
 
     paperless = {
-      enable = true;
+      enable = false;
       portForwards = [ (mkPortForward "tcp" 11061 null) ];
       ingressHosts = [ "docs" ];
       reverseProxy = {
