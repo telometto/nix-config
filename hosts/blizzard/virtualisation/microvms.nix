@@ -234,7 +234,7 @@ let
     };
 
     paperless = {
-      enable = true;
+      enable = false;
       portForwards = [ (mkPortForward "tcp" 11061 null) ];
       ingressHosts = [ "docs" ];
       reverseProxy = {
@@ -282,6 +282,20 @@ let
       reverseProxy = {
         subdomain = "photos";
         url = vmUrl "immich";
+      };
+    };
+
+    mealie = {
+      enable = true;
+      portForwards = [ (mkPortForward "tcp" 11071 null) ];
+      ingressHosts = [ "recipes" ];
+      reverseProxy = {
+        subdomain = "recipes";
+        url = vmUrl "mealie";
+        middlewares = [
+          "security-headers"
+          "crowdsec"
+        ];
       };
     };
   };

@@ -39,4 +39,10 @@ in
     dataDir = "/var/lib/lidarr";
     reverseProxy.enable = false;
   };
+
+  sys.services.arrExporter.lidarr = {
+    enable = true;
+    openFirewall = true;
+    arrPort = reg.port;
+  };
 }

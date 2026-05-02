@@ -8,7 +8,7 @@ let
   cfg = config.sys.services.matrix-authentication-service;
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
 
-  # Base config without secrets — an external oneshot (e.g. the VM's
+  # Base config without secrets - an external oneshot (e.g. the VM's
   # mas-secret service) must merge decrypted secrets and point
   # runtimeConfigFile at the result.
   baseConfig = lib.recursiveUpdate {
@@ -157,7 +157,7 @@ in
           "smtp"
         ];
         default = "smtp";
-        description = "Email transport — blackhole discards all mail.";
+        description = "Email transport - blackhole discards all mail.";
       };
 
       mode = lib.mkOption {
@@ -255,7 +255,7 @@ in
     };
     users.groups.mas = { };
 
-    # Base config (without secrets) — written to /etc so the runtime
+    # Base config (without secrets) - written to /etc so the runtime
     # assembly service can read and merge it with decrypted secrets.
     environment.etc."matrix-authentication-service/config.json" = {
       source = baseConfigFile;
@@ -264,7 +264,7 @@ in
       mode = "0400";
     };
 
-    # Idempotent DB creation — runs before MAS to ensure the role and
+    # Idempotent DB creation - runs before MAS to ensure the role and
     # database exist even if PostgreSQL was initialised before MAS was added.
     systemd.services.mas-db-init = lib.mkIf cfg.database.createLocally {
       description = "Create MAS PostgreSQL database and role";
@@ -353,7 +353,7 @@ in
             builtins.match ".*[:@].*@.*" cfg.database.uri != null
             || builtins.match ".*password=.*" cfg.database.uri != null
           );
-        message = "sys.services.matrix-authentication-service.database.uri must not contain embedded credentials — inject them via runtime secrets instead";
+        message = "sys.services.matrix-authentication-service.database.uri must not contain embedded credentials - inject them via runtime secrets instead";
       }
       {
         assertion = cfg.email.transport != "smtp" || (cfg.email.hostname != "" && cfg.email.username != "");

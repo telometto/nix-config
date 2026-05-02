@@ -25,7 +25,7 @@ in
     };
 
     dynamic = {
-      # TODO: dead code — upstream uses providers.file.filename, not directory.
+      # TODO: dead code - upstream uses providers.file.filename, not directory.
       # Remove if the upstream module is never refactored to support directory-based dynamic config.
       dir = lib.mkOption {
         type = lib.types.str;

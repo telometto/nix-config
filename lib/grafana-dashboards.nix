@@ -31,6 +31,7 @@ rec {
   };
 
   custom = {
+    arr-services = ../dashboards/shared/arr-services.json;
     zfs-overview = ../dashboards/host/blizzard/zfs-overview.json;
     power-consumption = ../dashboards/shared/power-consumption.json;
     power-consumption-historical = ../dashboards/host/blizzard/power-consumption-historical.json;

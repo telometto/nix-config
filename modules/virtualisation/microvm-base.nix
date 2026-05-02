@@ -512,8 +512,14 @@ in
         forwardPorts = allForwardPorts;
       };
 
-      # Firewall trusts the MicroVM bridge
-      firewall.trustedInterfaces = [ "microvm-br0" ];
+      # VMs reach the internet via NAT (FORWARD chain) and use external DNS,
+      # so the bridge needs no INPUT-chain trust on the host.
+      # Add interfaces."microvm-br0".allowedTCPPorts here if a VM must reach
+      # a specific host service directly.
+      firewall.interfaces."microvm-br0" = {
+        allowedTCPPorts = [ ];
+        allowedUDPPorts = [ ];
+      };
     };
 
     # Add VM services to Cloudflare Tunnel ingress

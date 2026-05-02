@@ -6,7 +6,7 @@
 }:
 let
   cfg = config.sys.role.desktop;
-  THEME = "green_blocks";
+  THEME = "loader";
 in
 {
   config = lib.mkIf cfg.enable {

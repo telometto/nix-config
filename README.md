@@ -19,15 +19,28 @@ sudo nixos-rebuild switch --flake .#<hostname>
 - **Per-host toggles** — Enable users and services per machine with `sys.*`
   options
 
+## Loader Fan-out
+
+```mermaid
+flowchart LR
+    F["flake.nix\nmkHost(hostname)"] --> SL["system-loader.nix\nmodules/**/*.nix"]
+    F --> HL["host-loader.nix\nhosts/hostname/**/*.nix"]
+    F --> HM["home-manager nixosModule"]
+    HM --> HML["hm-loader.nix\nhome/**/*.nix\n(excl. overrides/)"]
+    HM --> OV["home/overrides/\nhost/ + user/\n(explicit, conditional)"]
+```
+
 ## Repository Structure
 
 | Directory | Purpose |
 |-----------|---------|
-| [modules/](modules/) | System modules (`sys.*` options) |
-| [home/](home/) | Home Manager modules (`hm.*` options) |
-| [hosts/](hosts/) | Host configurations |
-| [vms/](vms/) | MicroVM definitions |
+| [modules/](modules/) | System modules (`sys.*` options) — auto-loaded |
+| [home/](home/) | Home Manager modules (`hm.*` options) — auto-loaded |
+| [hosts/](hosts/) | Host configurations — auto-loaded per host |
+| [vms/](vms/) | MicroVM definitions (23 VMs) |
+| [containers/](containers/) | Rootless Podman containers (Home Manager modules) |
 | [lib/](lib/) | Shared helpers (Traefik, Grafana, constants) |
+| [dashboards/](dashboards/) | Grafana dashboard JSON files |
 | [docs/](docs/) | Documentation |
 
 ## Host Configuration
@@ -41,6 +54,15 @@ sudo nixos-rebuild switch --flake .#<hostname>
   sys.services.tailscale.enable = true;
 }
 ```
+
+## Hosts
+
+| Host | Role | Desktop | Description |
+|------|------|---------|-------------|
+| snowfall | Desktop | KDE | Primary workstation; AMD GPU, distributed builds, monitoring stack |
+| blizzard | Server | — | Home server; ZFS, NFS, MicroVM host, Tailscale subnet router |
+| avalanche | Desktop | GNOME | ThinkPad P51; nixos-hardware module, iwlwifi+BT workaround |
+| kaizer | Desktop | KDE | External access; NVIDIA GPU, multi-user (gianluca+frankie), Java |
 
 ## Common Commands
 
@@ -61,28 +83,15 @@ sudo nixos-rebuild switch --flake .#<hostname>
   `.github/workflows/update-nix-lock-recreate.yml` using
   `nix flake update --recreate-lock-file`.
 
-## Hosts
-
-| Host | Role | Desktop |
-|------|------|---------|
-| snowfall | Desktop | KDE |
-| blizzard | Server | None |
-| avalanche | Desktop | GNOME |
-| kaizer | Desktop | KDE |
-
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
 | [Tutorial: Provision Host](docs/tutorial-provision-host.md) | Set up a new machine |
 | [How-To: Add Hosts and Users](docs/how-to-add-host-and-users.md) | Add new hosts/users |
-| [Reference: Architecture](docs/reference-architecture.md) | Options quick reference |
-| [Explanation: Design](docs/explanation-design.md) | Design decisions |
-| [Architecture Blueprint](docs/Project_Architecture_Blueprint.md) | Full system design |
+| [Reference: Architecture](docs/reference-architecture.md) | Options and stack quick reference |
+| [Reference: CI](docs/reference-ci.md) | CI workflows reference |
+| [Explanation: Design](docs/explanation-design.md) | Design decisions and rationale |
+| [Architecture Blueprint](docs/Project_Architecture_Blueprint.md) | Full system architecture |
 
 See [docs/README.md](docs/README.md) for the complete documentation index.
-
-______________________________________________________________________
-
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*

@@ -42,4 +42,10 @@ in
     enable = true;
     port = flaresolverrPort;
   };
+
+  sys.services.arrExporter.prowlarr = {
+    enable = true;
+    openFirewall = true;
+    arrPort = reg.port;
+  };
 }
