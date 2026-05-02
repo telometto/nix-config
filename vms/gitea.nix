@@ -62,11 +62,6 @@ in
     };
   };
 
-  networking.firewall.allowedTCPPorts = [
-    reg.port
-    2222
-  ];
-
   systemd.tmpfiles.rules = [
     "d /var/lib/gitea 0700 gitea gitea -"
     "d /var/lib/postgresql 0700 postgres postgres -"
@@ -106,18 +101,12 @@ in
 
       reverseProxy.enable = false;
 
-      settings = {
-        server = {
-          ROOT_URL = "https://git.${VARS.domains.public}/";
-          START_SSH_SERVER = true;
-
-          SSH_DOMAIN = "ssh-git.${VARS.domains.public}";
-          SSH_LISTEN_HOST = "0.0.0.0";
-          SSH_LISTEN_PORT = 2222;
-        };
-
-        session.COOKIE_SECURE = true;
+      ssh = {
+        enable = false;
+        domain = "ssh-git.${VARS.domains.public}";
       };
+
+      settings.server.ROOT_URL = "https://git.${VARS.domains.public}/";
     };
   };
 }
