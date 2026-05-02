@@ -12,7 +12,7 @@ let
     ║                 ██║ ╚████║██║██╔╝ ██╗╚██████╔╝███████║                ║
     ║                 ╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝                ║
     ║                                                                       ║
-    ║              🔒 Secured by NixOS • Hardened by Design 🔒             ║
+    ║              🔒 Secured by NixOS • Hardened by Design 🔒              ║
     ║                                                                       ║
     ║   ┌─────────────────────────────────────────────────────────────┐     ║
     ║   │  Welcome back to the Matrix!                                │     ║
