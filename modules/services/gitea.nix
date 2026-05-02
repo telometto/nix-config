@@ -192,7 +192,6 @@ in
             HTTP_PORT = cfg.port;
 
             LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
-            LFS_ALLOW_PURE_SSH = lib.mkIf cfg.lfs.enable true;
           };
 
           repository = {
@@ -202,7 +201,7 @@ in
 
           service.DISABLE_REGISTRATION = cfg.disableRegistration;
 
-          session.COOKIE_SECURE = lib.mkIf cfg.reverseProxy.enable true;
+          session.COOKIE_SECURE = lib.mkDefault true;
         }
         (lib.mkIf (cfg.lfs.enable && cfg.lfs.s3Backend.enable) {
           lfs = {
