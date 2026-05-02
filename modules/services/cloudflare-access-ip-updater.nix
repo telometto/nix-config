@@ -74,7 +74,7 @@ let
     echo "Policy: $POLICY_NAME (decision: $POLICY_DECISION, precedence: $POLICY_PRECEDENCE)"
 
     # Determine correct CIDR notation: /32 for IPv4, /128 for IPv6
-    if echo "$CURRENT_IP" | grep -qF ':'; then
+    if [[ "$CURRENT_IP" == *:* ]]; then
       IP_CIDR="$CURRENT_IP/128"
     else
       IP_CIDR="$CURRENT_IP/32"
