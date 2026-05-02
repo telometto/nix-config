@@ -109,9 +109,6 @@ let
     gitea = {
       enable = true;
       ingressHosts = [ "git" ];
-      extraIngress = {
-        "ssh-git.${VARS.domains.public}" = "ssh://${reg.gitea.ip}:2222";
-      };
       reverseProxy = {
         subdomain = "git";
         url = vmUrl "gitea";
