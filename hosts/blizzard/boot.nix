@@ -7,7 +7,7 @@
     initrd.supportedFilesystems.zfs = true;
 
     zfs = {
-      forceImportAll = true;
+      forceImportRoot = false;
       requestEncryptionCredentials = true;
       devNodes = "/dev/disk/by-id";
 
