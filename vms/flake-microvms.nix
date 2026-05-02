@@ -13,23 +13,23 @@ let
     imports = [ ../modules/core/overlays.nix ];
 
     sys.overlays.fromInputs = {
-      nixpkgs-unstable = [
-        "firefly-iii"
-      ];
+      # nixpkgs-unstable = [ "firefly-iii" ];
       # nixpkgs-stable = [ "cloud-hypervisor" ];
     };
   };
 
-  paperlessBuildWorkaround = {
-    nixpkgs.overlays = [
-      (_final: prev: {
-        "paperless-ngx" = prev."paperless-ngx".overrideAttrs (_old: {
-          doCheck = false;
-          doInstallCheck = false;
-        });
-      })
-    ];
-  };
+  /*
+    paperlessBuildWorkaround = {
+      nixpkgs.overlays = [
+        (_final: prev: {
+          "paperless-ngx" = prev."paperless-ngx".overrideAttrs (_old: {
+            doCheck = false;
+            doInstallCheck = false;
+          });
+        })
+      ];
+    };
+  */
 
   mkMicrovm =
     modules:
@@ -37,7 +37,7 @@ let
       inherit system;
       modules = [
         fromInputsOverlays
-        ../modules/core/nixpkgs-module-overrides.nix
+        # ../modules/core/nixpkgs-module-overrides.nix
       ]
       ++ modules;
 
@@ -148,7 +148,7 @@ in
   paperless-vm = mkMicrovm [
     microvmModule
     sopsModule
-    paperlessBuildWorkaround
+    # paperlessBuildWorkaround
     ./paperless.nix
   ];
 
@@ -168,5 +168,11 @@ in
     microvmModule
     sopsModule
     ./immich.nix
+  ];
+
+  mealie-vm = mkMicrovm [
+    microvmModule
+    sopsModule
+    ./mealie.nix
   ];
 }

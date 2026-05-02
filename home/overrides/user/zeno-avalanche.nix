@@ -16,6 +16,7 @@
     pkgs.rendercv
     pkgs.claude-code
     pkgs.signal-desktop
+    pkgs.uv
     # pkgs.rustdesk-flutter
     # (pkgs.jellyfin-media-player.override {
     #   qtwebengine = pkgs.kdePackages.qtwebengine; # overridden due to CVEs

@@ -8,6 +8,7 @@
 {
   imports = [
     ../modules/security/secrets.nix
+    ../modules/services/arr-exporter.nix
     ../modules/services/nfs.nix
     ../modules/services/traefik.nix
   ];
@@ -172,13 +173,15 @@
     ];
   };
 
-  # Common VM user and persistence (shared by all MicroVMs)
-  users.users.admin = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keys = [
-      VARS.users.zeno.sshPubKey
-    ];
+  users = {
+    mutableUsers = false;
+    users.admin = {
+      isNormalUser = true;
+      extraGroups = [ "wheel" ];
+      openssh.authorizedKeys.keys = [
+        VARS.users.zeno.sshPubKey
+      ];
+    };
   };
 
   systemd = {
