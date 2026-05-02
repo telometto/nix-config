@@ -73,13 +73,20 @@ let
 
     echo "Policy: $POLICY_NAME (decision: $POLICY_DECISION, precedence: $POLICY_PRECEDENCE)"
 
+    # Determine correct CIDR notation: /32 for IPv4, /128 for IPv6
+    if [[ "$CURRENT_IP" == *:* ]]; then
+      IP_CIDR="$CURRENT_IP/128"
+    else
+      IP_CIDR="$CURRENT_IP/32"
+    fi
+
     # Build the updated policy JSON
     # This creates a policy with the IP rule for bypass
     UPDATE_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
       --arg name "$POLICY_NAME" \
       --arg decision "$POLICY_DECISION" \
       --argjson precedence "$POLICY_PRECEDENCE" \
-      --arg ip "$CURRENT_IP/32" \
+      --arg ip "$IP_CIDR" \
       '{
         name: $name,
         decision: $decision,
