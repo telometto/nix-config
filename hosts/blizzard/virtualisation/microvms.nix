@@ -38,6 +38,7 @@ let
     // {
       portForward.ports = spec.portForwards or [ ];
       cfTunnel.ingress = mkPublicIngress (spec.ingressHosts or [ ]) // (spec.extraIngress or { });
+      cfTunnel.enable = false; # Disabled during k3s migration
       reverseProxy = spec.reverseProxy or { };
     };
 
