@@ -12,14 +12,28 @@
     hostName = lib.mkForce "blizzard";
     hostId = lib.mkForce "86bc16e3";
 
-    firewall = rec {
+    firewall = {
       enable = true;
 
-      allowedTCPPorts = [ ];
-      allowedUDPPorts = allowedTCPPorts;
+      # Required for Cilium: pod traffic arrives on veth interfaces with
+      # source IPs outside the expected routing path; strict rp_filter drops it.
+      checkReversePath = false;
+
+      # Trust all CNI/pod network interfaces so pod↔host traffic bypasses
+      # the INPUT chain.
+      trustedInterfaces = [ "cni+" ];
+
+      allowedTCPPorts = [
+        4240  # Cilium health check
+        4244  # Hubble server
+        4245  # Hubble relay
+      ];
+      allowedUDPPorts = [
+        8472  # VXLAN (Cilium overlay, single-node loopback)
+      ];
 
       allowedTCPPortRanges = [ ];
-      allowedUDPPortRanges = allowedTCPPortRanges;
+      allowedUDPPortRanges = [ ];
     };
   };
 
