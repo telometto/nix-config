@@ -22,8 +22,11 @@ in
     extraFlags = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
-        "--snapshotter native"
-        "--disable traefik"
+        "--snapshotter=native"
+        "--disable=traefik"
+        "--disable=servicelb"
+        "--flannel-backend=none"
+        "--disable-network-policy"
         "--kubelet-arg=read-only-port=10255"
       ];
     };
