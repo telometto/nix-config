@@ -268,8 +268,8 @@ in
     # database exist even if PostgreSQL was initialised before MAS was added.
     systemd.services.mas-db-init = lib.mkIf cfg.database.createLocally {
       description = "Create MAS PostgreSQL database and role";
-      after = [ "postgresql.service" ];
-      requires = [ "postgresql.service" ];
+      after = [ "postgresql.target" ];
+      requires = [ "postgresql.target" ];
       before = [ "matrix-authentication-service.service" ];
       requiredBy = [ "matrix-authentication-service.service" ];
       serviceConfig = {
@@ -296,9 +296,10 @@ in
     systemd.services.matrix-authentication-service = {
       description = "Matrix Authentication Service";
       after =
-        (if cfg.database.createLocally then [ "postgresql.service" ] else [ "network-online.target" ])
+        (if cfg.database.createLocally then [ "postgresql.target" ] else [ "network-online.target" ])
         ++ [ "network.target" ];
-      requires = lib.optionals cfg.database.createLocally [ "postgresql.service" ];
+      wants = lib.optionals (!cfg.database.createLocally) [ "network-online.target" ];
+      requires = lib.optionals cfg.database.createLocally [ "postgresql.target" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
