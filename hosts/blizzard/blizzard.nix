@@ -19,9 +19,9 @@
       # source IPs outside the expected routing path; strict rp_filter drops it.
       checkReversePath = false;
 
-      # Trust all CNI/pod network interfaces so pod↔host traffic bypasses
-      # the INPUT chain.
-      trustedInterfaces = [ "cni+" ];
+      # Trust Cilium's pod veth interfaces (named lxcXXXXXXXX) so pod↔host
+      # traffic (e.g. pods reaching the kube-apiserver) bypasses the INPUT chain.
+      trustedInterfaces = [ "lxc+" ];
 
       allowedTCPPorts = [
         4240  # Cilium health check
