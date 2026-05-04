@@ -327,9 +327,9 @@ in
           description = "Compress Synapse room state to reclaim database space";
           after = [
             "matrix-synapse.service"
-            "postgresql.service"
+            "postgresql.target"
           ];
-          requires = [ "postgresql.service" ];
+          requires = [ "postgresql.target" ];
           serviceConfig = {
             Type = "oneshot";
             User = "matrix-synapse";
@@ -346,9 +346,9 @@ in
           description = "VACUUM ANALYZE the Synapse PostgreSQL database";
           after = [
             "matrix-synapse.service"
-            "postgresql.service"
+            "postgresql.target"
           ];
-          requires = [ "postgresql.service" ];
+          requires = [ "postgresql.target" ];
           serviceConfig = {
             Type = "oneshot";
             User = "matrix-synapse";
@@ -365,8 +365,8 @@ in
 
         matrix-synapse-db-size = lib.mkIf (cfg.dbSizeLogger.enable && cfg.database.createLocally) {
           description = "Log Synapse PostgreSQL database size to the journal";
-          after = [ "postgresql.service" ];
-          requires = [ "postgresql.service" ];
+          after = [ "postgresql.target" ];
+          requires = [ "postgresql.target" ];
           serviceConfig = {
             Type = "oneshot";
             User = "matrix-synapse";
@@ -387,9 +387,9 @@ in
           wantedBy = [ "multi-user.target" ];
           after = [
             "matrix-synapse.service"
-            "postgresql.service"
+            "postgresql.target"
           ];
-          requires = [ "postgresql.service" ];
+          requires = [ "postgresql.target" ];
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
