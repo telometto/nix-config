@@ -25,6 +25,7 @@ in
         "--snapshotter=native"
         "--disable=traefik"
         "--disable=servicelb"
+        "--disable-kube-proxy"
         "--flannel-backend=none"
         "--disable-network-policy"
         "--kubelet-arg=read-only-port=10255"
