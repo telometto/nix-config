@@ -6,6 +6,8 @@
   ...
 }:
 {
+  boot.kernelModules = [ "kvm-amd" ];
+
   networking = {
     hostName = lib.mkForce "blizzard";
     hostId = lib.mkForce "86bc16e3";
@@ -67,7 +69,7 @@
     # };
 
     services = {
-      k3s.enable = false;
+      k3s.enable = true;
 
       resolved = {
         enableDNS = false;
