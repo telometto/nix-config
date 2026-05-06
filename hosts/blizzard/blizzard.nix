@@ -24,9 +24,9 @@
       trustedInterfaces = [ "lxc+" ];
 
       allowedTCPPorts = [
-        4240  # Cilium health check
-        4244  # Hubble server
-        4245  # Hubble relay
+        4240 # Cilium health check
+        4244 # Hubble server
+        4245 # Hubble relay
       ];
       allowedUDPPorts = [ ];
       # Note: 8472/UDP (VXLAN) is NOT opened — canonical config uses
