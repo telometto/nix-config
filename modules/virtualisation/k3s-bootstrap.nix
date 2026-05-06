@@ -1,4 +1,9 @@
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.sys.services.k3s.bootstrap;
 
@@ -151,7 +156,13 @@ in
       description = "Bootstrap k3s: install Cilium and Flux via helmfile";
       after = [ "k3s.service" ];
       requires = [ "k3s.service" ];
-      path = with pkgs; [ coreutils gnugrep kubectl kubernetes-helm helmfile ];
+      path = with pkgs; [
+        coreutils
+        gnugrep
+        kubectl
+        kubernetes-helm
+        helmfile
+      ];
       environment.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
       serviceConfig = {
         Type = "oneshot";
