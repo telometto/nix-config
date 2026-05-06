@@ -12,6 +12,7 @@
       experimental-features = [
         "nix-command"
         "flakes"
+        "fetch-tree"
         "parse-toml-timestamps"
         "verified-fetches"
         "cgroups"
