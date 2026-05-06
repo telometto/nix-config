@@ -36,6 +36,30 @@ ______________________________________________________________________
 
 ## Architecture
 
+### Architecture choice: kube-proxy replacement
+
+Two viable configurations exist for Cilium on k3s. **Canonical** (this deployment):
+
+| Setting | Canonical (this repo) | Alternative (niki-on-github/nixos-k3s) |
+|---|---|---|
+| `kubeProxyReplacement` | `true` | `false` (keeps k3s kube-proxy) |
+| k3s flag | `--disable-kube-proxy` required | omit |
+| `k8sServiceHost` | `"127.0.0.1"` required | not needed |
+| `routingMode` | `native` | `native` |
+| `trustedInterfaces` | `[ "lxc+" ]` | `[ "cni+" ]` |
+| Dataplane | single (eBPF only) | dual (iptables + eBPF) |
+| Footguns | more NixOS-specific pitfalls | fewer |
+| Hubble visibility | full service-level visibility | partial |
+
+**Switching cost:** non-trivial. Requires changing `modules/virtualisation/k3s.nix`
+(drop `--disable-kube-proxy`), `homelab-apps/network/cilium-helmrelease.yaml` (drop
+`kubeProxyReplacement`, `k8sServiceHost`/`Port`), and
+`hosts/blizzard/virtualisation/cilium-values.yaml`.
+
+**The canonical path is committed.** Do not switch without understanding the full diff.
+
+---
+
 ### Infrastructure layer — nix-config repo (stays NixOS)
 
 `blizzard` runs NixOS. `sys.services.k3s.enable = true` brings up k3s in single-server mode.
@@ -50,7 +74,7 @@ The following become k3s workloads (Deployments/Helm charts) rather than NixOS s
 Host-level NixOS services (sops-nix secrets for blizzard itself, Tailscale, resolved, etc.) are
 unchanged.
 
-**NixOS-specific requirements for Cilium (discovered during execution):**
+**NixOS-specific requirements for Cilium (canonical `kubeProxyReplacement: true` path):**
 
 The following must be set in `hosts/blizzard/blizzard.nix` for Cilium pod networking to function
 on NixOS. Without these, pods have zero network connectivity despite Cilium appearing healthy:
@@ -58,6 +82,7 @@ on NixOS. Without these, pods have zero network connectivity despite Cilium appe
 ```nix
 networking.firewall.checkReversePath = false;   # strict rp_filter drops pod traffic
 networking.firewall.trustedInterfaces = [ "lxc+" ]; # Cilium names its veth interfaces lxcXXXXXXXX
+# NOTE: "cni+" does NOT match Cilium's interface naming — use "lxc+" only
 ```
 
 The k3s module must also include `--disable-kube-proxy` in `extraFlags` to prevent k3s's built-in
@@ -65,9 +90,11 @@ iptables kube-proxy from conflicting with Cilium's eBPF service routing (causes 
 even when pod-to-internet works). Cilium must use `kubeProxyReplacement: true` — setting it to
 `false` does not work with k3s because there is no standalone kube-proxy process to fall back to.
 
-Cilium must be installed directly via Helm **before** bootstrapping Flux. Installing it through
-Flux means Flux's own pods can't reach the Kubernetes API server (Cilium's service maps aren't
-ready yet), causing a chicken-and-egg deadlock.
+Cilium must be installed **before** bootstrapping Flux. Installing it through Flux means Flux's
+own pods can't reach the Kubernetes API server (Cilium's service maps aren't ready yet), causing
+a chicken-and-egg deadlock. The `sys.services.k3s.bootstrap` NixOS module
+(`modules/virtualisation/k3s-bootstrap.nix`) automates the correct order via a helmfile-driven
+systemd timer: Cilium installs first (wait: true), then flux-operator, then flux-instance.
 
 ### Workload layer — homelab-apps repo (new)
 
