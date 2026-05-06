@@ -6,7 +6,7 @@
   ...
 }:
 {
-  boot.kernelModules = [ "kvm-amd" ];
+  # kvm-intel is already loaded via hardware-configuration.nix (Intel CPU); no override needed.
 
   networking = {
     hostName = lib.mkForce "blizzard";
@@ -85,6 +85,7 @@
     services = {
       k3s = {
         enable = true;
+        ciliumCni = true;
         bootstrap = {
           enable = true;
           ciliumValuesFile = ./virtualisation/cilium-values.yaml;
