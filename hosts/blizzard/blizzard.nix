@@ -28,9 +28,9 @@
         4244  # Hubble server
         4245  # Hubble relay
       ];
-      allowedUDPPorts = [
-        8472  # VXLAN (Cilium overlay, single-node loopback)
-      ];
+      allowedUDPPorts = [ ];
+      # Note: 8472/UDP (VXLAN) is NOT opened — canonical config uses
+      # routingMode: native, not VXLAN overlay.
 
       allowedTCPPortRanges = [ ];
       allowedUDPPortRanges = [ ];
@@ -83,7 +83,17 @@
     # };
 
     services = {
-      k3s.enable = true;
+      k3s = {
+        enable = true;
+        bootstrap = {
+          enable = true;
+          ciliumValuesFile = ./virtualisation/cilium-values.yaml;
+          fluxValuesFile = ./virtualisation/flux-instance-values.yaml;
+          # To fully automate Flux's Git auth on first boot, add the SSH key to
+          # nix-secrets, encrypt with sops, then set:
+          #   fluxGitAuthSecretFile = config.sops.secrets."flux-git-auth".path;
+        };
+      };
 
       resolved = {
         enableDNS = false;
