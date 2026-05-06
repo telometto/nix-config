@@ -54,6 +54,7 @@ ______________________________________________________________________
 | `services.subgen-container.enable` | [subgen.nix](subgen.nix) | 11027 | Whisper-based subtitle generator (CPU or AMD GPU) |
 | `services.lingarr.enable` | [subtitle-stack.nix](subtitle-stack.nix) | 11025 | Full subtitle translation pipeline (lingarr + libretranslate + ollama + subgen as a pod) |
 | `services.subgen.enable` | [subtitle-stack.nix](subtitle-stack.nix) | 11027 | Subgen as part of the subtitle-stack pod |
+| `services.nominatim-container.enable` | [nominatim.nix](nominatim.nix) | 11080 | OpenStreetMap geocoding API (mediagis/nominatim) |
 
 **`ollama.nix`** — Standalone LLM inference server. Supports ROCm (AMD GPU) or
 CPU-only image selection. Usable on any host that has Podman. Enable via
