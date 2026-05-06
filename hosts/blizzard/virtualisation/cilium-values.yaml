@@ -1,0 +1,27 @@
+# Vendored Cilium Helm values — used by the OS-level helmfile bootstrap
+# (modules/virtualisation/k3s-bootstrap.nix) BEFORE Flux is installed.
+#
+# Flux variable substitution (${VAR}) is NOT available here — this file runs at
+# cluster bootstrap time, before flux-instance has started reconciling.
+#
+# KEEP IN SYNC WITH: homelab-apps/network/cilium-helmrelease.yaml
+# When changing values here, update that file too (and vice-versa).
+#
+# Canonical architecture: kubeProxyReplacement: true (see design spec for rationale).
+# k3s must be started with --disable-kube-proxy for this to work — both flags
+# must be set together or both omitted. Never mix them.
+kubeProxyReplacement: true
+k8sServiceHost: "127.0.0.1"
+k8sServicePort: 6443
+ipam:
+  mode: kubernetes
+routingMode: native
+ipv4NativeRoutingCIDR: "10.42.0.0/16"
+autoDirectNodeRoutes: true
+hubble:
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+operator:
+  replicas: 1
