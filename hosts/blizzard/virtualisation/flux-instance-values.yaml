@@ -1,0 +1,24 @@
+# Flux-instance Helm values — configures which Git repo and path to reconcile.
+# Used by modules/virtualisation/k3s-bootstrap.nix via helmfile.
+#
+# The pullSecret "flux-system" is the SSH key Secret that flux-instance uses to
+# authenticate to GitHub. It must be pre-staged in the k3s manifests dir before
+# flux-instance starts — set sys.services.k3s.bootstrap.fluxGitAuthSecretFile
+# to a sops-decrypted Secret YAML path to automate this, or create it manually
+# after bootstrap:
+#   nix run nixpkgs#fluxcd -- create secret git flux-system \
+#     -n flux-system \
+#     --url="ssh://git@github.com/telometto/homelab-apps" \
+#     --private-key-file=~/.ssh/id_ed25519
+instance:
+  distribution:
+    version: "2.8.6"
+  sync:
+    kind: GitRepository
+    url: "ssh://git@github.com/telometto/homelab-apps"
+    ref: refs/heads/main
+    path: flux
+    interval: 2m
+    pullSecret: "flux-system"
+  cluster:
+    networkPolicy: false
