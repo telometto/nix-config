@@ -146,18 +146,17 @@ in
 
     environment.etc."k3s/helmfile.yaml".text = helmfileText;
 
-    systemd.tmpfiles.rules =
-      [
-        # Always remove a previously-staged manifest so that unsetting
-        # fluxGitAuthSecretFile does not leave stale Git credentials in k3s's
-        # auto-apply directory.
-        "R /var/lib/rancher/k3s/server/manifests/flux-git-auth.yaml - - - -"
-      ]
-      ++ lib.optionals (cfg.fluxGitAuthSecretFile != null) [
-        # L+ replaces the symlink if it already points elsewhere (e.g. the sops
-        # decrypted path changed between rebuilds).
-        "L+ /var/lib/rancher/k3s/server/manifests/flux-git-auth.yaml - - - - ${cfg.fluxGitAuthSecretFile}"
-      ];
+    systemd.tmpfiles.rules = [
+      # Always remove a previously-staged manifest so that unsetting
+      # fluxGitAuthSecretFile does not leave stale Git credentials in k3s's
+      # auto-apply directory.
+      "R /var/lib/rancher/k3s/server/manifests/flux-git-auth.yaml - - - -"
+    ]
+    ++ lib.optionals (cfg.fluxGitAuthSecretFile != null) [
+      # L+ replaces the symlink if it already points elsewhere (e.g. the sops
+      # decrypted path changed between rebuilds).
+      "L+ /var/lib/rancher/k3s/server/manifests/flux-git-auth.yaml - - - - ${cfg.fluxGitAuthSecretFile}"
+    ];
 
     systemd.services.k3s-helm-bootstrap = {
       description = "Bootstrap k3s: install Cilium and Flux via helmfile";
