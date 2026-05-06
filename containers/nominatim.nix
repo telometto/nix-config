@@ -62,7 +62,7 @@ in
       "d ${cfg.dataDir} 0755 - - -"
     ];
 
-    virtualisation.quadlet.containers.nominatim = {
+    virtualisation.quadlet.containers.nominatim-standalone = {
       autoStart = true;
       containerConfig = {
         image = cfg.image;
