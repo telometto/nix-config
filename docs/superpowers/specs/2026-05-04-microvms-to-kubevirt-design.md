@@ -58,7 +58,7 @@ Two viable configurations exist for Cilium on k3s. **Canonical** (this deploymen
 
 **The canonical path is committed.** Do not switch without understanding the full diff.
 
----
+______________________________________________________________________
 
 ### Infrastructure layer — nix-config repo (stays NixOS)
 
