@@ -3,7 +3,6 @@
 { lib, config, ... }:
 let
   cfg = config.services.nominatim-container;
-  inherit (config.virtualisation.quadlet) volumes;
 in
 {
   options.services.nominatim-container = {
@@ -19,6 +18,12 @@ in
       type = lib.types.str;
       default = "mediagis/nominatim:5.3";
       description = "Container image to use.";
+    };
+
+    dataDir = lib.mkOption {
+      type = lib.types.str;
+      default = "/rpool/unenc/apps/docker/nominatim";
+      description = "Path for persistent Nominatim/Postgres data storage.";
     };
 
     pbfUrl = lib.mkOption {
@@ -53,14 +58,16 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    virtualisation.quadlet.volumes.nominatim-data = { };
+    systemd.user.tmpfiles.rules = [
+      "d ${cfg.dataDir} 0755 - - -"
+    ];
 
     virtualisation.quadlet.containers.nominatim = {
       autoStart = true;
       containerConfig = {
         image = cfg.image;
         publishPorts = [ "${toString cfg.port}:8080" ];
-        volumes = [ "${volumes.nominatim-data.ref}:/var/lib/postgresql/14/main" ];
+        volumes = [ "${cfg.dataDir}:/var/lib/postgresql/16/main" ];
         environments = {
           PBF_URL = cfg.pbfUrl;
           THREADS = toString cfg.threads;
