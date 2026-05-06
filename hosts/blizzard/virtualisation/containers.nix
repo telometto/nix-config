@@ -12,6 +12,7 @@ in
   home-manager.users.${username} = {
     imports = [
       ../../../containers/subtitle-stack.nix
+      ../../../containers/nominatim.nix
     ];
 
     services = {
@@ -19,6 +20,8 @@ in
         enable = true;
         ollama.enable = false;
       };
+
+      nominatim-container.enable = true;
 
       subgen = {
         enable = false;
