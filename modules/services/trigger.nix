@@ -431,7 +431,7 @@ in
         # The webapp enforces Buffer.from(val, "utf8").length === 32 at startup.
         # openssl rand -hex 16 produces exactly 32 ASCII hex characters (= 32 bytes).
         # openssl rand -hex 32 produces 64 characters and will be rejected.
-        description = "Path to ENCRYPTION_KEY file. Must contain exactly 32 ASCII characters after stripping trailing newlines (openssl rand -hex 16).";
+        description = "Path to ENCRYPTION_KEY file. Must contain exactly 32 ASCII characters after stripping newlines (openssl rand -hex 16).";
       };
 
       managedWorkerSecretFile = lib.mkOption {
@@ -610,7 +610,7 @@ in
             }
 
             # Skip all checks on a first-ever install (goose_db_version does not exist yet).
-            GOOSE_TABLE=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='goose_db_version'" 2>/dev/null || echo 0)
+            GOOSE_TABLE=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='goose_db_version'")
             [ "$GOOSE_TABLE" = "0" ] && exit 0
 
             # Migration 003: task_runs_v1 + raw_task_runs_payload_v1 created,
