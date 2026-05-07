@@ -489,6 +489,8 @@ in
       '';
     };
 
+    networking.firewall.allowedTCPPorts = [ cfg.port ];
+
     systemd.services.trigger-compose = {
       description = "trigger.dev v4 docker-compose stack";
       after = [
