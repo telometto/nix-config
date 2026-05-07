@@ -75,8 +75,8 @@ let
           LOGIN_ORIGIN: ${cfg.appOrigin}
           API_ORIGIN: ${cfg.appOrigin}
           ELECTRIC_ORIGIN: http://electric:3000
-          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/main?schema=public&sslmode=disable
-          DIRECT_URL: postgresql://postgres:postgres@postgres:5432/main?schema=public&sslmode=disable
+          DATABASE_URL: postgresql://postgres:${dol}{POSTGRES_PASSWORD}@postgres:5432/main?schema=public&sslmode=disable
+          DIRECT_URL: postgresql://postgres:${dol}{POSTGRES_PASSWORD}@postgres:5432/main?schema=public&sslmode=disable
           SESSION_SECRET: ${dol}{SESSION_SECRET}
           MAGIC_LINK_SECRET: ${dol}{MAGIC_LINK_SECRET}
           ENCRYPTION_KEY: ${dol}{ENCRYPTION_KEY}
@@ -97,9 +97,9 @@ let
           TRIGGER_BOOTSTRAP_ENABLED: "1"
           TRIGGER_BOOTSTRAP_WORKER_GROUP_NAME: bootstrap
           TRIGGER_BOOTSTRAP_WORKER_TOKEN_PATH: /home/node/shared/worker_token
-          CLICKHOUSE_URL: http://default:password@clickhouse:8123?secure=false
+          CLICKHOUSE_URL: http://default:${dol}{CLICKHOUSE_PASSWORD}@clickhouse:8123?secure=false
           RUN_REPLICATION_ENABLED: "1"
-          RUN_REPLICATION_CLICKHOUSE_URL: http://default:password@clickhouse:8123
+          RUN_REPLICATION_CLICKHOUSE_URL: http://default:${dol}{CLICKHOUSE_PASSWORD}@clickhouse:8123
           TRIGGER_TELEMETRY_DISABLED: "1"
           INTERNAL_OTEL_TRACE_LOGGING_ENABLED: "0"
           # SMTP / magic-link: set by trigger-setup when cfg.smtp.enable is true;
@@ -131,7 +131,7 @@ let
           - wal_level=logical
         environment:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: ${dol}{POSTGRES_PASSWORD}
           POSTGRES_DB: main
         healthcheck:
           test: ["CMD", "pg_isready", "-U", "postgres"]
@@ -167,7 +167,7 @@ let
         networks:
           - webapp
         environment:
-          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/main?schema=public&sslmode=disable
+          DATABASE_URL: postgresql://postgres:${dol}{POSTGRES_PASSWORD}@postgres:5432/main?schema=public&sslmode=disable
           ELECTRIC_INSECURE: "true"
           ELECTRIC_USAGE_REPORTING: "false"
         healthcheck:
@@ -186,14 +186,14 @@ let
           - 127.0.0.1:9090:9000
         environment:
           CLICKHOUSE_ADMIN_USER: default
-          CLICKHOUSE_ADMIN_PASSWORD: password
+          CLICKHOUSE_ADMIN_PASSWORD: ${dol}{CLICKHOUSE_PASSWORD}
         volumes:
           - clickhouse:/bitnami/clickhouse
           - ${clickhouseOverride}:/bitnami/clickhouse/etc/config.d/override.xml:ro
         networks:
           - webapp
         healthcheck:
-          test: ["CMD", "clickhouse-client", "--host", "localhost", "--port", "9000", "--user", "default", "--password", "password", "--query", "SELECT 1"]
+          test: ["CMD-SHELL", "clickhouse-client --host localhost --port 9000 --user default --password $$CLICKHOUSE_ADMIN_PASSWORD --query 'SELECT 1'"]
           interval: 5s
           timeout: 5s
           retries: 5
@@ -441,6 +441,16 @@ in
         type = lib.types.str;
         description = "Path to MinIO root password (also used as OBJECT_STORE_SECRET_ACCESS_KEY).";
       };
+
+      postgresPasswordFile = lib.mkOption {
+        type = lib.types.str;
+        description = "Path to Postgres root password (used for POSTGRES_PASSWORD and all DATABASE_URL/DIRECT_URL connections).";
+      };
+
+      clickhousePasswordFile = lib.mkOption {
+        type = lib.types.str;
+        description = "Path to ClickHouse admin password (used for CLICKHOUSE_ADMIN_PASSWORD and all ClickHouse connection URLs).";
+      };
     };
   };
 
@@ -502,6 +512,8 @@ in
               printf 'MANAGED_WORKER_SECRET=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.managedWorkerSecretFile})"
               printf 'REGISTRY_PASSWORD=%s\n'     "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.registryPasswordFile})"
               printf 'MINIO_PASSWORD=%s\n'        "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.minioPasswordFile})"
+              printf 'POSTGRES_PASSWORD=%s\n'    "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.postgresPasswordFile})"
+              printf 'CLICKHOUSE_PASSWORD=%s\n'  "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.clickhousePasswordFile})"
               ${lib.optionalString cfg.smtp.enable ''
                 printf 'EMAIL_TRANSPORT=smtp\n'
                 printf 'FROM_EMAIL=%s\n'    ${lib.escapeShellArg cfg.smtp.fromEmail}
