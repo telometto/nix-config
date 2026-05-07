@@ -69,6 +69,19 @@ Spawns four containers together: `lingarr` (subtitle manager), `libretranslate`
 The two options (`services.lingarr.enable` and `services.subgen.enable`) control
 whether to include the stack.
 
+**`nominatim.nix`** — OpenStreetMap geocoding API backed by PostgreSQL 16. Runs
+the `mediagis/nominatim` image as a standalone container. The initial start
+downloads and imports the configured PBF file (Norway by default, ~1.5 GB
+download / ~50 GB on-disk); this can take several hours — `TimeoutStartSec` is
+set to `infinity` to accommodate this. Incremental OSM updates via replication
+are enabled by default. The image uses default rootless Podman userns (no
+`keep-id`) because its entrypoint runs as container-root to create the
+`nominatim` system user and initialize the PostgreSQL cluster before dropping
+privileges — this is safe; container-root maps to the host user with zero host
+privilege. **Version upgrades** (e.g. 5.3 → 5.4) require running
+`nominatim admin --migrate` inside the container before the new image can serve
+requests; skipping this step will cause startup failures.
+
 ______________________________________________________________________
 
 ### Architecture
@@ -98,6 +111,9 @@ as rootless Podman Quadlet systemd user services.
          │
          ├── subgen-container (services.subgen-container.enable)
          │   └── subgen (:11027)
+         │
+         ├── nominatim-container (services.nominatim-container.enable)
+         │   └── nominatim-standalone (:11080)
          │
          └── subtitle-stack
              ├── lingarr        (:11025)  ← services.lingarr.enable
