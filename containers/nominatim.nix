@@ -16,7 +16,7 @@ in
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "mediagis/nominatim:5.3";
+      default = "docker.io/mediagis/nominatim:5.3";
       description = "Container image to use.";
     };
 
@@ -65,7 +65,7 @@ in
     virtualisation.quadlet.containers.nominatim-standalone = {
       autoStart = true;
       containerConfig = {
-        image = cfg.image;
+        inherit (cfg) image;
         publishPorts = [ "${toString cfg.port}:8080" ];
         volumes = [ "${cfg.dataDir}:/var/lib/postgresql/16/main" ];
         environments = {
@@ -77,8 +77,7 @@ in
           FREEZE = "false";
         }
         // cfg.extraEnvironments;
-        shmSize = cfg.shmSize;
-        userns = "keep-id";
+        inherit (cfg) shmSize;
       };
       serviceConfig = {
         Restart = "on-failure";
