@@ -576,6 +576,7 @@ in
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
+            TimeoutStartSec = "300";
           };
           script = ''
             set -euo pipefail
