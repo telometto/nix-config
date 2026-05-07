@@ -204,7 +204,7 @@ in
           subgen = {
             autoStart = true;
             containerConfig = {
-              image = "mccloud/subgen";
+              image = "docker.io/mccloud/subgen";
               environments = {
                 WHISPER_MODEL = cfgSubgen.whisperModel;
                 WHISPER_THREADS = "6";
