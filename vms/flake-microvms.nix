@@ -175,4 +175,10 @@ in
     sopsModule
     ./mealie.nix
   ];
+
+  trigger-vm = mkMicrovm [
+    microvmModule
+    sopsModule
+    ./trigger.nix
+  ];
 }
