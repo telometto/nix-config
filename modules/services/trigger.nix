@@ -431,7 +431,7 @@ in
         # The webapp enforces Buffer.from(val, "utf8").length === 32 at startup.
         # openssl rand -hex 16 produces exactly 32 ASCII hex characters (= 32 bytes).
         # openssl rand -hex 32 produces 64 characters and will be rejected.
-        description = "Path to ENCRYPTION_KEY file. Must contain exactly 32 UTF-8 bytes (openssl rand -hex 16).";
+        description = "Path to ENCRYPTION_KEY file. Must contain exactly 32 ASCII characters after stripping trailing newlines (openssl rand -hex 16).";
       };
 
       managedWorkerSecretFile = lib.mkOption {
@@ -561,7 +561,9 @@ in
           after = [
             "docker.service"
             "trigger-setup.service"
+            "network-online.target"
           ];
+          wants = [ "network-online.target" ];
           requires = [
             "docker.service"
             "trigger-setup.service"
@@ -615,17 +617,17 @@ in
             # but the trailing CREATE VIEW fails on ClickHouse 25.x (JSON/Dynamic
             # columns not allowed in Views).  Mark applied if the table exists
             # but the version record is missing.
-            TNAME=task_runs_v1
-            if [ "$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='$TNAME'" 2>/dev/null || echo 0)" = "1" ] && \
-               [ "$(ch "SELECT count() FROM goose_db_version WHERE version_id=3 AND is_applied=1" 2>/dev/null || echo 0)" = "0" ]; then
+            TABLE_003=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='task_runs_v1'")
+            VER_003=$(ch "SELECT count() FROM goose_db_version WHERE version_id=3 AND is_applied=1")
+            if [ "$TABLE_003" = "1" ] && [ "$VER_003" = "0" ]; then
               ch "INSERT INTO goose_db_version (version_id, is_applied) VALUES (3, 1)"
             fi
 
             # Migration 004: task_runs_v2.  Apply the same guard in case the
             # data volume outlived a goose_db_version reset.
-            TNAME=task_runs_v2
-            if [ "$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='$TNAME'" 2>/dev/null || echo 0)" = "1" ] && \
-               [ "$(ch "SELECT count() FROM goose_db_version WHERE version_id=4 AND is_applied=1" 2>/dev/null || echo 0)" = "0" ]; then
+            TABLE_004=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='task_runs_v2'")
+            VER_004=$(ch "SELECT count() FROM goose_db_version WHERE version_id=4 AND is_applied=1")
+            if [ "$TABLE_004" = "1" ] && [ "$VER_004" = "0" ]; then
               ch "INSERT INTO goose_db_version (version_id, is_applied) VALUES (4, 1)"
             fi
           '';
