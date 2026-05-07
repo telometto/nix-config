@@ -1,6 +1,6 @@
 # Standalone Subgen container - can run on any host independently
 # Home Manager module - runs rootless via quadlet-nix
-# Uses mccloud/subgen:cpu by default, mccloud/subgen:amd when gpu.enable is true
+# Uses docker.io/mccloud/subgen:cpu by default, docker.io/mccloud/subgen:amd when gpu.enable is true
 { lib, config, ... }:
 let
   cfg = config.services.subgen-container;
@@ -32,7 +32,7 @@ in
     image = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Container image to use. Defaults to mccloud/subgen:amd when gpu.enable is true, mccloud/subgen:cpu otherwise.";
+      description = "Container image to use. Defaults to docker.io/mccloud/subgen:amd when gpu.enable is true, docker.io/mccloud/subgen:cpu otherwise.";
     };
 
     whisperModel = lib.mkOption {
