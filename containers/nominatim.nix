@@ -34,8 +34,8 @@ in
 
     replicationUrl = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = "https://download.geofabrik.de/europe/norway-updates/";
-      description = "Replication base URL for incremental OSM updates. Set null to disable.";
+      default = null;
+      description = "Replication base URL for incremental OSM updates. Must match the region of pbfUrl. Set null to disable (default).";
     };
 
     threads = lib.mkOption {
