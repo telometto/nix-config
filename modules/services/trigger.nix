@@ -85,7 +85,7 @@ let
           REDIS_PORT: "6379"
           REDIS_TLS_DISABLED: "true"
           APP_LOG_LEVEL: info
-          DEV_OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:${toString cfg.port}/otel
+          DEV_OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:3000/otel
           DEPLOY_REGISTRY_HOST: localhost:5000
           DEPLOY_REGISTRY_NAMESPACE: trigger
           DEPLOY_REGISTRY_USERNAME: registry-user
@@ -132,7 +132,7 @@ let
         environment:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
+          POSTGRES_DB: main
         healthcheck:
           test: ["CMD", "pg_isready", "-U", "postgres"]
           interval: 10s
@@ -389,7 +389,7 @@ in
       adminEmailsFile = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
-        description = "Path to file containing a regex of emails auto-promoted to admin. Null disables.";
+        description = "Path to file containing a regex of emails auto-promoted to admin. When null, ADMIN_EMAILS is set to an empty string in the container (no auto-promotion).";
       };
     };
 
@@ -427,6 +427,21 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !cfg.smtp.enable || cfg.smtp.passwordFile != "";
+        message = "sys.services.trigger: smtp.passwordFile must be set when smtp.enable = true";
+      }
+      {
+        assertion = !cfg.smtp.enable || cfg.smtp.username != "";
+        message = "sys.services.trigger: smtp.username must be set when smtp.enable = true";
+      }
+      {
+        assertion = !cfg.smtp.enable || cfg.smtp.fromEmail != "";
+        message = "sys.services.trigger: smtp.fromEmail must be set when smtp.enable = true";
+      }
+    ];
+
     virtualisation.docker = {
       enable = true;
       daemon.settings = {
@@ -440,7 +455,7 @@ in
         "d ${cfg.dataDir} 0700 root root -"
         "d ${cfg.dataDir}/docker 0700 root root -"
         "d /run/trigger 0700 root root -"
-        "d /run/trigger/registry 0755 root root -"
+        "d /run/trigger/registry 0700 root root -"
       ];
 
       services = {
@@ -490,7 +505,7 @@ in
             # Generate bcrypt htpasswd for the bundled Docker registry.
             REGISTRY_PASSWORD=$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.registryPasswordFile})
             htpasswd -bnBC 10 "registry-user" "$REGISTRY_PASSWORD" > /run/trigger/registry/auth.htpasswd
-            chmod 644 /run/trigger/registry/auth.htpasswd
+            chmod 600 /run/trigger/registry/auth.htpasswd
           '';
         };
 

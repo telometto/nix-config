@@ -47,8 +47,6 @@ in
     };
   };
 
-  networking.firewall.allowedTCPPorts = [ reg.port ];
-
   systemd.tmpfiles.rules = [
     "d /var/lib/trigger 0700 root root -"
   ];
