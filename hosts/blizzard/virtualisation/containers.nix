@@ -21,7 +21,10 @@ in
         ollama.enable = false;
       };
 
-      nominatim-container.enable = true;
+      nominatim-container = {
+        enable = true;
+        replicationUrl = "https://download.geofabrik.de/europe/norway-updates/";
+      };
 
       subgen = {
         enable = false;
