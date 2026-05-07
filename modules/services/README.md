@@ -142,6 +142,14 @@ ______________________________________________________________________
 |-------------|--------------|-----------------|---------|
 | [gitea.nix](gitea.nix) | `sys.services.gitea` | MicroVM | Self-hosted Git forge |
 
+#### Workflow Automation
+
+| Module file | Option prefix | Typical location | Purpose |
+|-------------|--------------|-----------------|---------|
+| [trigger.nix](trigger.nix) | `sys.services.trigger` | MicroVM | Trigger.dev v4 background job and workflow platform |
+
+> **Note:** `sys.services.trigger` runs the full Trigger.dev v4 stack (webapp, supervisor, Postgres, Redis, ClickHouse, ElectricSQL, MinIO, Docker registry) via Docker Compose inside a dedicated MicroVM. Docker is enabled only within this VM; the host continues to use Podman/Quadlet. All internal service ports are bound to `127.0.0.1` inside the VM — only the webapp port (11080) is exposed on the bridge for Traefik.
+
 ______________________________________________________________________
 
 ### MicroVM deployment note

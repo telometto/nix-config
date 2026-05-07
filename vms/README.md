@@ -1,7 +1,7 @@
 ## MicroVM Configurations
 
 Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
-for lightweight virtualization. The flake currently defines 24 MicroVM
+for lightweight virtualization. The flake currently defines 25 MicroVM
 configurations for the `blizzard` host on a `10.100.0.0/24` tap bridge.
 
 ______________________________________________________________________
@@ -38,7 +38,7 @@ flowchart TB
     wg["wireguard-vm\n10.100.0.11\n(VPN gateway)"]
 
     subgraph direct["Direct-routed VMs (via bridge)"]
-        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli"]
+        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli · trigger"]
     end
 
     subgraph wgrouted["WG-routed VMs (traffic via wireguard-vm)"]
@@ -86,6 +86,7 @@ ______________________________________________________________________
 | searx | 10.100.0.12 | 11012 | 2 GB | 1 | Direct | Meta-search engine |
 | sonarr | 10.100.0.21 | 11021 | 1 GB | 1 | Direct | TV PVR |
 | tautulli | 10.100.0.42 | 11042 | 1 GB | 1 | Direct | Plex statistics |
+| trigger | 10.100.0.80 | 11080 | 12 GB | 6 | Direct | Trigger.dev v4 background job platform |
 | wireguard | 10.100.0.11 | 56943 | 512 MB | 1 | Direct | VPN gateway (routes qb/sabnzbd/firefox/brave) |
 
 ______________________________________________________________________
