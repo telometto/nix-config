@@ -138,9 +138,9 @@ in
           if cfg.image != null then
             cfg.image
           else if cfg.gpu.enable then
-            "mccloud/subgen:amd"
+            "docker.io/mccloud/subgen:amd"
           else
-            "mccloud/subgen:cpu";
+            "docker.io/mccloud/subgen:cpu";
         publishPorts = [
           "${toString cfg.port}:9000"
         ];
