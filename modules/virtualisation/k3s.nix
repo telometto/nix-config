@@ -1,6 +1,12 @@
 { lib, config, ... }:
 let
   cfg = config.sys.services.k3s or { };
+
+  ciliumFlags = [
+    "--disable-kube-proxy"
+    "--flannel-backend=none"
+    "--disable-network-policy"
+  ];
 in
 {
   options.sys.services.k3s = {
@@ -19,11 +25,22 @@ in
       };
     };
 
+    # When true, appends --disable-kube-proxy / --flannel-backend=none /
+    # --disable-network-policy so Cilium can take over CNI and kube-proxy.
+    # Keep false (the default) if you are not deploying Cilium; without a CNI
+    # the node will stay NotReady indefinitely.
+    ciliumCni = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable Cilium-compatible k3s flags (disables flannel, kube-proxy, and built-in network policy).";
+    };
+
     extraFlags = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
-        "--snapshotter native"
-        "--disable traefik"
+        "--snapshotter=native"
+        "--disable=traefik"
+        "--disable=servicelb"
         "--kubelet-arg=read-only-port=10255"
       ];
     };
@@ -34,7 +51,8 @@ in
 
     services.k3s = {
       enable = lib.mkDefault true;
-      inherit (cfg) role gracefulNodeShutdown extraFlags;
+      inherit (cfg) role gracefulNodeShutdown;
+      extraFlags = cfg.extraFlags ++ lib.optionals cfg.ciliumCni ciliumFlags;
     };
   };
 }

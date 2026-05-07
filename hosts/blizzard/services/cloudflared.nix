@@ -1,7 +1,7 @@
 { config, VARS, ... }:
 {
   sys.services.cloudflared = {
-    enable = true;
+    enable = false;
 
     tunnelId = "ce54cb73-83b2-4628-8246-26955d280641";
     credentialsFile = config.sys.secrets.cloudflaredCredentialsFile;

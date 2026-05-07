@@ -6,18 +6,34 @@
   ...
 }:
 {
+  # kvm-intel is already loaded via hardware-configuration.nix (Intel CPU); no override needed.
+
   networking = {
     hostName = lib.mkForce "blizzard";
     hostId = lib.mkForce "86bc16e3";
 
-    firewall = rec {
+    firewall = {
       enable = true;
 
-      allowedTCPPorts = [ ];
-      allowedUDPPorts = allowedTCPPorts;
+      # Required for Cilium: pod traffic arrives on veth interfaces with
+      # source IPs outside the expected routing path; strict rp_filter drops it.
+      checkReversePath = false;
+
+      # Trust Cilium's pod veth interfaces (named lxcXXXXXXXX) so pod↔host
+      # traffic (e.g. pods reaching the kube-apiserver) bypasses the INPUT chain.
+      trustedInterfaces = [ "lxc+" ];
+
+      allowedTCPPorts = [
+        4240 # Cilium health check
+        4244 # Hubble server
+        4245 # Hubble relay
+      ];
+      allowedUDPPorts = [ ];
+      # Note: 8472/UDP (VXLAN) is NOT opened — canonical config uses
+      # routingMode: native, not VXLAN overlay.
 
       allowedTCPPortRanges = [ ];
-      allowedUDPPortRanges = allowedTCPPortRanges;
+      allowedUDPPortRanges = [ ];
     };
   };
 
@@ -67,7 +83,18 @@
     # };
 
     services = {
-      k3s.enable = false;
+      k3s = {
+        enable = true;
+        ciliumCni = true;
+        bootstrap = {
+          enable = true;
+          ciliumValuesFile = ./virtualisation/cilium-values.yaml;
+          fluxValuesFile = ./virtualisation/flux-instance-values.yaml;
+          # To fully automate Flux's Git auth on first boot, add the SSH key to
+          # nix-secrets, encrypt with sops, then set:
+          #   fluxGitAuthSecretFile = config.sops.secrets."flux-git-auth".path;
+        };
+      };
 
       resolved = {
         enableDNS = false;
