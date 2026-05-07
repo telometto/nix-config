@@ -448,7 +448,10 @@ in
       requires = [ "sops-install-secrets.service" ];
       before = [ "trigger-compose.service" ];
       requiredBy = [ "trigger-compose.service" ];
-      path = [ pkgs.apacheHttpd pkgs.coreutils ];
+      path = [
+        pkgs.apacheHttpd
+        pkgs.coreutils
+      ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -465,19 +468,19 @@ in
           printf 'REGISTRY_PASSWORD=%s\n'     "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.registryPasswordFile})"
           printf 'MINIO_PASSWORD=%s\n'        "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.minioPasswordFile})"
           ${lib.optionalString cfg.smtp.enable ''
-          printf 'EMAIL_TRANSPORT=smtp\n'
-          printf 'FROM_EMAIL=${cfg.smtp.fromEmail}\n'
-          printf 'REPLY_TO_EMAIL=${cfg.smtp.fromEmail}\n'
-          printf 'SMTP_HOST=${cfg.smtp.host}\n'
-          printf 'SMTP_PORT=${toString cfg.smtp.port}\n'
-          printf 'SMTP_USER=${cfg.smtp.username}\n'
-          printf 'SMTP_PASSWORD=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.smtp.passwordFile})"
+            printf 'EMAIL_TRANSPORT=smtp\n'
+            printf 'FROM_EMAIL=${cfg.smtp.fromEmail}\n'
+            printf 'REPLY_TO_EMAIL=${cfg.smtp.fromEmail}\n'
+            printf 'SMTP_HOST=${cfg.smtp.host}\n'
+            printf 'SMTP_PORT=${toString cfg.smtp.port}\n'
+            printf 'SMTP_USER=${cfg.smtp.username}\n'
+            printf 'SMTP_PASSWORD=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.smtp.passwordFile})"
           ''}
           ${lib.optionalString (cfg.auth.whitelistedEmailsFile != null) ''
-          printf 'WHITELISTED_EMAILS=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.auth.whitelistedEmailsFile})"
+            printf 'WHITELISTED_EMAILS=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.auth.whitelistedEmailsFile})"
           ''}
           ${lib.optionalString (cfg.auth.adminEmailsFile != null) ''
-          printf 'ADMIN_EMAILS=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.auth.adminEmailsFile})"
+            printf 'ADMIN_EMAILS=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.auth.adminEmailsFile})"
           ''}
         } > /run/trigger/compose.env
         chmod 600 /run/trigger/compose.env
