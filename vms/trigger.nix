@@ -55,7 +55,7 @@ in
 
   sys.services.trigger = {
     enable = true;
-    port = reg.port;
+    inherit (reg) port;
     appOrigin = "https://triggers.${VARS.domains.public}";
 
     smtp = {

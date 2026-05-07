@@ -65,7 +65,7 @@ let
         user: root
         command: sh -c "chown -R node:node /home/node/shared && exec ./scripts/entrypoint.sh"
         healthcheck:
-          test: ["CMD", "node", "-e", "http.get('http://localhost:3000/healthcheck', res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+          test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/healthcheck', res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
           interval: 30s
           timeout: 10s
           retries: 5
@@ -272,7 +272,7 @@ let
           DOCKER_AUTOREMOVE_EXITED_CONTAINERS: "0"
           ENFORCE_MACHINE_PRESETS: "1"
         healthcheck:
-          test: ["CMD", "node", "-e", "http.get('http://localhost:8020/health', res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+          test: ["CMD", "node", "-e", "require('http').get('http://localhost:8020/health', res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
           interval: 30s
           timeout: 10s
           retries: 5
@@ -435,86 +435,90 @@ in
       };
     };
 
-    systemd.tmpfiles.rules = [
-      "d ${cfg.dataDir} 0700 root root -"
-      "d ${cfg.dataDir}/docker 0700 root root -"
-      "d /run/trigger 0700 root root -"
-      "d /run/trigger/registry 0755 root root -"
-    ];
-
-    systemd.services.trigger-setup = {
-      description = "Build trigger.dev runtime env file and registry credentials from sops secrets";
-      after = [ "sops-install-secrets.service" ];
-      requires = [ "sops-install-secrets.service" ];
-      before = [ "trigger-compose.service" ];
-      requiredBy = [ "trigger-compose.service" ];
-      path = [
-        pkgs.apacheHttpd
-        pkgs.coreutils
+    systemd = {
+      tmpfiles.rules = [
+        "d ${cfg.dataDir} 0700 root root -"
+        "d ${cfg.dataDir}/docker 0700 root root -"
+        "d /run/trigger 0700 root root -"
+        "d /run/trigger/registry 0755 root root -"
       ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
+
+      services = {
+        trigger-setup = {
+          description = "Build trigger.dev runtime env file and registry credentials from sops secrets";
+          after = [ "sops-install-secrets.service" ];
+          requires = [ "sops-install-secrets.service" ];
+          before = [ "trigger-compose.service" ];
+          requiredBy = [ "trigger-compose.service" ];
+          path = [
+            pkgs.apacheHttpd
+            pkgs.coreutils
+          ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          script = ''
+            set -euo pipefail
+
+            # Write runtime env file with all secrets for docker-compose substitution.
+            {
+              printf 'SESSION_SECRET=%s\n'        "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.sessionSecretFile})"
+              printf 'MAGIC_LINK_SECRET=%s\n'     "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.magicLinkSecretFile})"
+              printf 'ENCRYPTION_KEY=%s\n'        "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.encryptionKeyFile})"
+              printf 'MANAGED_WORKER_SECRET=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.managedWorkerSecretFile})"
+              printf 'REGISTRY_PASSWORD=%s\n'     "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.registryPasswordFile})"
+              printf 'MINIO_PASSWORD=%s\n'        "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.minioPasswordFile})"
+              ${lib.optionalString cfg.smtp.enable ''
+                printf 'EMAIL_TRANSPORT=smtp\n'
+                printf 'FROM_EMAIL=${cfg.smtp.fromEmail}\n'
+                printf 'REPLY_TO_EMAIL=${cfg.smtp.fromEmail}\n'
+                printf 'SMTP_HOST=${cfg.smtp.host}\n'
+                printf 'SMTP_PORT=${toString cfg.smtp.port}\n'
+                printf 'SMTP_USER=${cfg.smtp.username}\n'
+                printf 'SMTP_PASSWORD=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.smtp.passwordFile})"
+              ''}
+              ${lib.optionalString (cfg.auth.whitelistedEmailsFile != null) ''
+                printf 'WHITELISTED_EMAILS=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.auth.whitelistedEmailsFile})"
+              ''}
+              ${lib.optionalString (cfg.auth.adminEmailsFile != null) ''
+                printf 'ADMIN_EMAILS=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.auth.adminEmailsFile})"
+              ''}
+            } > /run/trigger/compose.env
+            chmod 600 /run/trigger/compose.env
+
+            # Generate bcrypt htpasswd for the bundled Docker registry.
+            REGISTRY_PASSWORD=$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.registryPasswordFile})
+            htpasswd -bnBC 10 "registry-user" "$REGISTRY_PASSWORD" > /run/trigger/registry/auth.htpasswd
+            chmod 644 /run/trigger/registry/auth.htpasswd
+          '';
+        };
+
+        trigger-compose = {
+          description = "trigger.dev v4 docker-compose stack";
+          after = [
+            "docker.service"
+            "trigger-setup.service"
+            "network-online.target"
+          ];
+          requires = [
+            "docker.service"
+            "trigger-setup.service"
+          ];
+          wants = [ "network-online.target" ];
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            ExecStart = "${pkgs.docker}/bin/docker compose -f ${composeFile} --env-file /run/trigger/compose.env --project-directory ${cfg.dataDir} up -d --remove-orphans";
+            ExecStop = "${pkgs.docker}/bin/docker compose -f ${composeFile} --project-directory ${cfg.dataDir} down";
+            TimeoutStartSec = "300";
+            TimeoutStopSec = "120";
+          };
+        };
       };
-      script = ''
-        set -euo pipefail
-
-        # Write runtime env file with all secrets for docker-compose substitution.
-        {
-          printf 'SESSION_SECRET=%s\n'        "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.sessionSecretFile})"
-          printf 'MAGIC_LINK_SECRET=%s\n'     "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.magicLinkSecretFile})"
-          printf 'ENCRYPTION_KEY=%s\n'        "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.encryptionKeyFile})"
-          printf 'MANAGED_WORKER_SECRET=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.managedWorkerSecretFile})"
-          printf 'REGISTRY_PASSWORD=%s\n'     "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.registryPasswordFile})"
-          printf 'MINIO_PASSWORD=%s\n'        "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.minioPasswordFile})"
-          ${lib.optionalString cfg.smtp.enable ''
-            printf 'EMAIL_TRANSPORT=smtp\n'
-            printf 'FROM_EMAIL=${cfg.smtp.fromEmail}\n'
-            printf 'REPLY_TO_EMAIL=${cfg.smtp.fromEmail}\n'
-            printf 'SMTP_HOST=${cfg.smtp.host}\n'
-            printf 'SMTP_PORT=${toString cfg.smtp.port}\n'
-            printf 'SMTP_USER=${cfg.smtp.username}\n'
-            printf 'SMTP_PASSWORD=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.smtp.passwordFile})"
-          ''}
-          ${lib.optionalString (cfg.auth.whitelistedEmailsFile != null) ''
-            printf 'WHITELISTED_EMAILS=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.auth.whitelistedEmailsFile})"
-          ''}
-          ${lib.optionalString (cfg.auth.adminEmailsFile != null) ''
-            printf 'ADMIN_EMAILS=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.auth.adminEmailsFile})"
-          ''}
-        } > /run/trigger/compose.env
-        chmod 600 /run/trigger/compose.env
-
-        # Generate bcrypt htpasswd for the bundled Docker registry.
-        REGISTRY_PASSWORD=$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.registryPasswordFile})
-        htpasswd -bnBC 10 "registry-user" "$REGISTRY_PASSWORD" > /run/trigger/registry/auth.htpasswd
-        chmod 644 /run/trigger/registry/auth.htpasswd
-      '';
     };
 
     networking.firewall.allowedTCPPorts = [ cfg.port ];
-
-    systemd.services.trigger-compose = {
-      description = "trigger.dev v4 docker-compose stack";
-      after = [
-        "docker.service"
-        "trigger-setup.service"
-        "network-online.target"
-      ];
-      requires = [
-        "docker.service"
-        "trigger-setup.service"
-      ];
-      wants = [ "network-online.target" ];
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = "${pkgs.docker}/bin/docker compose -f ${composeFile} --env-file /run/trigger/compose.env --project-directory ${cfg.dataDir} up -d --remove-orphans";
-        ExecStop = "${pkgs.docker}/bin/docker compose -f ${composeFile} --project-directory ${cfg.dataDir} down";
-        TimeoutStartSec = "300";
-        TimeoutStopSec = "120";
-      };
-    };
   };
 }
