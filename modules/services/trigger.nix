@@ -266,7 +266,7 @@ let
           TRIGGER_WORKLOAD_API_PORT_EXTERNAL: "8020"
           DOCKER_HOST: tcp://docker-proxy:2375
           DOCKER_RUNNER_NETWORKS: webapp,supervisor
-          DOCKER_REGISTRY_URL: registry:5000
+          DOCKER_REGISTRY_URL: localhost:5000
           DOCKER_REGISTRY_USERNAME: registry-user
           DOCKER_REGISTRY_PASSWORD: ${dol}{REGISTRY_PASSWORD}
           DOCKER_AUTOREMOVE_EXITED_CONTAINERS: "0"
