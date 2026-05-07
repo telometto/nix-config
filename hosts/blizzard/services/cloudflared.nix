@@ -12,6 +12,7 @@
       "dashboard.${VARS.domains.public}" = "http://localhost:80";
       "metrics.${VARS.domains.public}" = "http://localhost:80";
       "lingarr.${VARS.domains.public}" = "http://localhost:80";
+      "nominatim.${VARS.domains.public}" = "http://localhost:80";
     };
   };
 }

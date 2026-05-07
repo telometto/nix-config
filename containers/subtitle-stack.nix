@@ -147,7 +147,7 @@ in
           lingarr = {
             autoStart = true;
             containerConfig = {
-              image = "lingarr/lingarr:latest";
+              image = "docker.io/lingarr/lingarr:latest";
               environments = {
                 ASPNETCORE_URLS = "http://+:9876";
                 MAX_CONCURRENT_JOBS = "1";
@@ -175,7 +175,7 @@ in
           libretranslate = {
             autoStart = true;
             containerConfig = {
-              image = "libretranslate/libretranslate:latest";
+              image = "docker.io/libretranslate/libretranslate:latest";
               environments = {
                 LT_LOAD_ONLY = "en,it,nb";
               };
@@ -191,7 +191,7 @@ in
           ollama = {
             autoStart = true;
             containerConfig = {
-              image = "ollama/ollama:latest";
+              image = "docker.io/ollama/ollama:latest";
               volumes = [
                 "${cfgLingarr.dataDir}/ollama:/root/.ollama"
               ];
@@ -204,7 +204,7 @@ in
           subgen = {
             autoStart = true;
             containerConfig = {
-              image = "mccloud/subgen";
+              image = "docker.io/mccloud/subgen";
               environments = {
                 WHISPER_MODEL = cfgSubgen.whisperModel;
                 WHISPER_THREADS = "6";
