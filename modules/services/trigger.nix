@@ -607,7 +607,7 @@ in
             }
 
             # Skip all checks on a first-ever install (goose_db_version does not exist yet).
-            GOOSE_TABLE=$(ch "SELECT count() FROM system.tables WHERE name='goose_db_version'" 2>/dev/null || echo 0)
+            GOOSE_TABLE=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='goose_db_version'" 2>/dev/null || echo 0)
             [ "$GOOSE_TABLE" = "0" ] && exit 0
 
             # Migration 003: task_runs_v1 + raw_task_runs_payload_v1 created,
