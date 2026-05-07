@@ -42,14 +42,12 @@ in
       "trigger/managed_worker_secret".mode = "0400";
       "trigger/registry_password".mode = "0400";
       "trigger/minio_password".mode = "0400";
+      "trigger/postgres_password".mode = "0400";
+      "trigger/clickhouse_password".mode = "0400";
       "trigger/whitelisted_emails".mode = "0400";
       "protonmail/smtp_token".mode = "0400";
     };
   };
-
-  systemd.tmpfiles.rules = [
-    "d /var/lib/trigger 0700 root root -"
-  ];
 
   sys.services.trigger = {
     enable = true;
@@ -77,6 +75,8 @@ in
       managedWorkerSecretFile = config.sops.secrets."trigger/managed_worker_secret".path;
       registryPasswordFile = config.sops.secrets."trigger/registry_password".path;
       minioPasswordFile = config.sops.secrets."trigger/minio_password".path;
+      postgresPasswordFile = config.sops.secrets."trigger/postgres_password".path;
+      clickhousePasswordFile = config.sops.secrets."trigger/clickhouse_password".path;
     };
   };
 }
