@@ -36,6 +36,10 @@ let
         "crowdsec"
       ];
     };
+    nominatim = {
+      subdomain = "nominatim";
+      url = "http://127.0.0.1:11080";
+    };
   };
   generated = traefikLib.mkRoutes { domain = VARS.domains.public; } (generatedVmRoutes // hostRoutes);
   matrixSynapseEnabled = vmInstances."matrix-synapse".enable or false;

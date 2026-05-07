@@ -12,12 +12,18 @@ in
   home-manager.users.${username} = {
     imports = [
       ../../../containers/subtitle-stack.nix
+      ../../../containers/nominatim.nix
     ];
 
     services = {
       lingarr = {
         enable = true;
         ollama.enable = false;
+      };
+
+      nominatim-container = {
+        enable = true;
+        replicationUrl = "https://download.geofabrik.de/europe/norway-updates/";
       };
 
       subgen = {

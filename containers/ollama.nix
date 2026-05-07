@@ -23,7 +23,7 @@ in
     image = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Container image to use. Defaults to ollama/ollama:rocm when gpu.enable is true, ollama/ollama:latest otherwise.";
+      description = "Container image to use. Defaults to docker.io/ollama/ollama:rocm when gpu.enable is true, docker.io/ollama/ollama:latest otherwise.";
     };
 
     extraEnvironments = lib.mkOption {
@@ -53,9 +53,9 @@ in
           if cfg.image != null then
             cfg.image
           else if cfg.gpu.enable then
-            "ollama/ollama:rocm"
+            "docker.io/ollama/ollama:rocm"
           else
-            "ollama/ollama:latest";
+            "docker.io/ollama/ollama:latest";
         publishPorts = [
           "${toString cfg.port}:11434"
         ];
