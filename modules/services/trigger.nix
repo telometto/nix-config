@@ -571,6 +571,7 @@ in
           path = [
             pkgs.docker
             pkgs.coreutils
+            pkgs.gnugrep
           ];
           serviceConfig = {
             Type = "oneshot";
@@ -595,11 +596,14 @@ in
               [ "$STATUS" = "healthy" ] && break
               sleep 1
             done
+            [ "$STATUS" = "healthy" ] || { echo "ClickHouse did not become healthy after 60 s"; exit 1; }
 
-            CHPASS=$(grep '^CLICKHOUSE_PASSWORD=' /run/trigger/compose.env | cut -d= -f2 | tr -d '\n')
+            line=$(grep '^CLICKHOUSE_PASSWORD=' /run/trigger/compose.env)
+            CHPASS=''${line#CLICKHOUSE_PASSWORD=}
             ch() {
               ${pkgs.docker}/bin/docker exec trigger-clickhouse-1 \
-                clickhouse-client --user default --password "$CHPASS" --query "$1"
+                clickhouse-client --user default --password "$CHPASS" \
+                --database trigger_dev --query "$1"
             }
 
             # Skip all checks on a first-ever install (goose_db_version does not exist yet).
