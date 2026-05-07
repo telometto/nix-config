@@ -617,7 +617,7 @@ in
             TNAME=task_runs_v1
             if [ "$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='$TNAME'" 2>/dev/null || echo 0)" = "1" ] && \
                [ "$(ch "SELECT count() FROM goose_db_version WHERE version_id=3 AND is_applied=1" 2>/dev/null || echo 0)" = "0" ]; then
-              ch "INSERT INTO goose_db_version (version_id, is_applied) VALUES (3, 1)" || true
+              ch "INSERT INTO goose_db_version (version_id, is_applied) VALUES (3, 1)"
             fi
 
             # Migration 004: task_runs_v2.  Apply the same guard in case the
@@ -625,7 +625,7 @@ in
             TNAME=task_runs_v2
             if [ "$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='$TNAME'" 2>/dev/null || echo 0)" = "1" ] && \
                [ "$(ch "SELECT count() FROM goose_db_version WHERE version_id=4 AND is_applied=1" 2>/dev/null || echo 0)" = "0" ]; then
-              ch "INSERT INTO goose_db_version (version_id, is_applied) VALUES (4, 1)" || true
+              ch "INSERT INTO goose_db_version (version_id, is_applied) VALUES (4, 1)"
             fi
           '';
         };
