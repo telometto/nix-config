@@ -345,7 +345,11 @@ in
 
     clickhouseImageTag = lib.mkOption {
       type = lib.types.str;
-      default = "25.3.2";
+      # 24.12 is the last release before ClickHouse 25.x introduced a
+      # restriction that breaks trigger.dev migration 003 (CREATE VIEW with
+      # JSON/Dynamic columns).  The trigger-ch-migrate-fixup service handles
+      # the symptom, but pinning here avoids hitting the bug entirely.
+      default = "24.12";
       description = "Docker image tag for bitnamilegacy/clickhouse.";
     };
 
@@ -424,7 +428,10 @@ in
 
       encryptionKeyFile = lib.mkOption {
         type = lib.types.str;
-        description = "Path to 32-hex-char ENCRYPTION_KEY (openssl rand -hex 16).";
+        # The webapp enforces Buffer.from(val, "utf8").length === 32 at startup.
+        # openssl rand -hex 16 produces exactly 32 ASCII hex characters (= 32 bytes).
+        # openssl rand -hex 32 produces 64 characters and will be rejected.
+        description = "Path to ENCRYPTION_KEY file. Must contain exactly 32 ASCII characters after stripping newlines (openssl rand -hex 16).";
       };
 
       managedWorkerSecretFile = lib.mkOption {
@@ -539,16 +546,105 @@ in
           '';
         };
 
-        trigger-compose = {
-          description = "trigger.dev v4 docker-compose stack";
+        # Migration 003 in trigger.dev 4.x attempts to CREATE VIEW with
+        # JSON/Dynamic columns, which ClickHouse 25.x rejects.  Because
+        # ClickHouse DDL is non-transactional, the tables created earlier in
+        # the same migration file persist, but goose never writes the version
+        # record.  On every subsequent start the webapp retries the migration
+        # and hits TABLE_ALREADY_EXISTS, crash-looping forever.
+        #
+        # This service boots ClickHouse alone, detects the inconsistency, and
+        # inserts the missing goose_db_version records so the webapp can
+        # proceed normally when trigger-compose starts the full stack.
+        trigger-ch-migrate-fixup = {
+          description = "Repair trigger.dev ClickHouse goose migration state before stack startup";
           after = [
             "docker.service"
             "trigger-setup.service"
             "network-online.target"
           ];
+          wants = [ "network-online.target" ];
           requires = [
             "docker.service"
             "trigger-setup.service"
+          ];
+          before = [ "trigger-compose.service" ];
+          requiredBy = [ "trigger-compose.service" ];
+          path = [
+            pkgs.docker
+            pkgs.coreutils
+            pkgs.gnugrep
+          ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            TimeoutStartSec = "300";
+          };
+          script = ''
+            set -euo pipefail
+
+            # Boot ClickHouse alone so we can inspect migration state.
+            # trigger-compose will start the full stack afterwards; it will
+            # find ClickHouse already running and not restart it.
+            ${pkgs.docker}/bin/docker compose \
+              -f ${composeFile} \
+              --env-file /run/trigger/compose.env \
+              --project-directory ${cfg.dataDir} \
+              up -d clickhouse
+
+            # Wait up to 60 s for ClickHouse to become healthy.
+            for i in $(seq 1 60); do
+              STATUS=$(${pkgs.docker}/bin/docker inspect \
+                --format '{{.State.Health.Status}}' trigger-clickhouse-1 2>/dev/null || true)
+              [ "$STATUS" = "healthy" ] && break
+              sleep 1
+            done
+            [ "$STATUS" = "healthy" ] || { echo "ClickHouse did not become healthy after 60 s"; exit 1; }
+
+            line=$(grep '^CLICKHOUSE_PASSWORD=' /run/trigger/compose.env)
+            CHPASS=''${line#CLICKHOUSE_PASSWORD=}
+            ch() {
+              ${pkgs.docker}/bin/docker exec trigger-clickhouse-1 \
+                clickhouse-client --user default --password "$CHPASS" \
+                --database trigger_dev --query "$1"
+            }
+
+            # Skip all checks on a first-ever install (goose_db_version does not exist yet).
+            GOOSE_TABLE=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='goose_db_version'")
+            [ "$GOOSE_TABLE" = "0" ] && exit 0
+
+            # Migration 003: task_runs_v1 + raw_task_runs_payload_v1 created,
+            # but the trailing CREATE VIEW fails on ClickHouse 25.x (JSON/Dynamic
+            # columns not allowed in Views).  Mark applied if the table exists
+            # but the version record is missing.
+            TABLE_003=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='task_runs_v1'")
+            VER_003=$(ch "SELECT count() FROM goose_db_version WHERE version_id=3 AND is_applied=1")
+            if [ "$TABLE_003" = "1" ] && [ "$VER_003" = "0" ]; then
+              ch "INSERT INTO goose_db_version (version_id, is_applied) VALUES (3, 1)"
+            fi
+
+            # Migration 004: task_runs_v2.  Apply the same guard in case the
+            # data volume outlived a goose_db_version reset.
+            TABLE_004=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='task_runs_v2'")
+            VER_004=$(ch "SELECT count() FROM goose_db_version WHERE version_id=4 AND is_applied=1")
+            if [ "$TABLE_004" = "1" ] && [ "$VER_004" = "0" ]; then
+              ch "INSERT INTO goose_db_version (version_id, is_applied) VALUES (4, 1)"
+            fi
+          '';
+        };
+
+        trigger-compose = {
+          description = "trigger.dev v4 docker-compose stack";
+          after = [
+            "docker.service"
+            "trigger-setup.service"
+            "trigger-ch-migrate-fixup.service"
+            "network-online.target"
+          ];
+          requires = [
+            "docker.service"
+            "trigger-setup.service"
+            "trigger-ch-migrate-fixup.service"
           ];
           wants = [ "network-online.target" ];
           wantedBy = [ "multi-user.target" ];
