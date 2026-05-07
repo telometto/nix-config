@@ -298,6 +298,18 @@ let
         ];
       };
     };
+
+    trigger = {
+      enable = true;
+      reverseProxy = {
+        subdomain = "triggers";
+        url = vmUrl "trigger";
+        middlewares = [
+          "security-headers"
+          "crowdsec"
+        ];
+      };
+    };
   };
 in
 {
