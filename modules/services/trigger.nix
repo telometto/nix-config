@@ -178,7 +178,7 @@ let
           start_period: 10s
 
       clickhouse:
-        image: bitnamilegacy/clickhouse:latest
+        image: bitnamilegacy/clickhouse:${cfg.clickhouseImageTag}
         restart: unless-stopped
         logging: *logging-config
         ports:
@@ -221,7 +221,7 @@ let
           start_period: 10s
 
       minio:
-        image: bitnamilegacy/minio:latest
+        image: bitnamilegacy/minio:${cfg.minioImageTag}
         restart: unless-stopped
         logging: *logging-config
         ports:
@@ -279,7 +279,7 @@ let
           start_period: 10s
 
       docker-proxy:
-        image: tecnativa/docker-socket-proxy:latest
+        image: tecnativa/docker-socket-proxy:${cfg.dockerSocketProxyImageTag}
         restart: unless-stopped
         logging: *logging-config
         volumes:
@@ -341,6 +341,24 @@ in
       type = lib.types.str;
       default = "/var/lib/trigger";
       description = "Persistent volume root; Docker's data-root lives at <dataDir>/docker.";
+    };
+
+    clickhouseImageTag = lib.mkOption {
+      type = lib.types.str;
+      default = "25.3.2";
+      description = "Docker image tag for bitnamilegacy/clickhouse.";
+    };
+
+    minioImageTag = lib.mkOption {
+      type = lib.types.str;
+      default = "2025.4.22";
+      description = "Docker image tag for bitnamilegacy/minio.";
+    };
+
+    dockerSocketProxyImageTag = lib.mkOption {
+      type = lib.types.str;
+      default = "0.3.0";
+      description = "Docker image tag for tecnativa/docker-socket-proxy.";
     };
 
     smtp = {
@@ -486,11 +504,11 @@ in
               printf 'MINIO_PASSWORD=%s\n'        "$(tr -d '\n' < ${lib.escapeShellArg cfg.secrets.minioPasswordFile})"
               ${lib.optionalString cfg.smtp.enable ''
                 printf 'EMAIL_TRANSPORT=smtp\n'
-                printf 'FROM_EMAIL=${cfg.smtp.fromEmail}\n'
-                printf 'REPLY_TO_EMAIL=${cfg.smtp.fromEmail}\n'
-                printf 'SMTP_HOST=${cfg.smtp.host}\n'
-                printf 'SMTP_PORT=${toString cfg.smtp.port}\n'
-                printf 'SMTP_USER=${cfg.smtp.username}\n'
+                printf 'FROM_EMAIL=%s\n'    ${lib.escapeShellArg cfg.smtp.fromEmail}
+                printf 'REPLY_TO_EMAIL=%s\n' ${lib.escapeShellArg cfg.smtp.fromEmail}
+                printf 'SMTP_HOST=%s\n'    ${lib.escapeShellArg cfg.smtp.host}
+                printf 'SMTP_PORT=%s\n'    ${lib.escapeShellArg (toString cfg.smtp.port)}
+                printf 'SMTP_USER=%s\n'    ${lib.escapeShellArg cfg.smtp.username}
                 printf 'SMTP_PASSWORD=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg cfg.smtp.passwordFile})"
               ''}
               ${lib.optionalString (cfg.auth.whitelistedEmailsFile != null) ''
