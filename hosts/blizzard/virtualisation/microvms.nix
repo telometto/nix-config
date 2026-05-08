@@ -306,7 +306,7 @@ let
         subdomain = "triggers";
         url = vmUrl "trigger";
         middlewares = [
-          "security-headers"
+          "trigger-headers"
           "crowdsec"
         ];
       };
