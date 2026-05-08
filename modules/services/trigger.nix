@@ -462,6 +462,17 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # rp_filter=1 (strict) drops inter-container packets on Docker bridge networks
+    # because the return route for a container source IP goes out the bridge
+    # interface, not the veth the packet arrived on.  Loose mode (2) accepts
+    # packets as long as the source IP is routable by any route, which is
+    # sufficient for the isolated VM threat model while still dropping
+    # completely unroutable (spoofed) source addresses.
+    boot.kernel.sysctl = {
+      "net.ipv4.conf.all.rp_filter" = lib.mkForce 2;
+      "net.ipv4.conf.default.rp_filter" = lib.mkForce 2;
+    };
+
     assertions = [
       {
         assertion = !cfg.smtp.enable || cfg.smtp.passwordFile != "";
@@ -609,7 +620,15 @@ in
                 --database trigger_dev --query "$1"
             }
 
-            # Skip all checks on a first-ever install (goose_db_version does not exist yet).
+            # Skip all checks on a first-ever install: trigger_dev database does not exist yet.
+            # NOTE: do NOT use ch() here — it passes --database trigger_dev, which makes
+            # ClickHouse throw UNKNOWN_DATABASE (exit 81) before the query can run.
+            DB_EXISTS=$(${pkgs.docker}/bin/docker exec trigger-clickhouse-1 \
+              clickhouse-client --user default --password "$CHPASS" \
+              --query "SELECT count() FROM system.databases WHERE name='trigger_dev'")
+            [ "$DB_EXISTS" = "0" ] && exit 0
+
+            # trigger_dev exists — skip if goose_db_version table has not been created yet.
             GOOSE_TABLE=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='goose_db_version'")
             [ "$GOOSE_TABLE" = "0" ] && exit 0
 
