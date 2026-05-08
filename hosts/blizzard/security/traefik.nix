@@ -150,6 +150,10 @@ in
             csp = null;
           };
 
+          trigger-headers = traefikLib.mkSecurityHeaders {
+            csp = null;
+          };
+
           # Matrix needs relaxed headers: no CSP (Element/clients make
           # cross-origin requests) and DENY framing to prevent click-jacking.
           # CORS headers are set here so browsers (and tools like the Matrix
