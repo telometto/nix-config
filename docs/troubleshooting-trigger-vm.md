@@ -1,10 +1,10 @@
 # Trigger VM — Troubleshooting Log
 
-**Date:** 2026-05-08  
-**VM:** `trigger-vm` (`admin@10.100.0.80`)  
+**Date:** 2026-05-08\
+**VM:** `trigger-vm` (`admin@10.100.0.80`)\
 **Reported issue:** `trigger-ch-migrate-fixup.service` fails → `trigger-compose.service` never starts.
 
----
+______________________________________________________________________
 
 ## Symptom
 
@@ -19,7 +19,7 @@ May 08 08:28:20 trigger-vm trigger-ch-migrate-fixup-start[2334]:
 
 `trigger-compose.service` is `inactive (dead)` because its `Requires=` on the fixup service was not satisfied.
 
----
+______________________________________________________________________
 
 ## Initial Code Analysis (from nix-config)
 
@@ -28,10 +28,10 @@ The relevant service is defined in `modules/services/trigger.nix`.
 The `trigger-ch-migrate-fixup` script:
 
 1. Starts only the ClickHouse container (`docker compose up -d clickhouse`).
-2. Waits up to 60 s for it to become healthy.
-3. Extracts `CLICKHOUSE_PASSWORD` from `/run/trigger/compose.env`.
-4. Defines a helper `ch()` that runs `clickhouse-client --database trigger_dev`.
-5. Uses `ch()` for the **very first check** — a query against `system.tables`:
+1. Waits up to 60 s for it to become healthy.
+1. Extracts `CLICKHOUSE_PASSWORD` from `/run/trigger/compose.env`.
+1. Defines a helper `ch()` that runs `clickhouse-client --database trigger_dev`.
+1. Uses `ch()` for the **very first check** — a query against `system.tables`:
    ```bash
    GOOSE_TABLE=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='goose_db_version'")
    [ "$GOOSE_TABLE" = "0" ] && exit 0
@@ -39,7 +39,7 @@ The `trigger-ch-migrate-fixup` script:
 
 **Root-cause hypothesis (pre-SSH):** The `ch()` helper passes `--database trigger_dev` to every invocation of `clickhouse-client`. On a fresh install (or after a data-volume wipe) the `trigger_dev` database does not yet exist. The intent is to detect this case (`GOOSE_TABLE = 0`) and bail early, but the `--database` flag forces ClickHouse to switch to `trigger_dev` *before* running the query, producing exit code 81 (`UNKNOWN_DATABASE`) before the result can be returned. The early-exit guard never fires.
 
----
+______________________________________________________________________
 
 ## SSH Investigation
 
@@ -113,7 +113,7 @@ which also matches veth link-type interfaces. This caused two problems:
 
 1. **networkd "claimed" each veth**, preventing Docker from running
    `ip link set vethXXX master br-YYY` — hence `brif/` always empty.
-2. **Route table pollution** — the VM's static LAN routes were injected into
+1. **Route table pollution** — the VM's static LAN routes were injected into
    every new veth, breaking Docker's own routing.
 
 Secondary blocker also found: `base.nix` sets `rp_filter = 1` (strict), which
@@ -121,7 +121,7 @@ would additionally drop inter-container packets even if the bridge were
 attached, because return packets arrive on the bridge but the routing table
 routes the source subnet via the veth.
 
----
+______________________________________________________________________
 
 ## Fix
 
@@ -189,7 +189,7 @@ network.
 > The proper fix is in the Nix config (see fixes 2 and 3 above) and must be
 > deployed via a NixOS rebuild on Blizzard once CI validates it.
 
----
+______________________________________________________________________
 
 ## Remaining work
 
