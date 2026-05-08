@@ -45,7 +45,6 @@ in
       "trigger/postgres_password".mode = "0400";
       "trigger/clickhouse_password".mode = "0400";
       "trigger/whitelisted_emails".mode = "0400";
-      "gmail/username".mode = "0400";
       "gmail/trigger_dev".mode = "0400";
     };
   };
@@ -59,8 +58,8 @@ in
       enable = true;
       host = "smtp.gmail.com";
       port = 587;
-      username = config.sops.secrets."gmail/username".path;
-      fromEmail = config.sops.secrets."gmail/username".path;
+      username = VARS.svc.trigger.username;
+      fromEmail = VARS.svc.trigger.username;
       passwordFile = config.sops.secrets."gmail/trigger_dev".path;
     };
 
