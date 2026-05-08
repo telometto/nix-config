@@ -68,7 +68,10 @@
   };
 
   systemd.network.networks."20-lan" = {
-    matchConfig.Type = "ether";
+    # Match the VM's primary NIC by its fixed MAC address so only the virtio
+    # interface gets the static LAN config; no other interface (Docker veth,
+    # future ether device, etc.) can accidentally match this unit.
+    matchConfig.MACAddress = mac;
     networkConfig = {
       Address = [ "${ip}/24" ];
       Gateway = gateway;
@@ -77,4 +80,11 @@
     };
   }
   // lib.optionalAttrs (extraRoutes != [ ]) { routes = extraRoutes; };
+
+  # Explicitly tell systemd-networkd to leave Docker veth and bridge
+  # interfaces unmanaged so Docker can configure them freely.
+  systemd.network.networks."99-docker-ignore" = {
+    matchConfig.Name = "veth* br-* docker*";
+    linkConfig.Unmanaged = true;
+  };
 }
