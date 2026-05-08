@@ -45,7 +45,8 @@ in
       "trigger/postgres_password".mode = "0400";
       "trigger/clickhouse_password".mode = "0400";
       "trigger/whitelisted_emails".mode = "0400";
-      "protonmail/smtp_token".mode = "0400";
+      "gmail/username".mode = "0400";
+      "gmail/trigger_dev".mode = "0400";
     };
   };
 
@@ -56,11 +57,11 @@ in
 
     smtp = {
       enable = true;
-      host = "smtp.protonmail.ch";
+      host = "smtp.gmail.com";
       port = 587;
-      username = "triggers@${VARS.domains.public}";
-      fromEmail = "triggers@${VARS.domains.public}";
-      passwordFile = config.sops.secrets."protonmail/smtp_token".path;
+      username = config.sops.secrets."gmail/username".path;
+      fromEmail = config.sops.secrets."gmail/username".path;
+      passwordFile = config.sops.secrets."gmail/trigger_dev".path;
     };
 
     auth = {
