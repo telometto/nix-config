@@ -26,7 +26,12 @@
     ];
 
     kernel.sysctl = {
-      # Network security: enable reverse path filtering to prevent IP spoofing
+      # Strict reverse-path filtering: drop packets whose source IP's best
+      # return route does not use the same interface the packet arrived on.
+      # This is the correct default for all VMs.  Services that run Docker
+      # (trigger-vm) override this to 2 (loose) in their own config because
+      # Docker bridge networking creates asymmetric routing that strict mode
+      # would otherwise drop.
       "net.ipv4.conf.all.rp_filter" = 1;
       "net.ipv4.conf.default.rp_filter" = 1;
 

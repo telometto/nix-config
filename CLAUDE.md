@@ -4,6 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+> **Note:** `nixos-rebuild`, `nix build`, and `nix flake check` all pull the
+> private `nix-secrets` flake via SSH (`git+ssh://git@github.com/telometto/nix-secrets`).
+> They will fail with a publickey error without the corresponding SSH key.
+> CI is the source of truth for build validation.
+
 ```bash
 # Apply configuration to current host
 sudo nixos-rebuild switch --flake .#<hostname>
@@ -24,7 +29,7 @@ Hosts: `snowfall` (desktop/KDE), `blizzard` (server), `avalanche` (desktop/GNOME
 
 ### Auto-loading
 
-The repo uses two loaders that eliminate manual imports:
+The repo uses three loaders that eliminate manual imports:
 
 - **`system-loader.nix`** — recursively imports every `.nix` file under `modules/`. Any new file there is immediately available.
 - **`hm-loader.nix`** — recursively imports every `.nix` file under `home/`, excluding `overrides/host/` and `overrides/user/` (those are opt-in).

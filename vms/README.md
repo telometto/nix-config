@@ -98,7 +98,7 @@ ______________________________________________________________________
 - **Standard kernel** (`pkgs.linuxPackages`) — intentionally not the hardened
   variant; chosen for broad driver compatibility. The comment at line 19 of
   `base.nix` makes this explicit.
-- **sysctl hardening** — rp_filter=1, no ICMP redirects/broadcasts, no source
+- **sysctl hardening** — rp_filter=1 (strict; trigger-vm overrides to 2 via `sys.services.trigger.looseRpFilter` in `modules/services/trigger.nix`), no ICMP redirects/broadcasts, no source
   routing, kptr_restrict=2, dmesg_restrict=1, core dumps disabled
   (`kernel.core_pattern = "|/bin/false"`)
 - **Kernel module blacklist** — bluetooth, btusb, uvcvideo
