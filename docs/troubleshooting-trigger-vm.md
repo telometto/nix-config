@@ -137,17 +137,15 @@ not yet exist.
 
 File: `vms/mkMicrovmConfig.nix`
 
-Changed `matchConfig.Type = "ether"` to also exclude Docker interface names:
+Replaced the broad `Type = "ether"` match with a precise MAC-address match so
+only the VM's virtio NIC receives the static LAN config:
 
 ```nix
-matchConfig = {
-  Type = "ether";
-  Name = "!veth* !br-* !docker*";
-};
+matchConfig.MACAddress = mac;
 ```
 
 Added a `"99-docker-ignore"` network unit that marks `veth*`, `br-*`, and
-`docker*` interfaces as `Unmanaged = true`.
+`docker*` interfaces as `Unmanaged = true` for defense in depth.
 
 ### Fix 3 — rp_filter (code complete, needs rebuild)
 
