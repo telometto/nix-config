@@ -365,6 +365,18 @@ in
       description = "Docker image tag for tecnativa/docker-socket-proxy.";
     };
 
+    looseRpFilter = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Set rp_filter to 2 (loose) on this host. Required when Docker bridge
+        networking is in use: bridge return paths are asymmetric and strict mode
+        (1) drops inter-container packets. Defaults to true because the trigger
+        service always requires Docker. Set to false only if a custom routing
+        configuration eliminates the asymmetry and you need strict anti-spoofing.
+      '';
+    };
+
     smtp = {
       enable = lib.mkEnableOption "SMTP transport for magic-link emails" // {
         default = false;
@@ -462,13 +474,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # rp_filter=1 (strict) drops inter-container packets on Docker bridge networks
-    # because the return route for a container source IP goes out the bridge
-    # interface, not the veth the packet arrived on.  Loose mode (2) accepts
-    # packets as long as the source IP is routable by any route, which is
-    # sufficient for the isolated VM threat model while still dropping
-    # completely unroutable (spoofed) source addresses.
-    boot.kernel.sysctl = {
+    boot.kernel.sysctl = lib.mkIf cfg.looseRpFilter {
       "net.ipv4.conf.all.rp_filter" = lib.mkForce 2;
       "net.ipv4.conf.default.rp_filter" = lib.mkForce 2;
     };

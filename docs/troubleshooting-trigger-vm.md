@@ -151,12 +151,14 @@ Added a `"99-docker-ignore"` network unit that marks `veth*`, `br-*`, and
 
 ### Fix 3 — rp_filter (code complete, needs rebuild)
 
-File: `vms/base.nix`
+File: `modules/services/trigger.nix`
 
-Changed `net.ipv4.conf.all.rp_filter` from `1` (strict) to `2` (loose).
-Loose mode still validates that a route exists for the source IP, but does not
-require the reverse path to use the same interface — which is the normal
-behaviour for Docker bridge networking.
+Added a `sys.services.trigger.looseRpFilter` option (defaults to `true`).
+When enabled, it sets `net.ipv4.conf.all.rp_filter = 2` (loose) scoped only
+to the system that enables the trigger service. `vms/base.nix` keeps the
+strict default (`rp_filter = 1`) for all other VMs — only trigger-vm gets
+loose mode, because Docker bridge networking creates asymmetric routing that
+strict mode drops.
 
 ### Live workaround (applied on the VM, not persistent across rebuild)
 
