@@ -301,6 +301,7 @@ let
 
     trigger = {
       enable = true;
+      ingressHosts = [ "triggers" ];
       reverseProxy = {
         subdomain = "triggers";
         url = vmUrl "trigger";
