@@ -68,7 +68,15 @@
   };
 
   systemd.network.networks."20-lan" = {
-    matchConfig.Type = "ether";
+    # Match only the VM's physical NIC (virtio); explicitly exclude Docker
+    # veth pairs and bridge interfaces so systemd-networkd does not claim them.
+    # Without this, networkd matches every new veth Docker creates (Type=ether)
+    # and applies the VM's static routes to it, which both pollutes the routing
+    # table and prevents Docker from attaching the veth to a bridge.
+    matchConfig = {
+      Type = "ether";
+      Name = "!veth* !br-* !docker*";
+    };
     networkConfig = {
       Address = [ "${ip}/24" ];
       Gateway = gateway;
@@ -77,4 +85,11 @@
     };
   }
   // lib.optionalAttrs (extraRoutes != [ ]) { routes = extraRoutes; };
+
+  # Explicitly tell systemd-networkd to leave Docker veth and bridge
+  # interfaces unmanaged so Docker can configure them freely.
+  systemd.network.networks."99-docker-ignore" = {
+    matchConfig.Name = "veth* br-* docker*";
+    linkConfig.Unmanaged = true;
+  };
 }
