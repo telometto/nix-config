@@ -365,6 +365,18 @@ in
       description = "Docker image tag for tecnativa/docker-socket-proxy.";
     };
 
+    looseRpFilter = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Set rp_filter to 2 (loose) on this host. Required when Docker bridge
+        networking is in use: bridge return paths are asymmetric and strict mode
+        (1) drops inter-container packets. Defaults to true because the trigger
+        service always requires Docker. Set to false only if a custom routing
+        configuration eliminates the asymmetry and you need strict anti-spoofing.
+      '';
+    };
+
     smtp = {
       enable = lib.mkEnableOption "SMTP transport for magic-link emails" // {
         default = false;
@@ -462,6 +474,11 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    boot.kernel.sysctl = lib.mkIf cfg.looseRpFilter {
+      "net.ipv4.conf.all.rp_filter" = lib.mkForce 2;
+      "net.ipv4.conf.default.rp_filter" = lib.mkForce 2;
+    };
+
     assertions = [
       {
         assertion = !cfg.smtp.enable || cfg.smtp.passwordFile != "";
@@ -609,7 +626,15 @@ in
                 --database trigger_dev --query "$1"
             }
 
-            # Skip all checks on a first-ever install (goose_db_version does not exist yet).
+            # Skip all checks on a first-ever install: trigger_dev database does not exist yet.
+            # NOTE: do NOT use ch() here — it passes --database trigger_dev, which makes
+            # ClickHouse throw UNKNOWN_DATABASE (exit 81) before the query can run.
+            DB_EXISTS=$(${pkgs.docker}/bin/docker exec trigger-clickhouse-1 \
+              clickhouse-client --user default --password "$CHPASS" \
+              --query "SELECT count() FROM system.databases WHERE name='trigger_dev'")
+            [ "$DB_EXISTS" = "0" ] && exit 0
+
+            # trigger_dev exists — skip if goose_db_version table has not been created yet.
             GOOSE_TABLE=$(ch "SELECT count() FROM system.tables WHERE database='trigger_dev' AND name='goose_db_version'")
             [ "$GOOSE_TABLE" = "0" ] && exit 0
 
