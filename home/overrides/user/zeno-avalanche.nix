@@ -68,12 +68,6 @@
             SetEnv = "TERM=xterm-256color";
           };
 
-          "ssh-git.*" = {
-            User = "gitea";
-            IdentityFile = "${config.home.homeDirectory}/.ssh/github-key";
-            IdentitiesOnly = "yes";
-            ProxyCommand = "${pkgs.cloudflared.out}/bin/cloudflared access ssh --hostname %h";
-          };
         };
 
         allowedSigners = [
