@@ -106,7 +106,10 @@ in
         domain = "ssh-git.${VARS.domains.public}";
       };
 
-      settings.server.ROOT_URL = "https://git.${VARS.domains.public}/";
+      settings.server = {
+        ROOT_URL = "https://git.${VARS.domains.public}/";
+        DISABLE_SSH = true;
+      };
     };
   };
 }

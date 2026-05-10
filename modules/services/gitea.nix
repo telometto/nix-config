@@ -215,7 +215,6 @@ in
             HTTP_PORT = cfg.port;
 
             LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
-            DISABLE_SSH = lib.mkIf (!cfg.ssh.enable) true;
 
             START_SSH_SERVER = lib.mkIf cfg.ssh.enable true;
             SSH_LISTEN_HOST = lib.mkIf cfg.ssh.enable cfg.ssh.listenHost;
