@@ -72,12 +72,6 @@
             IdentityFile = "${config.home.homeDirectory}/.ssh/zeno-blizzard";
           };
 
-          "ssh-git.*" = {
-            User = "gitea";
-            IdentityFile = "${config.home.homeDirectory}/.ssh/github-key";
-            IdentitiesOnly = "yes";
-            ProxyCommand = "${pkgs.cloudflared.out}/bin/cloudflared access ssh --hostname %h";
-          };
         };
       };
     };
