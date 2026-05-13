@@ -10,7 +10,6 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write
   issues: write
 
 jobs:
@@ -31,7 +30,9 @@ jobs:
           echo "## 🔍 Security Audit Results" >> $GITHUB_STEP_SUMMARY
           echo "### Secrets Scanning" >> $GITHUB_STEP_SUMMARY
 
-          if nix run nixpkgs#gitleaks -- detect --no-git --verbose; then
+          # Checkout uses fetch-depth: 0, so scan the full git history instead
+          # of only the working tree.
+          if nix run nixpkgs#gitleaks -- detect --source . --verbose; then
             echo "✅ Gitleaks: No secrets detected" >> $GITHUB_STEP_SUMMARY
             echo "secrets_found=false" >> $GITHUB_OUTPUT
           else
