@@ -75,7 +75,11 @@ Canonical Cilium settings:
 | Cilium | `ipv4NativeRoutingCIDR: "10.42.0.0/16"` |
 | Cilium | `autoDirectNodeRoutes: true` |
 | NixOS firewall | `checkReversePath = false` |
-| NixOS firewall | `trustedInterfaces = [ "lxc+" ]` |
+| NixOS firewall | `interfaces."lxc+".allowedTCPPorts = [ 6443 4240 4244 4245 ]` |
+
+Do not trust all `lxc+` pod veth traffic on the host firewall. Keep pod-to-host
+access scoped to the k3s API backend and Cilium/Hubble internals required by the
+bootstrap smoke test and observability stack.
 
 `kubeProxyReplacement: false` is not an acceptable fallback in this k3s setup because no standalone kube-proxy is running.
 
