@@ -25,6 +25,7 @@ flowchart LR
     subgraph Reference["Information-Oriented"]
         RA["Reference: Architecture\nreference-architecture.md"]
         RC["Reference: CI\nreference-ci.md"]
+        SA["Security Audit\nsecurity-audit-2026-05-13.md"]
         BP["Architecture Blueprint\nProject_Architecture_Blueprint.md"]
     end
     subgraph Understanding["Understanding-Oriented"]
@@ -50,6 +51,8 @@ flowchart LR
   Quick reference for options and patterns
 - [reference-ci.md](reference-ci.md) —
   CI workflows, checks, and automation
+- [security-audit-2026-05-13.md](security-audit-2026-05-13.md) —
+  Static security audit findings and remediation roadmap
 - [Project_Architecture_Blueprint.md](Project_Architecture_Blueprint.md) —
   Comprehensive architecture documentation
 
@@ -65,6 +68,7 @@ flowchart LR
 | Add a new user | [How-To: Add Hosts and Users](how-to-add-host-and-users.md) |
 | Understand the architecture | [Architecture Blueprint](Project_Architecture_Blueprint.md) |
 | Find option namespaces | [Reference: Architecture](reference-architecture.md) |
+| Review security findings | [Security Audit](security-audit-2026-05-13.md) |
 | Learn why things work this way | [Explanation: Design](explanation-design.md) |
 
 ### Directory READMEs
