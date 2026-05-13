@@ -103,7 +103,7 @@ hosts/<hostname>/             # Per-host config
   packages.nix (optional)
   containers.nix (optional)
 
-vms/                          # MicroVM definitions (23 VMs), merged into nixosConfigurations
+vms/                          # MicroVM definitions (24 VMs), merged into nixosConfigurations
 containers/                   # Rootless Podman containers (Home Manager modules)
 lib/                          # Shared helpers (constants, traefik, grafana)
 dashboards/                   # Grafana dashboard JSON (shared/ + host/blizzard/)
