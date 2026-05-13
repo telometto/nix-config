@@ -35,7 +35,7 @@ flowchart TD
 
 ## Files in `homelab-apps`
 
-The public repo already contains bootstrap directories/manifests for:
+The imported repo now contains bootstrap directories/manifests for:
 
 - `flux/`
 - `network/`
@@ -44,15 +44,14 @@ The public repo already contains bootstrap directories/manifests for:
 - `ingress/`
 - `kubevirt/`
 - `cdi/`
+- `storage/`
+- `vms/`
 
-Known follow-up when the repo is imported into this workspace:
+Known follow-up after the first pilot reconciles:
 
-- remove or leave unused `kubevirt/runtimeclass-gvisor.yaml`
-- replace tiered `media`/`apps`/`internal` assumptions with all-VM workload structure
-- add storage manifests
-- add VM templates and per-VM manifests
 - add Traefik middleware/routes with parity to the old NixOS Traefik behavior
-- add per-VM NetworkPolicies
+- tighten per-VM NetworkPolicies before adding VPN-routed or high-risk services
+- add additional per-VM manifests after the halted `actual` pilot is accepted
 
 ## Task 1 — Verify k3s Cilium mode
 
@@ -163,7 +162,7 @@ gVisor was previously attempted by writing a k3s containerd `config.toml.tmpl`. 
 For this all-KubeVirt migration:
 
 - `hosts/blizzard/virtualisation/gvisor.nix` remains inert.
-- `homelab-apps/kubevirt/runtimeclass-gvisor.yaml` should be removed or left unused.
+- `homelab-apps/kubevirt/runtimeclass-gvisor.yaml` has been removed from the active GitOps tree.
 - No workload migration should depend on `RuntimeClass: gvisor`.
 
 ## Validation commands
@@ -193,11 +192,10 @@ kubectl get cdi
 
 Plan 2 is not container migration. It is the KubeVirt VM template and pilot VM plan:
 
-1. import `homelab-apps` into the workspace
-1. add local storage manifests
-1. add Debian cloud-image `DataVolume` template
-1. add cloud-init SealedSecret template
-1. migrate a disabled/low-risk VM
+1. reconcile the `kubevirt-local` storage class
+1. import the Debian cloud image for the halted `actual` VM
+1. start and validate the `actual` pilot VM
+1. migrate Actual data from the old MicroVM state if needed
 1. validate rollback
 
 Plan 3 migrates the remaining VMs in waves. Plan 4 removes the MicroVM stack after the rollback window closes.

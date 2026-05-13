@@ -154,14 +154,19 @@ Rollback remains available until the old MicroVM images are deleted. To roll bac
 | Operations | qemu-guest-agent ready, logs available, backup path documented |
 | Cleanup | No stale MicroVM references except intentional legacy docs |
 
-## When `homelab-apps` must be imported
+## `homelab-apps` implementation status
 
-Import `telometto/homelab-apps` into the workspace before implementing:
+`telometto/homelab-apps` is now imported and contains the first executable migration resources:
 
-- storage manifests
-- VM templates/components
-- per-VM KubeVirt manifests
-- Traefik middleware/routes
-- cloudflared secret changes
-- NetworkPolicy allowlists
-- removal of `runtimeclass-gvisor.yaml`
+- dependency-ordered Flux Kustomizations
+- Kustomize entrypoints for operator/config directories
+- `kubevirt-local` single-node local storage class
+- removed `runtimeclass-gvisor.yaml`
+- `vms/actual` as a halted Debian/KubeVirt pilot VM
+
+Still pending in `homelab-apps`:
+
+- Traefik middleware/routes for public cutover
+- cloudflared secret handling as SealedSecret
+- tighter per-VM NetworkPolicy allowlists
+- additional per-VM manifests after the `actual` pilot is accepted
