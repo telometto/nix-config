@@ -12,6 +12,43 @@ let
     export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
     export HELM_BIN=${pkgs.kubernetes-helm}/bin/helm
 
+    run_helmfile_phase() {
+      phase="$1"
+      ${pkgs.helmfile}/bin/helmfile \
+        --quiet \
+        --file /etc/k3s/helmfile.yaml \
+        --selector "phase=$phase" \
+        apply \
+        --skip-diff-on-install \
+        --suppress-diff
+    }
+
+    wait_for_cilium_connectivity() {
+      echo "k3s-helm-bootstrap: waiting for Cilium daemonset..."
+      ${pkgs.kubectl}/bin/kubectl -n kube-system rollout status daemonset/cilium --timeout=5m
+
+      echo "k3s-helm-bootstrap: verifying pod -> Kubernetes API ClusterIP connectivity..."
+      ${pkgs.kubectl}/bin/kubectl delete pod k3s-cilium-smoke --ignore-not-found --wait=true --timeout=60s >/dev/null 2>&1 || true
+      ${pkgs.kubectl}/bin/kubectl run k3s-cilium-smoke \
+        --image=curlimages/curl:8.8.0 \
+        --restart=Never \
+        --command -- sh -ec '
+          code="$(curl -k -sS -o /tmp/healthz-body -w "%{http_code}" https://10.43.0.1:443/healthz || true)"
+          echo "kubernetes API healthz HTTP status: $code"
+          test "$code" = "401" || test "$code" = "403"
+        '
+
+      if ! ${pkgs.kubectl}/bin/kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/k3s-cilium-smoke --timeout=180s; then
+        ${pkgs.kubectl}/bin/kubectl describe pod k3s-cilium-smoke || true
+        ${pkgs.kubectl}/bin/kubectl logs k3s-cilium-smoke || true
+        ${pkgs.kubectl}/bin/kubectl delete pod k3s-cilium-smoke --ignore-not-found --wait=true --timeout=60s >/dev/null 2>&1 || true
+        exit 1
+      fi
+
+      ${pkgs.kubectl}/bin/kubectl logs k3s-cilium-smoke || true
+      ${pkgs.kubectl}/bin/kubectl delete pod k3s-cilium-smoke --ignore-not-found --wait=true --timeout=60s >/dev/null 2>&1 || true
+    }
+
     check_done() {
       ${pkgs.kubectl}/bin/kubectl get crds --no-headers 2>/dev/null \
         | ${pkgs.gnugrep}/bin/grep -Eo 'cilium\.io|toolkit\.fluxcd\.io' \
@@ -31,13 +68,12 @@ let
       exit 0
     fi
 
-    echo "k3s-helm-bootstrap: running helmfile..."
-    ${pkgs.helmfile}/bin/helmfile \
-      --quiet \
-      --file /etc/k3s/helmfile.yaml \
-      apply \
-      --skip-diff-on-install \
-      --suppress-diff
+    echo "k3s-helm-bootstrap: installing Cilium..."
+    run_helmfile_phase cni
+    wait_for_cilium_connectivity
+
+    echo "k3s-helm-bootstrap: installing Flux..."
+    run_helmfile_phase flux
     echo "k3s-helm-bootstrap: done"
   '';
 
@@ -49,6 +85,8 @@ let
     releases:
       - name: cilium
         namespace: kube-system
+        labels:
+          phase: cni
         chart: cilium/cilium
         version: "${cfg.ciliumChartVersion}"
         values: ["${cfg.ciliumValuesFile}"]
@@ -57,6 +95,8 @@ let
 
       - name: flux-operator
         namespace: flux-system
+        labels:
+          phase: flux
         chart: oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator
         version: "${cfg.fluxOperatorVersion}"
         createNamespace: true
@@ -64,6 +104,8 @@ let
 
       - name: flux-instance
         namespace: flux-system
+        labels:
+          phase: flux
         chart: oci://ghcr.io/controlplaneio-fluxcd/charts/flux-instance
         version: "${cfg.fluxInstanceVersion}"
         values: ["${cfg.fluxValuesFile}"]
@@ -146,44 +188,46 @@ in
 
     environment.etc."k3s/helmfile.yaml".text = helmfileText;
 
-    systemd.tmpfiles.rules = [
-      # Always remove a previously-staged manifest so that unsetting
-      # fluxGitAuthSecretFile does not leave stale Git credentials in k3s's
-      # auto-apply directory.
-      "R /var/lib/rancher/k3s/server/manifests/flux-git-auth.yaml - - - -"
-    ]
-    ++ lib.optionals (cfg.fluxGitAuthSecretFile != null) [
-      # L+ replaces the symlink if it already points elsewhere (e.g. the sops
-      # decrypted path changed between rebuilds).
-      "L+ /var/lib/rancher/k3s/server/manifests/flux-git-auth.yaml - - - - ${cfg.fluxGitAuthSecretFile}"
-    ];
-
-    systemd.services.k3s-helm-bootstrap = {
-      description = "Bootstrap k3s: install Cilium and Flux via helmfile";
-      after = [ "k3s.service" ];
-      requires = [ "k3s.service" ];
-      path = with pkgs; [
-        coreutils
-        gnugrep
-        kubectl
-        kubernetes-helm
-        helmfile
+    systemd = {
+      tmpfiles.rules = [
+        # Always remove a previously-staged manifest so that unsetting
+        # fluxGitAuthSecretFile does not leave stale Git credentials in k3s's
+        # auto-apply directory.
+        "R /var/lib/rancher/k3s/server/manifests/flux-git-auth.yaml - - - -"
+      ]
+      ++ lib.optionals (cfg.fluxGitAuthSecretFile != null) [
+        # L+ replaces the symlink if it already points elsewhere (e.g. the sops
+        # decrypted path changed between rebuilds).
+        "L+ /var/lib/rancher/k3s/server/manifests/flux-git-auth.yaml - - - - ${cfg.fluxGitAuthSecretFile}"
       ];
-      environment.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = bootstrapScript;
-      };
-    };
 
-    systemd.timers.k3s-helm-bootstrap = {
-      description = "Retry k3s helmfile bootstrap until Cilium and Flux CRDs exist";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnBootSec = "${toString cfg.delaySeconds}s";
-        OnUnitActiveSec = "3min";
-        Unit = "k3s-helm-bootstrap.service";
+      services.k3s-helm-bootstrap = {
+        description = "Bootstrap k3s: install Cilium and Flux via helmfile";
+        after = [ "k3s.service" ];
+        requires = [ "k3s.service" ];
+        path = with pkgs; [
+          coreutils
+          gnugrep
+          kubectl
+          kubernetes-helm
+          helmfile
+        ];
+        environment.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = bootstrapScript;
+        };
+      };
+
+      timers.k3s-helm-bootstrap = {
+        description = "Retry k3s helmfile bootstrap until Cilium and Flux CRDs exist";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = "${toString cfg.delaySeconds}s";
+          OnUnitActiveSec = "3min";
+          Unit = "k3s-helm-bootstrap.service";
+        };
       };
     };
   };
