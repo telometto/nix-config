@@ -37,7 +37,7 @@ flowchart LR
 | [modules/](modules/) | System modules (`sys.*` options) — auto-loaded |
 | [home/](home/) | Home Manager modules (`hm.*` options) — auto-loaded |
 | [hosts/](hosts/) | Host configurations — auto-loaded per host |
-| [vms/](vms/) | MicroVM definitions (23 VMs) |
+| [vms/](vms/) | Legacy MicroVM definitions (24 VMs, migration source inventory) |
 | [containers/](containers/) | Rootless Podman containers (Home Manager modules) |
 | [lib/](lib/) | Shared helpers (Traefik, Grafana, constants) |
 | [dashboards/](dashboards/) | Grafana dashboard JSON files |
@@ -60,7 +60,7 @@ flowchart LR
 | Host | Role | Desktop | Description |
 |------|------|---------|-------------|
 | snowfall | Desktop | KDE | Primary workstation; AMD GPU, distributed builds, monitoring stack |
-| blizzard | Server | — | Home server; ZFS, NFS, MicroVM host, Tailscale subnet router |
+| blizzard | Server | — | Home server; ZFS, NFS, MicroVM/KubeVirt migration host, Tailscale subnet router |
 | avalanche | Desktop | GNOME | ThinkPad P51; nixos-hardware module, iwlwifi+BT workaround |
 | kaizer | Desktop | KDE | External access; NVIDIA GPU, multi-user (gianluca+frankie), Java |
 
@@ -91,6 +91,8 @@ flowchart LR
 | [How-To: Add Hosts and Users](docs/how-to-add-host-and-users.md) | Add new hosts/users |
 | [Reference: Architecture](docs/reference-architecture.md) | Options and stack quick reference |
 | [Reference: CI](docs/reference-ci.md) | CI workflows reference |
+| [KubeVirt Migration Plan](docs/kubevirt-migration-plan.md) | MicroVM-to-KubeVirt migration tracker |
+| [KubeVirt Operations](docs/kubevirt-operations.md) | KubeVirt/Flux/Cilium operations runbook |
 | [Explanation: Design](docs/explanation-design.md) | Design decisions and rationale |
 | [Architecture Blueprint](docs/Project_Architecture_Blueprint.md) | Full system architecture |
 
