@@ -19,9 +19,15 @@ Each host directory contains:
 hosts/<hostname>/
 ├── <hostname>.nix              # Main configuration (imports + core settings)
 ├── hardware-configuration.nix  # Hardware-specific (from nixos-generate-config)
-├── packages.nix                # Host-specific packages
+├── disko.nix                   # Optional declarative disk layout (currently only snowfall)
+├── packages.nix                # Host-specific packages (optional)
 └── [optional subdirectories]   # Domain-specific configs (for complex hosts)
 ```
+
+`disko.nix` is optional. The disko module is wired into every host by `flake.nix`, but a host
+only uses disko when that file exists in its directory. At the moment, only
+[`snowfall/disko.nix`](snowfall/disko.nix) is present; the other hosts continue to rely on their
+hardware/storage modules until they are explicitly migrated.
 
 For complex hosts like servers, configuration is organized into subdirectories:
 

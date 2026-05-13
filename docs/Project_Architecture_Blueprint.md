@@ -10,7 +10,7 @@ ______________________________________________________________________
 
 ## 1. Executive Summary
 
-This repository implements a modular NixOS flake configuration for 4 physical hosts and 23 MicroVMs.
+This repository implements a modular NixOS flake configuration for 4 physical hosts and 24 MicroVMs.
 The design centres on three auto-loading mechanisms that eliminate manual `imports` lists, a
 two-namespace option system (`sys.*` / `hm.*`), role files that bundle machine-class defaults,
 and a layered Home Manager precedence stack that allows fine-grained per-user overrides without
@@ -27,7 +27,7 @@ flowchart TD
     SL -->|"imports every .nix"| MOD["modules/**"]
     HL -->|"imports every .nix"| HOST["hosts/<hostname>/**"]
     HML -->|"imports every .nix\nexcluding overrides/"| HOME["home/**"]
-    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(23 MicroVMs)"]
+    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(24 MicroVMs)"]
     F --> HOSTS["nixosConfigurations\nsnowfall · blizzard · avalanche · kaizer"]
 ```
 
@@ -39,7 +39,7 @@ ______________________________________________________________________
 
 | Output | Value |
 |--------|-------|
-| `nixosConfigurations` | 4 named hosts + 23 `-vm` entries (merged from `vms/flake-microvms.nix`) |
+| `nixosConfigurations` | 4 named hosts + 24 `-vm` entries (merged from `vms/flake-microvms.nix`) |
 | `formatter.x86_64-linux` | treefmt wrapper (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
@@ -522,9 +522,16 @@ ______________________________________________________________________
 
 ### Disko (disk management)
 
-- Disko is included in `mkHost` but is **not actively used**. Only `hosts/snowfall/disko.nix`
-  exists and it is commented out as "on hold". Disks are managed manually via
-  `hardware-configuration.nix`.
+`inputs.disko.nixosModules.disko` is included in every `mkHost` call, but a host only uses disko when a `disko.nix` file exists under its host directory. The current rollout is partial: only `hosts/snowfall/disko.nix` exists today.
+
+| Host | Current disko state | Notes |
+|------|---------------------|-------|
+| `snowfall` | Active (`hosts/snowfall/disko.nix`) | btrfs on Samsung 980 PRO (system) + Kingston KC3000 (data, `destroy=false`) |
+| `blizzard` | Not declared | Existing ZFS/HDD/SSD pools are managed by `hosts/blizzard/boot.nix` and storage modules, not disko |
+| `avalanche` | Not declared | Existing `hardware-configuration.nix` remains the storage source of truth |
+| `kaizer` | Not declared | Existing `hardware-configuration.nix` remains the storage source of truth |
+
+Future host migrations should add `hosts/<hostname>/disko.nix` deliberately and adjust that host's `hardware-configuration.nix` only as part of the installer/provisioning flow. Disko configs are **targets for fresh installs** — `nixos-rebuild` does not repartition disks. Provision via: boot installer ISO → run disko script → `nixos-install`.
 
 ______________________________________________________________________
 

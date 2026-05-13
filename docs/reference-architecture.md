@@ -11,7 +11,7 @@ Information reference for this repo's moving parts, options, and commands.
 | Output | Description |
 |--------|-------------|
 | `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}` | The four physical hosts |
-| `nixosConfigurations.<vm-name>` (×23) | MicroVM guests defined in `vms/` |
+| `nixosConfigurations.<vm-name>` (×24) | MicroVM guests defined in `vms/` |
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
 | `checks.x86_64-linux.formatting` | Formatting check (`nix flake check`) |
 | `devShells.x86_64-linux.default` | Dev shell with nil, nixfmt, deadnix, statix, sops, ssh-to-age |
@@ -27,7 +27,7 @@ Every physical host built with `mkHost` automatically receives:
 - `lanzaboote` NixOS module
 - `microvm.host` NixOS module
 - `quadlet-nix` NixOS module
-- `disko` NixOS module (wired in but not active; see [Why disko is not active](explanation-design.md#why-disko-is-not-active))
+- `disko` NixOS module (wired into every host; currently used only by hosts that define `disko.nix`, see [Disko](explanation-design.md#disko--declarative-disk-management))
 
 `specialArgs` available in every module: `inputs`, `system`, `VARS`, `consts`, `self`, `hostname`.
 
@@ -160,7 +160,7 @@ Operational tools used across the repo.
 | ruff | Python formatter | `treefmt.nix` |
 | sops-nix | Secret decryption at activation time | `modules/core/sops.nix` |
 | lanzaboote | Secure Boot (both roles) | `modules/boot/secureboot.nix` |
-| disko | Disk layout (included but not active) | `hosts/snowfall/disko.nix` (on hold) |
+| disko | Optional declarative disk layout; wired into every host but active only where `disko.nix` exists | `hosts/snowfall/disko.nix` currently |
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
 `nix flake check` only runs the `checks.formatting` check. Full host evaluation (build testing) is done by the `validate-config.yml` CI workflow, not as a flake check.

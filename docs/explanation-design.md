@@ -45,9 +45,17 @@ Reproducibility across hosts, clean input pinning, and ergonomic per-host switch
 
 The MicroVM base uses `pkgs.linuxPackages` (the standard kernel), not `pkgs.linuxPackages_hardened`. This is intentional for compatibility: the hardened kernel disables BPF JIT and other kernel features that some services require (e.g., certain monitoring and container workloads). The security surface is instead reduced via sysctl hardening, AppArmor profiles, blacklisted kernel modules, and a restrictive per-VM firewall. This gives most of the security benefit without the compatibility cost.
 
-## Why disko is Not Active
+## Disko — Declarative Disk Management
 
-disko is wired into every `mkHost` call but `hosts/snowfall/disko.nix` is the only file that exists for it, and it is commented out "on hold". Disk partitioning on all existing machines is handled manually via `hardware-configuration.nix`. disko would be valuable for reproducible fresh installs but the existing machines are already partitioned and there is no need to repartition them. The wiring is in place so it can be activated when provisioning a new host from scratch.
+The disko NixOS module is wired into every `mkHost` call, so no flake-level changes are needed when a host adopts declarative disk provisioning. Adoption is still per-host: `host-loader.nix` only imports a disk layout when `hosts/<hostname>/disko.nix` exists.
+
+Current rollout:
+
+- **`snowfall`** — active `hosts/snowfall/disko.nix`; btrfs on Samsung 980 PRO (system) + Kingston KC3000 (data). The data disk carries `destroy = false` so disko never reformats it.
+- **`blizzard`** — no `disko.nix` yet. Existing ZFS/HDD/SSD pools (`rpool`, `tank`, `flash`) are managed by the host boot/storage modules and imported at boot via `boot.zfs.extraPools`.
+- **`avalanche`** / **`kaizer`** — no `disko.nix` yet; their generated `hardware-configuration.nix` files remain the storage source of truth.
+
+Future disko configs should be treated as **targets for fresh installs**, not applied automatically on `nixos-rebuild`. To apply one, boot a NixOS installer ISO and run the disko script; the provisioning tutorial covers the full flow. Only remove conflicting `fileSystems.*` and `swapDevices` entries from a host's `hardware-configuration.nix` when that host is actually migrated to disko.
 
 ## Why No `overlays/` Directory
 

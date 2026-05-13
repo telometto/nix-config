@@ -12,12 +12,12 @@ MicroVMs keep running untouched throughout.
 
 **Tech Stack:** NixOS, k3s (nixpkgs), Cilium 1.19.3, flux-operator 0.33.0,
 flux-instance 0.33.0 (Flux 2.8.6), KubeVirt v1.3.1, CDI v1.60.2, MetalLB v0.14.*,
-Sealed Secrets v2.*, Traefik v31.*
+Sealed Secrets v2.*, Traefik v31.\*
 
 **⚠ Downtime:** NixOS Traefik and cloudflared are already disabled (commit `0e0a6118`).
 All services are down until Traefik and cloudflared redeploy via Flux in Task 11.
 
----
+______________________________________________________________________
 
 ## Why Cilium Must Come Before Flux
 
@@ -26,21 +26,23 @@ Flux controller pods are stuck `Pending` on a CNI-less node. Once rescheduled, t
 the Kubernetes API ClusterIP (`10.43.0.1:443`) and crash immediately.
 
 **Correct order:**
+
 1. k3s starts with `--flannel-backend=none --disable-kube-proxy --disable-network-policy`
-2. Cilium installs (wait until `1/1 Running`)
-3. Verify pod → ClusterIP: `curl -k https://10.43.0.1:443/healthz` must return `401`, not a timeout
-4. Only then install Flux (flux-operator → flux-instance)
-5. Flux adopts the existing Cilium HelmRelease via the homelab-apps `network` Kustomization
+1. Cilium installs (wait until `1/1 Running`)
+1. Verify pod → ClusterIP: `curl -k https://10.43.0.1:443/healthz` must return `401`, not a timeout
+1. Only then install Flux (flux-operator → flux-instance)
+1. Flux adopts the existing Cilium HelmRelease via the homelab-apps `network` Kustomization
 
 The `sys.services.k3s.bootstrap` NixOS module automates steps 2–4 via a systemd timer that
 runs a helmfile. The timer fires `delaySeconds` after boot and retries every 3 minutes until
 both `cilium.io` and `toolkit.fluxcd.io` CRDs are present (idempotency check).
 
----
+______________________________________________________________________
 
 ## File Map
 
 **Modified in nix-config (already committed):**
+
 - `modules/virtualisation/k3s.nix` — Cilium-compatible extraFlags including `--disable-kube-proxy`
 - `hosts/blizzard/blizzard.nix` — firewall (`checkReversePath`, `trustedInterfaces = ["lxc+"]`)
 - `hosts/blizzard/security/traefik.nix` — emptied stub
@@ -48,14 +50,16 @@ both `cilium.io` and `toolkit.fluxcd.io` CRDs are present (idempotency check).
 - `hosts/blizzard/virtualisation/gvisor.nix` — stubbed; gVisor deferred (see Appendix A)
 
 **Created in nix-config (this plan):**
+
 - `modules/virtualisation/k3s-bootstrap.nix` — helmfile-driven bootstrap module
 - `hosts/blizzard/virtualisation/cilium-values.yaml` — vendored Cilium values
 - `hosts/blizzard/virtualisation/flux-instance-values.yaml` — Flux sync config
 
 **Modified in homelab-apps (this plan):**
+
 - `network/cilium-helmrelease.yaml` — version pinned to `1.19.3`
 
----
+______________________________________________________________________
 
 ## Pre-condition: clean k3s state
 
@@ -71,7 +75,7 @@ sudo systemctl status k3s
 
 If k3s has never been successfully bootstrapped, skip this.
 
----
+______________________________________________________________________
 
 ## Task 1: Verify k3s module flags (ground truth)
 
@@ -82,6 +86,7 @@ grep -A12 'extraFlags' modules/virtualisation/k3s.nix
 ```
 
 Expected — all of these must be present:
+
 - `--snapshotter=native`
 - `--disable=traefik`
 - `--disable=servicelb`
@@ -91,7 +96,7 @@ Expected — all of these must be present:
 
 If any are missing, edit `modules/virtualisation/k3s.nix` and add them to the `default` list.
 
----
+______________________________________________________________________
 
 ## Task 2: Verify blizzard firewall config (ground truth)
 
@@ -102,11 +107,12 @@ grep -E 'checkReversePath|trustedInterfaces|8472' hosts/blizzard/blizzard.nix
 ```
 
 Expected:
+
 - `checkReversePath = false`
-- `trustedInterfaces = [ "lxc+" ]`  ← must be `lxc+`, NOT `cni+`
+- `trustedInterfaces = [ "lxc+" ]` ← must be `lxc+`, NOT `cni+`
 - No `8472` entry (VXLAN not needed with native routing)
 
----
+______________________________________________________________________
 
 ## Task 3: Verify Traefik and cloudflared are disabled (ground truth)
 
@@ -120,7 +126,7 @@ cat hosts/blizzard/security/traefik.nix
 # Expected: empty stub { ... }: { }
 ```
 
----
+______________________________________________________________________
 
 ## Task 4: Verify gvisor.nix is stubbed (ground truth)
 
@@ -132,7 +138,7 @@ grep 'gVisor deferred' hosts/blizzard/virtualisation/gvisor.nix && echo "OK"
 
 Expected: OK (no active systemd service, just comments).
 
----
+______________________________________________________________________
 
 ## Task 5: Add the bootstrap module and values files
 
@@ -195,6 +201,7 @@ instance:
 cluster the `flux-system` SSH secret doesn't exist yet.
 
 **Option A — fully automated (recommended for repeatability):**
+
 ```bash
 # Generate the Kubernetes Secret YAML from your existing flux SSH key
 nix run nixpkgs#fluxcd -- create secret git flux-system \
@@ -202,14 +209,17 @@ nix run nixpkgs#fluxcd -- create secret git flux-system \
   --private-key-file=~/.ssh/id_ed25519 \
   --export > flux-git-auth-secret.yaml
 ```
+
 Add `flux-git-auth-secret.yaml` to your nix-secrets flake, encrypt with sops, then set in
 `hosts/blizzard/blizzard.nix`:
+
 ```nix
 sys.services.k3s.bootstrap.fluxGitAuthSecretFile = config.sops.secrets."flux-git-auth".path;
 ```
 
 **Option B — manual on first boot only:**
 Skip `fluxGitAuthSecretFile`. After Task 7 (Cilium healthy), create the secret manually:
+
 ```bash
 nix run nixpkgs#fluxcd -- create secret git flux-system \
   -n flux-system \
@@ -253,7 +263,7 @@ git add modules/virtualisation/k3s-bootstrap.nix \
 git commit -m "feat(blizzard): add helmfile-driven k3s bootstrap (Cilium + Flux)"
 ```
 
----
+______________________________________________________________________
 
 ## Task 6: Apply and reboot
 
@@ -265,7 +275,7 @@ sudo systemctl reboot
 
 Wait ~60s for the system to come back. Then reconnect via SSH.
 
----
+______________________________________________________________________
 
 ## Task 7: Verify bootstrap timer ran and Cilium is healthy
 
@@ -278,12 +288,14 @@ sudo journalctl -u k3s-helm-bootstrap.service -f
 ```
 
 The timer fires ~180s after boot and retries every 3 minutes. A successful run looks like:
+
 ```
 k3s-helm-bootstrap: running helmfile...
 k3s-helm-bootstrap: done
 ```
 
 Check CRDs are present (both groups required):
+
 ```bash
 kubectl get crds --no-headers 2>/dev/null | grep -E 'cilium\.io|toolkit\.fluxcd\.io'
 ```
@@ -309,13 +321,14 @@ kubectl run test --image=curlimages/curl --restart=Never --rm -it -- \
 A timeout or `connection refused` means Cilium is not routing service traffic correctly.
 
 If you get a timeout:
-1. `kubectl logs -n kube-system -l k8s-app=cilium` — look for eBPF load failures
-2. Verify `trustedInterfaces = [ "lxc+" ]` (not `cni+`) in blizzard.nix
-3. Verify `checkReversePath = false` in blizzard.nix
-4. Verify `--disable-kube-proxy` is in k3s extraFlags
-5. Try: `sudo systemctl restart k3s` then re-run the curl test
 
----
+1. `kubectl logs -n kube-system -l k8s-app=cilium` — look for eBPF load failures
+1. Verify `trustedInterfaces = [ "lxc+" ]` (not `cni+`) in blizzard.nix
+1. Verify `checkReversePath = false` in blizzard.nix
+1. Verify `--disable-kube-proxy` is in k3s extraFlags
+1. Try: `sudo systemctl restart k3s` then re-run the curl test
+
+______________________________________________________________________
 
 ## Task 8: Verify node is Ready
 
@@ -324,12 +337,14 @@ kubectl get nodes
 ```
 
 Expected:
+
 ```
 NAME       STATUS   ROLES                  AGE   VERSION
 blizzard   Ready    control-plane,master   Xm    v1.xx.x+k3s1
 ```
 
 `NotReady` after Cilium is running means the node taint hasn't cleared. Check:
+
 ```bash
 kubectl describe node blizzard | grep -A5 Taints
 ```
@@ -337,7 +352,7 @@ kubectl describe node blizzard | grep -A5 Taints
 If `node.cilium.io/agent-not-ready` is still present but Cilium pods are Running, wait 60s and
 check again — Cilium clears the taint automatically once its agent is fully initialized.
 
----
+______________________________________________________________________
 
 ## Task 9: Verify Flux is reconciling
 
@@ -349,6 +364,7 @@ Expected: `flux-system/flux-system   True   Fetched revision: main@sha1:...`
 
 If the GitRepository shows `False` with an auth error, the `flux-system` SSH secret is missing.
 Create it manually (Option B from Task 5 Step 4) and restart:
+
 ```bash
 nix run nixpkgs#fluxcd -- create secret git flux-system \
   -n flux-system \
@@ -358,11 +374,12 @@ kubectl rollout restart deployment -n flux-system
 ```
 
 Then wait and recheck:
+
 ```bash
 nix run nixpkgs#fluxcd -- get all -A
 ```
 
----
+______________________________________________________________________
 
 ## Task 10: Confirm Cilium version pin in homelab-apps
 
@@ -374,6 +391,7 @@ grep version network/cilium-helmrelease.yaml
 Expected: `version: "1.19.3"`.
 
 If it still shows `"1.16.*"`, update it:
+
 ```bash
 sed -i 's/version: "1.16.\*"/version: "1.19.3"  # pinned: 1.16.6 broke on kernel 6.18.26/' \
   network/cilium-helmrelease.yaml
@@ -383,11 +401,12 @@ git push
 ```
 
 After push, Flux reconciles and the HelmRelease adopts the bootstrapped Cilium install:
+
 ```bash
 nix run nixpkgs#fluxcd -- get hr -A | grep cilium
 ```
 
----
+______________________________________________________________________
 
 ## Task 11: Wait for all Kustomizations to reconcile
 
@@ -407,6 +426,7 @@ Expected eventually:
 | `cdi` | Ready |
 
 Check individual operators:
+
 ```bash
 kubectl get kubevirt -n kubevirt
 # Expected: Phase: Deployed
@@ -419,11 +439,12 @@ kubectl get pods -n ingress
 ```
 
 If cloudflared shows `ErrImagePull` or `CrashLoopBackOff`:
+
 - The `cloudflared-token` SealedSecret is missing or invalid
 - Verify the `ingress/cloudflared-secret-sealed.yaml` is in homelab-apps
 - Re-seal with `kubeseal` if needed (get kubeseal version from `kubectl get deployment -n kube-system sealed-secrets-controller -o jsonpath='{...image}'`)
 
----
+______________________________________________________________________
 
 ## Task 12: Back up the Sealed Secrets controller key
 
@@ -443,7 +464,7 @@ rm ~/sealed-secrets-key.backup.yaml
 
 Store `sealed-secrets-key-backup.age` in the nix-secrets flake or another secure offline location.
 
----
+______________________________________________________________________
 
 ## Task 13: Final validation
 
@@ -463,6 +484,7 @@ sudo systemctl list-units 'microvm@*' --state=active
 ```
 
 All green = Phase 1 complete. Record it:
+
 ```bash
 cd ~/.versioncontrol/github/projects/personal/homelab-apps
 echo "Phase 1 complete: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> MIGRATION_LOG.md
@@ -471,20 +493,20 @@ git commit -m "chore: record Plan 1 completion"
 git push
 ```
 
----
+______________________________________________________________________
 
 ## Reading order
 
 1. **`docs/superpowers/specs/2026-05-04-microvms-to-kubevirt-design.md`** — read "Architecture
    choice: kube-proxy replacement" first to understand why the canonical config looks as it does.
-2. **This document** — execute Tasks 1–13 sequentially. Stop and debug before continuing if
+1. **This document** — execute Tasks 1–13 sequentially. Stop and debug before continuing if
    any verification step fails.
-3. **`modules/virtualisation/k3s-bootstrap.nix`** — read once to understand the automation.
-4. **`hosts/blizzard/virtualisation/cilium-values.yaml`** ↔
+1. **`modules/virtualisation/k3s-bootstrap.nix`** — read once to understand the automation.
+1. **`hosts/blizzard/virtualisation/cilium-values.yaml`** ↔
    **`homelab-apps/network/cilium-helmrelease.yaml`** — keep these in sync on every Cilium change.
-5. **Appendix A (below)** — only if debugging a specific failure.
+1. **Appendix A (below)** — only if debugging a specific failure.
 
----
+______________________________________________________________________
 
 ## What's next
 
@@ -494,7 +516,7 @@ git push
 **Plan 3 — VM Migration + Cleanup:** KubeVirt VMs (gitea, matrix-synapse, immich, firefly,
 firefly-importer, paperless, wireguard, firefox, brave), then remove MicroVM stack from nix-config.
 
----
+______________________________________________________________________
 
 ## Appendix A — History: Original Failed Bootstrap (2026-05-04/05)
 
@@ -503,7 +525,7 @@ execution. The original task ordering (Flux-before-Cilium) was wrong. Everything
 authoritative record of what actually happened, preserved so future debugging sessions have a
 symptom→fix table.
 
----
+______________________________________________________________________
 
 ### Critical bootstrap order correction
 
@@ -516,37 +538,42 @@ Once manually scheduled after the containerd config issue was fixed, they entere
 reach the Kubernetes API ClusterIP (`10.43.0.1:443`).
 
 **Correct order (mandatory):**
-1. k3s starts with `--flannel-backend=none --disable-kube-proxy --disable-network-policy`
-2. Install Cilium **directly via Helm** (not through Flux) and wait for `1/1 Running`
-3. Verify pod-to-ClusterIP: `kubectl run test --image=curlimages/curl --restart=Never --rm -it -- curl -k https://10.43.0.1:443/healthz` must return `401`, not a timeout
-4. **Only then** bootstrap Flux
-5. Flux adopts the Cilium release via the HelmRelease manifest
 
----
+1. k3s starts with `--flannel-backend=none --disable-kube-proxy --disable-network-policy`
+1. Install Cilium **directly via Helm** (not through Flux) and wait for `1/1 Running`
+1. Verify pod-to-ClusterIP: `kubectl run test --image=curlimages/curl --restart=Never --rm -it -- curl -k https://10.43.0.1:443/healthz` must return `401`, not a timeout
+1. **Only then** bootstrap Flux
+1. Flux adopts the Cilium release via the HelmRelease manifest
+
+______________________________________________________________________
 
 ### NixOS firewall: two required changes
 
 The NixOS firewall dropped all pod traffic by default. Two settings were missing:
 
 **1. Reverse path filter must be disabled:**
+
 ```nix
 networking.firewall.checkReversePath = false;
 ```
+
 Strict rp_filter (`= true`, the NixOS default) drops packets from pod interfaces because the
 source IP (in the pod CIDR `10.42.0.0/16`) doesn't match the expected return path. This caused
 complete pod network failure — pods had zero connectivity to anything.
 
 **2. Cilium's pod veth interfaces must be trusted:**
+
 ```nix
 networking.firewall.trustedInterfaces = [ "lxc+" ];
 ```
+
 Cilium names its host-side veth interfaces `lxcXXXXXXXX` (not `cni*`). The original plan used
 `"cni+"`, which matched nothing. Without trusting `lxc+`, pod-to-host traffic (needed for pods
 to reach the Kubernetes API server) was blocked by the INPUT chain.
 
 Both changes require `nixos-rebuild switch` and a Cilium DaemonSet rollout to take effect.
 
----
+______________________________________________________________________
 
 ### k3s `--disable-kube-proxy` is mandatory with Cilium
 
@@ -556,6 +583,7 @@ Cilium's `kubeProxyReplacement: true`, both systems try to handle service routin
 works.
 
 **Fix added to `modules/virtualisation/k3s.nix`:**
+
 ```nix
 "--disable-kube-proxy"
 ```
@@ -563,7 +591,7 @@ works.
 Without this flag, pods can reach the internet (eBPF masquerade works) but cannot reach any
 ClusterIP (double-NAT conflict).
 
----
+______________________________________________________________________
 
 ### `kubeProxyReplacement: false` does not work with k3s
 
@@ -574,7 +602,7 @@ but has no service maps to forward it.
 
 **`kubeProxyReplacement: true` is the only correct setting for k3s.**
 
----
+______________________________________________________________________
 
 ### Cilium native routing mode, not VXLAN
 
@@ -589,7 +617,7 @@ autoDirectNodeRoutes: true
 
 Updated in `homelab-apps/network/cilium-helmrelease.yaml`.
 
----
+______________________________________________________________________
 
 ### Cilium version: 1.16.6 → 1.19.3
 
@@ -597,7 +625,7 @@ Cilium 1.16.6 had zero pod connectivity on kernel 6.18.26 — likely eBPF compat
 Upgrading to 1.19.3 resolved it (in combination with the NixOS firewall fixes above; hard to
 isolate which was the deciding factor).
 
----
+______________________________________________________________________
 
 ### gVisor containerd config broke all pod sandboxes
 
@@ -605,10 +633,10 @@ The gVisor systemd service wrote a `config.toml.tmpl` to
 `/var/lib/rancher/k3s/agent/etc/containerd/` that replaced k3s's entire containerd config
 instead of extending it. k3s uses Go templates with variables like
 `{{ .NodeConfig.AgentConfig.CNIBinDir }}` that our minimal TOML completely omitted. Result:
-containerd couldn't create any pod sandbox (`FailedCreatePodSandBox: rpc error: code =
-InvalidArgument`), blocking even the Cilium DaemonSet pods from starting.
+containerd couldn't create any pod sandbox (`FailedCreatePodSandBox: rpc error: code = InvalidArgument`), blocking even the Cilium DaemonSet pods from starting.
 
 **Fix:** Delete the broken template file before reinstalling Cilium:
+
 ```bash
 sudo rm /var/lib/rancher/k3s/agent/etc/containerd/config.toml.tmpl
 sudo systemctl restart k3s
@@ -618,7 +646,7 @@ The `gvisor.nix` approach needs to be redesigned to use k3s's proper template ex
 (`{{ template "base" . }}` as the first line). This is deferred — gVisor is not yet functional
 on this cluster.
 
----
+______________________________________________________________________
 
 ### GitHub fine-grained token needs Administration permission for Flux bootstrap
 
@@ -626,24 +654,33 @@ on this cluster.
 `repos/{owner}/{repo}/keys`). A fine-grained token with only `contents: rw` is insufficient.
 Add **Administration: Read and Write** to the token.
 
----
+______________________________________________________________________
 
 ### `flux` CLI is not installed system-wide
 
 Use `nix run nixpkgs#fluxcd -- <args>` anywhere a `flux` command is needed, or add
 `pkgs.fluxcd` to blizzard's system packages in nix-config.
 
----
+______________________________________________________________________
 
 ### After `nixos-rebuild switch`, restart k3s and wait for Cilium
 
 `nixos-rebuild switch` restarts k3s when k3s-related options change (flags, modules). This
 terminates all pods including Cilium. After the switch:
-1. Run `sudo systemctl restart k3s` if pods are in a stale state
-2. Wait for `kubectl get pods -n kube-system | grep cilium` to show `1/1 Running`
-3. Verify pod connectivity before proceeding
 
----
+1. Run `sudo systemctl restart k3s` if pods are in a stale state
+
+1. Wait for `kubectl get pods -n kube-system | grep cilium` to show `1/1 Running`
+
+1. Verify pod connectivity before proceeding
+
+1. Run `sudo systemctl restart k3s` if pods are in a stale state
+
+1. Wait for `kubectl get pods -n kube-system | grep cilium` to show `1/1 Running`
+
+1. Verify pod connectivity before proceeding
+
+______________________________________________________________________
 
 ### Cilium Helm values: final working configuration
 
@@ -666,6 +703,7 @@ operator:
 ```
 
 Install command (the original manual approach before the bootstrap module existed):
+
 ```bash
 nix run nixpkgs#kubernetes-helm -- install cilium cilium \
   --repo https://helm.cilium.io \
