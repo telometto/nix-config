@@ -94,16 +94,24 @@ Do not set `kubeProxyReplacement: false`; kube-proxy is disabled in k3s for this
 
 ## Task 3 — Keep host firewall Cilium-compatible
 
-`blizzard` must allow Cilium's veth/device model:
+`blizzard` must allow Cilium's veth/device model without trusting every pod veth
+interface unconditionally:
 
 ```nix
 networking.firewall = {
   checkReversePath = false;
-  trustedInterfaces = [ "lxc+" ];
+  interfaces."lxc+".allowedTCPPorts = [
+    6443 # k3s API backend after Cilium Service translation
+    4240 # Cilium health check
+    4244 # Hubble server
+    4245 # Hubble relay
+  ];
 };
 ```
 
-The `lxc+` pattern is intentional for Cilium interfaces in this environment.
+The `lxc+` pattern is intentional for Cilium interfaces in this environment, but
+it must remain scoped to the required pod-to-host ports instead of being added to
+`trustedInterfaces`.
 
 ## Task 4 — Bootstrap Cilium before Flux
 
