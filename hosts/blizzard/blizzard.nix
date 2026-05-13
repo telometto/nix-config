@@ -134,5 +134,11 @@
 
   environment.variables.KUBECONFIG = "/home/${VARS.users.zeno.user}/.kube/config";
 
+  systemd.tmpfiles.rules = [
+    "d /flash/enc/kubevirt 0700 root root - -"
+    "d /flash/enc/kubevirt/actual 0700 root root - -"
+    "d /flash/enc/kubevirt/actual/rootdisk 0700 root root - -"
+  ];
+
   system.stateVersion = "24.11";
 }
