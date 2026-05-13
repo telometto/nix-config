@@ -97,7 +97,7 @@ flowchart LR
     Build --> F
     Secrets --> F
     Dev --> F
-    F --> OUT1[nixosConfigurations\n4 hosts + 23 VMs]
+    F --> OUT1[nixosConfigurations\n4 hosts + 24 VMs]
     F --> OUT2[formatter / checks / devShells]
 ```
 
