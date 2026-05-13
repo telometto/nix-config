@@ -48,7 +48,7 @@ Public ingress remains Cloudflare Tunnel → Traefik → Kubernetes Service → 
 | `telometto/homelab-apps` | Flux Kustomizations, KubeVirt/CDI/SealedSecrets/Traefik manifests, storage, NetworkPolicies, VM manifests |
 | `telometto/nix-secrets` | Private host secrets consumed by sops-nix |
 
-`homelab-apps` already exists publicly and already contains bootstrap manifests for Flux, Cilium, KubeVirt, CDI, sealed-secrets, ingress, namespaces, and default-deny policies. It still has tiered/gVisor remnants such as `kubevirt/runtimeclass-gvisor.yaml`; those should be removed or left unused when that repository is imported for edits.
+`homelab-apps` is imported alongside this repo and contains bootstrap manifests for Flux, Cilium, KubeVirt, CDI, sealed-secrets, ingress, namespaces, default-deny policies, local storage, and the first halted KubeVirt pilot VM. The old gVisor RuntimeClass has been removed from the active GitOps path.
 
 ## Bootstrap design
 
