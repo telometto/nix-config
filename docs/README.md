@@ -43,6 +43,10 @@ flowchart LR
 
 - [how-to-add-host-and-users.md](how-to-add-host-and-users.md) —
   Add new hosts and users to the configuration
+- [kubevirt-migration-plan.md](kubevirt-migration-plan.md) —
+  Track the MicroVM-to-KubeVirt execution plan and per-VM cutover checklist
+- [kubevirt-operations.md](kubevirt-operations.md) —
+  Operate and troubleshoot the KubeVirt/Flux/Cilium stack on `blizzard`
 
 #### Reference
 
@@ -63,6 +67,8 @@ flowchart LR
 |------|----------|
 | Set up a new machine | [Tutorial: Provision Host](tutorial-provision-host.md) |
 | Add a new user | [How-To: Add Hosts and Users](how-to-add-host-and-users.md) |
+| Migrate MicroVMs to KubeVirt | [KubeVirt Migration Plan](kubevirt-migration-plan.md) |
+| Operate KubeVirt on blizzard | [KubeVirt Operations Runbook](kubevirt-operations.md) |
 | Understand the architecture | [Architecture Blueprint](Project_Architecture_Blueprint.md) |
 | Find option namespaces | [Reference: Architecture](reference-architecture.md) |
 | Learn why things work this way | [Explanation: Design](explanation-design.md) |
