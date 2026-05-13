@@ -4,7 +4,7 @@
 **Branch:** dev-kubevirt
 **Status:** Approved, pending implementation plan
 
-______________________________________________________________________
+---
 
 ## Context
 
@@ -20,7 +20,7 @@ Goals driving the migration:
 - YAML-based workload definitions in a separate GitOps repo
 - Security-first: internet-facing services must be strongly isolated
 
-______________________________________________________________________
+---
 
 ## Chosen Approach: Tiered KubeVirt + gVisor (Approach B)
 
@@ -32,7 +32,7 @@ Services are split into three tiers based on isolation requirements:
 | Container (gVisor) | k3s pod, `RuntimeClass: gvisor` | User-space kernel sandbox |
 | Container (standard) | k3s pod, default runtime | Standard Linux namespaces + hardening |
 
-______________________________________________________________________
+---
 
 ## Architecture
 
@@ -58,7 +58,7 @@ Two viable configurations exist for Cilium on k3s. **Canonical** (this deploymen
 
 **The canonical path is committed.** Do not switch without understanding the full diff.
 
-______________________________________________________________________
+---
 
 ### Infrastructure layer — nix-config repo (stays NixOS)
 
@@ -67,7 +67,6 @@ The `microvm.nix` host module, bridge networking, and TAP interfaces are removed
 completes.
 
 The following become k3s workloads (Deployments/Helm charts) rather than NixOS services:
-
 - Traefik reverse proxy
 - Cloudflare tunnel (`cloudflared`)
 
@@ -114,7 +113,7 @@ separate `homelab-apps` git repo. Flux reconciles it to the cluster.
 | Sealed Secrets | Encrypted secret management |
 | gVisor (`runsc`) | User-space kernel sandbox for container tier |
 
-______________________________________________________________________
+---
 
 ## VM Tier
 
@@ -146,7 +145,7 @@ Each VM has two PVCs:
 1. **Boot disk** — `DataVolume` importing the Debian cloud image. CDI handles the import; subsequent
    boots use the local PVC copy.
 
-1. **Data disk** — `hostPath` PersistentVolume pointing at the existing
+2. **Data disk** — `hostPath` PersistentVolume pointing at the existing
    `/flash/enc/vms/<vmname>/` directory on blizzard. Zero data migration on cutover.
 
 ### cloud-init security baseline
@@ -163,7 +162,6 @@ Applied to every VM via a Kubernetes Secret referenced as `cloudInitNoCloud.user
 ### KubeVirt security context
 
 The `virt-launcher` pod (wraps each VM) runs with:
-
 - `allowPrivilegeEscalation: false`
 - No host network namespace
 - No host PID namespace
@@ -185,7 +183,7 @@ receive raw UDP/51820 from the internet without NodePort remapping.
 Hard memory limits matching current vm-registry values (no overcommit). CPU shared by default;
 `dedicatedCpuPlacement: true` available per-VM if needed.
 
-______________________________________________________________________
+---
 
 ## Container Tier
 
@@ -242,7 +240,7 @@ For natively non-root images (`searx`, `mealie`, `actual`): add `runAsNonRoot: t
   services share it. `hostPath` is `ReadWriteOnce` per Kubernetes semantics but works fine for
   multi-pod access on a single node. When a second node is added, this must be replaced with an
   NFS-backed PV or a distributed storage solution (e.g. Longhorn, Ceph).
-- **Config/state:** per-service `hostPath` PVC. The \*arr services are currently MicroVMs, so their
+- **Config/state:** per-service `hostPath` PVC. The *arr services are currently MicroVMs, so their
   state (e.g. `/var/lib/sonarr`) is inside the VM's `persist.img` block image — not directly
   accessible as a host path. Cutover procedure for each: stop MicroVM → mount `persist.img` via
   loop device → copy service state to a new host directory → point container PVC at that directory.
@@ -259,7 +257,7 @@ For natively non-root images (`searx`, `mealie`, `actual`): add `runAsNonRoot: t
 
 All namespaces: hard resource `requests` and `limits` on every workload.
 
-______________________________________________________________________
+---
 
 ## Networking
 
@@ -301,7 +299,7 @@ Default-deny ingress and egress on all namespaces. Explicit allows:
 | `wireguard` VM ← internet (UDP 51820) | Ingress |
 | `wireguard` VM → LAN CIDR | Egress |
 
-______________________________________________________________________
+---
 
 ## Secrets Management
 
@@ -311,7 +309,6 @@ The Sealed Secrets controller runs in the cluster. Secrets are stored as `Sealed
 files in the `homelab-apps` repo — asymmetrically encrypted, safe to commit to git.
 
 Key properties:
-
 - **Namespace-bound**: a `SealedSecret` created for the `vms` namespace cannot be decrypted in
   `media` or any other namespace, even if the YAML is copied
 - **No SOPS/age key derivation** from SSH host keys — no sops-nix involvement for workload secrets
@@ -329,7 +326,7 @@ Each VM's `VirtualMachine` manifest references a Secret containing cloud-init `u
 Unchanged — blizzard remains NixOS, sops-nix continues to manage host-level secrets. Only
 per-VM age keys (derived from MicroVM SSH host keys) are superseded.
 
-______________________________________________________________________
+---
 
 ## GitOps — homelab-apps repo
 
@@ -360,7 +357,7 @@ homelab-apps/
   secrets/           # SealedSecret YAMLs (encrypted, safe to commit)
 ```
 
-______________________________________________________________________
+---
 
 ## Migration Plan
 
@@ -369,13 +366,13 @@ Downtime per service is acceptable. Hard cutover (no parallel running).
 ### Phase 1 — Cluster bootstrap (no workload changes)
 
 1. Enable k3s on blizzard: `sys.services.k3s.enable = true`
-1. Deploy Cilium CNI (replace Flannel)
-1. Install operators: KubeVirt, CDI, MetalLB, Sealed Secrets controller, gVisor node config
-1. Deploy Traefik as a k3s Deployment and disable the NixOS Traefik and cloudflared services in
+2. Deploy Cilium CNI (replace Flannel)
+3. Install operators: KubeVirt, CDI, MetalLB, Sealed Secrets controller, gVisor node config
+4. Deploy Traefik as a k3s Deployment and disable the NixOS Traefik and cloudflared services in
    nix-config simultaneously; run `nixos-rebuild boot` (not `switch`) so the changeover takes
    effect on the next reboot — k3s Traefik owns 80/443 from first boot, no overlap window
-1. Deploy Flux; point at `homelab-apps` repo
-1. Back up Sealed Secrets controller private key
+5. Deploy Flux; point at `homelab-apps` repo
+6. Back up Sealed Secrets controller private key
 
 MicroVMs keep running throughout Phase 1.
 
@@ -417,7 +414,7 @@ For each: shut down MicroVM → create KubeVirt VM pointing data PVC at existing
 - Disable NixOS Traefik and cloudflared services (replaced by k3s Deployments)
 - Remove `hosts/blizzard/virtualisation/microvms.nix`
 
-______________________________________________________________________
+---
 
 ## Pros & Cons Summary
 

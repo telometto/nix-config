@@ -13,9 +13,11 @@ sequenceDiagram
     M->>R: git clone
     M->>M: nixos-generate-config (hardware-configuration.nix)
     R->>R: create hosts/<hostname>/
+    R->>R: define disk layout (disko.nix)
     R->>R: register in flake.nix
     M->>S: configure SOPS age key
-    M->>M: nixos-rebuild switch --flake .#<hostname>
+    M->>M: disko destroy,format,mount (from installer ISO)
+    M->>M: nixos-install --flake .#<hostname>
     M-->>M: system built, users created, HM active
 ```
 
@@ -40,6 +42,32 @@ Run on the target machine and place the output in the new host directory:
 mkdir -p hosts/<hostname>
 nixos-generate-config --show-hardware-config > hosts/<hostname>/hardware-configuration.nix
 ```
+
+## Step 2.5: Define Disk Layout (disko)
+
+Copy the nearest host's `disko.nix` as a starting point and update the `device` path.
+
+Find the NVMe by-id path on the target machine:
+
+```bash
+ls -l /dev/disk/by-id/ | grep -i nvme
+```
+
+Create `hosts/<hostname>/disko.nix` with the correct `device = "/dev/disk/by-id/nvme-…"`.
+The file is auto-imported by `host-loader.nix` — no explicit `imports` needed.
+
+**Applying the layout (fresh install from a NixOS USB):**
+
+```bash
+sudo nix run github:nix-community/disko/latest -- \
+  --mode destroy,format,mount \
+  /path/to/nix-config/hosts/<hostname>/disko.nix
+sudo nixos-install --flake /path/to/nix-config#<hostname>
+```
+
+> **Warning:** `--mode destroy` wipes all data on the declared disk(s). Verify
+> the `device` path before running. The snowfall data disk carries `destroy = false`
+> and is protected even if disko is re-run.
 
 ## Step 3: Create Host Directory
 

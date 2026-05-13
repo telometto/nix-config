@@ -19,7 +19,7 @@ set of MicroVMs. It uses:
   that bundle sensible defaults.
 - **Home Manager** as a NixOS module, keyed off the user list in `VARS`.
 - **sops-nix** for secrets, sourced from the private `nix-secrets` flake.
-- **disko**, **lanzaboote** (Secure Boot), **microvm.nix**, **quadlet-nix**,
+- **disko** (wired into the flake; only hosts with `disko.nix` actively use it), **lanzaboote** (Secure Boot), **microvm.nix**, **quadlet-nix**,
   **hyprland**, **nur**, **nix-colors**, **treefmt-nix**.
 
 Hosts live under `hosts/`:
@@ -99,7 +99,7 @@ home/                         # Home Manager modules, hm.* namespace
 hosts/<hostname>/             # Per-host config
   <hostname>.nix              # toggles roles, users, services
   hardware-configuration.nix  # hardware specifics
-  disko.nix (optional)        # disk layout
+  disko.nix                   # optional disk layout (currently only snowfall)
   packages.nix (optional)
   containers.nix (optional)
 
@@ -234,7 +234,8 @@ Auto-merge for lockfile PRs is gated on `Flake Check` and
 Follow `docs/how-to-add-host-and-users.md`:
 
 1. `hosts/<hostname>/<hostname>.nix` + `hardware-configuration.nix`
-   (+ `disko.nix`, `packages.nix` as needed).
+  - optional `disko.nix` (copy nearest host only when adopting disko; update `device = "/dev/disk/by-id/nvme-…"`);
+     `packages.nix` and other files as needed.
 1. Add `<hostname> = mkHost "<hostname>" [ ];` to `nixosConfigurations` in
    `flake.nix`. The `validate-config.yml` workflow discovers hosts by
    grepping for `mkHost` — keep the spacing `name = mkHost` intact so the
