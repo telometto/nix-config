@@ -3,6 +3,7 @@ let
   cfg = config.sys.services.k3s or { };
 
   ciliumFlags = [
+    "--disable=servicelb"
     "--disable-kube-proxy"
     "--flannel-backend=none"
     "--disable-network-policy"
@@ -25,8 +26,9 @@ in
       };
     };
 
-    # When true, appends --disable-kube-proxy / --flannel-backend=none /
-    # --disable-network-policy so Cilium can take over CNI and kube-proxy.
+    # When true, appends --disable=servicelb / --disable-kube-proxy /
+    # --flannel-backend=none / --disable-network-policy so Cilium can take
+    # over LoadBalancer handling, CNI, and kube-proxy replacement.
     # Keep false (the default) if you are not deploying Cilium; without a CNI
     # the node will stay NotReady indefinitely.
     ciliumCni = lib.mkOption {
@@ -40,7 +42,6 @@ in
       default = [
         "--snapshotter=native"
         "--disable=traefik"
-        "--disable=servicelb"
         "--kubelet-arg=read-only-port=10255"
       ];
     };

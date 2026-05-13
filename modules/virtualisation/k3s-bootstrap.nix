@@ -8,6 +8,8 @@ let
   cfg = config.sys.services.k3s.bootstrap;
 
   bootstrapScript = pkgs.writeShellScript "k3s-helm-bootstrap" ''
+    set -euo pipefail
+
     # Full paths set by serviceConfig.Environment; add them here for safety
     export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
     export HELM_BIN=${pkgs.kubernetes-helm}/bin/helm

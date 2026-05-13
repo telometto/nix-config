@@ -19,15 +19,16 @@
       # source IPs outside the expected routing path; strict rp_filter drops it.
       checkReversePath = false;
 
-      # Trust Cilium's pod veth interfaces (named lxcXXXXXXXX) so pod↔host
-      # traffic (e.g. pods reaching the kube-apiserver) bypasses the INPUT chain.
-      trustedInterfaces = [ "lxc+" ];
-
-      allowedTCPPorts = [
+      # Do not trust all Cilium pod veth traffic. Only open the pod→host
+      # ports required for the k3s API backend and Cilium/Hubble internals.
+      interfaces."lxc+".allowedTCPPorts = [
+        6443 # k3s API backend after Cilium Service translation
         4240 # Cilium health check
         4244 # Hubble server
         4245 # Hubble relay
       ];
+
+      allowedTCPPorts = [ ];
       allowedUDPPorts = [ ];
       # Note: 8472/UDP (VXLAN) is NOT opened — canonical config uses
       # routingMode: native, not VXLAN overlay.
