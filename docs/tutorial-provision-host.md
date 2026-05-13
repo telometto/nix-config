@@ -18,12 +18,14 @@ sequenceDiagram
     M->>S: configure SOPS age key
     M->>M: disko destroy,format,mount (from installer ISO)
     M->>M: nixos-install --flake .#<hostname>
-    M-->>M: system built, users created, HM active
+    M-->>M: reboot into installed system
+    M->>M: nixos-rebuild switch for subsequent changes
 ```
 
 ## Prerequisites
 
-- NixOS installed on the target machine.
+  - Fresh install: boot the target machine from a NixOS installer ISO with network access.
+  - Existing install: use `nixos-rebuild switch` after adding the host to the repo; do not run disko unless you intend to repartition.
 - SSH access to this repo (`github.com/telometto/nix-config`).
 - SSH access to the private `nix-secrets` repo (provides `VARS`).
 
@@ -56,18 +58,8 @@ ls -l /dev/disk/by-id/ | grep -i nvme
 Create `hosts/<hostname>/disko.nix` with the correct `device = "/dev/disk/by-id/nvme-…"`.
 The file is auto-imported by `host-loader.nix` — no explicit `imports` needed.
 
-**Applying the layout (fresh install from a NixOS USB):**
-
-```bash
-sudo nix run github:nix-community/disko/latest -- \
-  --mode destroy,format,mount \
-  /path/to/nix-config/hosts/<hostname>/disko.nix
-sudo nixos-install --flake /path/to/nix-config#<hostname>
-```
-
-> **Warning:** `--mode destroy` wipes all data on the declared disk(s). Verify
-> the `device` path before running. The snowfall data disk carries `destroy = false`
-> and is protected even if disko is re-run.
+Do not apply the layout yet. Run disko only after the host file is created,
+secrets are prepared, and the host is registered in `flake.nix`.
 
 ## Step 3: Create Host Directory
 
@@ -136,14 +128,35 @@ nixosConfigurations = {
 };
 ```
 
-## Step 6: Build and Switch
+## Step 6: Install, then Rebuild After First Boot
+
+For a fresh install from the NixOS installer ISO, run disko and then
+`nixos-install` after Steps 1–5 are complete:
+
+```bash
+sudo nix run github:nix-community/disko/latest -- \
+  --mode destroy,format,mount \
+  /path/to/nix-config/hosts/<hostname>/disko.nix
+sudo nixos-install --flake /path/to/nix-config#<hostname>
+```
+
+> **Warning:** `--mode destroy` wipes all data on the declared disk(s). Verify
+> the `device` path before running. The snowfall data disk carries `destroy = false`
+> and is protected even if disko is re-run.
+
+After `nixos-install` finishes, reboot into the installed system.
+
+Use `nixos-rebuild switch` only for subsequent changes after the host has booted
+into its installed system, or when onboarding an already-installed machine that
+does not need repartitioning:
 
 ```bash
 sudo nixos-rebuild switch --flake .#<hostname>
 ```
 
-This builds the system with all modules auto-imported and sets up Home Manager
-for enabled users.
+Both `nixos-install` and later `nixos-rebuild switch` evaluate the same flake
+configuration with all modules auto-imported and Home Manager set up for enabled
+users.
 
 ## Verify
 

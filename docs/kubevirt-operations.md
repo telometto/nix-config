@@ -164,7 +164,7 @@ If the controller private key is lost, existing SealedSecrets cannot be decrypte
 Check:
 
 - `networking.firewall.checkReversePath = false` on `blizzard`
-- `networking.firewall.trustedInterfaces = [ "lxc+" ]`
+- `networking.firewall.interfaces."lxc+".allowedTCPPorts` includes `6443`, `4240`, `4244`, and `4245`
 - k3s has `--disable-kube-proxy`
 - Cilium has `kubeProxyReplacement: true`
 - pod-to-API ClusterIP smoke test returns HTTP 401 or 403, not timeout
