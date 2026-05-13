@@ -62,14 +62,6 @@ let
       exit 0
     fi
 
-    # Give k3s API extra settle time before the first helmfile run
-    sleep 30
-
-    if check_done; then
-      echo "k3s-helm-bootstrap: already complete (post-sleep)"
-      exit 0
-    fi
-
     echo "k3s-helm-bootstrap: installing Cilium..."
     run_helmfile_phase cni
     wait_for_cilium_connectivity
