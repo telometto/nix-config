@@ -9,7 +9,6 @@ _:
   #   {{ template "base" . }}
   # so k3s expands its own defaults before the gVisor runtime block is appended.
   #
-  # The RuntimeClass "gvisor" Kustomization in homelab-apps/kubevirt/ is harmless
-  # to leave deployed — it only creates a CRD instance referencing handler "runsc",
-  # which does nothing until the runtime is actually registered in containerd.
+  # The old RuntimeClass "gvisor" manifest was removed from homelab-apps. Do
+  # not reintroduce it until the host-side runtime is deliberately configured.
 }
