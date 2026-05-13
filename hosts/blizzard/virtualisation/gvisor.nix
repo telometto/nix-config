@@ -1,4 +1,4 @@
-{ ... }:
+_:
 {
   # gVisor deferred — the containerd config.toml.tmpl written by the previous
   # implementation overwrote k3s's own containerd config entirely (omitting
