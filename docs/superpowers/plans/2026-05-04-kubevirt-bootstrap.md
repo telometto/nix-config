@@ -117,10 +117,10 @@ it must remain scoped to the required pod-to-host ports instead of being added t
 
 `modules/virtualisation/k3s-bootstrap.nix` uses a generated helmfile with release labels:
 
-1. apply selector `phase=cni`
+1. run `helmfile sync` with selector `phase=cni`
 1. wait for the Cilium DaemonSet
 1. run a pod that curls the Kubernetes API Service IP (`10.43.0.1:443`)
-1. apply selector `phase=flux`
+1. run `helmfile sync` with selector `phase=flux`
 
 The smoke test succeeds on HTTP 401 or 403 because that proves pod networking and Service routing work; authentication is not the point of the test.
 
