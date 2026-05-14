@@ -167,7 +167,7 @@ in
     delaySeconds = lib.mkOption {
       type = lib.types.int;
       default = 180;
-      description = "Seconds after boot before the first helmfile apply attempt.";
+      description = "Seconds after boot before the first helmfile sync attempt.";
     };
   };
 
@@ -214,7 +214,6 @@ in
         environment.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
         serviceConfig = {
           Type = "oneshot";
-          RemainAfterExit = true;
           ExecStart = bootstrapScript;
         };
       };
@@ -224,7 +223,7 @@ in
         wantedBy = [ "timers.target" ];
         timerConfig = {
           OnBootSec = "${toString cfg.delaySeconds}s";
-          OnUnitActiveSec = "3min";
+          OnUnitInactiveSec = "3min";
           Unit = "k3s-helm-bootstrap.service";
         };
       };
