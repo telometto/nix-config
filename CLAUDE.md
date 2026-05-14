@@ -24,7 +24,7 @@ Hosts: `snowfall` (desktop/KDE), `blizzard` (server), `avalanche` (desktop/GNOME
 
 ### Auto-loading
 
-The repo uses two loaders that eliminate manual imports:
+The repo uses three loaders that eliminate manual imports:
 
 - **`system-loader.nix`** — recursively imports every `.nix` file under `modules/`. Any new file there is immediately available.
 - **`hm-loader.nix`** — recursively imports every `.nix` file under `home/`, excluding `overrides/host/` and `overrides/user/` (those are opt-in).
