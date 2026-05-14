@@ -46,7 +46,7 @@ Temporary source-of-truth: `vms/vm-registry.nix` and `hosts/blizzard/virtualisat
 | `firefox` | yes | 4 | 4 GiB | 11052 | `ff` | Browser isolation is the product; privacy-routed today. |
 | `wireguard` | yes | 1 | 512 MiB | 56943/UDP | raw UDP | Inbound VPN gateway; use MetalLB or equivalent controlled UDP exposure. |
 | `sabnzbd` | yes | 1 | 1 GiB | 11031 | `sab` | Privacy-routed today via `wireguard` VM gateway; media share at `/data`. |
-| `flaresolverr` | yes | 1 | 512 MiB | 11013 | none | Internal helper; low-risk pilot candidate. |
+| `flaresolverr` | no | 1 | 512 MiB | 11013 | none | Registry entry only; no standalone `flaresolverr-vm` is exported or enabled today. FlareSolverr currently runs inside the `prowlarr` MicroVM. |
 | `matrix-synapse` | yes | 4 | 4 GiB | 11060 | `matrix`, apex well-known | High-risk: federation, E2E identity, MAS secrets, Postgres state. |
 | `paperless` | no | 4 | 8 GiB | 11061 | `docs` | Sensitive documents; keep CSRF-safe headers and validate document integrity. |
 | `firefly` | yes | 2 | 2 GiB | 11062 | `finance` | Finance data; Postgres and app key secrets. |
@@ -93,8 +93,8 @@ Use disabled or low-risk VMs first.
 Suggested first candidates:
 
 1. `actual` or `lidarr` if their current disabled state is acceptable.
-2. `flaresolverr` for a simple internal helper.
-3. `tautulli` or `overseerr` to prove public ingress and middleware.
+2. `tautulli` or `overseerr` to prove public ingress and middleware.
+3. A split-out `flaresolverr` VM only if you first decide to extract it from the current `prowlarr` MicroVM.
 
 A pilot is complete only when the service survives a VM reboot, Flux reconciliation, and a `blizzard` reboot with rollback still available.
 
@@ -102,7 +102,7 @@ A pilot is complete only when the service survives a VM reboot, Flux reconciliat
 
 | Wave | VMs | Goal |
 |---|---|---|
-| Low-risk | `actual`, `lidarr`, `brave`, `flaresolverr`, `tautulli`, `ombi`, `overseerr` | Prove template, storage, ingress, rollback |
+| Low-risk | `actual`, `lidarr`, `brave`, `tautulli`, `ombi`, `overseerr` | Prove template, storage, ingress, rollback |
 | Media stack | `prowlarr`, `sonarr`, `radarr`, `bazarr`, `readarr`, `lidarr`, `qbittorrent`, `sabnzbd` | Prove shared media access and privacy routing |
 | Public data | `gitea`, `matrix-synapse`, `firefly`, `firefly-importer`, `paperless`, `immich`, `mealie`, `searx` | Preserve data integrity, app secrets, and public security controls |
 | Network-sensitive | `wireguard`, `adguard` | Preserve raw UDP/DNS behavior with explicit exposure decisions |
