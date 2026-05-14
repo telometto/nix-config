@@ -160,9 +160,9 @@ Rollback remains available until the old MicroVM images are deleted. To roll bac
 
 - dependency-ordered Flux Kustomizations
 - Kustomize entrypoints for operator/config directories
-- `kubevirt-local` single-node local storage class
+- `kubevirt-local` and `kubevirt-local-immediate` single-node local storage classes
 - removed `runtimeclass-gvisor.yaml`
-- `vms/actual` as a halted Debian/KubeVirt pilot VM
+- `vms/actual` as a manual-control Debian/KubeVirt pilot VM
 
 Still pending in `homelab-apps`:
 
