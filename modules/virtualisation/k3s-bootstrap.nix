@@ -20,9 +20,7 @@ let
         --quiet \
         --file /etc/k3s/helmfile.yaml \
         --selector "phase=$phase" \
-        apply \
-        --skip-diff-on-install \
-        --suppress-diff
+        sync
     }
 
     wait_for_cilium_connectivity() {
@@ -174,6 +172,13 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = (config.sys.services.k3s.enable or false) || (config.services.k3s.enable or false);
+        message = "sys.services.k3s.bootstrap.enable requires sys.services.k3s.enable or services.k3s.enable.";
+      }
+    ];
+
     environment.systemPackages = with pkgs; [
       helmfile
       kubernetes-helm
