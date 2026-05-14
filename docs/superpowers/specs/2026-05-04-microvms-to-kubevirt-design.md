@@ -152,7 +152,7 @@ The migration is not allowed to weaken these controls:
 
 | Wave | VMs | Purpose |
 |---|---|---|
-| Pilot | `actual`, `lidarr`, `flaresolverr` | Prove image import, storage, VM template, rollback |
+| Pilot | `actual`, `lidarr` | Prove image import, storage, VM template, rollback |
 | Ingress pilot | `tautulli`, `ombi`, `overseerr`, `searx` | Prove public route and middleware parity |
 | Media stack | `prowlarr`, `sonarr`, `radarr`, `bazarr`, `readarr`, `qbittorrent`, `sabnzbd` | Prove media storage and VPN routing |
 | Sensitive public data | `gitea`, `matrix-synapse`, `firefly`, `firefly-importer`, `paperless`, `immich`, `mealie` | Preserve state, secrets, and public security controls |
