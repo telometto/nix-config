@@ -51,7 +51,7 @@ Known follow-up after the first pilot reconciles:
 
 - add Traefik middleware/routes with parity to the old NixOS Traefik behavior
 - tighten per-VM NetworkPolicies before adding VPN-routed or high-risk services
-- add additional per-VM manifests after the halted `actual` pilot is accepted
+- add additional per-VM manifests after the manual-control `actual` pilot is accepted
 
 ## Task 1 — Verify k3s Cilium mode
 
@@ -200,8 +200,8 @@ kubectl get cdi
 
 Plan 2 is not container migration. It is the KubeVirt VM template and pilot VM plan:
 
-1. reconcile the `kubevirt-local` storage class
-1. import the Debian cloud image for the halted `actual` VM
+1. reconcile the `kubevirt-local` and `kubevirt-local-immediate` storage classes
+1. import the Debian cloud image for the manual-control `actual` VM
 1. start and validate the `actual` pilot VM
 1. migrate Actual data from the old MicroVM state if needed
 1. validate rollback
