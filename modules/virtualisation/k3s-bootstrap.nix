@@ -23,17 +23,53 @@ let
         sync
     }
 
+    rollout_ready() {
+      namespace="$1"
+      resource="$2"
+      timeout="$3"
+      ${pkgs.kubectl}/bin/kubectl -n "$namespace" rollout status "$resource" --timeout="$timeout" >/dev/null 2>&1
+    }
+
+    check_done() {
+      rollout_ready kube-system daemonset/cilium 30s \
+        && rollout_ready flux-system deployment/flux-operator 30s \
+        && rollout_ready flux-system deployment/source-controller 30s \
+        && rollout_ready flux-system deployment/kustomize-controller 30s \
+        && rollout_ready flux-system deployment/helm-controller 30s
+    }
+
+    disable_retry_timer() {
+      echo "k3s-helm-bootstrap: bootstrap workloads are healthy; disabling retry timer"
+      ${pkgs.systemd}/bin/systemctl disable --now k3s-helm-bootstrap.timer >/dev/null 2>&1 || true
+    }
+
+    wait_for_bootstrap_readiness() {
+      echo "k3s-helm-bootstrap: waiting for bootstrap workloads to become ready..."
+      ${pkgs.kubectl}/bin/kubectl -n kube-system rollout status daemonset/cilium --timeout=5m
+      ${pkgs.kubectl}/bin/kubectl -n flux-system rollout status deployment/flux-operator --timeout=5m
+      ${pkgs.kubectl}/bin/kubectl -n flux-system rollout status deployment/source-controller --timeout=5m
+      ${pkgs.kubectl}/bin/kubectl -n flux-system rollout status deployment/kustomize-controller --timeout=5m
+      ${pkgs.kubectl}/bin/kubectl -n flux-system rollout status deployment/helm-controller --timeout=5m
+    }
+
     wait_for_cilium_connectivity() {
       echo "k3s-helm-bootstrap: waiting for Cilium daemonset..."
       ${pkgs.kubectl}/bin/kubectl -n kube-system rollout status daemonset/cilium --timeout=5m
 
       echo "k3s-helm-bootstrap: verifying pod -> Kubernetes API ClusterIP connectivity..."
+      kubernetes_service_ip="$(${pkgs.kubectl}/bin/kubectl get service kubernetes -o jsonpath='{.spec.clusterIP}')"
+      if [ -z "$kubernetes_service_ip" ]; then
+        echo "k3s-helm-bootstrap: failed to discover kubernetes Service ClusterIP" >&2
+        exit 1
+      fi
+      echo "k3s-helm-bootstrap: discovered kubernetes Service ClusterIP $kubernetes_service_ip"
       ${pkgs.kubectl}/bin/kubectl delete pod k3s-cilium-smoke --ignore-not-found --wait=true --timeout=60s >/dev/null 2>&1 || true
       ${pkgs.kubectl}/bin/kubectl run k3s-cilium-smoke \
         --image=curlimages/curl:8.8.0 \
+        --env="KUBERNETES_SERVICE_IP=$kubernetes_service_ip" \
         --restart=Never \
         --command -- sh -ec '
-          code="$(curl -k -sS -o /tmp/healthz-body -w "%{http_code}" https://10.43.0.1:443/healthz || true)"
+          code="$(curl -k -sS -o /tmp/healthz-body -w "%{http_code}" "https://$KUBERNETES_SERVICE_IP:443/healthz" || true)"
           echo "kubernetes API healthz HTTP status: $code"
           test "$code" = "401" || test "$code" = "403"
         '
@@ -49,14 +85,9 @@ let
       ${pkgs.kubectl}/bin/kubectl delete pod k3s-cilium-smoke --ignore-not-found --wait=true --timeout=60s >/dev/null 2>&1 || true
     }
 
-    check_done() {
-      ${pkgs.kubectl}/bin/kubectl get crds --no-headers 2>/dev/null \
-        | ${pkgs.gnugrep}/bin/grep -Eo 'cilium\.io|toolkit\.fluxcd\.io' \
-        | sort -u | wc -l | grep -q 2
-    }
-
     if check_done; then
-      echo "k3s-helm-bootstrap: already complete (CRDs present)"
+      echo "k3s-helm-bootstrap: already complete (workloads ready)"
+      disable_retry_timer
       exit 0
     fi
 
@@ -66,6 +97,8 @@ let
 
     echo "k3s-helm-bootstrap: installing Flux..."
     run_helmfile_phase flux
+    wait_for_bootstrap_readiness
+    disable_retry_timer
     echo "k3s-helm-bootstrap: done"
   '';
 
@@ -206,7 +239,6 @@ in
         requires = [ "k3s.service" ];
         path = with pkgs; [
           coreutils
-          gnugrep
           kubectl
           kubernetes-helm
           helmfile
@@ -219,7 +251,7 @@ in
       };
 
       timers.k3s-helm-bootstrap = {
-        description = "Retry k3s helmfile bootstrap until Cilium and Flux CRDs exist";
+        description = "Retry k3s helmfile bootstrap until Cilium and Flux workloads are healthy";
         wantedBy = [ "timers.target" ];
         timerConfig = {
           OnBootSec = "${toString cfg.delaySeconds}s";
