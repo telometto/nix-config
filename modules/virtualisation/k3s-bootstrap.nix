@@ -259,6 +259,7 @@ in
         serviceConfig = {
           Type = "oneshot";
           ExecStart = bootstrapScript;
+          TimeoutStartSec = "infinity";
         };
       };
 
