@@ -36,7 +36,7 @@ Public ingress remains Cloudflare Tunnel → Traefik → Kubernetes Service → 
 | VM orchestration | KubeVirt | VM lifecycle, virt-launcher pods, guest console/API |
 | Image import | CDI | Debian Stable cloud image and data volume import |
 | Guest OS | Debian Stable cloud image | Application runtime inside each VM |
-| Ingress | cloudflared + Traefik | Public route termination and security middleware |
+| Ingress | cloudflared (k3s Deployment via Flux) + Traefik | Public route termination and security middleware; cloudflared runs in k3s, not as a NixOS host service |
 | Secrets | sops-nix + Sealed Secrets | Host/bootstrap secrets and workload secrets |
 | Storage phase 1 | local PV/hostPath PVCs | Single-node persistent VM disks on `blizzard` |
 

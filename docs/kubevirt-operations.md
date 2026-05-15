@@ -14,6 +14,7 @@ flowchart TD
     vm --> data[(Data PVC / local PV)]
 
     flux[Flux] --> apps[homelab-apps]
+    apps --> cf
     apps --> traefik
     apps --> kv[KubeVirt + CDI]
     apps --> policy[Cilium NetworkPolicy]
@@ -123,7 +124,7 @@ Do not expose VM services directly with public NodePorts. Use MetalLB only for d
 
 Before exposing any service publicly, verify:
 
-- Cloudflare Tunnel is connected
+- Cloudflare Tunnel is connected (runs as a k3s Deployment in homelab-apps, not a host service)
 - Traefik route points to the Kubernetes Service
 - security middleware matches the old NixOS Traefik behavior
 - CrowdSec bouncer is active
