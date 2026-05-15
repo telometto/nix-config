@@ -211,7 +211,15 @@ in
         message = "sys.services.k3s.bootstrap.enable requires sys.services.k3s.enable or services.k3s.enable.";
       }
       {
-        assertion = (config.sys.services.k3s.role or "server") == "server";
+        assertion =
+          let
+            effectiveRole =
+              if (config.services.k3s.enable or false) then
+                (config.services.k3s.role or "server")
+              else
+                (config.sys.services.k3s.role or "server");
+          in
+          effectiveRole == "server";
         message = "sys.services.k3s.bootstrap.enable is only supported on k3s server nodes (role must be \"server\").";
       }
     ];
