@@ -143,9 +143,18 @@
     path = [ pkgs.coreutils ];
     serviceConfig = {
       Type = "oneshot";
-      ConditionPathExists = "/etc/rancher/k3s/k3s.yaml";
       ExecStart = pkgs.writeShellScript "k3s-copy-kubeconfig" ''
         set -euo pipefail
+        deadline=120
+        elapsed=0
+        while [ ! -f /etc/rancher/k3s/k3s.yaml ]; do
+          if [ "$elapsed" -ge "$deadline" ]; then
+            echo "k3s-copy-kubeconfig: timed out waiting for k3s.yaml" >&2
+            exit 1
+          fi
+          sleep 2
+          elapsed=$((elapsed + 2))
+        done
         install -d -m 700 -o ${VARS.users.zeno.user} -g users /home/${VARS.users.zeno.user}/.kube
         install -m 600 -o ${VARS.users.zeno.user} -g users \
           /etc/rancher/k3s/k3s.yaml \
