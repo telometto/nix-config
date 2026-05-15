@@ -210,6 +210,10 @@ in
         assertion = (config.sys.services.k3s.enable or false) || (config.services.k3s.enable or false);
         message = "sys.services.k3s.bootstrap.enable requires sys.services.k3s.enable or services.k3s.enable.";
       }
+      {
+        assertion = (config.sys.services.k3s.role or "server") == "server";
+        message = "sys.services.k3s.bootstrap.enable is only supported on k3s server nodes (role must be \"server\").";
+      }
     ];
 
     environment.systemPackages = with pkgs; [
