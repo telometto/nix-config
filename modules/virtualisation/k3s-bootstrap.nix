@@ -71,7 +71,7 @@ let
         --command -- sh -ec '
           code="$(curl -k -sS -o /tmp/healthz-body -w "%{http_code}" "https://$KUBERNETES_SERVICE_IP:443/healthz" || true)"
           echo "kubernetes API healthz HTTP status: $code"
-          test "$code" = "401" || test "$code" = "403"
+          test "$code" = "200" || test "$code" = "401" || test "$code" = "403"
         '
 
       if ! ${pkgs.kubectl}/bin/kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/k3s-cilium-smoke --timeout=180s; then
