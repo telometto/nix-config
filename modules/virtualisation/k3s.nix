@@ -34,7 +34,7 @@ in
     ciliumCni = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Enable Cilium-compatible k3s flags (disables flannel, kube-proxy, and built-in network policy).";
+      description = "Enable Cilium-compatible k3s flags (disables flannel, kube-proxy, network policy, and ServiceLB).";
     };
 
     extraFlags = lib.mkOption {
