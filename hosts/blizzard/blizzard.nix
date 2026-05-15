@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   VARS,
   consts,
   ...
@@ -134,6 +135,24 @@
   };
 
   environment.variables.KUBECONFIG = "/home/${VARS.users.zeno.user}/.kube/config";
+
+  systemd.services.k3s-copy-kubeconfig = {
+    description = "Copy k3s kubeconfig to ${VARS.users.zeno.user} home directory";
+    after = [ "k3s.service" ];
+    wantedBy = [ "multi-user.target" ];
+    path = [ pkgs.coreutils ];
+    serviceConfig = {
+      Type = "oneshot";
+      ConditionPathExists = "/etc/rancher/k3s/k3s.yaml";
+      ExecStart = pkgs.writeShellScript "k3s-copy-kubeconfig" ''
+        set -euo pipefail
+        install -d -m 700 -o ${VARS.users.zeno.user} -g users /home/${VARS.users.zeno.user}/.kube
+        install -m 600 -o ${VARS.users.zeno.user} -g users \
+          /etc/rancher/k3s/k3s.yaml \
+          /home/${VARS.users.zeno.user}/.kube/config
+      '';
+    };
+  };
 
   systemd.tmpfiles.rules = [
     "d /flash/enc/kubevirt 0700 root root - -"
