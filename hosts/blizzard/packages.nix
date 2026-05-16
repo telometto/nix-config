@@ -7,6 +7,8 @@ let
   ];
 
   kubernetes = [
+    pkgs.kubectl
+    pkgs.kubevirt # provides virtctl for KubeVirt VM lifecycle operations
     (pkgs.wrapHelm pkgs.kubernetes-helm {
       plugins = [
         pkgs.kubernetes-helmPlugins.helm-secrets
@@ -27,5 +29,5 @@ let
   ];
 in
 {
-  environment.systemPackages = media ++ security ++ storage;
+  environment.systemPackages = media ++ kubernetes ++ security ++ storage;
 }
