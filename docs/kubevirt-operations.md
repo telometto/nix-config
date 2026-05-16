@@ -79,7 +79,7 @@ Prefer running application workloads inside the VM with systemd units. Podman in
 Phase 1 uses single-node local storage on `blizzard`:
 
 - old MicroVM state: `/flash/enc/vms/<vm>/`
-- new KubeVirt state: `/flash/enc/kubevirt/<vm>/`
+- new KubeVirt state: `/flash/enc/vms/kubevirt/<vm>/`
 
 Keep old and new storage separate. Do not mutate old MicroVM images during migration.
 

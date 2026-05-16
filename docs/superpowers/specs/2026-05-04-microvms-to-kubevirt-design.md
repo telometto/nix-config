@@ -124,7 +124,7 @@ Phase 1 uses local storage on `blizzard`:
 | Path | Purpose |
 |---|---|
 | `/flash/enc/vms` | Current MicroVM state, kept for rollback |
-| `/flash/enc/kubevirt` | New KubeVirt VM disks/PVs |
+| `/flash/enc/vms/kubevirt` | New KubeVirt VM disks/PVs |
 
 This is deliberately simple and single-node. It does not satisfy real live migration semantics. Future storage work can introduce distributed storage or a shared backend after the VM migration is proven.
 
