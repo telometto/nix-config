@@ -28,25 +28,31 @@ let
       if [ $timeout -le 0 ]; then
         echo "KWallet not available yet, skipping automatic SSH key import"
         echo "Keys can be added manually with: ssh-add"
-        exit 0  # Exit gracefully instead of failing
+        exit 0
       fi
       sleep 1
       timeout=$((timeout - 1))
     done
 
-    # Import only explicitly listed SSH keys (no greedy auto-discovery)
+    # Auto-discover SSH keys: for every .pub file, import the private counterpart
     sshDir="${config.home.homeDirectory}/.ssh"
-    for keyName in ${lib.escapeShellArgs cfg.sshKeys}; do
-      key="$sshDir/$keyName"
-      if [ -f "$key" ]; then
-        if ${pkgs.openssh}/bin/ssh-keygen -l -f "$key" > /dev/null 2>&1; then
-          echo "Adding key: $key"
-          ${pkgs.openssh}/bin/ssh-add "$key" </dev/null || true
-        else
-          echo "Skipping invalid key: $key"
-        fi
+    for pubKey in "$sshDir"/*.pub; do
+      [ -e "$pubKey" ] || continue
+      keyName="$(basename "$pubKey" .pub)"
+      privKey="$sshDir/$keyName"
+      ${lib.optionalString (cfg.excludeKeys != [ ]) ''
+        skip=0
+        for excl in ${lib.escapeShellArgs cfg.excludeKeys}; do
+          [ "$keyName" = "$excl" ] && skip=1 && break
+        done
+        [ "$skip" = "1" ] && continue
+      ''}
+      [ -f "$privKey" ] || continue
+      if ${pkgs.openssh}/bin/ssh-keygen -l -f "$privKey" > /dev/null 2>&1; then
+        echo "Adding key: $privKey"
+        ${pkgs.openssh}/bin/ssh-add "$privKey" </dev/null || true
       else
-        echo "Warning: SSH key not found: $key"
+        echo "Skipping invalid key: $privKey"
       fi
     done
   '';
@@ -67,10 +73,10 @@ in
       description = "Additional KDE configuration";
     };
 
-    sshKeys = lib.mkOption {
+    excludeKeys = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description = "List of SSH key filenames in ~/.ssh to auto-import via KWallet on login. Empty list disables auto-import.";
+      description = "SSH key filenames in ~/.ssh to skip during auto-import (base name without .pub extension).";
       example = [
         "id_ed25519"
         "work_rsa"
@@ -118,8 +124,8 @@ in
       SSH_ASKPASS_REQUIRE = "prefer";
     };
 
-    # Automatic SSH key import using KWallet
-    systemd.user.services."ssh-add-keys" = lib.mkIf (cfg.sshKeys != [ ]) {
+    # Automatic SSH key import: auto-discovers private keys by .pub counterpart
+    systemd.user.services."ssh-add-keys" = {
       Unit = {
         Description = "Load SSH keys into the agent using KWallet";
 
