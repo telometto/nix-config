@@ -47,6 +47,8 @@ flowchart LR
   Track the MicroVM-to-KubeVirt execution plan and per-VM cutover checklist
 - [kubevirt-operations.md](kubevirt-operations.md) —
   Operate and troubleshoot the KubeVirt/Flux/Cilium stack on `blizzard`
+- [kubevirt-production-migration-notes.md](kubevirt-production-migration-notes.md) —
+  Capture production cutover notes for data, VPN routing, shared storage, and secrets
 
 #### Reference
 
@@ -69,6 +71,7 @@ flowchart LR
 | Add a new user | [How-To: Add Hosts and Users](how-to-add-host-and-users.md) |
 | Migrate MicroVMs to KubeVirt | [KubeVirt Migration Plan](kubevirt-migration-plan.md) |
 | Operate KubeVirt on blizzard | [KubeVirt Operations Runbook](kubevirt-operations.md) |
+| Plan KubeVirt production cutover | [KubeVirt Production Migration Notes](kubevirt-production-migration-notes.md) |
 | Understand the architecture | [Architecture Blueprint](Project_Architecture_Blueprint.md) |
 | Find option namespaces | [Reference: Architecture](reference-architecture.md) |
 | Learn why things work this way | [Explanation: Design](explanation-design.md) |
