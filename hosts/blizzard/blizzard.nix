@@ -167,6 +167,7 @@
     "d /flash/enc/vms/kubevirt 0700 root root - -"
     "d /flash/enc/vms/kubevirt/actual 0700 root root - -"
     "d /flash/enc/vms/kubevirt/actual/rootdisk 0700 root root - -"
+    "d /flash/enc/vms/kubevirt/actual/data 0700 root root - -"
   ];
 
   system.stateVersion = "24.11";
