@@ -35,10 +35,10 @@ nixosConfigurations = {
 ```
 
 5. Configure SOPS for the new host if it will run any secrets-enabled services
-  such as Tailscale or borgbackup. Follow
-  [SOPS Setup Guide](sops-setup-guide.md) to derive the host's age recipient,
-  update the private `nix-secrets` repository, and re-encrypt affected secret
-  files.
+   such as Tailscale or borgbackup. Follow
+   [SOPS Setup Guide](sops-setup-guide.md) to derive the host's age recipient,
+   update the private `nix-secrets` repository, and re-encrypt affected secret
+   files.
 
 1. (Optional) Add Home Manager overrides:
 

@@ -79,10 +79,10 @@ Severity follows the repository's OWASP-aligned model:
 
 ### F-001 — CI secret scanning skipped Git history
 
-**Severity:** Important  
+**Severity:** Important\
 **Category:** OWASP A03 Software Supply Chain Failures, A04 Cryptographic
-Failures  
-**Status:** Remediated in this change set  
+Failures\
+**Status:** Remediated in this change set\
 **Confidence:** High
 
 The initial audit found that the scheduled security audit checked out full
@@ -117,8 +117,8 @@ Validation:
 
 ### F-002 — Default and service CSP policies permit inline/eval scripts
 
-**Severity:** Important  
-**Category:** OWASP A02 Security Misconfiguration, A05 Injection/XSS  
+**Severity:** Important\
+**Category:** OWASP A02 Security Misconfiguration, A05 Injection/XSS\
 **Confidence:** High
 
 The central Traefik security header helper and several service-specific
@@ -165,9 +165,9 @@ Validation:
 
 ### F-003 — Cloudflare Access IP updater can clear existing policy rules
 
-**Severity:** Important  
-**Category:** OWASP A01 Broken Access Control, A06 Insecure Design  
-**Status:** Remediated in this change set  
+**Severity:** Important\
+**Category:** OWASP A01 Broken Access Control, A06 Insecure Design\
+**Status:** Remediated in this change set\
 **Confidence:** High
 
 The initial audit found that the Cloudflare Access updater fetched the current
@@ -196,7 +196,7 @@ Remediation status:
 1. Existing `exclude` and `require` values are preserved.
 1. Unmanaged `include` values are preserved.
 1. The previous managed IP include is removed using the service state file, and
-  the current managed IP include is inserted.
+   the current managed IP include is inserted.
 
 Validation:
 
@@ -210,9 +210,9 @@ Validation:
 
 ### F-004 — `.gitignore` does not cover common local secret files
 
-**Severity:** Important  
-**Category:** OWASP A04 Cryptographic Failures  
-**Status:** Remediated in this change set  
+**Severity:** Important\
+**Category:** OWASP A04 Cryptographic Failures\
+**Status:** Remediated in this change set\
 **Confidence:** High
 
 The initial audit found that `.gitignore` only ignored the private secrets
@@ -240,8 +240,8 @@ Validation:
 
 ### F-005 — Desktop/server role exclusivity is not enforced
 
-**Severity:** Suggestion  
-**Category:** OWASP A06 Insecure Design  
+**Severity:** Suggestion\
+**Category:** OWASP A06 Insecure Design\
 **Confidence:** High
 
 The role module exposes independent booleans for desktop and server roles, but
@@ -270,8 +270,8 @@ Validation:
 
 ### F-006 — MicroVM registry drift is documented but not enforced
 
-**Severity:** Suggestion  
-**Category:** OWASP A06 Insecure Design, A02 Security Misconfiguration  
+**Severity:** Suggestion\
+**Category:** OWASP A06 Insecure Design, A02 Security Misconfiguration\
 **Confidence:** High
 
 The current registry values are unique, but the registry has one entry that is
@@ -309,9 +309,9 @@ Validation:
 
 ### F-007 — Matrix CORS/CSP exception needs an explicit security contract
 
-**Severity:** Suggestion  
-**Category:** OWASP A02 Security Misconfiguration  
-**Status:** Partially remediated in this change set  
+**Severity:** Suggestion\
+**Category:** OWASP A02 Security Misconfiguration\
+**Status:** Partially remediated in this change set\
 **Confidence:** Medium
 
 The Matrix middleware disables CSP and allows wildcard CORS with authorization
@@ -345,8 +345,8 @@ Validation:
 
 ### F-008 — CrowdSec console sharing should be an explicit data-sharing choice
 
-**Severity:** Suggestion  
-**Category:** OWASP A09 Security Logging and Alerting Failures, Privacy  
+**Severity:** Suggestion\
+**Category:** OWASP A09 Security Logging and Alerting Failures, Privacy\
 **Confidence:** Medium
 
 CrowdSec console sharing is enabled for manual, custom, tainted, and contextual
