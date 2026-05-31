@@ -2,4 +2,11 @@
 nix-secrets/
 vars/
 
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.crt
+
 result
