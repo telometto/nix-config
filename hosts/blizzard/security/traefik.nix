@@ -52,6 +52,8 @@ let
     "100.64.0.0/10"
   ];
 
+  # Plex OAuth and web clients still require inline/eval allowances; keep this
+  # policy scoped to Plex-family routes instead of using it as a default.
   plexCsp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
 in
 {
@@ -124,6 +126,8 @@ in
 
           security-headers = traefikLib.mkSecurityHeaders { };
 
+          # Lingarr currently needs inline script allowances and WebSocket
+          # connections; keep this exception route-scoped.
           lingarr-headers = traefikLib.mkSecurityHeaders {
             csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:;";
           };
@@ -154,10 +158,9 @@ in
             csp = null;
           };
 
-          # Matrix needs relaxed headers: no CSP (Element/clients make
-          # cross-origin requests) and DENY framing to prevent click-jacking.
-          # CORS headers are set here so browsers (and tools like the Matrix
-          # connectivity tester) can reach all API/well-known endpoints.
+          # Matrix needs relaxed headers for federated clients and well-known
+          # discovery. Do not reuse this wildcard CORS/no-CSP profile outside
+          # Matrix routes.
           matrix-headers = traefikLib.mkSecurityHeaders {
             xFrameOptions = "DENY";
             xssProtection = "0";
@@ -172,7 +175,8 @@ in
             };
           };
 
-          # Plex-adjacent services (Overseerr, Tautulli) - relaxed referrer + Plex CSP
+          # Plex-adjacent services need Plex OAuth/referrer compatibility; keep
+          # this separate from the default security headers.
           plex-headers = traefikLib.mkSecurityHeaders {
             referrerPolicy = "no-referrer-when-downgrade";
             csp = plexCsp;
