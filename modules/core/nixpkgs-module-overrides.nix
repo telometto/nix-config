@@ -12,5 +12,5 @@ _: {
   #   # security.apparmor.includes; AppArmor rejects them.
   #   # Fix: https://github.com/NixOS/nixpkgs/pull/511479 (merged nixos-unstable-small)
   #   disabledModules = [ "security/pam.nix" ];
-  #   imports = [ "${inputs.nixpkgs-unstable}/nixos/modules/security/pam.nix" ];
+  #   imports = [ "${inputs.nixpkgs-small}/nixos/modules/security/pam.nix" ];
 }
