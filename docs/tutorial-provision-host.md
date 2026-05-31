@@ -73,29 +73,10 @@ files.
 Any service that uses secrets (Tailscale, borgbackup, etc.) requires the
 host's age key to be registered in `.sops.yaml` before secrets will decrypt.
 
-These files live in the **private `nix-secrets` repository**, not in this repo.
-
-1. Derive the age public key from the host's SSH host key:
-
-```bash
-ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key | ssh-to-age
-```
-
-2. In the `nix-secrets` repository, add the resulting age key to `.sops.yaml`
-   under the new host entry.
-
-1. Still in `nix-secrets`, re-encrypt all affected secret files:
-
-```bash
-cd ../nix-secrets
-sops updatekeys path/to/affected-secret.yaml
-```
-
-Repeat `sops updatekeys` for any other secret files that should be readable
-by the new host.
-
-Until this step is complete, any secrets-enabled service will fail to start
-with a SOPS decryption error.
+Follow [SOPS Setup Guide](sops-setup-guide.md) to derive the host's age
+recipient, update the private `nix-secrets` repository, and re-encrypt the
+affected secret files. Until that guide is complete for the host, any
+secrets-enabled service can fail with a SOPS decryption error.
 
 ## Step 5: Register in flake.nix
 
