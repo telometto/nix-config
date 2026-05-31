@@ -101,7 +101,10 @@ in
 
 ### Configuration Precedence
 
-Layers are applied from lowest priority (bottom) to highest (top):
+The canonical implementation is
+[`modules/core/home-users.nix`](../modules/core/home-users.nix). Layers are
+applied from lowest priority to highest priority, with `autoDesktopConfig`
+merged separately via `lib.mkDefault`.
 
 ```mermaid
 flowchart TD
@@ -127,6 +130,9 @@ As a numbered list (low → high):
 `autoDesktopConfig` (`hm.desktop.<flavor>.enable = lib.mkDefault true`) is merged separately — it uses `lib.mkDefault` so any explicit `hm.desktop.*.enable` setting in any layer takes precedence.
 
 `lib.mkForce` overrides everything regardless of layer.
+
+See [Reference: Architecture — HM Override System](../docs/reference-architecture.md#hm-override-system)
+for the canonical table and source-level notes.
 
 ### Related Documentation
 

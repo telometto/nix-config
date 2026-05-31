@@ -1,6 +1,6 @@
 # Project Architecture Blueprint
 
-> **Last verified: 2026-04-27**
+> **Last verified: 2026-06-01**
 >
 > **Project Type:** NixOS Flake Configuration
 >
@@ -10,7 +10,7 @@ ______________________________________________________________________
 
 ## 1. Executive Summary
 
-This repository implements a modular NixOS flake configuration for 4 physical hosts and 23 MicroVMs.
+This repository implements a modular NixOS flake configuration for 4 physical hosts and 25 wired MicroVM outputs.
 The design centres on three auto-loading mechanisms that eliminate manual `imports` lists, a
 two-namespace option system (`sys.*` / `hm.*`), role files that bundle machine-class defaults,
 and a layered Home Manager precedence stack that allows fine-grained per-user overrides without
@@ -27,7 +27,7 @@ flowchart TD
     SL -->|"imports every .nix"| MOD["modules/**"]
     HL -->|"imports every .nix"| HOST["hosts/<hostname>/**"]
     HML -->|"imports every .nix\nexcluding overrides/"| HOME["home/**"]
-    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(23 MicroVMs)"]
+    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(25 wired VM outputs)"]
     F --> HOSTS["nixosConfigurations\nsnowfall · blizzard · avalanche · kaizer"]
 ```
 
@@ -39,7 +39,7 @@ ______________________________________________________________________
 
 | Output | Value |
 |--------|-------|
-| `nixosConfigurations` | 4 named hosts + 23 `-vm` entries (merged from `vms/flake-microvms.nix`) |
+| `nixosConfigurations` | 4 named hosts + 25 `-vm` entries (merged from `vms/flake-microvms.nix`) |
 | `formatter.x86_64-linux` | treefmt wrapper (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
@@ -55,7 +55,7 @@ There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
 | `./system-loader.nix` | repo |
 | `./host-loader.nix` | repo |
 | `inputs.disko.nixosModules.disko` | disko input (included; not actively used — see §13) |
-| `inputs.home-manager.nixosModules.home-manager` | home-manager |
+| `inputs.hm-stable.nixosModules.home-manager` | Home Manager release module |
 | `inputs.sops-nix.nixosModules.sops` | sops-nix |
 | `inputs.lanzaboote.nixosModules.lanzaboote` | lanzaboote |
 | `inputs.microvm.nixosModules.host` | microvm |
@@ -68,14 +68,15 @@ There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
 ```mermaid
 flowchart LR
     subgraph Core
-        NP[nixpkgs unstable]
-        NPS[nixpkgs-stable-latest 25.11]
-        NPS2[nixpkgs-stable 24.11]
-        NPU[nixpkgs-unstable-small]
+        NP[nixpkgs nixos-26.05]
+        NPB[nixpkgs-beta nixos-26.05]
+        NPU[nixpkgs-unstable]
+        NPS[nixpkgs-small unstable-small]
         NHW[nixos-hardware]
     end
     subgraph Build
-        HM[home-manager]
+        HM[hm-stable release-26.05]
+        HMM[hm-master]
         SOPS[sops-nix]
         LB[lanzaboote]
         MVM[microvm]
@@ -97,7 +98,7 @@ flowchart LR
     Build --> F
     Secrets --> F
     Dev --> F
-    F --> OUT1[nixosConfigurations\n4 hosts + 23 VMs]
+    F --> OUT1[nixosConfigurations\n4 hosts + 25 VM outputs]
     F --> OUT2[formatter / checks / devShells]
 ```
 
@@ -361,7 +362,7 @@ flowchart TD
     MK["vms/mkMicrovmConfig.nix\nTransforms registry attrs into NixOS module:\nmicrovm.hypervisor = cloud-hypervisor\nmicrovm.vsock.cid\nmicrovm.mem / vcpu\nmicrovm.interfaces / volumes\nnetworking + systemd.network\nAuto-appends /persist volume\nand /nix/store virtiofs share"]
     SVC["vms/<name>.nix\nPer-VM service module\n(actual application config)"]
     FM["vms/flake-microvms.nix\nmkMicrovm helper\nwraps each VM"]
-    OUT["nixosConfigurations.*-vm\n(23 entries merged into flake outputs)"]
+    OUT["nixosConfigurations.*-vm\n(25 entries merged into flake outputs)"]
 
     REG --> MK
     BASE --> FM
@@ -399,7 +400,16 @@ and therefore do not inherit host-only modules.
 | paperless | 10.100.0.61 | 11061 | 8 GB | 4 | Document management |
 | firefly | 10.100.0.62 | 11062 | 2 GB | 2 | Personal finance |
 | firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Firefly data import |
+| flaresolverr | 10.100.0.13 | 11013 | 512 MB | 1 | Embedded in `prowlarr-vm`; standalone scaffold exists |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Photo library |
+| mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Recipe manager |
+| trigger | 10.100.0.80 | 11080 | 12 GB | 6 | Trigger.dev v4 background jobs |
+
+`vms/flake-microvms.nix` exposes 25 VM outputs. `vms/vm-registry.nix` also
+contains a standalone `flaresolverr` allocation and `vms/flaresolverr.nix`
+exists, but FlareSolverr currently runs inside `prowlarr-vm` instead of as a
+separate `flaresolverr-vm` output. See
+[`architecture-risks-and-improvements.md`](architecture-risks-and-improvements.md#microvm-count-and-flaresolverr).
 
 ______________________________________________________________________
 
@@ -413,7 +423,7 @@ flowchart TD
     HOST["blizzard host\n192.168.2.x / 10.100.0.1 bridge"]
     ADG["adguard-vm\n10.100.0.10\nDNS sinkhole"]
     WG["wireguard-vm\n10.100.0.11\nVPN gateway"]
-    REST["Other VMs\n10.100.0.12–70\ndefault gateway = 10.100.0.1"]
+    REST["Other VMs\n10.100.0.12–80\ndefault gateway = 10.100.0.1"]
 
     HOST --> ADG
     HOST --> WG
@@ -544,6 +554,11 @@ ______________________________________________________________________
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 
+Full flake evaluation, host builds, and `nixos-rebuild` require access to the
+private `nix-secrets` SSH input. In sandboxes without that deploy key, prefer
+syntax-only checks such as `nix-instantiate --parse <file>.nix` and rely on CI
+for full evaluation.
+
 ### Formatter chain (`nix fmt`)
 
 treefmt-nix orchestrates the following formatters in one pass:
@@ -611,4 +626,4 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-*Last verified against source: 2026-04-27*
+*Last verified against source: 2026-06-01*
