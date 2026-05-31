@@ -25,6 +25,8 @@ flowchart LR
     subgraph Reference["Information-Oriented"]
         RA["Reference: Architecture\nreference-architecture.md"]
         RC["Reference: CI\nreference-ci.md"]
+      SOPS["SOPS Setup Guide\nsops-setup-guide.md"]
+      RISKS["Architecture Risks\narchitecture-risks-and-improvements.md"]
         BP["Architecture Blueprint\nProject_Architecture_Blueprint.md"]
     end
     subgraph Understanding["Understanding-Oriented"]
@@ -50,6 +52,9 @@ flowchart LR
   Quick reference for options and patterns
 - [reference-ci.md](reference-ci.md) —
   CI workflows, checks, and automation
+- [sops-setup-guide.md](sops-setup-guide.md) — Host recipient setup and secret flow
+- [architecture-risks-and-improvements.md](architecture-risks-and-improvements.md) —
+  Source-guided risks and improvement opportunities
 - [Project_Architecture_Blueprint.md](Project_Architecture_Blueprint.md) —
   Comprehensive architecture documentation
 
@@ -65,6 +70,8 @@ flowchart LR
 | Add a new user | [How-To: Add Hosts and Users](how-to-add-host-and-users.md) |
 | Understand the architecture | [Architecture Blueprint](Project_Architecture_Blueprint.md) |
 | Find option namespaces | [Reference: Architecture](reference-architecture.md) |
+| Configure host secrets | [SOPS Setup Guide](sops-setup-guide.md) |
+| Review risks and improvements | [Architecture Risks and Improvements](architecture-risks-and-improvements.md) |
 | Learn why things work this way | [Explanation: Design](explanation-design.md) |
 
 ### Directory READMEs

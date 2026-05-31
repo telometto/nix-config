@@ -103,7 +103,7 @@ hosts/<hostname>/             # Per-host config
   packages.nix (optional)
   containers.nix (optional)
 
-vms/                          # MicroVM definitions (23 VMs), merged into nixosConfigurations
+vms/                          # MicroVM definitions (25 wired VM outputs), merged into nixosConfigurations
 containers/                   # Rootless Podman containers (Home Manager modules)
 lib/                          # Shared helpers (constants, traefik, grafana)
 dashboards/                   # Grafana dashboard JSON (shared/ + host/blizzard/)
@@ -277,7 +277,7 @@ maintainer instead of guessing lock hashes.
 - `paperless-ngx` has a build workaround in `vms/flake-microvms.nix`
   (`doCheck = false; doInstallCheck = false;`). Preserve it unless you
   are deliberately re-testing upstream.
-- Documentation was last audited and verified against the codebase on 2026-04-27.
+- Documentation was last audited and verified against the codebase on 2026-06-01.
   When in doubt, prefer verifying against the source files over trusting a doc claim.
 
 ## 9. Where to look first
