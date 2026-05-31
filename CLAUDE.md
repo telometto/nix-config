@@ -29,7 +29,7 @@ Hosts: `snowfall` (desktop/KDE), `blizzard` (server), `avalanche` (desktop/GNOME
 
 ### Channel posture
 
-`nixpkgs` tracks `nixos-26.05` (stable). Use `sys.overlays.fromInputs.nixpkgs-small = [ "pkg" ]` to pull individual packages from `nixos-unstable-small`; use `nixpkgs-unstable = [ "pkg" ]` to back-pin to `nixos-24.11`. See `modules/core/overlays.nix` for the full option.
+`nixpkgs` and `nixpkgs-beta` track `nixos-26.05` (stable). Use `sys.overlays.fromInputs.nixpkgs-small = [ "pkg" ]` to pull individual packages from `nixos-unstable-small`; use `nixpkgs-unstable = [ "pkg" ]` for `nixos-unstable`. See `modules/core/overlays.nix` for the full option.
 
 ### Auto-loading
 
@@ -95,9 +95,11 @@ Enable in a host file: `sys.role.desktop.enable = true;`
 
 ### MicroVMs
 
+- `vms/flake-microvms.nix` — wires the 25 current `*-vm` outputs into `nixosConfigurations`.
 - `vms/vm-registry.nix` — single source of truth for CID, MAC, IP, memory, vCPU per VM.
 - `vms/mkMicrovmConfig.nix` — helper that generates common network/storage config from a registry entry.
 - `vms/base.nix` — shared hardened base (SSH keys, admin user, firewall).
+- `flaresolverr` currently has a standalone registry/file scaffold, but the active service runs inside `prowlarr-vm`; see `docs/architecture-risks-and-improvements.md`.
 
 ### Lib helpers
 

@@ -1,8 +1,8 @@
 ## MicroVM Configurations
 
 Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
-for lightweight virtualization. The flake currently defines 25 MicroVM
-configurations for the `blizzard` host on a `10.100.0.0/24` tap bridge.
+for lightweight virtualization. The flake currently wires 25 MicroVM outputs
+for the `blizzard` host on a `10.100.0.0/24` tap bridge.
 
 ______________________________________________________________________
 
@@ -69,6 +69,7 @@ ______________________________________________________________________
 | brave | 10.100.0.54 | 11054 | 4 GB | 4 | Via WG | Containerized Brave browser |
 | firefly | 10.100.0.62 | 11062 | 2 GB | 2 | Direct | Firefly III finance |
 | firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Direct | Firefly data importer |
+| flaresolverr | 10.100.0.13 | 11013 | 512 MB | 1 | Embedded | Runs inside `prowlarr-vm`; standalone registry/file scaffold exists |
 | firefox | 10.100.0.52 | 11052 | 4 GB | 4 | Via WG | Containerized Firefox browser |
 | gitea | 10.100.0.50 | 11050 | 2 GB | 2 | Direct | Self-hosted git forge |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Direct | Photo library |
@@ -149,6 +150,12 @@ sys.virtualisation.microvm.instances.<name> = {
 
 Each instance toggle is independent, so a VM can remain active while
 selectively disabling its Cloudflare Tunnel or Traefik routing.
+
+> **FlareSolverr note:** `vm-registry.nix` and `vms/flaresolverr.nix` contain
+> standalone FlareSolverr scaffolding, but `flake-microvms.nix` does not expose
+> `flaresolverr-vm`. The active service is currently started inside
+> `prowlarr-vm`; see
+> [Architecture Risks and Improvements](../docs/architecture-risks-and-improvements.md#microvm-count-and-flaresolverr).
 
 ______________________________________________________________________
 

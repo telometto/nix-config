@@ -31,6 +31,21 @@ SSH authentication error.
 
 ______________________________________________________________________
 
+### Local validation matrix
+
+| Check | Local without `nix-secrets` SSH? | Notes |
+|-------|:-------------------------------:|-------|
+| Read and edit files | yes | Always safe |
+| `nix-instantiate --parse <file>.nix` | yes | Syntax-only; does not evaluate the flake |
+| `deadnix .` / `statix check .` | yes, if installed | Static analysis only |
+| `nix fmt` | usually | Formats through `treefmt`; if input fetching fails locally, rely on `auto-format.yml` |
+| `nix flake check --no-build` | no | Evaluates the flake and needs the private input |
+| `nix eval .#nixosConfigurations.<host>...` | no | Requires `nix-secrets` and full host evaluation |
+| `nix build .#nixosConfigurations.<host>...` | no | Same private input requirement; may also be expensive |
+| `nixos-rebuild` | no in sandboxes | Requires full evaluation and a real NixOS/root context |
+
+______________________________________________________________________
+
 ### Auto-Merge Chain
 
 The primary lock-file automation (`update-nix-lock.yml`) opens a PR, then
@@ -56,6 +71,11 @@ flowchart TD
     K[update-nix-lock-recreate.yml\ncron 1st of month] -->|opens separate PR| L[manual review\nor auto-merge]
 ```
 
+`copilot-auto-merge.yml` is separate from lock-file automation. It arms GitHub
+auto-merge only when the latest Copilot review on the current head SHA has no
+inline comments. The final merge is still subject to repository branch
+protection, required status checks, and unresolved conversation settings.
+
 ______________________________________________________________________
 
 ### Full Workflow Reference
@@ -63,7 +83,7 @@ ______________________________________________________________________
 | Workflow | Trigger | Purpose | Auto-commits? |
 |----------|---------|---------|--------------|
 | `auto-format.yml` | PR / push to main / manual | Runs `nix fmt`, commits formatted changes back to the branch, comments on PR, enables auto-merge | Yes — formats in-place |
-| `flake-check.yml` | PR / push to main / manual (paths: `**.nix`, `flake.lock`, `treefmt.nix`) | Runs `nix flake check --no-build`, redacts secrets in failure output | No |
+| `flake-check.yml` | PR / push to main / manual (PR paths include `**.nix`, `flake.lock`, `treefmt.nix`; push paths include `**.nix`, `flake.lock`) | Runs `nix flake check --no-build`, redacts secrets in failure output | No |
 | `validate-config.yml` | PR / push to main / manual | Discovers hosts via `mkHost` grep, evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix, and evaluates the Home Manager users attrset | No |
 | `change-impact-analysis.yml` | PR | Diffs changed files under `hosts/`, `modules/`, `home/`, `vms/`, `lib/`, `flake.*`, posts impact report as a PR comment | No |
 | `compliance-check.yml` | PR / push / cron Mon 09:00 | Runs `deadnix` and other Nix linters, comments results | No |

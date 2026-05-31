@@ -11,7 +11,7 @@ Information reference for this repo's moving parts, options, and commands.
 | Output | Description |
 |--------|-------------|
 | `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}` | The four physical hosts |
-| `nixosConfigurations.<vm-name>` (×23) | MicroVM guests defined in `vms/` |
+| `nixosConfigurations.<vm-name>` (×25) | Wired MicroVM guests defined in `vms/flake-microvms.nix` |
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
 | `checks.x86_64-linux.formatting` | Formatting check (`nix flake check`) |
 | `devShells.x86_64-linux.default` | Dev shell with nil, nixfmt, deadnix, statix, sops, ssh-to-age |
@@ -93,21 +93,25 @@ ______________________________________________________________________
 
 ## HM Override System
 
-Home Manager config is assembled in layers. Lower layers supply defaults; higher layers win.
+Home Manager config is assembled from imports and attrsets in
+`modules/core/home-users.nix`. Lower layers usually supply defaults; higher
+layers are where host/user-specific choices live. Normal Nix module priorities
+still apply, so `lib.mkForce` wins from any layer.
 
 | Layer | File / mechanism | Scope |
 |-------|-----------------|-------|
-| 1. Module defaults | Individual `home/*.nix` option defaults | All users, all hosts |
-| 2. HM loader modules | All files under `home/` (via hm-loader) | All users, all hosts |
-| 3. Host-wide extra modules | `sys.home.extraModules` in host file | All users on that host |
-| 4. Base template | `sys.home.template` in host file | All users on that host |
-| 5. Auto desktop | `hm.desktop.<flavor>.enable = true` from `sys.desktop.flavor` (via `lib.mkDefault`) | All users on hosts with a desktop flavor |
-| 6. Host override | `home/overrides/host/<hostname>.nix` | All users on that specific host |
-| 7. User@host override | `home/overrides/user/<username>-<hostname>.nix` | Specific user on specific host |
-| 8. User extra modules | `sys.home.users.<username>.extraModules` in host file | Specific user on that host |
-| 9. `extraConfig` | `sys.home.users.<username>.extraConfig` in host file | Specific user on that host |
+| 1. HM loader modules | All files under `home/` via `hm-loader.nix` | All users, all hosts |
+| 2. Host-wide extra modules | `sys.home.extraModules` in host config | All users on that host |
+| 3. Template imports | `sys.home.template.imports` | All users on that host |
+| 4. Host override | `home/overrides/host/<hostname>.nix`, if it exists | All users on that host |
+| 5. User@host override | `home/overrides/user/<username>-<hostname>.nix`, if it exists | Specific user on that host |
+| 6. User extra modules/imports | `sys.home.users.<username>.extraModules` and `extraConfig.imports` | Specific user on that host |
+| 7. Template attrs | `sys.home.template` without `imports` | All users on that host |
+| 8. User extra config attrs | `sys.home.users.<username>.extraConfig` without `imports` | Specific user on that host |
+| 9. Auto desktop defaults | `hm.desktop.<flavor>.enable = lib.mkDefault true` for KDE/GNOME/Hyprland | Desktop hosts |
 
-`lib.mkForce` in any override file always wins regardless of layer.
+`home.username` and `home.homeDirectory` are also filled with `lib.mkDefault`
+from the enabled system user data.
 
 ### The `ssh-common.nix` exception
 
@@ -175,7 +179,9 @@ The bridge between SOPS and service modules is the `sys.secrets.*` option namesp
 
 The `whenEnabled` pattern ties secret definitions to service enablement. A secret is only declared in `sops.secrets` when its corresponding service module is enabled (`lib.mkIf cfg.enable { sops.secrets.X = ...; }`). Disabling a service automatically removes its secret definition, preventing dangling decryption rules that would fail on hosts where that service is not running.
 
-See also: [Architecture Blueprint — Section 8: Secrets Architecture](Project_Architecture_Blueprint.md#section-8---secrets-architecture) for a full diagram.
+See also: [SOPS Setup Guide](sops-setup-guide.md) for host-recipient setup and
+[Architecture Blueprint — Section 8: Secrets Architecture](Project_Architecture_Blueprint.md#section-8---secrets-architecture)
+for a full diagram.
 
 ______________________________________________________________________
 
@@ -188,6 +194,11 @@ VMs do **not** use `system-loader.nix`. They are built with a minimal module set
 - [`vms/base.nix`](../vms/base.nix): Shared hardened base config for all VMs. Includes SSH host keys, admin user, firewall, and stateVersion.
 
 See [`vms/README.md`](../vms/README.md) for the full VM list and per-VM details.
+
+`vms/vm-registry.nix` currently contains one extra standalone allocation for
+`flaresolverr`. FlareSolverr is wired inside `prowlarr-vm` today, while the
+standalone `vms/flaresolverr.nix` scaffold is not a `nixosConfigurations`
+output. See [Architecture Risks and Improvements](architecture-risks-and-improvements.md#microvm-count-and-flaresolverr).
 
 ______________________________________________________________________
 
@@ -259,6 +270,8 @@ ______________________________________________________________________
 ## See Also
 
 - [Architecture Blueprint](Project_Architecture_Blueprint.md) — comprehensive diagrams and detailed explanations
+- [SOPS Setup Guide](sops-setup-guide.md) — host recipient setup and secret troubleshooting
+- [Architecture Risks and Improvements](architecture-risks-and-improvements.md) — source-guided risks and future improvements
 - [Explanation: Design](explanation-design.md) — rationale behind key decisions
 - [How-To: Add Hosts and Users](how-to-add-host-and-users.md) — step-by-step task guide
 - [vms/README.md](../vms/README.md) — VM list and configuration details
