@@ -34,27 +34,11 @@ nixosConfigurations = {
 };
 ```
 
-5. Configure SOPS for the new host (required if any secrets-enabled services
-   are on — Tailscale, borgbackup, etc.):
-
-   a. Derive the host's age recipient from its SSH host key:
-
-   ```bash
-   ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key | nix run nixpkgs#ssh-to-age --
-   ```
-
-   b. In the private `nix-secrets` repository (not this repo), add that public
-   key to the appropriate host entry in `.sops.yaml`.
-   c. Still in `nix-secrets`, re-encrypt each affected secret file using its
-   actual path there:
-
-   ```bash
-   cd ../nix-secrets
-   sops updatekeys path/to/affected-secret.yaml
-   ```
-
-   Repeat `sops updatekeys` for any other secret files that should be readable
-   by the new host.
+5. Configure SOPS for the new host if it will run any secrets-enabled services
+  such as Tailscale or borgbackup. Follow
+  [SOPS Setup Guide](sops-setup-guide.md) to derive the host's age recipient,
+  update the private `nix-secrets` repository, and re-encrypt affected secret
+  files.
 
 1. (Optional) Add Home Manager overrides:
 
@@ -126,6 +110,5 @@ sys.services.grafana.enable = true;
   roles) and check overrides file names match the expected pattern.
 - **Service secrets**: Enable the service option first; `modules/core/sops.nix`
   defines secrets only when the service is on.
-- **SOPS decryption fails**: Ensure the host's age key is in `.sops.yaml` in
-  the private `nix-secrets` repository, and that all affected secret files
-  there have been re-encrypted with `sops updatekeys <path>`.
+- **SOPS decryption fails**: Use the checklist in
+  [SOPS troubleshooting](sops-setup-guide.md#troubleshooting).
