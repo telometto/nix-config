@@ -3,7 +3,7 @@
 
   inputs = {
     # Primary channel - most packages come from here
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     # Latest stable alias (same target as nixpkgs; kept for symmetry and future bumps)
     nixpkgs-beta.url = "github:NixOS/nixpkgs/nixos-26.05";
     # Older stable - back-pin escape hatch for packages that regressed in 25.11
@@ -29,7 +29,7 @@
     };
 
     hm-stable = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
