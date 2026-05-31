@@ -29,7 +29,12 @@ Hosts: `snowfall` (desktop/KDE), `blizzard` (server), `avalanche` (desktop/GNOME
 
 ### Channel posture
 
-`nixpkgs` tracks `nixos-26.05` (stable). Use `sys.overlays.fromInputs.nixpkgs-small = [ "pkg" ]` to pull individual packages from `nixos-unstable-small`; use `nixpkgs-unstable = [ "pkg" ]` to back-pin to `nixos-24.11`. See `modules/core/overlays.nix` for the full option.
+`nixpkgs` tracks `nixos-26.05` (stable), and `nixpkgs-beta` currently tracks
+the same channel as a symmetry/future-bump alias. Use
+`sys.overlays.fromInputs.nixpkgs-unstable = [ "pkg" ]` to pull individual
+packages from `nixos-unstable`, or
+`sys.overlays.fromInputs.nixpkgs-small = [ "pkg" ]` for
+`nixos-unstable-small`. See `modules/core/overlays.nix` for the full option.
 
 ### Auto-loading
 
