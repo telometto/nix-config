@@ -49,11 +49,11 @@
     ## Pull specific packages from different nixpkgs inputs
     # overlays = {
     #   fromInputs = {
-    #     nixpkgs-unstable = [
-    #       "firefox"
-    #       "discord"
-    #     ];
-    #     nixpkgs-stable = [ "thunderbird" ];
+    #         nixpkgs-small = [
+    #           "firefox"
+    #           "discord"
+    #         ];
+    #     nixpkgs-beta = [ "resolved" ];
     #   };
 
     ## Add custom overlays

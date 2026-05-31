@@ -49,8 +49,8 @@ in
         Example:
         ```nix
         sys.overlays.fromInputs = {
-          nixpkgs-unstable = [ "firefox" "chromium" ];
-          nixpkgs-stable = [ "vscode" ];
+          nixpkgs-small = [ "firefox" "chromium" ];
+          nixpkgs-unstable = [ "vscode" ];
         };
         ```
 
@@ -58,8 +58,8 @@ in
       '';
       example = lib.literalExpression ''
         {
-          nixpkgs-unstable = [ "firefox" "discord" ];
-          nixpkgs-stable = [ "thunderbird" ];
+          nixpkgs-small = [ "firefox" "discord" ];
+          nixpkgs-unstable = [ "thunderbird" ];
         }
       '';
     };

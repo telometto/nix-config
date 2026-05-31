@@ -1,9 +1,9 @@
 { pkgs, ... }:
 let
   media = [
-    pkgs.jellyfin-ffmpeg # Conversion tools
-    pkgs.jellyfin-web # Web client
-    pkgs.seerr # Fork of Overseerr
+    # pkgs.jellyfin-ffmpeg # Conversion tools
+    # pkgs.jellyfin-web # Web client
+    # pkgs.seerr # Fork of Overseerr
   ];
 
   kubernetes = [

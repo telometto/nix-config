@@ -13,8 +13,13 @@ let
     imports = [ ../modules/core/overlays.nix ];
 
     sys.overlays.fromInputs = {
-      # nixpkgs-unstable = [ "firefly-iii" ];
-      # nixpkgs-stable = [ "cloud-hypervisor" ];
+      nixpkgs-unstable = [
+        "gitea"
+        "firefly-iii"
+        "firefly-iii-data-importer"
+        "seerr"
+      ];
+      # nixpkgs-unstable = [ "cloud-hypervisor" ];
     };
   };
 
