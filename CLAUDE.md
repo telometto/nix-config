@@ -27,6 +27,10 @@ Hosts: `snowfall` (desktop/KDE), `blizzard` (server), `avalanche` (desktop/GNOME
 
 ## Architecture
 
+### Channel posture
+
+`nixpkgs` tracks `nixos-26.05` (stable). Use `sys.overlays.fromInputs.nixpkgs-small = [ "pkg" ]` to pull individual packages from `nixos-unstable-small`; use `nixpkgs-unstable = [ "pkg" ]` to back-pin to `nixos-24.11`. See `modules/core/overlays.nix` for the full option.
+
 ### Auto-loading
 
 The repo uses three loaders that eliminate manual imports:
