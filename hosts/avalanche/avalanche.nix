@@ -11,6 +11,7 @@ let
   grafanaDashboards = import ../../lib/grafana-dashboards.nix { inherit lib pkgs; };
 in
 {
+  programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   imports = [
     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p51
   ];
@@ -63,24 +64,29 @@ in
     };
 
     ## Pull specific packages from different nixpkgs inputs
-    # overlays = {
-    #   fromInputs = {
-    #     nixpkgs-unstable = [
-    #       "firefox"
-    #       "discord"
-    #     ];
-    #     nixpkgs-stable = [ "thunderbird" ];
-    #   };
+    overlays = {
+      # fromInputs = {
+      #   nixpkgs-small = [
+      #     "pipx"
+      #     "openrazer"
+      #   ];
+      #   nixpkgs-unstable = [ "vscode" ];
+      # };
 
-    ## Add custom overlays
-    #   custom = [
-    #     (final: prev: {
-    #       firefox = prev.firefox.override {
-    #         enablePlasmaBrowserIntegration = true;
-    #       };
-    #     })
-    #   ];
-    # };
+      ## Add custom overlays
+      custom = [
+        (final: prev: {
+          # openldap = prev.openldap.overrideAttrs {
+          #   doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
+          # };
+
+          pipx = prev.pipx.overrideAttrs {
+            # Issues on master
+            doInstallCheck = false;
+          };
+        })
+      ];
+    };
 
     services = {
       resolved = {
