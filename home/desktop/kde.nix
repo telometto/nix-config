@@ -12,7 +12,7 @@ let
 
     if [ -z "''${SSH_AUTH_SOCK:-}" ]; then
       if [ -z "''${XDG_RUNTIME_DIR:-}" ]; then
-        echo "XDG_RUNTIME_DIR is not set; cannot locate SSH agent socket"
+        echo "XDG_RUNTIME_DIR is not set; cannot locate SSH agent socket" >&2
         exit 1
       fi
       export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent"
@@ -21,7 +21,7 @@ let
     timeout=${toString cfg.sshAgentTimeout}
     while [ ! -S "$SSH_AUTH_SOCK" ]; do
       if [ $timeout -le 0 ]; then
-        echo "SSH agent socket did not become available in time"
+        echo "SSH agent socket did not become available in time" >&2
         exit 1
       fi
       sleep 1
