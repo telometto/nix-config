@@ -12,7 +12,7 @@
     #pkgs.tuxguitar # Guitar tablature editor and player
     pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
     pkgs.vorta # Borg backup GUI
-    pkgs.logseq
+    # pkgs.logseq # issues with electron version
     pkgs.rendercv
     pkgs.claude-code
     pkgs.signal-desktop
