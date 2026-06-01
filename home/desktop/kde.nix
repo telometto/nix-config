@@ -10,8 +10,15 @@ let
   sshAddKeysScript = pkgs.writeShellScript "ssh-add-keys" ''
     set -eu
 
-    # Wait for ssh-agent socket to be available
-    timeout=30
+    if [ -z "''${SSH_AUTH_SOCK:-}" ]; then
+      if [ -z "''${XDG_RUNTIME_DIR:-}" ]; then
+        echo "XDG_RUNTIME_DIR is not set; cannot locate SSH agent socket"
+        exit 1
+      fi
+      export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent"
+    fi
+
+    timeout=${toString cfg.sshAgentTimeout}
     while [ ! -S "$SSH_AUTH_SOCK" ]; do
       if [ $timeout -le 0 ]; then
         echo "SSH agent socket did not become available in time"
@@ -21,9 +28,7 @@ let
       timeout=$((timeout - 1))
     done
 
-    # Wait for kwallet to be available (reduced timeout to avoid login delays)
-    # If KWallet isn't ready, keys can be added manually later
-    timeout=5
+    timeout=${toString cfg.kwalletTimeout}
     while ! ${pkgs.kdePackages.kwallet}/bin/kwallet-query -l ${cfg.kwalletName} > /dev/null 2>&1; do
       if [ $timeout -le 0 ]; then
         echo "KWallet not available yet, skipping automatic SSH key import"
@@ -92,6 +97,18 @@ in
         Example: "kdewallet"
       '';
     };
+
+    sshAgentTimeout = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 30;
+      description = "Seconds to wait for the SSH agent socket before failing.";
+    };
+
+    kwalletTimeout = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 30;
+      description = "Seconds to wait for KWallet before skipping automatic SSH key import.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -129,26 +146,20 @@ in
       Unit = {
         Description = "Load SSH keys into the agent using KWallet";
 
-        # Start after KDE session is ready, but don't block it
         After = [
           "graphical-session.target"
           "ssh-agent.service"
-          "plasma-kwin_wayland.service" # Wait for Wayland compositor
         ];
 
         Wants = [
           "ssh-agent.service"
         ];
-
-        # Don't start if SSH_AUTH_SOCK is not set
-        ConditionEnvironment = "SSH_AUTH_SOCK";
       };
 
       Service = {
         Type = "oneshot";
-        RemainAfterExit = false; # Don't block session startup
+        RemainAfterExit = false;
 
-        # Restart on failure with backoff
         Restart = "on-failure";
         RestartSec = "5s";
 
@@ -163,14 +174,14 @@ in
           "DBUS_SESSION_BUS_ADDRESS"
           "XAUTHORITY"
           "SSH_AUTH_SOCK"
+          "XDG_RUNTIME_DIR"
         ];
 
         ExecStart = sshAddKeysScript;
       };
 
       Install = {
-        # Use wants instead of required, so it doesn't block login
-        WantedBy = [ "default.target" ];
+        WantedBy = [ "graphical-session.target" ];
       };
     };
   };
