@@ -10,6 +10,7 @@ let
   LOCALE = "it_IT.UTF-8";
 in
 {
+  programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   networking = {
     hostName = lib.mkForce "kaizer";
     hostId = lib.mkForce "632f97e1";
@@ -78,24 +79,29 @@ in
     # };
 
     ## Pull specific packages from different nixpkgs inputs
-    # overlays = {
-    #   fromInputs = {
-    #     nixpkgs-unstable = [
-    #       "firefox"
-    #       "discord"
-    #     ];
-    #     nixpkgs-stable = [ "thunderbird" ];
-    #   };
+    overlays = {
+      # fromInputs = {
+      #   nixpkgs-small = [
+      #     "pipx"
+      #     "openrazer"
+      #   ];
+      #   nixpkgs-unstable = [ "vscode" ];
+      # };
 
-    ## Add custom overlays
-    #   custom = [
-    #     (final: prev: {
-    #       firefox = prev.firefox.override {
-    #         enablePlasmaBrowserIntegration = true;
-    #       };
-    #     })
-    #   ];
-    # };
+      ## Add custom overlays
+      custom = [
+        (final: prev: {
+          # openldap = prev.openldap.overrideAttrs {
+          #   doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
+          # };
+
+          pipx = prev.pipx.overrideAttrs {
+            # Issues on master
+            doInstallCheck = false;
+          };
+        })
+      ];
+    };
 
     services = {
       resolved = {
@@ -157,6 +163,11 @@ in
       enable32Bit = lib.mkDefault true;
     };
   };
+
+  users.users.${VARS.users.luke.user}.extraGroups = VARS.users.luke.extraGroups ++ [
+    "libvirtd"
+    "openrazer"
+  ];
 
   environment.systemPackages = with pkgs; [
     temurin-jre-bin-21
