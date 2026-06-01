@@ -41,7 +41,7 @@ in
         enable = true;
         extest.enable = lib.mkDefault true;
         protontricks.enable = lib.mkDefault true;
-        gamescopeSession.enable = lib.mkDefault true;
+        gamescopeSession.enable = lib.mkForce false; # Issues on master with bubblewrap
         extraPackages = with pkgs; [
           steam-run
           sc-controller # Replaced deprecated steamcontroller

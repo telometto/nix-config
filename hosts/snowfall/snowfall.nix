@@ -10,6 +10,7 @@ let
   grafanaDashboards = import ../../lib/grafana-dashboards.nix { inherit lib pkgs; };
 in
 {
+  programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   networking = {
     hostName = lib.mkForce "snowfall";
     hostId = lib.mkForce "131b6b39";
@@ -75,19 +76,25 @@ in
 
     ## Pull specific packages from different nixpkgs inputs
     overlays = {
-      #   fromInputs = {
-      #     nixpkgs-unstable = [
-      #       "firefox"
-      #       "discord"
-      #     ];
-      #     nixpkgs-stable = [ "lutris" ];
-      #   };
+      fromInputs = {
+        # nixpkgs-small = [
+        # "pipx"
+        #"openrazer"
+        # ];
+        # nixpkgs-small = [ "pipx" ];
+        nixpkgs-unstable = [ "vscode" ];
+      };
 
       ## Add custom overlays
       custom = [
         (final: prev: {
           openldap = prev.openldap.overrideAttrs {
             doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
+          };
+
+          pipx = prev.pipx.overrideAttrs {
+            # Issues on master
+            doInstallCheck = false;
           };
         })
       ];
