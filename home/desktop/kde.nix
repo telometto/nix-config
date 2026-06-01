@@ -29,7 +29,7 @@ let
     done
 
     timeout=${toString cfg.kwalletTimeout}
-    while ! ${pkgs.kdePackages.kwallet}/bin/kwallet-query -l ${cfg.kwalletName} > /dev/null 2>&1; do
+    while ! ${pkgs.kdePackages.kwallet}/bin/kwallet-query -l ${lib.escapeShellArg cfg.kwalletName} > /dev/null 2>&1; do
       if [ $timeout -le 0 ]; then
         echo "KWallet not available yet, skipping automatic SSH key import"
         echo "Keys can be added manually with: ssh-add"
