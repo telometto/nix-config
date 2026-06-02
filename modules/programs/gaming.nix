@@ -6,6 +6,12 @@
 }:
 let
   cfg = config.sys.programs.gaming;
+  FONTS = with pkgs; [
+    noto-fonts
+    noto-fonts-cjk-sans
+    noto-fonts-cjk-serif
+    noto-fonts-color-emoji
+  ];
 in
 {
   options.sys.programs.gaming = {
@@ -31,6 +37,8 @@ in
   config = lib.mkIf cfg.enable {
     hardware.steam-hardware.enable = lib.mkDefault true;
 
+    fonts.packages = FONTS;
+
     programs = {
       gamescope = {
         enable = lib.mkDefault true;
@@ -48,6 +56,7 @@ in
           steamtinkerlaunch
           protonplus
         ];
+        fontPackages = FONTS;
       };
       gamemode.enable = lib.mkDefault true;
 
