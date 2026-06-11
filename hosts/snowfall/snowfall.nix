@@ -77,12 +77,13 @@ in
     ## Pull specific packages from different nixpkgs inputs
     overlays = {
       fromInputs = {
-        # nixpkgs-small = [
-        # "pipx"
-        #"openrazer"
+        # nixpkgs = [
+        #   "pipx"
+        #   "openrazer"
         # ];
-        # nixpkgs-small = [ "pipx" ];
+        # nixpkgs-beta = [ "pipx" ];
         nixpkgs-unstable = [ "vscode" ];
+        # nixpkgs-small = [ "pipx" ];
       };
 
       ## Add custom overlays
@@ -90,11 +91,6 @@ in
         (final: prev: {
           openldap = prev.openldap.overrideAttrs {
             doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
-          };
-
-          pipx = prev.pipx.overrideAttrs {
-            # Issues on master
-            doInstallCheck = false;
           };
         })
       ];
@@ -267,14 +263,26 @@ in
 
   services.rpcbind.enable = lib.mkDefault true;
 
-  fileSystems."/home/${VARS.users.zeno.user}/pools/rpool/unenc/media/data/media" = {
-    device = "192.168.2.100:/rpool/unenc/media/data/media";
-    fsType = "nfs";
-    options = [
-      "nofail"
-      "x-systemd.automount"
-      "x-systemd.idle-timeout=600"
-    ];
+  fileSystems = {
+    "/home/${VARS.users.zeno.user}/backups" = {
+      device = "100.86.227.97:/rpool/enc/transfers";
+      fsType = "nfs";
+      options = [
+        "nofail"
+        "x-systemd.automount"
+        "x-systemd.idle-timeout=600"
+      ];
+    };
+
+    "/home/${VARS.users.zeno.user}/pools/rpool/unenc/media/data/media" = {
+      device = "100.86.227.97:/rpool/unenc/media/data/media";
+      fsType = "nfs";
+      options = [
+        "nofail"
+        "x-systemd.automount"
+        "x-systemd.idle-timeout=600"
+      ];
+    };
   };
 
   hardware = {
