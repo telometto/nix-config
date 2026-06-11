@@ -27,9 +27,13 @@
     pkgs.rendercv
     pkgs.claude-code
     pkgs.uv
+    pkgs.filen-desktop
+    pkgs.filen-cli
   ];
 
   hm = {
+    langs = "nb_NO.UTF-8";
+
     programs = {
       development = {
         extraPackages = [
