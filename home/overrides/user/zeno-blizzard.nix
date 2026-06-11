@@ -13,6 +13,8 @@
   ];
 
   hm = {
+    langs = "nb_NO.UTF-8";
+
     programs = {
       fastfetch = {
         enable = true;
