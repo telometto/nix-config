@@ -61,15 +61,15 @@ in
 
       ## Pull specific packages from different nixpkgs inputs
       overlays = {
-        # fromInputs = {
+        fromInputs = {
         #   nixpkgs = [
         #     "pipx"
         #     "openrazer"
         #   ];
         # nixpkgs-beta = [];
         #   nixpkgs-unstable = [ "vscode" ];
-        # nixpkgs-small = [];
-        # };
+        nixpkgs-small = [ "atuin" ];
+        };
 
         ## Add custom overlays
         custom = [
