@@ -24,13 +24,10 @@
       };
 
       gaming.lutris.enable = lib.mkForce false;
-
-      terminal.zellij.exitShellOnExit = false;
     };
   };
 
   programs = {
     ssh.enableDefaultConfig = false;
-    atuin.enable = lib.mkForce false;
   };
 }
