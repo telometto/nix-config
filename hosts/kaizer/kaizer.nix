@@ -159,16 +159,19 @@ in
     };
   };
 
-  users.users.${VARS.users.luke.user}.extraGroups = VARS.users.luke.extraGroups ++ [
-    "libvirtd"
-    "openrazer"
-  ];
+  users.users.${VARS.users.luke.user} = {
+    uid = lib.mkForce 1003;
+    extraGroups = VARS.users.luke.extraGroups ++ [
+      "libvirtd"
+      "openrazer"
+    ];
+  };
 
   environment.systemPackages = with pkgs; [
-    temurin-jre-bin-21
-    temurin-jre-bin-17
-    temurin-jre-bin-8
-    glfw
+    # temurin-jre-bin-21
+    # temurin-jre-bin-17
+    # temurin-jre-bin-8
+    # glfw
 
     # Alternative: prismlauncher if Titan doesn't work well
     # prismlauncher
