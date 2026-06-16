@@ -18,7 +18,10 @@ in
       displayManager.sddm = {
         enable = lib.mkDefault true;
 
-        wayland.enable = lib.mkDefault true;
+        wayland = {
+          enable = lib.mkDefault true;
+          compositor = lib.mkDefault "kwin";
+        };
         autoNumlock = lib.mkDefault true;
         /**
           Available themes:
@@ -81,6 +84,14 @@ in
     #   xdgOpenUsePortal = lib.mkDefault true;
     #   config.common.default = lib.mkDefault "*";
     # };
+
+    systemd.tmpfiles.rules = [
+      "d /var/lib/sddm/.config 0700 sddm sddm - -"
+      "L+ /var/lib/sddm/.config/powermanagementprofilesrc - - - - ${pkgs.writeText "sddm-powermanagementprofilesrc" ''
+        [AC][DPMS]
+        idleTime=300
+      ''}"
+    ];
 
     security.pam.services = {
       login = {
