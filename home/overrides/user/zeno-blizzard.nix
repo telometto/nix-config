@@ -1,5 +1,5 @@
-# User-specific configuration for admin user on blizzard host
-# This file is automatically imported only for the admin user on blizzard
+# User-specific configuration for zeno on blizzard host
+# This file is automatically imported only for zeno on blizzard
 {
   lib,
   config,
