@@ -12,35 +12,7 @@
     };
   };
 
-  programs.ghostty = {
-    enable = true;
-
-    enableZshIntegration = true;
-
-    systemd.enable = true;
-
-    settings = {
-      font-family = "FiraCode Nerd Font Mono";
-      font-size = 13;
-
-      theme = "Pale Night Hc";
-
-      background-opacity = 0.95;
-
-      cursor-style = "block";
-      cursor-style-blink = false;
-
-      window-padding-x = 8;
-      window-padding-y = 4;
-      window-padding-balance = true;
-
-      mouse-hide-while-typing = true;
-
-      shell-integration = "zsh";
-    };
-  };
-
-  # Laptop-specific overrides:
-  # hm.programs.media.extraPackages = with pkgs; [ laptop-specific-media ];
-  # programs.git.extraConfig.avalanche = "laptop-setting";
+  # Laptop-specific override examples (add pkgs to args if using packages):
+  # hm.programs.media.extraPackages = with pkgs; [ vlc ];
+  # programs.git.extraConfig.url."git@github.com:".insteadOf = "https://github.com/";
 }
