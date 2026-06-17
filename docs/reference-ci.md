@@ -75,6 +75,7 @@ ______________________________________________________________________
 | `update-nix-lock.yml` | cron every 3h / manual | Runs `update-flake-lock`, opens PR, waits for `flake-check` + full validate matrix, then auto-merges | Yes — lock file |
 | `update-nix-lock-recreate.yml` | cron 1st of month 03:00 / manual | `nix flake update --recreate-lock-file`, opens PR via `peter-evans/create-pull-request@v7`, auto-merge | Yes — lock file |
 | `update-dashboards.yml` | cron Mon 09:00 / manual | Polls Grafana.com API for new revisions of dashboards 1860 and 315, opens PR if newer revision found | No (opens PR) |
+| `copilot-auto-merge.yml` | PR review submitted | Auto-merges Copilot-generated PRs after an approving review, using PR label gating | No |
 
 ______________________________________________________________________
 

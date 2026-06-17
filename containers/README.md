@@ -64,10 +64,10 @@ CPU-only image selection. Usable on any host that has Podman. Enable via
 or AMD GPU acceleration. Enable via `services.subgen-container.enable = true`.
 
 **`subtitle-stack.nix`** — Full subtitle translation pipeline as a Podman pod.
-Spawns four containers together: `lingarr` (subtitle manager), `libretranslate`
-(translation engine), `ollama` (LLM backend), and `subgen` (Whisper generator).
-The two options (`services.lingarr.enable` and `services.subgen.enable`) control
-whether to include the stack.
+Always spawns `lingarr` and `subgen`; also spawns `libretranslate` and `ollama`
+when `services.lingarr.libretranslate.enable` and `services.lingarr.ollama.enable`
+are true (both default to true). The top-level options (`services.lingarr.enable`
+and `services.subgen.enable`) control whether to include the pod at all.
 
 **`nominatim.nix`** — OpenStreetMap geocoding API backed by PostgreSQL 16. Runs
 the `mediagis/nominatim` image as a standalone container. The initial start
