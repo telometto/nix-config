@@ -17,4 +17,32 @@
       gaming.lutris.enable = true;
     };
   };
+
+  programs.ghostty = {
+    enable = true;
+
+    enableZshIntegration = true;
+
+    systemd.enable = true;
+
+    settings = {
+      font-family = "FiraCode Nerd Font Mono";
+      font-size = 13;
+
+      theme = "Pale Night Hc";
+
+      background-opacity = 0.95;
+
+      cursor-style = "block";
+      cursor-style-blink = false;
+
+      window-padding-x = 8;
+      window-padding-y = 4;
+      window-padding-balance = true;
+
+      mouse-hide-while-typing = true;
+
+      shell-integration = "zsh";
+    };
+  };
 }
