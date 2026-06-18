@@ -349,7 +349,7 @@ in
       # restriction that breaks trigger.dev migration 003 (CREATE VIEW with
       # JSON/Dynamic columns).  The trigger-ch-migrate-fixup service handles
       # the symptom, but pinning here avoids hitting the bug entirely.
-      default = "24.12";
+      default = "latest";
       description = "Docker image tag for bitnamilegacy/clickhouse.";
     };
 
@@ -361,7 +361,7 @@ in
 
     dockerSocketProxyImageTag = lib.mkOption {
       type = lib.types.str;
-      default = "0.3.0";
+      default = "latest";
       description = "Docker image tag for tecnativa/docker-socket-proxy.";
     };
 

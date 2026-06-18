@@ -59,6 +59,13 @@ flowchart LR
 #### Explanation
 
 - [explanation-design.md](explanation-design.md) — Design decisions and rationale
+- [architecture-risks-and-improvements.md](architecture-risks-and-improvements.md) — Known risks and improvement backlog
+- [security-audit-2026-06-01.md](security-audit-2026-06-01.md) — Security audit report (2026-06-01)
+
+#### Operations
+
+- [sops-setup-guide.md](sops-setup-guide.md) — How to set up SOPS secrets and age keys
+- [troubleshooting-trigger-vm.md](troubleshooting-trigger-vm.md) — Troubleshooting the trigger MicroVM
 
 ### Quick Links
 

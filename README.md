@@ -37,7 +37,7 @@ flowchart LR
 | [modules/](modules/) | System modules (`sys.*` options) — auto-loaded |
 | [home/](home/) | Home Manager modules (`hm.*` options) — auto-loaded |
 | [hosts/](hosts/) | Host configurations — auto-loaded per host |
-| [vms/](vms/) | MicroVM definitions (23 VMs) |
+| [vms/](vms/) | MicroVM definitions (25 wired VM outputs) |
 | [containers/](containers/) | Rootless Podman containers (Home Manager modules) |
 | [lib/](lib/) | Shared helpers (Traefik, Grafana, constants) |
 | [dashboards/](dashboards/) | Grafana dashboard JSON files |
@@ -66,6 +66,10 @@ flowchart LR
 
 ## Common Commands
 
+Full evaluation commands require SSH access to the private `nix-secrets` flake.
+If that key is unavailable, use CI as the source of truth and see
+[Reference: CI](docs/reference-ci.md#local-validation-matrix).
+
 | Command | Description |
 |---------|-------------|
 | `sudo nixos-rebuild switch --flake .#<host>` | Apply configuration |
@@ -91,6 +95,8 @@ flowchart LR
 | [How-To: Add Hosts and Users](docs/how-to-add-host-and-users.md) | Add new hosts/users |
 | [Reference: Architecture](docs/reference-architecture.md) | Options and stack quick reference |
 | [Reference: CI](docs/reference-ci.md) | CI workflows reference |
+| [SOPS Setup Guide](docs/sops-setup-guide.md) | Host recipient setup and secret flow |
+| [Architecture Risks and Improvements](docs/architecture-risks-and-improvements.md) | Potential improvements and current risks |
 | [Explanation: Design](docs/explanation-design.md) | Design decisions and rationale |
 | [Architecture Blueprint](docs/Project_Architecture_Blueprint.md) | Full system architecture |
 

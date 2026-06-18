@@ -12,7 +12,7 @@
     };
   };
 
-  # Laptop-specific overrides:
-  # hm.programs.media.extraPackages = with pkgs; [ laptop-specific-media ];
-  # programs.git.extraConfig.avalanche = "laptop-setting";
+  # Laptop-specific override examples (add pkgs to args if using packages):
+  # hm.programs.media.extraPackages = with pkgs; [ vlc ];
+  # programs.git.extraConfig.url."git@github.com:".insteadOf = "https://github.com/";
 }

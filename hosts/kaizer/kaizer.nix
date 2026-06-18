@@ -10,6 +10,7 @@ let
   LOCALE = "it_IT.UTF-8";
 in
 {
+  programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   networking = {
     hostName = lib.mkForce "kaizer";
     hostId = lib.mkForce "632f97e1";
@@ -55,8 +56,6 @@ in
       ];
     };
 
-    boot.lanzaboote.enable = lib.mkForce false;
-
     hardware.nvidia = {
       enable = true;
 
@@ -80,21 +79,23 @@ in
     ## Pull specific packages from different nixpkgs inputs
     # overlays = {
     #   fromInputs = {
-    #     nixpkgs-unstable = [
-    #       "firefox"
-    #       "discord"
-    #     ];
-    #     nixpkgs-stable = [ "thunderbird" ];
-    #   };
+    # nixpkgs = [
+    #   "pipx"
+    #   "openrazer"
+    # ];
+    # nixpkgs-beta = [ "pipx" ];
+    # nixpkgs-unstable = [ "vscode" ];
+    # nixpkgs-small = [ "pipx" ];
+    # };
 
     ## Add custom overlays
-    #   custom = [
-    #     (final: prev: {
-    #       firefox = prev.firefox.override {
-    #         enablePlasmaBrowserIntegration = true;
-    #       };
-    #     })
-    #   ];
+    # custom = [
+    #   (final: prev: {
+    #     openldap = prev.openldap.overrideAttrs {
+    #       doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
+    #     };
+    #   })
+    # ];
     # };
 
     services = {
@@ -158,11 +159,19 @@ in
     };
   };
 
+  users.users.${VARS.users.luke.user} = {
+    uid = lib.mkForce 1003;
+    extraGroups = VARS.users.luke.extraGroups ++ [
+      "libvirtd"
+      "openrazer"
+    ];
+  };
+
   environment.systemPackages = with pkgs; [
-    temurin-jre-bin-21
-    temurin-jre-bin-17
-    temurin-jre-bin-8
-    glfw
+    # temurin-jre-bin-21
+    # temurin-jre-bin-17
+    # temurin-jre-bin-8
+    # glfw
 
     # Alternative: prismlauncher if Titan doesn't work well
     # prismlauncher
