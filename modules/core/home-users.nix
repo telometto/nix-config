@@ -47,6 +47,18 @@ let
     let
       override = lib.attrByPath [ username ] cfg.users { };
 
+      # Resolve the active role name (desktop takes precedence over server)
+      roleName =
+        if config.sys.role.desktop.enable then
+          "desktop"
+        else if config.sys.role.server.enable then
+          "server"
+        else
+          null;
+
+      # Path to role-specific override file (applies to all users sharing this role)
+      roleOverridePath = if roleName != null then ../../home/overrides/role/${roleName}.nix else null;
+
       # Path to host-specific override file
       hostOverridePath = ../../home/overrides/host/${config.networking.hostName}.nix;
 
@@ -57,6 +69,10 @@ let
       [ ../../hm-loader.nix ]
       ++ cfg.extraModules
       ++ lib.toList (cfg.template.imports or [ ])
+      # Import role-override if it exists (applies to all users on hosts with that role)
+      ++ (lib.optional (
+        roleOverridePath != null && builtins.pathExists roleOverridePath
+      ) roleOverridePath)
       # Import host-override if it exists (applies to all users on this host)
       ++ (lib.optional (builtins.pathExists hostOverridePath) hostOverridePath)
       # Import user-specific config if it exists (applies only to this user on this host)

@@ -1,5 +1,5 @@
-# User-specific configuration for admin user on avalanche host
-# This file is automatically imported only for the admin user on avalanche
+# User-specific configuration for zeno on avalanche host
+# This file is automatically imported only for zeno on avalanche
 {
   lib,
   config,
