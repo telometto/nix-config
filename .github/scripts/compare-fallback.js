@@ -1,26 +1,42 @@
+const { execFileSync } = require('child_process');
 
-const { execSync } = require('child_process');
+const git = (args) => execFileSync('git', args, { encoding: 'utf8' });
+
+const getSafePrBranch = () => {
+    const prBranch = process.env.PR_BRANCH || 'update_flake_lock_action';
+    const safeRefPattern = /^[A-Za-z0-9._/-]+$/;
+
+    if (!safeRefPattern.test(prBranch) || prBranch.startsWith('-') || prBranch.includes('..')) {
+        throw new Error(`Refusing unsafe PR_BRANCH value: ${prBranch}`);
+    }
+
+    return prBranch;
+};
 
 const generateCompareLinksFromDiff = () => {
     try {
-        const prBranch = process.env.PR_BRANCH || 'update_flake_lock_action';
+        const prBranch = getSafePrBranch();
         let flakeDiff;
 
         // Try different methods to get the diff
         try {
             // Method 1: Compare current branch with PR branch
-            flakeDiff = execSync(`git diff HEAD..${prBranch} -- flake.lock 2>/dev/null || git diff origin/main..origin/${prBranch} -- flake.lock`, { encoding: 'utf8' });
+            try {
+                flakeDiff = git(['diff', `HEAD..${prBranch}`, '--', 'flake.lock']);
+            } catch {
+                flakeDiff = git(['diff', `origin/main..origin/${prBranch}`, '--', 'flake.lock']);
+            }
         } catch {
             try {
                 // Method 2: Get the diff from the last 2 commits on flake.lock
-                const commits = execSync('git log -2 --pretty=format:"%H" -- flake.lock', { encoding: 'utf8' }).trim().split('\n');
+                const commits = git(['log', '-2', '--pretty=format:%H', '--', 'flake.lock']).trim().split('\n');
                 if (commits.length >= 2) {
                     const [newCommit, oldCommit] = commits;
-                    flakeDiff = execSync(`git diff ${oldCommit} ${newCommit} -- flake.lock`, { encoding: 'utf8' });
+                    flakeDiff = git(['diff', oldCommit, newCommit, '--', 'flake.lock']);
                 }
             } catch {
                 // Method 3: Try to read current flake.lock and compare with staged/modified version
-                flakeDiff = execSync('git diff HEAD -- flake.lock', { encoding: 'utf8' });
+                flakeDiff = git(['diff', 'HEAD', '--', 'flake.lock']);
             }
         }
 
