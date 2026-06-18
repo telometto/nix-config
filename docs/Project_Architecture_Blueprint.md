@@ -1,6 +1,6 @@
 # Project Architecture Blueprint
 
-> **Last verified: 2026-04-27**
+> **Last verified: 2026-06-17**
 >
 > **Project Type:** NixOS Flake Configuration
 >
@@ -10,7 +10,7 @@ ______________________________________________________________________
 
 ## 1. Executive Summary
 
-This repository implements a modular NixOS flake configuration for 4 physical hosts and 23 MicroVMs.
+This repository implements a modular NixOS flake configuration for 4 physical hosts and 25 MicroVMs.
 The design centres on three auto-loading mechanisms that eliminate manual `imports` lists, a
 two-namespace option system (`sys.*` / `hm.*`), role files that bundle machine-class defaults,
 and a layered Home Manager precedence stack that allows fine-grained per-user overrides without
@@ -27,7 +27,7 @@ flowchart TD
     SL -->|"imports every .nix"| MOD["modules/**"]
     HL -->|"imports every .nix"| HOST["hosts/<hostname>/**"]
     HML -->|"imports every .nix\nexcluding overrides/"| HOME["home/**"]
-    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(23 MicroVMs)"]
+    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(25 MicroVMs)"]
     F --> HOSTS["nixosConfigurations\nsnowfall · blizzard · avalanche · kaizer"]
 ```
 
@@ -39,7 +39,7 @@ ______________________________________________________________________
 
 | Output | Value |
 |--------|-------|
-| `nixosConfigurations` | 4 named hosts + 23 `-vm` entries (merged from `vms/flake-microvms.nix`) |
+| `nixosConfigurations` | 4 named hosts + 25 `-vm` entries (merged from `vms/flake-microvms.nix`) |
 | `formatter.x86_64-linux` | treefmt wrapper (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
@@ -55,7 +55,7 @@ There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
 | `./system-loader.nix` | repo |
 | `./host-loader.nix` | repo |
 | `inputs.disko.nixosModules.disko` | disko input (included; not actively used — see §13) |
-| `inputs.home-manager.nixosModules.home-manager` | home-manager |
+| `inputs.hm-stable.nixosModules.home-manager` | home-manager |
 | `inputs.sops-nix.nixosModules.sops` | sops-nix |
 | `inputs.lanzaboote.nixosModules.lanzaboote` | lanzaboote |
 | `inputs.microvm.nixosModules.host` | microvm |
@@ -68,14 +68,15 @@ There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
 ```mermaid
 flowchart LR
     subgraph Core
-        NP[nixpkgs unstable]
-        NPS[nixpkgs-stable-latest 25.11]
-        NPS2[nixpkgs-stable 24.11]
-        NPU[nixpkgs-unstable-small]
+        NP["nixpkgs nixos-26.05 (stable)"]
+        NPB["nixpkgs-beta nixos-26.05 (symmetry alias)"]
+        NPU[nixpkgs-unstable nixos-unstable]
+        NPS[nixpkgs-small nixos-unstable-small]
         NHW[nixos-hardware]
     end
     subgraph Build
-        HM[home-manager]
+        HM[hm-stable home-manager/release-26.05]
+        HMU[hm-unstable home-manager/master]
         SOPS[sops-nix]
         LB[lanzaboote]
         MVM[microvm]
@@ -97,7 +98,7 @@ flowchart LR
     Build --> F
     Secrets --> F
     Dev --> F
-    F --> OUT1[nixosConfigurations\n4 hosts + 23 VMs]
+    F --> OUT1[nixosConfigurations\n4 hosts + 25 VMs]
     F --> OUT2[formatter / checks / devShells]
 ```
 
@@ -112,8 +113,8 @@ modules/
 ├── core/           NixOS users, sops bridge, home-users wiring, locale, nix settings, overlays
 ├── boot/           Plymouth splash, lanzaboote Secure Boot
 ├── desktop/        base.nix (sys.desktop.flavor enum), flavors/ (gnome, kde, hyprland, cosmic)
-├── hardware/       NVIDIA, openrazer, AMD
-├── networking/     base, networkd, networkmanager, nfs-client
+├── hardware/       NVIDIA
+├── networking/     base, networkd, networkmanager
 ├── programs/       gaming+Steam, GnuPG, ssh, java, nix-ld
 ├── security/       secrets option declarations (sys.secrets.*), SSH hardening
 ├── services/       ~60 service modules (grafana, tailscale, traefik, etc.)
@@ -130,6 +131,7 @@ home/
 ├── security/         sops HM integration
 ├── services/         gpgAgent, sshAgent
 └── overrides/
+    ├── role/         <role>.nix — all HM users on hosts with sys.role.<role>.enable = true
     ├── host/         <hostname>.nix — all users on that host
     └── user/         <username>-<hostname>.nix — specific user on specific host
 
@@ -150,7 +152,7 @@ containers/           quadlet-nix Home Manager container modules
 flowchart TD
     SL["system-loader.nix\nlib.filesystem.listFilesRecursive ./modules"]
     HL["host-loader.nix\nlib.filesystem.listFilesRecursive ./hosts/\${hostname}"]
-    HML["hm-loader.nix\nlib.filesystem.listFilesRecursive ./home\nexcluding /overrides/host/ and /overrides/user/"]
+    HML["hm-loader.nix\nlib.filesystem.listFilesRecursive ./home\nexcluding /overrides/host/, /overrides/user/, /overrides/role/"]
     SL -->|"auto-imported\n(no manual imports needed)"| M1[modules/core/*]
     SL --> M2[modules/services/*]
     SL --> M3[modules/.../*]
@@ -163,8 +165,8 @@ flowchart TD
     HML --> HM4[home/.../**]
 ```
 
-The override files (`home/overrides/host/` and `home/overrides/user/`) are **not** auto-imported;
-they are injected explicitly by `modules/core/home-users.nix` per user per host.
+The override files (`home/overrides/role/`, `home/overrides/host/`, and `home/overrides/user/`) are **not** auto-imported;
+they are injected conditionally by `modules/core/home-users.nix` per user (role → host → user, in that precedence order).
 
 ______________________________________________________________________
 
@@ -299,11 +301,12 @@ flowchart TD
     L1["1. hm-loader output\nauto-imported home/** modules\n(includes shared modules such as home/base.nix)"]
     L2["2. sys.home.extraModules\nhost-wide extra HM modules for all users"]
     L3["3. sys.home.template.imports\nhost-wide base template imports for all users"]
-    L4["4. home/overrides/host/<hostname>.nix\n(if file exists)"]
-    L5["5. home/overrides/user/<username>-<hostname>.nix\n(if file exists)"]
-    L6["6. sys.home.users.<name>.extraModules\n+ sys.home.users.<name>.extraConfig.imports"]
+    L4["4. home/overrides/role/<role>.nix\n(if file exists and sys.role.<role>.enable = true)"]
+    L5["5. home/overrides/host/<hostname>.nix\n(if file exists)"]
+    L6["6. home/overrides/user/<username>-<hostname>.nix\n(if file exists)"]
+    L7["7. sys.home.users.<name>.extraModules\n+ sys.home.users.<name>.extraConfig.imports"]
     AD["autoDesktopConfig\nmerged separately with lib.mkDefault\nhm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"]
-    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> OUT[Merged HM config for user]
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7 --> OUT[Merged HM config for user]
     AD --> OUT
 ```
 
@@ -361,7 +364,7 @@ flowchart TD
     MK["vms/mkMicrovmConfig.nix\nTransforms registry attrs into NixOS module:\nmicrovm.hypervisor = cloud-hypervisor\nmicrovm.vsock.cid\nmicrovm.mem / vcpu\nmicrovm.interfaces / volumes\nnetworking + systemd.network\nAuto-appends /persist volume\nand /nix/store virtiofs share"]
     SVC["vms/<name>.nix\nPer-VM service module\n(actual application config)"]
     FM["vms/flake-microvms.nix\nmkMicrovm helper\nwraps each VM"]
-    OUT["nixosConfigurations.*-vm\n(23 entries merged into flake outputs)"]
+    OUT["nixosConfigurations.*-vm\n(25 entries merged into flake outputs)"]
 
     REG --> MK
     BASE --> FM
@@ -400,6 +403,8 @@ and therefore do not inherit host-only modules.
 | firefly | 10.100.0.62 | 11062 | 2 GB | 2 | Personal finance |
 | firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Firefly data import |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Photo library |
+| mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Meal planning |
+| trigger | 10.100.0.80 | 11080 | 12 GB | 6 | Workflow automation |
 
 ______________________________________________________________________
 
@@ -459,9 +464,9 @@ ______________________________________________________________________
 | Host | Role | Desktop | Key features |
 |------|------|---------|--------------|
 | `snowfall` | desktop | KDE | AMD GPU, openrazer, distributed-builds server, Prometheus + Grafana + Traefik + Cloudflare tunnel |
-| `blizzard` | server | none | ZFS + NFS + Samba, full monitoring stack, MicroVM host, Tailscale subnet router (192.168.2.0/24 + 10.100.0.0/24), CrowdSec, k3s |
+| `blizzard` | server | none | ZFS + NFS + Samba, full monitoring stack, MicroVM host, Tailscale subnet router (192.168.2.0/24 + 10.100.0.0/24), CrowdSec |
 | `avalanche` | desktop | GNOME | ThinkPad P51, nixos-hardware, iwlwifi BT coexistence patches |
-| `kaizer` | desktop | KDE | Two users (gianluca + frankie), lanzaboote **disabled**, NVIDIA, Java Temurin 8/17/21, Italian locale |
+| `kaizer` | desktop | KDE | Two users (gianluca + luke; frankie disabled), lanzaboote **disabled**, NVIDIA, Java Temurin 8/17/21, Italian locale |
 
 ### Host file pattern
 

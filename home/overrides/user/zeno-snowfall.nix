@@ -1,5 +1,5 @@
-# User-specific configuration for admin user on snowfall host
-# This file is automatically imported only for the admin user on snowfall
+# User-specific configuration for zeno on snowfall host
+# This file is automatically imported only for zeno on snowfall
 {
   lib,
   config,
