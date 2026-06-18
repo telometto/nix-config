@@ -1,5 +1,5 @@
-# User-specific configuration for admin user on avalanche host
-# This file is automatically imported only for the admin user on avalanche
+# User-specific configuration for zeno on avalanche host
+# This file is automatically imported only for zeno on avalanche
 {
   lib,
   config,
@@ -12,7 +12,7 @@
     #pkgs.tuxguitar # Guitar tablature editor and player
     pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
     pkgs.vorta # Borg backup GUI
-    pkgs.logseq
+    # pkgs.logseq # issues with electron version
     pkgs.rendercv
     pkgs.claude-code
     pkgs.signal-desktop
@@ -24,6 +24,8 @@
   ];
 
   hm = {
+    langs = "nb_NO.UTF-8";
+
     programs = {
       development = {
         extraPackages = [

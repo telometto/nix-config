@@ -84,11 +84,11 @@ in
 
       language = {
         address = lib.mkDefault locale;
-        base = lib.mkDefault locale;
+        base = lib.mkDefault "en_US.UTF-8";
         collate = lib.mkDefault locale;
         ctype = lib.mkDefault locale;
         measurement = lib.mkDefault locale;
-        messages = lib.mkDefault locale;
+        messages = lib.mkDefault "en_US.UTF-8";
         monetary = lib.mkDefault locale;
         name = lib.mkDefault locale;
         numeric = lib.mkDefault locale;

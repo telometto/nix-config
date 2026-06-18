@@ -10,43 +10,54 @@ let
   sshAddKeysScript = pkgs.writeShellScript "ssh-add-keys" ''
     set -eu
 
-    # Wait for ssh-agent socket to be available
-    timeout=30
+    if [ -z "''${SSH_AUTH_SOCK:-}" ]; then
+      if [ -z "''${XDG_RUNTIME_DIR:-}" ]; then
+        echo "XDG_RUNTIME_DIR is not set; cannot locate SSH agent socket" >&2
+        exit 1
+      fi
+      export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent"
+    fi
+
+    timeout=${toString cfg.sshAgentTimeout}
     while [ ! -S "$SSH_AUTH_SOCK" ]; do
       if [ $timeout -le 0 ]; then
-        echo "SSH agent socket did not become available in time"
+        echo "SSH agent socket did not become available in time" >&2
         exit 1
       fi
       sleep 1
       timeout=$((timeout - 1))
     done
 
-    # Wait for kwallet to be available (reduced timeout to avoid login delays)
-    # If KWallet isn't ready, keys can be added manually later
-    timeout=5
-    while ! ${pkgs.kdePackages.kwallet}/bin/kwallet-query -l ${cfg.kwalletName} > /dev/null 2>&1; do
+    timeout=${toString cfg.kwalletTimeout}
+    while ! ${pkgs.kdePackages.kwallet}/bin/kwallet-query -l ${lib.escapeShellArg cfg.kwalletName} > /dev/null 2>&1; do
       if [ $timeout -le 0 ]; then
         echo "KWallet not available yet, skipping automatic SSH key import"
         echo "Keys can be added manually with: ssh-add"
-        exit 0  # Exit gracefully instead of failing
+        exit 0
       fi
       sleep 1
       timeout=$((timeout - 1))
     done
 
-    # Import only explicitly listed SSH keys (no greedy auto-discovery)
+    # Auto-discover SSH keys: for every .pub file, import the private counterpart
     sshDir="${config.home.homeDirectory}/.ssh"
-    for keyName in ${lib.escapeShellArgs cfg.sshKeys}; do
-      key="$sshDir/$keyName"
-      if [ -f "$key" ]; then
-        if ${pkgs.openssh}/bin/ssh-keygen -l -f "$key" > /dev/null 2>&1; then
-          echo "Adding key: $key"
-          ${pkgs.openssh}/bin/ssh-add "$key" </dev/null || true
-        else
-          echo "Skipping invalid key: $key"
-        fi
+    for pubKey in "$sshDir"/*.pub; do
+      [ -e "$pubKey" ] || continue
+      keyName="$(basename "$pubKey" .pub)"
+      privKey="$sshDir/$keyName"
+      ${lib.optionalString (cfg.excludeKeys != [ ]) ''
+        skip=0
+        for excl in ${lib.escapeShellArgs cfg.excludeKeys}; do
+          [ "$keyName" = "$excl" ] && skip=1 && break
+        done
+        [ "$skip" = "1" ] && continue
+      ''}
+      [ -f "$privKey" ] || continue
+      if ${pkgs.openssh}/bin/ssh-keygen -l -f "$privKey" > /dev/null 2>&1; then
+        echo "Adding key: $privKey"
+        ${pkgs.openssh}/bin/ssh-add "$privKey" </dev/null || true
       else
-        echo "Warning: SSH key not found: $key"
+        echo "Skipping invalid key: $privKey"
       fi
     done
   '';
@@ -67,10 +78,10 @@ in
       description = "Additional KDE configuration";
     };
 
-    sshKeys = lib.mkOption {
+    excludeKeys = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description = "List of SSH key filenames in ~/.ssh to auto-import via KWallet on login. Empty list disables auto-import.";
+      description = "SSH key filenames in ~/.ssh to skip during auto-import (base name without .pub extension).";
       example = [
         "id_ed25519"
         "work_rsa"
@@ -85,6 +96,18 @@ in
         Typical values are "kdewallet" (the default wallet), "default", or a custom wallet name.
         Example: "kdewallet"
       '';
+    };
+
+    sshAgentTimeout = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 30;
+      description = "Seconds to wait for the SSH agent socket before failing.";
+    };
+
+    kwalletTimeout = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 30;
+      description = "Seconds to wait for KWallet before skipping automatic SSH key import.";
     };
   };
 
@@ -118,31 +141,25 @@ in
       SSH_ASKPASS_REQUIRE = "prefer";
     };
 
-    # Automatic SSH key import using KWallet
-    systemd.user.services."ssh-add-keys" = lib.mkIf (cfg.sshKeys != [ ]) {
+    # Automatic SSH key import: auto-discovers private keys by .pub counterpart
+    systemd.user.services."ssh-add-keys" = {
       Unit = {
         Description = "Load SSH keys into the agent using KWallet";
 
-        # Start after KDE session is ready, but don't block it
         After = [
           "graphical-session.target"
           "ssh-agent.service"
-          "plasma-kwin_wayland.service" # Wait for Wayland compositor
         ];
 
         Wants = [
           "ssh-agent.service"
         ];
-
-        # Don't start if SSH_AUTH_SOCK is not set
-        ConditionEnvironment = "SSH_AUTH_SOCK";
       };
 
       Service = {
         Type = "oneshot";
-        RemainAfterExit = false; # Don't block session startup
+        RemainAfterExit = false;
 
-        # Restart on failure with backoff
         Restart = "on-failure";
         RestartSec = "5s";
 
@@ -157,14 +174,14 @@ in
           "DBUS_SESSION_BUS_ADDRESS"
           "XAUTHORITY"
           "SSH_AUTH_SOCK"
+          "XDG_RUNTIME_DIR"
         ];
 
         ExecStart = sshAddKeysScript;
       };
 
       Install = {
-        # Use wants instead of required, so it doesn't block login
-        WantedBy = [ "default.target" ];
+        WantedBy = [ "graphical-session.target" ];
       };
     };
   };

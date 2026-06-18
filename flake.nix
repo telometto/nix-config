@@ -3,12 +3,13 @@
 
   inputs = {
     # Primary channel - most packages come from here
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    # Stable fallbacks for packages broken on unstable
-    nixpkgs-stable-latest.url = "github:NixOS/nixpkgs/nixos-25.11";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
-    # Bleeding-edge channel for packages that need the latest commits
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    # Latest stable alias (same target as nixpkgs; kept for symmetry and future bumps)
+    nixpkgs-beta.url = "github:NixOS/nixpkgs/nixos-26.05";
+    # Unstable forward-pin: use sys.overlays.fromInputs for packages that need nixos-unstable
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Bleeding-edge forward-pin: use sys.overlays.fromInputs to pull individual packages from here
+    nixpkgs-small.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
@@ -27,13 +28,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    home-manager = {
+    hm-stable = {
+      url = "github:nix-community/home-manager/release-26.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    hm-master = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     lanzaboote = {
-      url = "github:nix-community/lanzaboote/master";
+      url = "github:nix-community/lanzaboote/v1.0.0";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         pre-commit.inputs.flake-compat.follows = "flake-compat";
@@ -102,7 +108,7 @@
             ./system-loader.nix
             ./host-loader.nix
             inputs.disko.nixosModules.disko
-            inputs.home-manager.nixosModules.home-manager
+            inputs.hm-stable.nixosModules.home-manager
             inputs.sops-nix.nixosModules.sops
             inputs.lanzaboote.nixosModules.lanzaboote
             inputs.microvm.nixosModules.host

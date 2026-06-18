@@ -1,5 +1,5 @@
-# User-specific configuration for admin user on snowfall host
-# This file is automatically imported only for the admin user on snowfall
+# User-specific configuration for zeno on snowfall host
+# This file is automatically imported only for zeno on snowfall
 {
   lib,
   config,
@@ -16,7 +16,7 @@
     pkgs.vorta # Borg backup GUI
     pkgs.hugo # static website engine
     pkgs.signal-desktop
-    pkgs.logseq
+    # pkgs.logseq # Issues with Electron
     pkgs.kdePackages.krdc
     pkgs.teams-for-linux
     pkgs.meld
@@ -27,9 +27,13 @@
     pkgs.rendercv
     pkgs.claude-code
     pkgs.uv
+    pkgs.filen-desktop
+    pkgs.filen-cli
   ];
 
   hm = {
+    langs = "nb_NO.UTF-8";
+
     programs = {
       development = {
         extraPackages = [

@@ -1,5 +1,5 @@
-# User-specific configuration for admin user on blizzard host
-# This file is automatically imported only for the admin user on blizzard
+# User-specific configuration for zeno on blizzard host
+# This file is automatically imported only for zeno on blizzard
 {
   lib,
   config,
@@ -13,6 +13,8 @@
   ];
 
   hm = {
+    langs = "nb_NO.UTF-8";
+
     programs = {
       fastfetch = {
         enable = true;

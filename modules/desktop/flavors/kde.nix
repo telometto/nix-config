@@ -18,7 +18,10 @@ in
       displayManager.sddm = {
         enable = lib.mkDefault true;
 
-        wayland.enable = lib.mkDefault true;
+        wayland = {
+          enable = lib.mkDefault true;
+          compositor = lib.mkDefault "kwin";
+        };
         autoNumlock = lib.mkDefault true;
         /**
           Available themes:

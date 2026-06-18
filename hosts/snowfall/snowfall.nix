@@ -10,6 +10,7 @@ let
   grafanaDashboards = import ../../lib/grafana-dashboards.nix { inherit lib pkgs; };
 in
 {
+  programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   networking = {
     hostName = lib.mkForce "snowfall";
     hostId = lib.mkForce "131b6b39";
@@ -75,13 +76,15 @@ in
 
     ## Pull specific packages from different nixpkgs inputs
     overlays = {
-      #   fromInputs = {
-      #     nixpkgs-unstable = [
-      #       "firefox"
-      #       "discord"
-      #     ];
-      #     nixpkgs-stable = [ "lutris" ];
-      #   };
+      fromInputs = {
+        # nixpkgs = [
+        #   "pipx"
+        #   "openrazer"
+        # ];
+        # nixpkgs-beta = [ "pipx" ];
+        nixpkgs-unstable = [ "vscode" ];
+        # nixpkgs-small = [ "pipx" ];
+      };
 
       ## Add custom overlays
       custom = [
@@ -260,14 +263,26 @@ in
 
   services.rpcbind.enable = lib.mkDefault true;
 
-  fileSystems."/home/${VARS.users.zeno.user}/pools/rpool/unenc/media/data/media" = {
-    device = "192.168.2.100:/rpool/unenc/media/data/media";
-    fsType = "nfs";
-    options = [
-      "nofail"
-      "x-systemd.automount"
-      "x-systemd.idle-timeout=600"
-    ];
+  fileSystems = {
+    "/home/${VARS.users.zeno.user}/backups" = {
+      device = "100.86.227.97:/rpool/enc/transfers";
+      fsType = "nfs";
+      options = [
+        "nofail"
+        "x-systemd.automount"
+        "x-systemd.idle-timeout=600"
+      ];
+    };
+
+    "/home/${VARS.users.zeno.user}/pools/rpool/unenc/media/data/media" = {
+      device = "100.86.227.97:/rpool/unenc/media/data/media";
+      fsType = "nfs";
+      options = [
+        "nofail"
+        "x-systemd.automount"
+        "x-systemd.idle-timeout=600"
+      ];
+    };
   };
 
   hardware = {

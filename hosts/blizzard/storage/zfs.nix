@@ -14,6 +14,15 @@ _: {
         autosnap = false;
       };
 
+      "rpool/enc/transfers" = {
+        useTemplate = [ "production" ];
+        autoprune = true;
+        monthly = 1;
+        weekly = 1;
+        daily = 0;
+        hourly = 0;
+      };
+
       flash = {
         useTemplate = [ "production" ];
         recursive = true;

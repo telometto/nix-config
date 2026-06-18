@@ -36,6 +36,15 @@ let
     STATE_FILE="/var/lib/cloudflare-access-ip-updater/last-ip"
     API_ENDPOINT="${apiEndpointTemplate}"
 
+    to_cidr() {
+      local ip="$1"
+      if [[ "$ip" == *:* ]]; then
+        printf '%s/128' "$ip"
+      else
+        printf '%s/32' "$ip"
+      fi
+    }
+
     # Get current public IP
     CURRENT_IP=$(${pkgs.curl}/bin/curl -sf ${lib.escapeShellArg cfg.ipService} | ${pkgs.coreutils}/bin/tr -d '[:space:]')
     if [[ -z "$CURRENT_IP" ]]; then
@@ -45,6 +54,7 @@ let
     echo "Current IP: $CURRENT_IP"
 
     # Check if IP has changed
+    LAST_IP=""
     if [[ -f "$STATE_FILE" ]]; then
       LAST_IP=$(${pkgs.coreutils}/bin/cat "$STATE_FILE")
       if [[ "$CURRENT_IP" == "$LAST_IP" ]]; then
@@ -73,30 +83,35 @@ let
 
     echo "Policy: $POLICY_NAME (decision: $POLICY_DECISION, precedence: $POLICY_PRECEDENCE)"
 
-    # Determine correct CIDR notation: /32 for IPv4, /128 for IPv6
-    if [[ "$CURRENT_IP" == *:* ]]; then
-      IP_CIDR="$CURRENT_IP/128"
-    else
-      IP_CIDR="$CURRENT_IP/32"
+    IP_CIDR=$(to_cidr "$CURRENT_IP")
+    LAST_IP_CIDR=""
+    if [[ -n "$LAST_IP" ]]; then
+      LAST_IP_CIDR=$(to_cidr "$LAST_IP")
     fi
 
-    # Build the updated policy JSON
-    # This creates a policy with the IP rule for bypass
-    UPDATE_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
-      --arg name "$POLICY_NAME" \
-      --arg decision "$POLICY_DECISION" \
-      --argjson precedence "$POLICY_PRECEDENCE" \
+    # Keep unmanaged policy rules intact and only replace this service's last managed IP rule.
+    UPDATE_PAYLOAD=$(echo "$POLICY_RESPONSE" | ${pkgs.jq}/bin/jq \
       --arg ip "$IP_CIDR" \
-      '{
-        name: $name,
-        decision: $decision,
-        precedence: $precedence,
-        include: [
-          { ip: { ip: $ip } }
-        ],
-        exclude: [],
-        require: []
-      }')
+      --arg previous_ip "$LAST_IP_CIDR" \
+      '
+        .result as $policy
+        | ($policy.include // []) as $include
+        | ($include | map(
+            select(
+              (.ip.ip? // "") as $existing_ip
+              | ($existing_ip != $ip)
+                and ($previous_ip == "" or $existing_ip != $previous_ip)
+            )
+          )) as $preserved_include
+        | {
+            name: $policy.name,
+            decision: $policy.decision,
+            precedence: $policy.precedence,
+            include: ([{ ip: { ip: $ip } }] + $preserved_include),
+            exclude: ($policy.exclude // []),
+            require: ($policy.require // [])
+          }
+      ')
 
     echo "Updating policy with new IP..."
     UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -sf \
