@@ -1,0 +1,18 @@
+title = "gitleaks nix-config"
+
+# Suppress false positives from the generic-api-key rule across git history.
+# Each allowlist is narrowly scoped to a specific pattern or commit.
+
+[[allowlists]]
+description = "GPG signing key IDs (format: 0x<16 hex chars>) are public identifiers, not secrets"
+regexes = ['''(?i)^(?:0x)?[0-9a-f]{16}$''']
+regexTarget = "secret"
+
+[[allowlists]]
+description = "kubectl --for=condition=<value> argument misidentified as generic-api-key"
+regexes = ['''(?i)^condition=\w+$''']
+regexTarget = "secret"
+
+[[allowlists]]
+description = "CrowdSec firewall-bouncer key — draft comment in commit 4fe0533f (2024-10-30), bouncer deleted"
+commits = ["4fe0533f359ee95399872cd0bcd8861a7409f8bc"]
