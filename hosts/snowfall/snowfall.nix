@@ -86,7 +86,7 @@ in
           "vscode"
           "codex"
         ];
-        nixpkgs-stable-small = [ "openblas" ];
+        # nixpkgs-stable-small = [ "openblas" ];
       };
 
       ## Add custom overlays
