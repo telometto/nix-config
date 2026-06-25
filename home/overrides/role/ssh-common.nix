@@ -2,6 +2,7 @@
 {
   programs.ssh = {
     enableDefaultConfig = false;
+
     settings = {
       "*" = {
         AddKeysToAgent = "yes";
