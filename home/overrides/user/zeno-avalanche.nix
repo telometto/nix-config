@@ -8,7 +8,6 @@
 }:
 {
   home.packages = [
-    pkgs.variety # Wallpaper changer
     #pkgs.tuxguitar # Guitar tablature editor and player
     pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
     pkgs.vorta # Borg backup GUI
@@ -35,8 +34,6 @@
 
         git.lfs = true;
       };
-
-      media.jf-mpv.enable = false;
     };
 
     files = {
