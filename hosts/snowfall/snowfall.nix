@@ -82,8 +82,11 @@ in
         #   "openrazer"
         # ];
         # nixpkgs-beta = [ "pipx" ];
-        nixpkgs-unstable = [ "vscode" ];
-        # nixpkgs-small = [ "pipx" ];
+        nixpkgs-unstable = [
+          "vscode"
+          "codex"
+        ];
+        nixpkgs-stable-small = [ "openblas" ];
       };
 
       ## Add custom overlays
