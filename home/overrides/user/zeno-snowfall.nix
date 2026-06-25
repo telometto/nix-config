@@ -9,7 +9,6 @@
 {
   # User-specific packages for admin on snowfall
   home.packages = [
-    pkgs.variety # Wallpaper changer
     pkgs.polychromatic # Razer configuration tool
     pkgs.tuxguitar # Guitar tablature editor and player
     pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
@@ -29,6 +28,7 @@
     pkgs.uv
     pkgs.filen-desktop
     pkgs.filen-cli
+    pkgs.codex
   ];
 
   hm = {
@@ -43,8 +43,6 @@
 
         git.lfs = true;
       };
-
-      media.jf-mpv.enable = false;
     };
 
     files = {
