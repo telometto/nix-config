@@ -3,7 +3,6 @@
 { lib, pkgs, ... }:
 {
   home.packages = [
-    pkgs.variety
     pkgs.rustdesk-flutter
     pkgs.polychromatic # Razer configuration tool
     pkgs.kdePackages.krdc
@@ -20,14 +19,9 @@
 
         mpv.enable = true;
         yt-dlp.enable = true;
-        jf-mpv.enable = lib.mkForce false;
       };
 
       gaming.lutris.enable = lib.mkForce false;
     };
-  };
-
-  programs = {
-    ssh.enableDefaultConfig = false;
   };
 }
