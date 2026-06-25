@@ -644,18 +644,18 @@
         "type": "github"
       }
     },
-    "nixpkgs-small": {
+    "nixpkgs-stable-small": {
       "locked": {
-        "lastModified": 1782335065,
-        "narHash": "sha256-gXd4wcArXVuwzUcvmpetohHysdvxkDq/QaXTDccl3x0=",
+        "lastModified": 1782343484,
+        "narHash": "sha256-RKx6gjqgGvCMbuJaNqcGmX4340OKd6mPey4EqaYZxqI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "27bf2edc037cc57a7aef5ba067b3996d45d7d464",
+        "rev": "936860f69b3f2c3aeae777cb4660b2128587d172",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-unstable-small",
+        "ref": "nixos-26.05-small",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -672,6 +672,22 @@
       "original": {
         "owner": "NixOS",
         "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs-unstable-small": {
+      "locked": {
+        "lastModified": 1782335065,
+        "narHash": "sha256-gXd4wcArXVuwzUcvmpetohHysdvxkDq/QaXTDccl3x0=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "27bf2edc037cc57a7aef5ba067b3996d45d7d464",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable-small",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -713,11 +729,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1782365810,
-        "narHash": "sha256-CP/ZDgWA4d8dITlmwtqJGxlFI7UVnGqMIag4AdwhReg=",
+        "lastModified": 1782372509,
+        "narHash": "sha256-+hT+UhtaXHHtEbiuAL8XdzudCgAdbbkuBhKuBm49zTk=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "e9c697fb41e93b2b6e34d1eafb57ef8d8f6e897f",
+        "rev": "872b893b05b4e28f766e436e0a734c4cfc8e6713",
         "type": "github"
       },
       "original": {
@@ -810,8 +826,9 @@
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_3",
         "nixpkgs-beta": "nixpkgs-beta",
-        "nixpkgs-small": "nixpkgs-small",
+        "nixpkgs-stable-small": "nixpkgs-stable-small",
         "nixpkgs-unstable": "nixpkgs-unstable",
+        "nixpkgs-unstable-small": "nixpkgs-unstable-small",
         "nur": "nur",
         "quadlet-nix": "quadlet-nix",
         "sops-nix": "sops-nix",

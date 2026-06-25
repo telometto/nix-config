@@ -6,10 +6,11 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     # Latest stable alias (same target as nixpkgs; kept for symmetry and future bumps)
     nixpkgs-beta.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs-stable-small.url = "github:NixOS/nixpkgs/nixos-26.05-small";
     # Unstable forward-pin: use sys.overlays.fromInputs for packages that need nixos-unstable
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     # Bleeding-edge forward-pin: use sys.overlays.fromInputs to pull individual packages from here
-    nixpkgs-small.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+    nixpkgs-unstable-small.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
