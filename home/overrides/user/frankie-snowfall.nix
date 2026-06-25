@@ -2,7 +2,6 @@
 # This file is automatically imported only for the frankie user on snowfall
 {
   lib,
-  config,
   pkgs,
   ...
 }:
@@ -12,7 +11,6 @@ in
 {
   # User-specific packages for frankie on snowfall
   home.packages = [
-    pkgs.variety # Wallpaper changer
     pkgs.polychromatic # Razer configuration tool
   ];
 
@@ -30,12 +28,6 @@ in
       paper = lib.mkForce LANGUAGE;
       telephone = lib.mkForce LANGUAGE;
       time = lib.mkForce LANGUAGE;
-    };
-  };
-
-  hm = {
-    programs = {
-      media.jf-mpv.enable = false;
     };
   };
 }

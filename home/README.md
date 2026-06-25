@@ -19,7 +19,7 @@ NixOS module, building user configurations automatically for enabled users.
 | [programs/](programs/) | User applications | `hm.programs.terminal.enable`, `hm.programs.browsers.enable` |
 | [security/](security/) | User-level SOPS secrets | `hm.security.sops.*` |
 | [services/](services/) | User services | `hm.services.gpgAgent.enable`, `hm.services.sshAgent.enable` |
-| [overrides/](overrides/) | Per-host and per-user overrides | Not auto-loaded — see Override System |
+| [overrides/](overrides/) | Per-role, per-host, and per-user overrides | Not auto-loaded — see Override System |
 
 ### Base Configuration
 
@@ -57,6 +57,14 @@ Apply settings to all users on a specific host:
 home/overrides/host/<hostname>.nix
 ```
 
+#### Role Overrides
+
+Apply settings to all users on hosts with a specific role:
+
+```
+home/overrides/role/<role>.nix
+```
+
 #### User Overrides
 
 Apply settings to a specific user on a specific host:
@@ -65,13 +73,11 @@ Apply settings to a specific user on a specific host:
 home/overrides/user/<username>-<hostname>.nix
 ```
 
-#### Shared Override Exception: `ssh-common.nix`
+#### Shared Role Modules
 
-`home/overrides/host/ssh-common.nix` is a shared SSH configuration file that
-does **not** follow the `<hostname>.nix` naming convention. It is not picked
-up automatically — host override files that need it import it explicitly. This
-is the only shared cross-host override file; it cannot be placed in `home/`
-directly because it is user-environment-specific rather than a general module.
+`home/overrides/role/ssh-common.nix` is a shared SSH configuration file used by
+role overrides. It is not picked up automatically as a standalone role; role
+override files that need it import it explicitly.
 
 ### Module Pattern
 
@@ -108,11 +114,13 @@ flowchart TD
     A["1. hm-loader output\nauto-imported home/** modules\n(includes home/base.nix mkDefaults)"] --> B
     B["2. sys.home.extraModules\nhost-wide extra modules for all users"] --> C
     C["3. sys.home.template\nhost-wide base template for all users"] --> D
-    D["4. home/overrides/host/<hostname>.nix (if exists)"] --> E
-    E["5. home/overrides/user/<user>-<host>.nix (if exists)"] --> F
-    F["6. sys.home.users.<name>.extraModules / extraConfig"]
-    AD["autoDesktopConfig\nlib.mkDefault hm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"] -.->|"merged separately"| F
-    H["lib.mkForce (anywhere)"] -.->|"always wins"| F
+    D["4. home/overrides/role/<role>.nix (if exists)"] --> E
+    E["5. home/overrides/host/<hostname>.nix (if exists)"] --> F
+    F["6. home/overrides/user/<user>-<host>.nix (if exists)"] --> G
+    G["7. sys.home.users.<name>.extraModules / extraConfig"] --> M
+    M["Final Home Manager user config"]
+    AD["autoDesktopConfig\nlib.mkDefault hm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"] -.->|"merged separately"| M
+    H["lib.mkForce (anywhere)"] -.->|"always wins"| M
 ```
 
 As a numbered list (low → high):
@@ -120,6 +128,7 @@ As a numbered list (low → high):
 1. Auto-imported HM modules (output of `hm-loader.nix`, includes `home/base.nix` with `lib.mkDefault` values)
 1. Host-wide extra modules (`sys.home.extraModules`)
 1. Base HM template (`sys.home.template`)
+1. Role overrides (`home/overrides/role/<role>.nix`)
 1. Host overrides (`home/overrides/host/<hostname>.nix`)
 1. User overrides (`home/overrides/user/<user>-<host>.nix`)
 1. Per-user `extraModules` / `extraConfig` (`sys.home.users.<name>.*`)

@@ -5,7 +5,21 @@
   pkgs,
   ...
 }:
+let
+  mkRoleDefault = lib.mkOverride 900;
+in
 {
+  imports = [ ./ssh-common.nix ];
+
+  home.packages = [
+    pkgs.variety
+  ];
+
+  hm.programs = {
+    browsers.chromium.enable = mkRoleDefault false;
+    media.jf-mpv.enable = mkRoleDefault false;
+  };
+
   programs.ghostty = {
     enable = true;
 
