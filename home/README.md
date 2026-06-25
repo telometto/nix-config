@@ -117,9 +117,10 @@ flowchart TD
     D["4. home/overrides/role/<role>.nix (if exists)"] --> E
     E["5. home/overrides/host/<hostname>.nix (if exists)"] --> F
     F["6. home/overrides/user/<user>-<host>.nix (if exists)"] --> G
-    G["7. sys.home.users.<name>.extraModules / extraConfig"]
-    AD["autoDesktopConfig\nlib.mkDefault hm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"] -.->|"merged separately"| F
-    H["lib.mkForce (anywhere)"] -.->|"always wins"| F
+    G["7. sys.home.users.<name>.extraModules / extraConfig"] --> M
+    M["Final Home Manager user config"]
+    AD["autoDesktopConfig\nlib.mkDefault hm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"] -.->|"merged separately"| M
+    H["lib.mkForce (anywhere)"] -.->|"always wins"| M
 ```
 
 As a numbered list (low → high):
