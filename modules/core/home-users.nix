@@ -20,7 +20,7 @@ let
   # Filter to only normal users that are enabled on this host
   systemUsers = lib.filterAttrs (
     username: userData:
-    (userData.isNormalUser or false) && (config.sys.users.${username}.enable or true)
+    (userData.isNormalUser or false) && (config.sys.users.${username}.enable or false)
   ) varsUsersByUsername;
 
   # Auto-enable desktop flavor based on system config

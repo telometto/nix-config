@@ -44,7 +44,7 @@
         hosts = {
           "*" = {
             ForwardAgent = "yes";
-            AddKeysToAgent = "yes";
+            AddKeysToAgent = "no";
             Compression = "yes";
           };
 
