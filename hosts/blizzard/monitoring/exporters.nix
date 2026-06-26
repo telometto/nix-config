@@ -33,6 +33,7 @@
         description = "Eaton 9130 UPS";
         directives = [
           "pollinterval = 5"
+          "lowbatt = 30"
         ];
       };
 
@@ -58,6 +59,7 @@
         port = 11014;
         variables = [
           "battery.charge"
+          "battery.charge.low"
           "battery.runtime"
           "input.frequency"
           "input.voltage"
