@@ -8,7 +8,7 @@
 let
   # Filter users based on per-host enablement (sys.users.<username>.enable)
   enabledUsers = lib.filterAttrs (
-    _roleName: userData: config.sys.users.${userData.user}.enable or true
+    _roleName: userData: config.sys.users.${userData.user}.enable or false
   ) VARS.users;
 in
 {
