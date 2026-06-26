@@ -40,8 +40,8 @@ let
     done
 
     if [ -z "''${HOME:-}" ]; then
-      echo "HOME is not set; cannot locate this user's SSH keys" >&2
-      exit 1
+      export HOME=${lib.escapeShellArg config.home.homeDirectory}
+      echo "HOME is not set; falling back to configured home directory: $HOME" >&2
     fi
 
     currentUid="$(${pkgs.coreutils}/bin/id -u)"
