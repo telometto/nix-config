@@ -8,6 +8,9 @@ let
   flavor = config.sys.desktop.flavor or "none";
   is = v: flavor == v;
   SDDM_THEME = "pixel_sakura";
+  SDDM_ASTRONAUT = pkgs.sddm-astronaut.override {
+    embeddedTheme = SDDM_THEME;
+  };
 in
 {
   config = lib.mkIf (is "kde") {
@@ -56,13 +59,19 @@ in
         pkgs.kdePackages.qtwayland
         pkgs.kdePackages.qtwebengine
         pkgs.xwayland
-        (pkgs.sddm-astronaut.override {
-          embeddedTheme = SDDM_THEME;
-        })
+        SDDM_ASTRONAUT
       ];
 
       plasma6.excludePackages = with pkgs.kdePackages; [ gwenview ];
     };
+
+    fonts.fontconfig.localConf = ''
+      <?xml version="1.0"?>
+      <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+      <fontconfig>
+        <dir>/run/current-system/sw/share/sddm/themes/sddm-astronaut-theme/Fonts</dir>
+      </fontconfig>
+    '';
 
     programs = {
       kdeconnect.enable = lib.mkDefault true;
