@@ -48,7 +48,11 @@ let
     sshDir="$HOME/.ssh"
     [ -d "$sshDir" ] || exit 0
 
-    realSshDir="$(${pkgs.coreutils}/bin/readlink -f "$sshDir")"
+    if ! realSshDir="$(${pkgs.coreutils}/bin/readlink -f "$sshDir" 2>/dev/null)"; then
+      echo "Skipping SSH key import because $sshDir could not be resolved" >&2
+      exit 0
+    fi
+
     sshDirUid="$(${pkgs.coreutils}/bin/stat -c %u "$realSshDir" 2>/dev/null || true)"
     if [ "$sshDirUid" != "$currentUid" ]; then
       echo "Skipping SSH key import because $realSshDir is not owned by the current user" >&2
@@ -70,7 +74,11 @@ let
       ''}
       [ -f "$privKey" ] || continue
 
-      realPrivKey="$(${pkgs.coreutils}/bin/readlink -f "$privKey")"
+      if ! realPrivKey="$(${pkgs.coreutils}/bin/readlink -f "$privKey" 2>/dev/null)"; then
+        echo "Skipping key that could not be resolved: $privKey"
+        continue
+      fi
+
       case "$realPrivKey" in
         "$realSshDir"/*) ;;
         *)
