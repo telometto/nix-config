@@ -31,7 +31,7 @@ in
         example = {
           "*" = {
             ForwardAgent = "yes";
-            AddKeysToAgent = "yes";
+            AddKeysToAgent = "no";
             Compression = "yes";
           };
           "github-personal" = {
