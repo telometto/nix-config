@@ -39,11 +39,27 @@ let
       timeout=$((timeout - 1))
     done
 
-    # Auto-discover SSH keys: for every .pub file, import the private counterpart
-    sshDir="${config.home.homeDirectory}/.ssh"
+    if [ -z "''${HOME:-}" ]; then
+      echo "HOME is not set; cannot locate this user's SSH keys" >&2
+      exit 1
+    fi
+
+    currentUid="$(${pkgs.coreutils}/bin/id -u)"
+    sshDir="$HOME/.ssh"
+    [ -d "$sshDir" ] || exit 0
+
+    realSshDir="$(${pkgs.coreutils}/bin/readlink -f "$sshDir")"
+    sshDirUid="$(${pkgs.coreutils}/bin/stat -c %u "$realSshDir" 2>/dev/null || true)"
+    if [ "$sshDirUid" != "$currentUid" ]; then
+      echo "Skipping SSH key import because $realSshDir is not owned by the current user" >&2
+      exit 0
+    fi
+
+    # Auto-discover SSH keys from this session user's ~/.ssh only:
+    # for every .pub file, import the private counterpart.
     for pubKey in "$sshDir"/*.pub; do
       [ -e "$pubKey" ] || continue
-      keyName="$(basename "$pubKey" .pub)"
+      keyName="$(${pkgs.coreutils}/bin/basename "$pubKey" .pub)"
       privKey="$sshDir/$keyName"
       ${lib.optionalString (cfg.excludeKeys != [ ]) ''
         skip=0
@@ -53,6 +69,22 @@ let
         [ "$skip" = "1" ] && continue
       ''}
       [ -f "$privKey" ] || continue
+
+      realPrivKey="$(${pkgs.coreutils}/bin/readlink -f "$privKey")"
+      case "$realPrivKey" in
+        "$realSshDir"/*) ;;
+        *)
+          echo "Skipping key outside this user's ~/.ssh: $privKey"
+          continue
+          ;;
+      esac
+
+      keyUid="$(${pkgs.coreutils}/bin/stat -c %u "$realPrivKey" 2>/dev/null || true)"
+      if [ "$keyUid" != "$currentUid" ]; then
+        echo "Skipping key not owned by the current user: $privKey"
+        continue
+      fi
+
       if ${pkgs.openssh}/bin/ssh-keygen -l -f "$privKey" > /dev/null 2>&1; then
         echo "Adding key: $privKey"
         ${pkgs.openssh}/bin/ssh-add "$privKey" </dev/null || true
