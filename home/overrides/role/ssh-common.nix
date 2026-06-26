@@ -5,7 +5,7 @@
 
     settings = {
       "*" = {
-        AddKeysToAgent = "yes";
+        AddKeysToAgent = "no";
         Compression = false;
         ServerAliveInterval = 0;
         ServerAliveCountMax = 3;
