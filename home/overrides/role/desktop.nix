@@ -38,13 +38,37 @@ in
       cursor-style = "block";
       cursor-style-blink = false;
 
+      window-width = 100;
+      window-height = 80;
+
       window-padding-x = 8;
       window-padding-y = 4;
       window-padding-balance = true;
 
       mouse-hide-while-typing = true;
 
+      scrollback-limit = 100000000;
+
+      clipboard-paste-bracketed-safe = false;
+
+      notify-on-command-finish = "unfocused";
+      notify-on-command-finish-action = "no-bell,notify";
+      notify-on-command-finish-after = "30s";
+
+      quick-terminal-position = "top";
+      quick-terminal-size = "40%";
+      quick-terminal-autohide = false;
+
       shell-integration = "zsh";
+      shell-integration-features = "sudo,ssh-env";
+
+      keybind = [
+        "ctrl+alt+space=toggle_quick_terminal"
+      ];
+
+      command-palette-entry = [
+        "title:\"Toggle Quick Terminal\",description:\"Show or hide the quick terminal.\",action:toggle_quick_terminal"
+      ];
     };
   };
 }
