@@ -499,6 +499,10 @@ in
         message = "sys.services.trigger: smtp.fromEmail must be set when smtp.enable = true";
       }
       {
+        assertion = cfg.auth.whitelistedEmailsFile != "";
+        message = "sys.services.trigger: auth.whitelistedEmailsFile must not be an empty string";
+      }
+      {
         assertion = cfg.auth.allowAllEmails || cfg.auth.whitelistedEmailsFile != null;
         message = "sys.services.trigger: auth.whitelistedEmailsFile must be set unless auth.allowAllEmails = true";
       }
