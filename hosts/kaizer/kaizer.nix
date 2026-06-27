@@ -120,6 +120,8 @@ in
   };
 
   services = {
+    displayManager.autoLogin.user = "gianluca";
+
     tailscale.authKeyFile = lib.mkForce config.sys.secrets.kaizerTsKey;
 
     rustdesk-server = {
