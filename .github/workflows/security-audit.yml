@@ -1,20 +1,24 @@
 name: Security Audit
 on:
   workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
   schedule:
     - cron: "0 2 * * 1"
 
 concurrency:
-  group: security-audit
+  group: security-audit-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   security-audit:
     runs-on: ubuntu-latest
+    outputs:
+      secrets_found: ${{ steps.gitleaks.outputs.secrets_found }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
@@ -27,75 +31,96 @@ jobs:
       - name: Check secrets exposure
         id: gitleaks
         run: |
-          echo "## 🔍 Security Audit Results" >> $GITHUB_STEP_SUMMARY
-          echo "### Secrets Scanning" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🔍 Security Audit Results"
+            echo "### Secrets Scanning"
+          } >> "$GITHUB_STEP_SUMMARY"
 
           # Checkout uses fetch-depth: 0, so scan the full git history instead
           # of only the working tree.
           if nix run nixpkgs#gitleaks -- detect --source . --redact --verbose; then
-            echo "✅ Gitleaks: No secrets detected" >> $GITHUB_STEP_SUMMARY
-            echo "secrets_found=false" >> $GITHUB_OUTPUT
+            echo "✅ Gitleaks: No secrets detected" >> "$GITHUB_STEP_SUMMARY"
+            echo "secrets_found=false" >> "$GITHUB_OUTPUT"
           else
-            echo "🚨 Gitleaks: Potential secrets found" >> $GITHUB_STEP_SUMMARY
-            echo "secrets_found=true" >> $GITHUB_OUTPUT
+            echo "🚨 Gitleaks: Potential secrets found" >> "$GITHUB_STEP_SUMMARY"
+            echo "secrets_found=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Audit firewall configuration
         run: |
-          echo "### Firewall Configuration Audit" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "### Firewall Configuration Audit"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
 
           open_ports=$(find . -name "*.nix" -exec grep -l "openFirewall.*true" {} \; 2>/dev/null || true)
           if [ -n "$open_ports" ]; then
-            echo "**Files with opened firewall ports:**" >> $GITHUB_STEP_SUMMARY
-            echo "$open_ports" | while read file; do
-              echo "- \`$file\`" >> $GITHUB_STEP_SUMMARY
-            done
+            {
+              echo "**Files with opened firewall ports:**"
+              while IFS= read -r file; do
+                echo "- \`$file\`"
+              done <<< "$open_ports"
+            } >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "✅ No explicitly opened firewall ports found" >> $GITHUB_STEP_SUMMARY
+            echo "✅ No explicitly opened firewall ports found" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Audit SSH configuration
         run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### SSH Security Audit" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          {
+            echo ""
+            echo "### SSH Security Audit"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
 
           if grep -Erq "services\.openssh\.settings\.PasswordAuthentication\s*=\s*true|PasswordAuthentication\s*=\s*true" --include="*.nix" . 2>/dev/null; then
-            echo "⚠️ Password authentication is enabled in some configurations" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ Password authentication is enabled in some configurations" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "✅ Password authentication not explicitly enabled" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Password authentication not explicitly enabled" >> "$GITHUB_STEP_SUMMARY"
           fi
 
           if grep -Erq "services\.openssh\.settings\.PermitRootLogin\s*=\s*\"yes\"|PermitRootLogin\s*=\s*\"yes\"" --include="*.nix" . 2>/dev/null; then
-            echo "⚠️ Root login is permitted in some configurations" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ Root login is permitted in some configurations" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "✅ Root login not explicitly permitted" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Root login not explicitly permitted" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Audit user permissions
         run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### User Permissions Audit" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          {
+            echo ""
+            echo "### User Permissions Audit"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
 
           wheel_users=$(grep -r "extraGroups.*wheel" --include="*.nix" . 2>/dev/null || true)
           if [ -n "$wheel_users" ]; then
-            echo "**Users with sudo access (wheel group):**" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            echo "$wheel_users" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            {
+              echo "**Users with sudo access (wheel group):**"
+              echo "\`\`\`"
+              echo "$wheel_users"
+              echo "\`\`\`"
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Generate security report
         run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📊 Security Summary" >> $GITHUB_STEP_SUMMARY
-          echo "Audit completed at: $(date)" >> $GITHUB_STEP_SUMMARY
-          echo "Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          {
+            echo ""
+            echo "## 📊 Security Summary"
+            echo "Audit completed at: $(date)"
+            echo "Repository: ${{ github.repository }}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
+  create-security-issue:
+    needs: security-audit
+    if: needs.security-audit.outputs.secrets_found == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
       - name: Create issue if secrets found
-        if: steps.gitleaks.outputs.secrets_found == 'true'
         uses: actions/github-script@v8
         with:
           script: |

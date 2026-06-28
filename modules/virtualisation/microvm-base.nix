@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.sys.virtualisation.microvm;
+  registry = import ../../vms/vm-registry.nix;
   mkVmName = name: "${name}-vm";
 
   # Port forward submodule
@@ -330,6 +331,24 @@ let
       lib.filter (host: builtins.length (lib.filter (candidate: candidate == host) hosts) > 1) hosts
     );
 
+  duplicateValues =
+    values:
+    lib.unique (
+      lib.filter (value: builtins.length (lib.filter (candidate: candidate == value) values) > 1) values
+    );
+
+  registryValues = builtins.attrValues registry;
+
+  registryFieldValues = field: map (entry: toString entry.${field}) registryValues;
+
+  duplicateRegistryCids = duplicateValues (registryFieldValues "cid");
+
+  duplicateRegistryMacs = duplicateValues (registryFieldValues "mac");
+
+  duplicateRegistryIps = duplicateValues (registryFieldValues "ip");
+
+  duplicateRegistryPorts = duplicateValues (registryFieldValues "port");
+
   formatList = list: lib.concatStringsSep ", " list;
 in
 {
@@ -466,6 +485,22 @@ in
       {
         assertion = duplicateIngressHosts == [ ];
         message = "sys.virtualisation.microvm (expose/instances) defines duplicate Cloudflare ingress hosts: ${formatList duplicateIngressHosts}";
+      }
+      {
+        assertion = duplicateRegistryCids == [ ];
+        message = "vms/vm-registry.nix defines duplicate MicroVM CIDs: ${formatList duplicateRegistryCids}";
+      }
+      {
+        assertion = duplicateRegistryMacs == [ ];
+        message = "vms/vm-registry.nix defines duplicate MicroVM MAC addresses: ${formatList duplicateRegistryMacs}";
+      }
+      {
+        assertion = duplicateRegistryIps == [ ];
+        message = "vms/vm-registry.nix defines duplicate MicroVM IP addresses: ${formatList duplicateRegistryIps}";
+      }
+      {
+        assertion = duplicateRegistryPorts == [ ];
+        message = "vms/vm-registry.nix defines duplicate MicroVM service ports: ${formatList duplicateRegistryPorts}";
       }
       {
         assertion = cloudflaredEnabled || enabledCfTunnelVms == [ ];

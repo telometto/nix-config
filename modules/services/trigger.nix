@@ -414,10 +414,16 @@ in
     };
 
     auth = {
+      allowAllEmails = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Allow any email address to request magic-link access when no whitelist file is configured.";
+      };
+
       whitelistedEmailsFile = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
-        description = "Path to file containing a regex of permitted email addresses. Null allows all.";
+        description = "Path to file containing a regex of permitted email addresses. Null is rejected unless allowAllEmails is true.";
       };
 
       adminEmailsFile = lib.mkOption {
@@ -491,6 +497,14 @@ in
       {
         assertion = !cfg.smtp.enable || cfg.smtp.fromEmail != "";
         message = "sys.services.trigger: smtp.fromEmail must be set when smtp.enable = true";
+      }
+      {
+        assertion = cfg.auth.whitelistedEmailsFile != "";
+        message = "sys.services.trigger: auth.whitelistedEmailsFile must not be an empty string";
+      }
+      {
+        assertion = cfg.auth.allowAllEmails || cfg.auth.whitelistedEmailsFile != null;
+        message = "sys.services.trigger: auth.whitelistedEmailsFile must be set unless auth.allowAllEmails = true";
       }
     ];
 
