@@ -126,10 +126,10 @@ in
 
           security-headers = traefikLib.mkSecurityHeaders { };
 
-          # Lingarr currently needs inline script allowances and WebSocket
-          # connections; keep this exception route-scoped.
+          # Lingarr currently needs inline/eval script allowances and
+          # WebSocket connections; keep this exception route-scoped.
           lingarr-headers = traefikLib.mkSecurityHeaders {
-            csp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:;";
+            csp = traefikLib.compatibilityCsp;
           };
 
           gitea-xfp-https.headers.customRequestHeaders.X-Forwarded-Proto = "https";
@@ -150,11 +150,14 @@ in
           };
 
           firefox-headers = traefikLib.mkSecurityHeaders {
+            # Browser-in-browser UIs use nested frames and dynamic client code.
             xFrameOptions = null;
             csp = null;
           };
 
           trigger-headers = traefikLib.mkSecurityHeaders {
+            # Trigger.dev's app shell currently needs a service-specific CSP
+            # review; keep no-CSP scoped to the Trigger route only.
             csp = null;
           };
 

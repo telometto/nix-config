@@ -188,6 +188,8 @@
     dns = "10.100.0.11";
   };
 
+  # Reserved for the flaresolverr service embedded in prowlarr-vm.
+  # This is not wired as a standalone flake output by design.
   flaresolverr = {
     name = "flaresolverr";
     cid = 118;
