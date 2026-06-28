@@ -29,7 +29,12 @@
     pkgs.filen-desktop
     pkgs.filen-cli
     pkgs.codex
-  ];
+  ]
+  ++ (with pkgs.sweethome3d; [
+    application
+    furniture-editor
+    textures-editor
+  ]);
 
   hm = {
     langs = "nb_NO.UTF-8";
