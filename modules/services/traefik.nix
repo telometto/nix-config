@@ -1,6 +1,7 @@
 { lib, config, ... }:
 let
   cfg = config.sys.services.traefik;
+  traefikLib = import ../../lib/traefik.nix { inherit lib; };
 
   trustedIPs = [
     "127.0.0.1/32"
@@ -158,17 +159,7 @@ in
 
         dynamic.files.core.settings.http = {
           middlewares = lib.optionalAttrs cfg.securityHeaders {
-            security-headers.headers = {
-              customResponseHeaders = {
-                X-Content-Type-Options = "nosniff";
-                X-Frame-Options = "SAMEORIGIN";
-                X-XSS-Protection = "1; mode=block";
-                Referrer-Policy = "no-referrer";
-                Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
-              };
-
-              contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';";
-            };
+            security-headers = traefikLib.mkSecurityHeaders { };
           };
 
           routers = lib.optionalAttrs cfg.dashboard.enable {
