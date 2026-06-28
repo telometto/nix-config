@@ -178,6 +178,18 @@ in
     # };
   };
 
+  fileSystems = {
+    "/home/${VARS.users.zeno.user}/backups" = {
+      device = "100.86.227.97:/rpool/enc/transfers";
+      fsType = "nfs";
+      options = [
+        "nofail"
+        "x-systemd.automount"
+        "x-systemd.idle-timeout=600"
+      ];
+    };
+  };
+
   boot.extraModprobeConfig = ''
     # Keep Bluetooth coexistence disabled for better BT audio stability
     options iwlwifi bt_coex_active=0
