@@ -79,6 +79,19 @@ in
             #   doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
             # };
 
+            podman-desktop = prev.podman-desktop.override {
+              # pnpm 10.29.2 is marked insecure; these packages only need a pnpm 10 builder.
+              pnpm_10_29_2 = final.pnpm_10;
+            };
+
+            signal-desktop = prev.signal-desktop.override {
+              pnpm_10_29_2 = final.pnpm_10;
+            };
+
+            vesktop = prev.vesktop.override {
+              pnpm_10_29_2 = final.pnpm_10;
+            };
+
             python3Packages = prev.python3Packages.overrideScope (
               _python-final: python-prev: {
                 # Django 5.2.15 install checks currently fail a timing-sensitive XML performance test.
