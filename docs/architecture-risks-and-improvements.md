@@ -1,6 +1,6 @@
 # Architecture Risks and Improvements
 
-> **Last reviewed: 2026-06-01**
+> **Last reviewed: 2026-06-30**
 
 This report captures documentation drift, operational risks, and future
 improvement opportunities discovered during a source-guided architecture
@@ -23,7 +23,8 @@ Most important follow-ups:
 1. Add registry-level MicroVM validation for CID, MAC, IP, and port uniqueness.
 1. Enforce mutually exclusive host roles or document the convention more
    strongly.
-1. Add clearer validation for the private `VARS.users` shape.
+1. Keep credential lifecycle guidance and private `VARS.users` validation
+   aligned as the private schema evolves.
 1. Revisit default Traefik CSP compatibility trade-offs.
 
 ______________________________________________________________________
@@ -109,7 +110,7 @@ ______________________________________________________________________
 | Registry/output drift | Registry entries and VM files can diverge from `flake-microvms.nix` outputs | Docs and host enablement can point at non-existent VM outputs | Validate registry entries against wired outputs, with explicit exceptions |
 | Role selection | `sys.role.desktop.enable` and `sys.role.server.enable` are independent booleans | A host can accidentally enable both role bundles | Add an assertion that at most one role is enabled, or migrate to a role enum |
 | Home overrides | `modules/core/home-users.nix` uses `builtins.pathExists` for conditional override imports | The behavior is convenient but implicit | Keep the pattern documented and consider a lightweight override inventory check |
-| `VARS.users` | `modules/core/users.nix` directly consumes fields from the private `VARS.users` data | Missing fields fail during evaluation with generic context | Add explicit assertions for required fields and document the schema |
+| `VARS.users` | `modules/core/users.nix` consumes fields from the private `VARS.users` data | Bad user registry data can lock out accounts on rebuild | Keep the explicit assertions for duplicate users/UIDs, placeholder password hashes, and malformed SSH public keys current with the private schema |
 | CI host discovery | Workflows discover physical hosts with a grep for `name = mkHost` | Formatting or structure changes can drop a host from the matrix | Add a small host-discovery check or generate the matrix from Nix when feasible |
 
 ______________________________________________________________________
@@ -152,7 +153,8 @@ These are intentionally not implemented in this documentation pass.
    ports.
 1. Resolve the `flaresolverr` standalone VM drift.
 1. Add a role exclusivity assertion in the role module layer.
-1. Add `VARS.users` schema assertions with actionable error messages.
+1. Extend credential lifecycle checks if private `vars.nix` metadata becomes
+   mandatory instead of advisory.
 1. Extend `.gitignore` for common local secret file patterns.
 1. Review Traefik CSP defaults and introduce stricter per-service policies
    where compatible.

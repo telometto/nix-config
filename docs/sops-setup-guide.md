@@ -77,6 +77,40 @@ startup.
 
 ______________________________________________________________________
 
+## Rotate a host key or age recipient
+
+Do not rotate host SSH keys or SOPS age recipients on a calendar. Rotate them
+only after host reinstallation, persistent storage loss, suspected compromise,
+or a deliberate algorithm/key-management upgrade. A missing recipient can break
+activation for every service that needs SOPS secrets.
+
+Use an overlap-and-remove sequence:
+
+1. Generate or confirm the replacement host SSH key on the target host.
+1. Derive the replacement age recipient:
+
+   ```bash
+   ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key | ssh-to-age
+   ```
+
+1. Add the replacement recipient to the host's entry in private
+   `nix-secrets/.sops.yaml` while keeping the old recipient.
+1. Re-encrypt every affected SOPS file:
+
+   ```bash
+   sops updatekeys path/to/affected-secret.yaml
+   ```
+
+1. Rebuild or deploy the host and verify that `sops-nix` decrypts its secrets.
+1. Remove the old recipient from `.sops.yaml`.
+1. Run `sops updatekeys` again for the same files.
+1. Rebuild or deploy once more and verify dependent services.
+
+For MicroVMs that use persistent host keys under `/persist/ssh`, derive the age
+recipient from the VM's persistent key, not from an ephemeral boot-time key.
+
+______________________________________________________________________
+
 ## Service enablement and secret declarations
 
 Secrets are intentionally conditional. `modules/core/sops.nix` only declares a
