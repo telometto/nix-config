@@ -21,21 +21,16 @@ let
     values:
     lib.unique (
       lib.filter (
-        value:
-        value != null
-        && lib.length (lib.filter (candidate: candidate == value) values) > 1
+        value: value != null && lib.length (lib.filter (candidate: candidate == value) values) > 1
       ) values
     );
 
   duplicateUsernames = duplicateValues usernames;
   duplicateUids = duplicateValues uids;
 
-  validSshPubKeyRegex =
-    "(ssh-ed25519|sk-ssh-ed25519@openssh\\.com|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521|sk-ecdsa-sha2-nistp256@openssh\\.com|ssh-rsa)[[:space:]]+[A-Za-z0-9+/]+={0,3}([[:space:]].*)?";
+  validSshPubKeyRegex = "(ssh-ed25519|sk-ssh-ed25519@openssh\\.com|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521|sk-ecdsa-sha2-nistp256@openssh\\.com|ssh-rsa)[[:space:]]+[A-Za-z0-9+/]+={0,3}([[:space:]].*)?";
 
-  isValidSshPubKey =
-    key:
-    builtins.isString key && builtins.match validSshPubKeyRegex key != null;
+  isValidSshPubKey = key: builtins.isString key && builtins.match validSshPubKeyRegex key != null;
 
   isUsablePasswordHash =
     hash:
@@ -81,18 +76,17 @@ let
   ) varsUsers;
 in
 {
-  assertions =
-    [
-      {
-        assertion = duplicateUsernames == [ ];
-        message = "VARS.users contains duplicate login names: ${lib.concatStringsSep ", " duplicateUsernames}";
-      }
-      {
-        assertion = duplicateUids == [ ];
-        message = "VARS.users contains duplicate UIDs: ${lib.concatStringsSep ", " (map builtins.toString duplicateUids)}";
-      }
-    ]
-    ++ userAssertions;
+  assertions = [
+    {
+      assertion = duplicateUsernames == [ ];
+      message = "VARS.users contains duplicate login names: ${lib.concatStringsSep ", " duplicateUsernames}";
+    }
+    {
+      assertion = duplicateUids == [ ];
+      message = "VARS.users contains duplicate UIDs: ${lib.concatStringsSep ", " (map builtins.toString duplicateUids)}";
+    }
+  ]
+  ++ userAssertions;
 
   # Create NixOS users from VARS.users
   # Transform from role-keyed (zeno, other) to username-keyed (zeno, <other's username>)

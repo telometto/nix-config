@@ -87,6 +87,7 @@ activation for every service that needs SOPS secrets.
 Use an overlap-and-remove sequence:
 
 1. Generate or confirm the replacement host SSH key on the target host.
+
 1. Derive the replacement age recipient:
 
    ```bash
@@ -95,6 +96,7 @@ Use an overlap-and-remove sequence:
 
 1. Add the replacement recipient to the host's entry in private
    `nix-secrets/.sops.yaml` while keeping the old recipient.
+
 1. Re-encrypt every affected SOPS file:
 
    ```bash
@@ -102,8 +104,11 @@ Use an overlap-and-remove sequence:
    ```
 
 1. Rebuild or deploy the host and verify that `sops-nix` decrypts its secrets.
+
 1. Remove the old recipient from `.sops.yaml`.
+
 1. Run `sops updatekeys` again for the same files.
+
 1. Rebuild or deploy once more and verify dependent services.
 
 For MicroVMs that use persistent host keys under `/persist/ssh`, derive the age
