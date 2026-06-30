@@ -78,6 +78,7 @@ ownership change, or a deliberate annual/quarterly review decision. Do not run
 it just because a timer fired.
 
 1. Generate a new unique password in Bitwarden.
+
 1. Create a Nix-compatible hash, for example:
 
    ```bash
@@ -85,8 +86,11 @@ it just because a timer fired.
    ```
 
 1. Update only the matching `hashedPassword` in private `nix-secrets/vars.nix`.
+
 1. Rebuild a non-critical host where the account is enabled.
+
 1. Test console login, sudo, and desktop unlock.
+
 1. Rebuild the remaining affected hosts.
 
 ## SSH User Key Runbook
