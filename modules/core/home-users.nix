@@ -10,10 +10,15 @@ let
 
   # Transform VARS.users from role-keyed to username-keyed
   varsUsersByUsername = lib.listToAttrs (
-    lib.mapAttrsToList (roleName: userData: {
-      name = userData.user or roleName;
-      value = userData;
-    }) (VARS.users or { })
+    lib.mapAttrsToList (roleName: userData:
+      let
+        username = userData.user or null;
+      in
+      {
+        name = if builtins.isString username && username != "" then username else roleName;
+        value = userData;
+      }
+    ) (VARS.users or { })
   );
 
   # Use VARS as the source of truth for which users to configure

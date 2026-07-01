@@ -14,8 +14,11 @@ let
     uid = userData.uid or null;
   }) varsUsers;
 
+  isValidUsername = username: builtins.isString username && username != "";
+  isValidUid = uid: builtins.isInt uid && uid > 0;
+
   usernames = map (record: record.username) userRecords;
-  uids = map (record: record.uid) (lib.filter (record: record.uid != null) userRecords);
+  uids = map (record: record.uid) (lib.filter (record: isValidUid record.uid) userRecords);
 
   duplicateValues =
     values:
@@ -28,7 +31,8 @@ let
   duplicateUsernames = duplicateValues usernames;
   duplicateUids = duplicateValues uids;
 
-  validSshPubKeyRegex = "(ssh-ed25519|sk-ssh-ed25519@openssh\\.com|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521|sk-ecdsa-sha2-nistp256@openssh\\.com|ssh-rsa)[[:space:]]+[A-Za-z0-9+/]+={0,3}([[:space:]].*)?";
+  validSshPubKeyRegex =
+    "(ssh-ed25519|sk-ssh-ed25519@openssh\\.com|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521|sk-ecdsa-sha2-nistp256@openssh\\.com|ssh-rsa)[[:space:]]+[A-Za-z0-9+/]+={0,2}([[:space:]].*)?";
 
   isValidSshPubKey = key: builtins.isString key && builtins.match validSshPubKeyRegex key != null;
 
@@ -43,13 +47,17 @@ let
   userAssertions = lib.concatMap (
     record:
     let
-      label = if record.username != null then record.username else record.roleName;
-      userData = record.userData;
+      label = if isValidUsername record.username then record.username else record.roleName;
+      inherit (record) userData;
     in
     [
       {
-        assertion = record.username != null && builtins.isString record.username && record.username != "";
+        assertion = isValidUsername record.username;
         message = "VARS.users.${record.roleName}.user must be a non-empty string.";
+      }
+      {
+        assertion = isValidUid record.uid;
+        message = "VARS.users.${record.roleName} (${label}) must define a positive integer uid.";
       }
       {
         assertion = userData ? hashedPassword && isUsablePasswordHash userData.hashedPassword;
@@ -72,7 +80,7 @@ let
     let
       username = userData.user or null;
     in
-    username != null && (config.sys.users.${username}.enable or false)
+    isValidUsername username && (config.sys.users.${username}.enable or false)
   ) varsUsers;
 in
 {
