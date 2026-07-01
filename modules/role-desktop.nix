@@ -84,36 +84,34 @@ in
               pnpm_10_29_2 = final.pnpm_10;
             };
 
-            vesktop = prev.vesktop.override {
-              pnpm_10_29_2 = final.pnpm_10;
-            };
+            /*
+              python3Packages = prev.python3Packages.overrideScope (
+                _python-final: python-prev: {
+                  # Django 5.2.15 install checks currently fail a timing-sensitive XML performance test.
+                  # Upstream nixpkgs update: https://github.com/NixOS/nixpkgs/pull/527788
+                  django = python-prev.django.overridePythonAttrs (_old: {
+                    doCheck = false;
+                  });
 
-            python3Packages = prev.python3Packages.overrideScope (
-              _python-final: python-prev: {
-                # Django 5.2.15 install checks currently fail a timing-sensitive XML performance test.
-                # Upstream nixpkgs update: https://github.com/NixOS/nixpkgs/pull/527788
-                django = python-prev.django.overridePythonAttrs (_old: {
-                  doCheck = false;
-                });
+                  django_5 = python-prev.django_5.overridePythonAttrs (_old: {
+                    doCheck = false;
+                  });
+                }
+              );
 
-                django_5 = python-prev.django_5.overridePythonAttrs (_old: {
-                  doCheck = false;
-                });
-              }
-            );
+              python313Packages = prev.python313Packages.overrideScope (
+                _python-final: python-prev: {
+                  # Keep the explicit 3.13 package set aligned with python3Packages.
+                  django = python-prev.django.overridePythonAttrs (_old: {
+                    doCheck = false;
+                  });
 
-            python313Packages = prev.python313Packages.overrideScope (
-              _python-final: python-prev: {
-                # Keep the explicit 3.13 package set aligned with python3Packages.
-                django = python-prev.django.overridePythonAttrs (_old: {
-                  doCheck = false;
-                });
-
-                django_5 = python-prev.django_5.overridePythonAttrs (_old: {
-                  doCheck = false;
-                });
-              }
-            );
+                  django_5 = python-prev.django_5.overridePythonAttrs (_old: {
+                    doCheck = false;
+                  });
+                }
+              );
+            */
 
             pipx = prev.pipx.overrideAttrs {
               # Issues on master
