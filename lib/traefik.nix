@@ -106,6 +106,12 @@ in
         description = "Whether to strip the path prefix before forwarding.";
       };
 
+      middlewares = lib.mkOption {
+        type = lib.types.nullOr (lib.types.listOf lib.types.str);
+        default = defaults.middlewares or null;
+        description = "Traefik middleware chain to use instead of the default chain. When null, defaultMiddlewares is used.";
+      };
+
       extraMiddlewares = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = defaults.extraMiddlewares or [ ];
@@ -130,6 +136,10 @@ in
       defaultMiddlewares ? [ "security-headers" ],
       extraDynamicConfig ? { },
     }:
+    let
+      routeMiddlewares =
+        if cfg.reverseProxy.middlewares != null then cfg.reverseProxy.middlewares else defaultMiddlewares;
+    in
     lib.mkIf
       (
         cfg.reverseProxy.enable
@@ -143,7 +153,7 @@ in
               rule = "Host(`${cfg.reverseProxy.domain}`)";
               service = name;
               entryPoints = [ "web" ];
-              middlewares = defaultMiddlewares ++ cfg.reverseProxy.extraMiddlewares;
+              middlewares = routeMiddlewares ++ cfg.reverseProxy.extraMiddlewares;
             };
 
             services.${name}.loadBalancer = {
