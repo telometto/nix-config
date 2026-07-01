@@ -126,6 +126,10 @@ let
       reverseProxy = {
         subdomain = "series";
         url = vmUrl "sonarr";
+        middlewares = [
+          "app-compat-headers"
+          "crowdsec"
+        ];
       };
     };
 
@@ -135,6 +139,10 @@ let
       reverseProxy = {
         subdomain = "movies";
         url = vmUrl "radarr";
+        middlewares = [
+          "app-compat-headers"
+          "crowdsec"
+        ];
       };
     };
 
@@ -144,6 +152,10 @@ let
       reverseProxy = {
         subdomain = "indexer";
         url = vmUrl "prowlarr";
+        middlewares = [
+          "app-compat-headers"
+          "crowdsec"
+        ];
       };
     };
 
@@ -153,6 +165,10 @@ let
       reverseProxy = {
         subdomain = "subs";
         url = vmUrl "bazarr";
+        middlewares = [
+          "app-compat-headers"
+          "crowdsec"
+        ];
       };
     };
 
@@ -162,6 +178,10 @@ let
       reverseProxy = {
         subdomain = "books";
         url = vmUrl "readarr";
+        middlewares = [
+          "app-compat-headers"
+          "crowdsec"
+        ];
       };
     };
 
