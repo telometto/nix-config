@@ -84,10 +84,6 @@ in
               pnpm_10_29_2 = final.pnpm_10;
             };
 
-            signal-desktop = prev.signal-desktop.override {
-              pnpm_10_29_2 = final.pnpm_10;
-            };
-
             vesktop = prev.vesktop.override {
               pnpm_10_29_2 = final.pnpm_10;
             };
