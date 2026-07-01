@@ -95,7 +95,8 @@ Each call adds these options under `sys.services.<name>.reverseProxy`:
 | `domain` | `str` (nullable) | FQDN used for the Traefik router rule |
 | `pathPrefix` | `str` (nullable) | URL path prefix to match |
 | `stripPrefix` | `bool` | Strip the path prefix before forwarding |
-| `extraMiddlewares` | `[str]` | Additional Traefik middleware names |
+| `middlewares` | `[str]` (nullable) | Replacement middleware chain. When `null`, the helper uses `defaultMiddlewares`. |
+| `extraMiddlewares` | `[str]` | Additional middleware names appended after the selected default or replacement chain |
 | `cfTunnel.enable` | `bool` | Route via Cloudflare tunnel instead of direct |
 
 **`mkRoutes` route entry shape:**
@@ -103,6 +104,12 @@ Each call adds these options under `sys.services.<name>.reverseProxy`:
 ```nix
 { subdomain, url, entryPoints?, middlewares? }
 ```
+
+For services using `mkTraefikDynamicConfig`, set `reverseProxy.middlewares`
+when a route needs to replace the default middleware chain, for example to avoid
+stacking two CSP-producing header middlewares. Use
+`reverseProxy.extraMiddlewares` when the route should keep its default chain and
+append additional behavior.
 
 ______________________________________________________________________
 
