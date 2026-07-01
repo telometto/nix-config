@@ -56,6 +56,7 @@ in
           steamtinkerlaunch
           protonplus
         ];
+        extraCompatPackages = with pkgs; [ proton-ge-bin ];
         fontPackages = FONTS;
       };
       gamemode.enable = lib.mkDefault true;
