@@ -10,7 +10,8 @@ let
 
   # Transform VARS.users from role-keyed to username-keyed
   varsUsersByUsername = lib.listToAttrs (
-    lib.mapAttrsToList (roleName: userData:
+    lib.mapAttrsToList (
+      roleName: userData:
       let
         username = userData.user or null;
       in
