@@ -876,127 +876,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${ds_prometheus}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "iops"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 26
-      },
-      "id": 8,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max",
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${ds_prometheus}"
-          },
-          "exemplar": false,
-          "expr": "irate(node_zfs_zpool_dataset_nread{instance=~\"$instance\", zpool=~\"$pool\"}[5m])",
-          "format": "time_series",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "{{dataset}} - Read IOPS",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${ds_prometheus}"
-          },
-          "exemplar": false,
-          "expr": "irate(node_zfs_zpool_dataset_nwrite{instance=~\"$instance\", zpool=~\"$pool\"}[5m])",
-          "format": "time_series",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "{{dataset}} - Write IOPS",
-          "refId": "B"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "filterFieldsByName",
-          "options": {
-            "include": {
-              "pattern": "Time|${iops_type:regex}"
-            }
-          }
-        }
-      ],
-      "title": "Dataset IOPS (Operations per Second)",
-      "type": "timeseries"
-    },
-    {
       "collapsed": false,
       "datasource": {
         "type": "prometheus",
@@ -1006,7 +885,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 26
       },
       "id": 100,
       "panels": [],
@@ -1049,7 +928,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 34
+        "y": 26
       },
       "id": 9,
       "options": {
@@ -1116,7 +995,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 34
+        "y": 26
       },
       "id": 10,
       "options": {
@@ -1215,7 +1094,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 42
+        "y": 34
       },
       "id": 11,
       "options": {
@@ -1335,7 +1214,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 42
+        "y": 34
       },
       "id": 12,
       "options": {
@@ -1469,7 +1348,7 @@
         "h": 6,
         "w": 4,
         "x": 0,
-        "y": 50
+        "y": 42
       },
       "id": 13,
       "options": {
@@ -1610,7 +1489,7 @@
         "h": 6,
         "w": 20,
         "x": 4,
-        "y": 50
+        "y": 42
       },
       "id": 17,
       "options": {
@@ -1799,7 +1678,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 56
+        "y": 48
       },
       "id": 14,
       "options": {
@@ -1928,7 +1807,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 34
+        "y": 26
       },
       "id": 15,
       "options": {
@@ -2005,7 +1884,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 34
+        "y": 26
       },
       "id": 16,
       "options": {
@@ -2064,7 +1943,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 64
+        "y": 56
       },
       "id": 104,
       "panels": [],
@@ -2099,7 +1978,7 @@
               },
               {
                 "color": "yellow",
-                "value": 1.0
+                "value": 1
               },
               {
                 "color": "green",
@@ -2143,7 +2022,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 65
+        "y": 57
       },
       "id": 18,
       "options": {
@@ -2240,7 +2119,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 65
+        "y": 57
       },
       "id": 19,
       "options": {
@@ -2290,7 +2169,11 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": "VictoriaMetrics (Long-term)",
+          "value": "victoriametrics"
+        },
         "hide": 0,
         "includeAll": false,
         "label": "Datasource",
