@@ -23,7 +23,7 @@ in
       };
 
       subgen-container = {
-        enable = false;
+        enable = true;
         gpu.enable = true;
         whisperModel = "large-v3";
         mediaDir = "/home/${username}/pools/rpool/unenc/media/data/media";
