@@ -85,7 +85,7 @@ let
     };
 
     ombi = {
-      enable = true;
+      enable = false;
       ingressHosts = [ "ombi" ];
       reverseProxy = {
         subdomain = "ombi";
