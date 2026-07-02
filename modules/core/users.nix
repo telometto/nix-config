@@ -33,13 +33,11 @@ let
   duplicateUsernames = duplicateValues usernames;
   duplicateUids = duplicateValues uids;
 
-  validSshPubKeyRegex =
-    "(ssh-ed25519|sk-ssh-ed25519@openssh\\.com|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521|sk-ecdsa-sha2-nistp256@openssh\\.com|ssh-rsa)[[:space:]]+[A-Za-z0-9+/]+={0,2}([[:space:]].*)?";
+  validSshPubKeyRegex = "(ssh-ed25519|sk-ssh-ed25519@openssh\\.com|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521|sk-ecdsa-sha2-nistp256@openssh\\.com|ssh-rsa)[[:space:]]+[A-Za-z0-9+/]+={0,2}([[:space:]].*)?";
 
   isValidSshPubKey = key: builtins.isString key && builtins.match validSshPubKeyRegex key != null;
 
-  validPasswordHashRegex =
-    "\\$(1|2[abxy]|5|6|7|y|gy)\\$[^[:space:]:$]+\\$[^[:space:]:]+";
+  validPasswordHashRegex = "\\$(1|2[abxy]|5|6|7|y|gy)\\$[^[:space:]:$]+\\$[^[:space:]:]+";
 
   isValidPasswordHash =
     hash:

@@ -14,7 +14,8 @@ let
   # Create a submodule for each user in VARS
   userOptions = lib.mapAttrs makeUserOption (
     lib.listToAttrs (
-      lib.mapAttrsToList (roleName: userData:
+      lib.mapAttrsToList (
+        roleName: userData:
         let
           username = userData.user or null;
         in
