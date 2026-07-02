@@ -126,6 +126,13 @@ in
 
           security-headers = traefikLib.mkSecurityHeaders { };
 
+          # Legacy app shells such as Grafana and the Arr family still need
+          # inline/eval script allowances and WebSocket connections. Keep this
+          # scoped to those routes instead of relaxing the shared default.
+          app-compat-headers = traefikLib.mkSecurityHeaders {
+            csp = traefikLib.compatibilityCsp;
+          };
+
           # Lingarr currently needs inline/eval script allowances and
           # WebSocket connections; keep this exception route-scoped.
           lingarr-headers = traefikLib.mkSecurityHeaders {

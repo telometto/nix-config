@@ -29,6 +29,7 @@ in
     reverseProxy = {
       enable = true;
       domain = "metrics.${VARS.domains.public}";
+      middlewares = [ "app-compat-headers" ];
       cfTunnel.enable = true;
     };
   };
