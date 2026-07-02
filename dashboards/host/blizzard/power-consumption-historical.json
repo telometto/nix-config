@@ -21,7 +21,10 @@
       {
         "name": "host",
         "type": "query",
-        "datasource": "VictoriaMetrics (Long-term)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "victoriametrics"
+        },
         "query": "label_values(node_rapl_package_joules_total, source_host)",
         "refresh": 1,
         "includeAll": true,
@@ -45,12 +48,19 @@
         "x": 0,
         "y": 0
       },
-      "datasource": "VictoriaMetrics (Long-term)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
       "targets": [
         {
           "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval]))",
           "legendFormat": "{{source_host}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "options": {
@@ -196,12 +206,19 @@
         "x": 0,
         "y": 10
       },
-      "datasource": "VictoriaMetrics (Long-term)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
       "targets": [
         {
           "expr": "sum by (source_host) (node_hwmon_power_average_watt{sensor=\"power1\", source_host=~\"$host\"})",
           "legendFormat": "{{source_host}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "options": {
@@ -271,12 +288,19 @@
         "x": 0,
         "y": 20
       },
-      "datasource": "VictoriaMetrics (Long-term)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
       "targets": [
         {
           "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval]))",
           "legendFormat": "{{source_host}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "options": {
@@ -354,12 +378,19 @@
         "x": 12,
         "y": 20
       },
-      "datasource": "VictoriaMetrics (Long-term)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
       "targets": [
         {
           "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval])) / 1000",
           "legendFormat": "{{source_host}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "options": {
@@ -437,12 +468,19 @@
         "x": 0,
         "y": 30
       },
-      "datasource": "VictoriaMetrics (Long-term)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
       "targets": [
         {
           "expr": "max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Price (incl. MVA)",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "options": {
@@ -513,12 +551,19 @@
         "x": 0,
         "y": 38
       },
-      "datasource": "VictoriaMetrics (Long-term)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
       "targets": [
         {
           "expr": "sum_over_time((sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h])) / 1000)[1d:1h]) * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "{{source_host}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "options": {
@@ -639,12 +684,19 @@
         "x": 12,
         "y": 38
       },
-      "datasource": "VictoriaMetrics (Long-term)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
       "targets": [
         {
           "expr": "sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[$__rate_interval])) / 1000 * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "{{source_host}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "options": {
@@ -802,12 +854,19 @@
         "x": 0,
         "y": 48
       },
-      "datasource": "VictoriaMetrics (Long-term)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
       "targets": [
         {
           "expr": "sum(sum_over_time((sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h])) / 1000)[$__range:1h])) * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "Total Cost",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "options": {
@@ -863,12 +922,20 @@
         "x": 8,
         "y": 48
       },
-      "datasource": "VictoriaMetrics (Long-term)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
       "targets": [
         {
-          "expr": "avg_over_time(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"})[$__range])",
+          "expr": "avg(avg_over_time(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}[$__range]))",
           "legendFormat": "Avg Price",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          },
+          "instant": true
         }
       ],
       "options": {
@@ -906,7 +973,7 @@
               },
               {
                 "color": "red",
-                "value": 1.0
+                "value": 1
               }
             ]
           }
@@ -925,12 +992,19 @@
         "x": 16,
         "y": 48
       },
-      "datasource": "VictoriaMetrics (Long-term)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
       "targets": [
         {
           "expr": "sum(\n  sum_over_time(\n    (sum by (source_host) (rate(node_rapl_package_joules_total{source_host=~\"$host\"}[1h])) / 1000)[$__range:1h]\n  )\n)",
           "legendFormat": "Total kWh",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "victoriametrics"
+          }
         }
       ],
       "options": {
