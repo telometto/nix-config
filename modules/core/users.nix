@@ -8,11 +8,13 @@
 let
   varsUsers = VARS.users or { };
 
-  userRecords = lib.mapAttrsToList (roleName: userData: {
+  mkUserRecord = roleName: userData: {
     inherit roleName userData;
     username = userData.user or null;
     uid = userData.uid or null;
-  }) varsUsers;
+  };
+
+  userRecords = lib.mapAttrsToList mkUserRecord varsUsers;
 
   isValidUsername = username: builtins.isString username && username != "";
   isValidUid = uid: builtins.isInt uid && uid > 0;
@@ -20,7 +22,6 @@ let
   usernames = map (record: record.username) (
     lib.filter (record: isValidUsername record.username) userRecords
   );
-  uids = map (record: record.uid) (lib.filter (record: isValidUid record.uid) userRecords);
 
   duplicateValues =
     values:
@@ -31,7 +32,6 @@ let
     );
 
   duplicateUsernames = duplicateValues usernames;
-  duplicateUids = duplicateValues uids;
 
   validSshPubKeyRegex = "(ssh-ed25519|sk-ssh-ed25519@openssh\\.com|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521|sk-ecdsa-sha2-nistp256@openssh\\.com|ssh-rsa)[[:space:]]+[A-Za-z0-9+/]+={0,2}([[:space:]].*)?";
 
@@ -86,6 +86,13 @@ let
     in
     isValidUsername username && (config.sys.users.${username}.enable or false)
   ) varsUsers;
+
+  # UID uniqueness is host-local; read the final user option so host overrides are honored.
+  enabledUserRecords = lib.mapAttrsToList mkUserRecord enabledUsers;
+  enabledUids = map (
+    record: config.users.users.${record.username}.uid or null
+  ) enabledUserRecords;
+  duplicateEnabledUids = duplicateValues enabledUids;
 in
 {
   assertions = [
@@ -94,8 +101,10 @@ in
       message = "VARS.users contains duplicate login names: ${lib.concatStringsSep ", " duplicateUsernames}";
     }
     {
-      assertion = duplicateUids == [ ];
-      message = "VARS.users contains duplicate UIDs: ${lib.concatStringsSep ", " (map builtins.toString duplicateUids)}";
+      assertion = duplicateEnabledUids == [ ];
+      message = "Enabled users for ${config.networking.hostName} contain duplicate UIDs: ${
+        lib.concatStringsSep ", " (map builtins.toString duplicateEnabledUids)
+      }";
     }
   ]
   ++ userAssertions;
