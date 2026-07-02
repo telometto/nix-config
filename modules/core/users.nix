@@ -17,7 +17,9 @@ let
   isValidUsername = username: builtins.isString username && username != "";
   isValidUid = uid: builtins.isInt uid && uid > 0;
 
-  usernames = map (record: record.username) userRecords;
+  usernames = map (record: record.username) (
+    lib.filter (record: isValidUsername record.username) userRecords
+  );
   uids = map (record: record.uid) (lib.filter (record: isValidUid record.uid) userRecords);
 
   duplicateValues =
@@ -36,9 +38,13 @@ let
 
   isValidSshPubKey = key: builtins.isString key && builtins.match validSshPubKeyRegex key != null;
 
-  isUsablePasswordHash =
+  validPasswordHashRegex =
+    "\\$(1|2[abxy]|5|6|7|y|gy)\\$[^[:space:]:$]+\\$[^[:space:]:]+";
+
+  isValidPasswordHash =
     hash:
     builtins.isString hash
+    && builtins.match validPasswordHashRegex hash != null
     && hash != ""
     && hash != "<HASHED PW>"
     && hash != "changeme"
@@ -60,8 +66,8 @@ let
         message = "VARS.users.${record.roleName} (${label}) must define a positive integer uid.";
       }
       {
-        assertion = userData ? hashedPassword && isUsablePasswordHash userData.hashedPassword;
-        message = "VARS.users.${record.roleName} (${label}) must define a non-empty, non-placeholder hashedPassword. Do not use routine password expiry; rotate this hash only after compromise, account ownership changes, suspected reuse, weak/old password discovery, or lost device.";
+        assertion = userData ? hashedPassword && isValidPasswordHash userData.hashedPassword;
+        message = "VARS.users.${record.roleName} (${label}) must define a non-empty, non-placeholder crypt-style hashedPassword. Do not use routine password expiry; rotate this hash only after compromise, account ownership changes, suspected reuse, weak/old password discovery, or lost device.";
       }
       {
         assertion = userData ? sshPubKey && isValidSshPubKey userData.sshPubKey;
