@@ -89,9 +89,7 @@ let
 
   # UID uniqueness is host-local; read the final user option so host overrides are honored.
   enabledUserRecords = lib.mapAttrsToList mkUserRecord enabledUsers;
-  enabledUids = map (
-    record: config.users.users.${record.username}.uid or null
-  ) enabledUserRecords;
+  enabledUids = map (record: config.users.users.${record.username}.uid or null) enabledUserRecords;
   duplicateEnabledUids = duplicateValues enabledUids;
 in
 {
@@ -102,9 +100,7 @@ in
     }
     {
       assertion = duplicateEnabledUids == [ ];
-      message = "Enabled users for ${config.networking.hostName} contain duplicate UIDs: ${
-        lib.concatStringsSep ", " (map builtins.toString duplicateEnabledUids)
-      }";
+      message = "Enabled users for ${config.networking.hostName} contain duplicate UIDs: ${lib.concatStringsSep ", " (map builtins.toString duplicateEnabledUids)}";
     }
   ]
   ++ userAssertions;
