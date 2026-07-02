@@ -32,7 +32,11 @@
         {
           "expr": "sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]))",
           "refId": "A",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -70,6 +74,10 @@
             ]
           }
         }
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -86,7 +94,11 @@
         {
           "expr": "sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) > vector(0)",
           "refId": "A",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -124,6 +136,10 @@
             ]
           }
         }
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -140,7 +156,11 @@
         {
           "expr": "sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))",
           "refId": "A",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -178,6 +198,10 @@
             ]
           }
         }
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -193,7 +217,11 @@
       "targets": [
         {
           "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * 24 * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -227,6 +255,10 @@
             ]
           }
         }
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -243,7 +275,11 @@
       "targets": [
         {
           "expr": "max_over_time(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:1m]) or max_over_time(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[1h:1m])",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -261,6 +297,10 @@
           "decimals": 1
         },
         "overrides": []
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -277,7 +317,11 @@
       "targets": [
         {
           "expr": "max_over_time((sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0)))[24h:1m]) or max_over_time((sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0)))[1h:1m])",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -295,6 +339,10 @@
           "decimals": 1
         },
         "overrides": []
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -310,7 +358,11 @@
       "targets": [
         {
           "expr": "max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"})",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -335,7 +387,7 @@
               },
               {
                 "color": "yellow",
-                "value": 1.0
+                "value": 1
               },
               {
                 "color": "orange",
@@ -343,11 +395,15 @@
               },
               {
                 "color": "red",
-                "value": 2.0
+                "value": 2
               }
             ]
           }
         }
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -366,42 +422,66 @@
           "legendFormat": "CPU",
           "refId": "A",
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
           "expr": "avg_over_time(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:])",
           "legendFormat": "CPU",
           "refId": "B",
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
           "expr": "avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0)",
           "legendFormat": "GPU",
           "refId": "C",
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
           "expr": "avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[24h:]) or vector(0)",
           "legendFormat": "GPU",
           "refId": "D",
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
           "expr": "avg_over_time(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[1h:]) + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0))",
           "legendFormat": "Total",
           "refId": "E",
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
           "expr": "avg_over_time(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[1m]))[24h:]) + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[24h:]) or vector(0))",
           "legendFormat": "Total",
           "refId": "F",
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "transformations": [
@@ -517,6 +597,10 @@
             ]
           }
         ]
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -532,7 +616,11 @@
       "targets": [
         {
           "expr": "(sum(increase(node_rapl_package_joules_total{instance=~\"$instance\"}[1h])) / 3600000 + (avg_over_time(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"})[1h:]) or vector(0)) * 3600 / 3600000) * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -570,6 +658,10 @@
             ]
           }
         }
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -587,17 +679,29 @@
         {
           "expr": "sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval]))",
           "legendFormat": "CPU",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
           "expr": "sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0)",
           "legendFormat": "GPU",
-          "refId": "B"
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
           "expr": "sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))",
           "legendFormat": "Total",
-          "refId": "C"
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -679,6 +783,10 @@
             ]
           }
         ]
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -695,7 +803,11 @@
         {
           "expr": "sum by (index) (irate(node_rapl_core_joules_total{instance=~\"$instance\"}[$__rate_interval]))",
           "legendFormat": "Core {{index}}",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -717,6 +829,10 @@
             "showPoints": "never"
           }
         }
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -733,12 +849,20 @@
         {
           "expr": "sum(increase(node_rapl_package_joules_total{instance=~\"$instance\"}[$__range])) / 3600000",
           "legendFormat": "CPU (kWh)",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
           "expr": "(sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0)) * $__range_s / 3600000",
           "legendFormat": "GPU (kWh est.)",
-          "refId": "B"
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -829,6 +953,10 @@
             ]
           }
         ]
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -845,17 +973,29 @@
         {
           "expr": "max(electricity_spot_price_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Spot Price",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
           "expr": "max(electricity_price_nok_per_kwh{tax=\"incl_mva\",type=\"norgespris\"})",
           "legendFormat": "Norgespris (active)",
-          "refId": "B"
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         },
         {
           "expr": "max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"})",
           "legendFormat": "Total Cost",
-          "refId": "C"
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -962,6 +1102,10 @@
             ]
           }
         ]
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -978,7 +1122,11 @@
         {
           "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "Cost Rate",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -1028,6 +1176,10 @@
             ]
           }
         }
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -1045,7 +1197,11 @@
         {
           "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "Cost Rate",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -1097,6 +1253,10 @@
             ]
           }
         }
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     },
     {
@@ -1113,7 +1273,11 @@
         {
           "expr": "(sum(irate(node_rapl_package_joules_total{instance=~\"$instance\"}[$__rate_interval])) + (sum(node_hwmon_power_average_watt{instance=~\"$instance\", sensor=\"power1\"}) or vector(0))) / 1000 * scalar(max(electricity_total_cost_nok_per_kwh{tax=\"incl_mva\"}))",
           "legendFormat": "Cost Rate (kr/h)",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          }
         }
       ],
       "options": {
@@ -1162,6 +1326,10 @@
             "fillOpacity": 80
           }
         }
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       }
     }
   ],
@@ -1171,9 +1339,15 @@
         "name": "datasource",
         "type": "datasource",
         "query": "prometheus",
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": "VictoriaMetrics (Long-term)",
+          "value": "victoriametrics"
+        },
         "hide": 0,
-        "label": "Datasource"
+        "label": "Datasource",
+        "refresh": 1,
+        "options": []
       },
       {
         "name": "instance",
