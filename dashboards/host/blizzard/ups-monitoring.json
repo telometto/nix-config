@@ -1124,7 +1124,11 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": "VictoriaMetrics (Long-term)",
+          "value": "victoriametrics"
+        },
         "hide": 0,
         "includeAll": false,
         "label": "Datasource",
