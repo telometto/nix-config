@@ -44,5 +44,6 @@ in
     enable = true;
     openFirewall = true;
     arrPort = reg.port;
+    extraEnvironment.ENABLE_ADDITIONAL_METRICS = "true";
   };
 }
