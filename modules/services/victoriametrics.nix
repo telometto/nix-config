@@ -80,6 +80,12 @@ in
         description = "Name of the Grafana datasource";
       };
 
+      uid = lib.mkOption {
+        type = lib.types.str;
+        default = "victoriametrics";
+        description = "Stable Grafana datasource UID for VictoriaMetrics";
+      };
+
       isDefault = lib.mkOption {
         type = lib.types.bool;
         default = false;
@@ -190,7 +196,7 @@ in
       lib.mkIf (cfg.grafanaDatasource.enable && config.sys.services.grafana.enable or false)
         [
           {
-            inherit (cfg.grafanaDatasource) name isDefault;
+            inherit (cfg.grafanaDatasource) name uid isDefault;
             type = "prometheus"; # VictoriaMetrics is PromQL-compatible
             access = "proxy";
             url = "http://127.0.0.1:${toString cfg.port}";

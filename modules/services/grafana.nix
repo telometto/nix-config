@@ -7,6 +7,9 @@
 let
   cfg = config.sys.services.grafana;
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
+  hasDefaultDatasource = lib.any (
+    datasource: datasource.isDefault or false
+  ) cfg.provision.datasources;
 in
 {
   options.sys.services.grafana = {
@@ -144,9 +147,10 @@ in
             lib.optionals (config.sys.services.prometheus.enable or false) [
               {
                 name = "Prometheus";
+                uid = "prometheus";
                 type = "prometheus";
                 url = "http://${config.sys.services.prometheus.listenAddress}:${toString config.sys.services.prometheus.port}";
-                isDefault = true;
+                isDefault = !hasDefaultDatasource;
                 editable = false;
               }
             ]

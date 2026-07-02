@@ -4,7 +4,7 @@ _: {
 
     listenAddress = "0.0.0.0";
     openFirewall = true;
-    retentionPeriod = "1y";
+    retentionPeriod = "10y";
     prometheusRemoteWrite.enable = true;
 
     dedup = {
@@ -15,6 +15,8 @@ _: {
     grafanaDatasource = {
       enable = true;
       name = "VictoriaMetrics (Long-term)";
+      uid = "victoriametrics";
+      isDefault = true;
     };
   };
 }
