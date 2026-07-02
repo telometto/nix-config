@@ -2278,37 +2278,6 @@
         "skipUrlSync": false,
         "sort": 1,
         "type": "query"
-      },
-      {
-        "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "hide": 0,
-        "includeAll": true,
-        "label": "IOPS Type",
-        "multi": true,
-        "name": "iops_type",
-        "options": [
-          {
-            "selected": false,
-            "text": "Read",
-            "value": ".*Read.*"
-          },
-          {
-            "selected": false,
-            "text": "Write",
-            "value": ".*Write.*"
-          }
-        ],
-        "query": ".*Read.*,.*Write.*",
-        "skipUrlSync": false,
-        "type": "custom"
       }
     ]
   },
