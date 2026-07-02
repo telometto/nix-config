@@ -124,6 +124,12 @@ in
 
     sys.home.enable = true;
 
+    # Enable udev access for VIA/Keychron Launcher on QMK-based keyboards.
+    hardware.keyboard.qmk = {
+      enable = true;
+      keychronSupport = true;
+    };
+
     networking.firewall.enable = true;
   };
 }
