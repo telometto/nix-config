@@ -30,6 +30,7 @@ let
     X11Forwarding = lib.mkDefault false;
     PermitRootLogin = lib.mkDefault "no";
     PasswordAuthentication = lib.mkDefault false;
+    KbdInteractiveAuthentication = lib.mkDefault false;
     UsePAM = lib.mkDefault true;
   };
 in
