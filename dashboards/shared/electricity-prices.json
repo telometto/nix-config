@@ -1267,11 +1267,7 @@
         "name": "datasource",
         "type": "datasource",
         "query": "prometheus",
-        "current": {
-          "selected": true,
-          "text": "VictoriaMetrics (Long-term)",
-          "value": "victoriametrics"
-        },
+        "current": {},
         "hide": 0,
         "label": "Datasource",
         "refresh": 1,

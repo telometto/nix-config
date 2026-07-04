@@ -81,9 +81,9 @@ in
       };
 
       uid = lib.mkOption {
-        type = lib.types.str;
+        type = lib.types.nullOr lib.types.str;
         default = "victoriametrics";
-        description = "Stable Grafana datasource UID for VictoriaMetrics";
+        description = "Optional stable Grafana datasource UID for VictoriaMetrics";
       };
 
       isDefault = lib.mkOption {
@@ -192,22 +192,36 @@ in
 
     # Add VictoriaMetrics as Grafana datasource
     # VictoriaMetrics is 100% compatible with Prometheus datasource type
-    sys.services.grafana.provision.datasources =
+    sys.services.grafana.provision.deleteDatasources =
       lib.mkIf (cfg.grafanaDatasource.enable && config.sys.services.grafana.enable or false)
         [
           {
-            inherit (cfg.grafanaDatasource) name uid isDefault;
-            type = "prometheus"; # VictoriaMetrics is PromQL-compatible
-            access = "proxy";
-            url = "http://127.0.0.1:${toString cfg.port}";
-            editable = false;
-            jsonData = {
-              # VictoriaMetrics supports Prometheus-compatible API
-              httpMethod = "POST";
-              # Enable range queries for better performance
-              manageAlerts = false;
-            };
+            inherit (cfg.grafanaDatasource) name;
+            orgId = 1;
           }
+        ];
+
+    sys.services.grafana.provision.datasources =
+      lib.mkIf (cfg.grafanaDatasource.enable && config.sys.services.grafana.enable or false)
+        [
+          (
+            {
+              inherit (cfg.grafanaDatasource) name isDefault;
+              type = "prometheus"; # VictoriaMetrics is PromQL-compatible
+              access = "proxy";
+              url = "http://127.0.0.1:${toString cfg.port}";
+              editable = false;
+              jsonData = {
+                # VictoriaMetrics supports Prometheus-compatible API
+                httpMethod = "POST";
+                # Enable range queries for better performance
+                manageAlerts = false;
+              };
+            }
+            // lib.optionalAttrs (cfg.grafanaDatasource.uid != null) {
+              inherit (cfg.grafanaDatasource) uid;
+            }
+          )
         ];
 
     # Open firewall if requested
