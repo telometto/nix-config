@@ -15,7 +15,6 @@ _: {
     grafanaDatasource = {
       enable = true;
       name = "VictoriaMetrics (Long-term)";
-      uid = "victoriametrics";
       isDefault = true;
     };
   };
