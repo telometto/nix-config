@@ -2169,11 +2169,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": true,
-          "text": "VictoriaMetrics (Long-term)",
-          "value": "victoriametrics"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "Datasource",

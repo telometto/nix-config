@@ -62,6 +62,20 @@ in
         '';
       };
 
+      deleteDatasources = lib.mkOption {
+        type = lib.types.listOf lib.types.attrs;
+        default = [ ];
+        description = "Datasource deletion rules to run before provisioning datasources";
+        example = lib.literalExpression ''
+          [
+            {
+              name = "Prometheus";
+              orgId = 1;
+            }
+          ]
+        '';
+      };
+
       dashboards = lib.mkOption {
         type = lib.types.attrsOf lib.types.path;
         default = { };
@@ -143,6 +157,14 @@ in
 
         datasources.settings = {
           apiVersion = 1;
+          deleteDatasources =
+            lib.optionals (config.sys.services.prometheus.enable or false) [
+              {
+                name = "Prometheus";
+                orgId = 1;
+              }
+            ]
+            ++ cfg.provision.deleteDatasources;
           datasources =
             lib.optionals (config.sys.services.prometheus.enable or false) [
               {
