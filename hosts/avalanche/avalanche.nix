@@ -179,7 +179,7 @@ in
   };
 
   fileSystems = {
-    "/home/${VARS.users.zeno.user}/backups" = {
+    "/mnt/backups" = {
       device = "100.86.227.97:/rpool/enc/transfers";
       fsType = "nfs";
       options = [

@@ -267,7 +267,7 @@ in
   services.rpcbind.enable = lib.mkDefault true;
 
   fileSystems = {
-    "/home/${VARS.users.zeno.user}/backups" = {
+    "/mnt/backups" = {
       device = "100.86.227.97:/rpool/enc/transfers";
       fsType = "nfs";
       options = [
@@ -277,7 +277,7 @@ in
       ];
     };
 
-    "/home/${VARS.users.zeno.user}/pools/rpool/unenc/media/data/media" = {
+    "/mnt/media" = {
       device = "100.86.227.97:/rpool/unenc/media/data/media";
       fsType = "nfs";
       options = [
