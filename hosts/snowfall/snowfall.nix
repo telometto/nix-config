@@ -90,13 +90,13 @@ in
       };
 
       ## Add custom overlays
-      custom = [
-        (final: prev: {
-          openldap = prev.openldap.overrideAttrs {
-            doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
-          };
-        })
-      ];
+      # custom = [
+      #   (final: prev: {
+      #     openldap = prev.openldap.overrideAttrs {
+      #       doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
+      #     };
+      #   })
+      # ];
     };
 
     services = {
