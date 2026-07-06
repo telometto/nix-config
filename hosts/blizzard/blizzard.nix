@@ -3,8 +3,13 @@
   lib,
   VARS,
   consts,
+  inputs,
+  system,
   ...
 }:
+let
+  webzfsPkgs = inputs.nixpkgs-webzfs.legacyPackages.${system};
+in
 {
   networking = {
     hostName = lib.mkForce "blizzard";
@@ -59,6 +64,15 @@
       ## Add custom overlays
       custom = [
         (final: prev: {
+          webzfs = webzfsPkgs.webzfs;
+          /*
+            .overrideAttrs (old: {
+              patches = (old.patches or [ ]) ++ [
+                ./services/webzfs-template-response-compat.patch
+              ];
+            });
+          */
+
           # openldap = prev.openldap.overrideAttrs {
           #   doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
           # };
