@@ -51,6 +51,8 @@ in
         protontricks.enable = lib.mkDefault true;
         gamescopeSession.enable = lib.mkForce false; # Issues on master with bubblewrap
         extraPackages = with pkgs; [
+          gamemode
+          mangohud
           steam-run
           sc-controller # Replaced deprecated steamcontroller
           steamtinkerlaunch
