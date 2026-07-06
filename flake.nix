@@ -11,6 +11,8 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     # Bleeding-edge forward-pin: use sys.overlays.fromInputs to pull individual packages from here
     nixpkgs-unstable-small.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+    # Temporary WebZFS package/module source until it lands in the primary nixpkgs input
+    nixpkgs-webzfs.url = "github:telometto/nixpkgs/add-webzfs";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
@@ -131,7 +133,9 @@
     {
       nixosConfigurations = {
         snowfall = mkHost "snowfall" [ ];
-        blizzard = mkHost "blizzard" [ ];
+        blizzard = mkHost "blizzard" [
+          (inputs.nixpkgs-webzfs + "/nixos/modules/services/monitoring/webzfs.nix")
+        ];
         avalanche = mkHost "avalanche" [ ];
         kaizer = mkHost "kaizer" [ ];
       }
