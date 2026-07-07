@@ -51,14 +51,8 @@ in
       variables.SSH_ASKPASS_REQUIRE = lib.mkDefault "prefer";
 
       systemPackages = [
-        pkgs.kdePackages.ksshaskpass
         pkgs.kdePackages.yakuake
-        pkgs.kdePackages.kwallet
-        pkgs.kdePackages.kwalletmanager
-        # pkgs.kdePackages.kwallet-pam
-        pkgs.kdePackages.qtwayland
         pkgs.kdePackages.qtwebengine
-        pkgs.xwayland
         SDDM_ASTRONAUT
       ];
 
@@ -98,17 +92,6 @@ in
       login = {
         enableAppArmor = true;
         gnupg.enable = true;
-        kwallet.enable = true;
-      };
-      sddm = {
-        enableAppArmor = true;
-        gnupg.enable = true;
-        kwallet.enable = true;
-      };
-      kwallet = {
-        enableAppArmor = true;
-        gnupg.enable = true;
-        kwallet.enable = true;
       };
     };
   };
