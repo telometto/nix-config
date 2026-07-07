@@ -72,7 +72,6 @@
       url = "github:hyprwm/Hyprland";
       inputs = {
         pre-commit-hooks.inputs.flake-compat.follows = "flake-compat";
-        pre-commit-hooks.inputs.gitignore.follows = "gitignore";
       };
     };
 
