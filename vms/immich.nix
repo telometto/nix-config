@@ -1,5 +1,7 @@
 {
   inputs,
+  VARS,
+  lib,
   ...
 }:
 let
@@ -29,6 +31,8 @@ in
     ))
   ];
 
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
+
   # SOPS configuration for this MicroVM
   # After first boot, get the VM's age key with:
   #   ssh admin@10.100.0.70 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
@@ -54,5 +58,20 @@ in
     host = "0.0.0.0";
     inherit (reg) port;
     openFirewall = true;
+
+    environment = {
+      TZ = "Europe/Oslo";
+      IMMICH_LOG_LEVEL = "log";
+      IMMICH_TRUSTED_PROXIES = "10.100.0.1";
+    };
+
+    ml.enable = false;
+
+    settings = {
+      machineLearning.urls = [
+        "http://10.100.0.1:3003"
+      ];
+      server.externalDomain = "https://photos.${VARS.domains.public}";
+    };
   };
 }
