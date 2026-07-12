@@ -2,11 +2,14 @@
   self,
   VARS,
   lib,
+  pkgs,
+  consts,
   ...
 }:
 let
   reg = import ../../../vms/vm-registry.nix;
   vmUrl = name: "http://${reg.${name}.ip}:${toString reg.${name}.port}";
+  immichMlProxyPort = 3003;
 
   localhostUrl = "http://localhost:80";
 
@@ -293,12 +296,20 @@ let
     };
 
     immich = {
-      enable = false;
-      portForwards = [ (mkPortForward "tcp" 11070 null) ];
-      ingressHosts = [ "photos" ];
+      enable = true;
+      # Stage 1: boot privately for first-admin setup. For the public route,
+      # set ingressHosts = [ "photos" ], reverseProxy.enable = true, and
+      # IMMICH_ALLOW_SETUP=false in the VM environment after setup is complete.
+      portForwards = [ ];
+      ingressHosts = [ ];
       reverseProxy = {
+        enable = false;
         subdomain = "photos";
         url = vmUrl "immich";
+        middlewares = [
+          "immich-headers"
+          "crowdsec"
+        ];
       };
     };
 
@@ -331,6 +342,30 @@ let
   };
 in
 {
+  networking.firewall.interfaces."microvm-br0".allowedTCPPorts = [ immichMlProxyPort ];
+
+  systemd.services.immich-ml-proxy = {
+    description = "Proxy Immich MicroVM machine-learning requests to Kaizer";
+    after = [
+      "network-online.target"
+      "systemd-networkd.service"
+      "tailscaled.service"
+    ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+
+    serviceConfig = {
+      ExecStart = "${lib.getExe pkgs.socat} TCP-LISTEN:${toString immichMlProxyPort},bind=10.100.0.1,reuseaddr,fork TCP:kaizer.boreal-ruler.ts.net:${toString immichMlProxyPort}";
+      Restart = "always";
+      RestartSec = "5s";
+      DynamicUser = true;
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = true;
+      ProtectSystem = "strict";
+    };
+  };
+
   sys.virtualisation = {
     enable = true;
 
