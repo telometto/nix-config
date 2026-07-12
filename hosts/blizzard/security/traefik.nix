@@ -52,6 +52,13 @@ let
     "100.64.0.0/10"
   ];
 
+  immichUploadTimeouts = {
+    transport.respondingTimeouts = {
+      readTimeout = "600s";
+      idleTimeout = "600s";
+    };
+  };
+
   # Plex OAuth and web clients still require inline/eval allowances; keep this
   # policy scoped to Plex-family routes instead of using it as a default.
   plexCsp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
@@ -74,7 +81,9 @@ in
       api.dashboard = true;
 
       entryPoints = {
-        web = {
+        # Cloudflare Tunnel terminates public HTTPS and forwards to this
+        # entrypoint, so Immich's large uploads need the longer timeout here.
+        web = immichUploadTimeouts // {
           address = ":80";
           forwardedHeaders = { inherit trustedIPs; };
         };
@@ -140,6 +149,10 @@ in
           };
 
           gitea-xfp-https.headers.customRequestHeaders.X-Forwarded-Proto = "https";
+
+          immich-headers = traefikLib.mkSecurityHeaders {
+            requestHeaders.X-Forwarded-Proto = "https";
+          };
 
           # Django CSRF requires the Referer header, which "no-referrer" strips.
           # See: https://github.com/paperless-ngx/paperless-ngx/discussions/5684
