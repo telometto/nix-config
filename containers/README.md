@@ -51,6 +51,7 @@ ______________________________________________________________________
 | Option | File | Port(s) | Purpose |
 |--------|------|---------|---------|
 | `services.ollama-container.enable` | [ollama.nix](ollama.nix) | 11434 | Standalone LLM server (ROCm/AMD or CPU image) |
+| `services.immich-machine-learning-container.enable` | [immich-machine-learning.nix](immich-machine-learning.nix) | 3003 | Standalone Immich ML worker (CUDA/NVIDIA or CPU image) |
 | `services.subgen-container.enable` | [subgen.nix](subgen.nix) | 11027 | Whisper-based subtitle generator (CPU or AMD GPU) |
 | `services.lingarr.enable` | [subtitle-stack.nix](subtitle-stack.nix) | 11025 | Full subtitle translation pipeline (lingarr + libretranslate + ollama + subgen as a pod) |
 | `services.subgen.enable` | [subtitle-stack.nix](subtitle-stack.nix) | 11027 | Subgen as part of the subtitle-stack pod |
@@ -59,6 +60,12 @@ ______________________________________________________________________
 **`ollama.nix`** — Standalone LLM inference server. Supports ROCm (AMD GPU) or
 CPU-only image selection. Usable on any host that has Podman. Enable via
 `services.ollama-container.enable = true` in a user's HM config.
+
+**`immich-machine-learning.nix`** — Standalone Immich machine-learning worker.
+Supports CUDA (NVIDIA GPU) or CPU-only image selection. Intended for keeping
+Immich's server/database/storage on a MicroVM while offloading ML inference to a
+GPU-capable host. Enable via
+`services.immich-machine-learning-container.enable = true` in a user's HM config.
 
 **`subgen.nix`** — Whisper-based automatic subtitle generation. Supports CPU
 or AMD GPU acceleration. Enable via `services.subgen-container.enable = true`.
