@@ -11,6 +11,12 @@ in
   options.services.subgen-container = {
     enable = lib.mkEnableOption "Standalone Subgen subtitle generation container";
 
+    autoStart = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to start the Subgen container automatically with the user systemd session.";
+    };
+
     port = lib.mkOption {
       type = lib.types.port;
       default = 11027;
@@ -131,8 +137,12 @@ in
       }
     ];
 
+    systemd.user.tmpfiles.rules = [
+      "d ${cfg.modelDir} 0755 - - -"
+    ];
+
     virtualisation.quadlet.containers.subgen-standalone = {
-      autoStart = true;
+      inherit (cfg) autoStart;
       containerConfig = {
         image =
           if cfg.image != null then
@@ -159,7 +169,7 @@ in
           WEBHOOKPORT = "9000";
           TRANSCRIBE_DEVICE = if cfg.gpu.enable then "cuda" else "cpu";
           CLEAR_VRAM_ON_COMPLETE = "True";
-          MODEL_PATH = "./models";
+          MODEL_PATH = "/subgen/models";
           DEBUG = "False";
         }
         // lib.optionalAttrs (cfg.forceDetectedLanguageTo != "") {
@@ -190,13 +200,22 @@ in
         userns = "keep-id";
       };
 
-      unitConfig =
-        lib.mkIf
+      unitConfig = lib.mkMerge [
+        {
+          ConditionPathIsDirectory = [
+            "${cfg.mediaDir}/tv"
+            "${cfg.mediaDir}/movies"
+            cfg.modelDir
+          ];
+        }
+        (lib.mkIf
           ((cfg.environmentFiles != [ ]) && (lib.attrByPath [ "hm" "security" "sops" "enable" ] false config))
           {
             Requires = [ "sops-nix.service" ];
             After = [ "sops-nix.service" ];
-          };
+          }
+        )
+      ];
     };
   };
 }
