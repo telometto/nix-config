@@ -24,6 +24,7 @@ in
 
       subgen-container = {
         enable = true;
+        autoStart = false;
         gpu.enable = true;
         whisperModel = "large-v3";
         mediaDir = "/mnt/media";
