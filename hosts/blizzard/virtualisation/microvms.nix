@@ -328,6 +328,19 @@ let
         ];
       };
     };
+
+    "pocket-id" = {
+      enable = true;
+      ingressHosts = [ "id" ];
+      reverseProxy = {
+        subdomain = "id";
+        url = vmUrl "pocket-id";
+        middlewares = [
+          "pocket-id-headers"
+          "crowdsec"
+        ];
+      };
+    };
   };
 in
 {
