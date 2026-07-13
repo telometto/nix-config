@@ -186,4 +186,10 @@ in
     sopsModule
     ./trigger.nix
   ];
+
+  pocket-id-vm = mkMicrovm [
+    microvmModule
+    sopsModule
+    ./pocket-id.nix
+  ];
 }
