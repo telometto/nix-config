@@ -10,7 +10,7 @@ ______________________________________________________________________
 
 ## 1. Executive Summary
 
-This repository implements a modular NixOS flake configuration for 4 physical hosts and 25 MicroVMs.
+This repository implements a modular NixOS flake configuration for 4 physical hosts and 26 MicroVMs.
 The design centres on three auto-loading mechanisms that eliminate manual `imports` lists, a
 two-namespace option system (`sys.*` / `hm.*`), role files that bundle machine-class defaults,
 and a layered Home Manager precedence stack that allows fine-grained per-user overrides without
@@ -27,7 +27,7 @@ flowchart TD
     SL -->|"imports every .nix"| MOD["modules/**"]
     HL -->|"imports every .nix"| HOST["hosts/<hostname>/**"]
     HML -->|"imports every .nix\nexcluding overrides/"| HOME["home/**"]
-    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(25 MicroVMs)"]
+    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(26 MicroVMs)"]
     F --> HOSTS["nixosConfigurations\nsnowfall · blizzard · avalanche · kaizer"]
 ```
 
@@ -405,6 +405,7 @@ and therefore do not inherit host-only modules.
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Photo library |
 | mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Meal planning |
 | trigger | 10.100.0.80 | 11080 | 12 GB | 6 | Workflow automation |
+| pocket-id | 10.100.0.81 | 11081 | 1 GB | 1 | Passkey-based OIDC provider |
 
 ______________________________________________________________________
 
@@ -412,6 +413,9 @@ ______________________________________________________________________
 
 All MicroVMs live on the `10.100.0.0/24` subnet bridged to the `blizzard` host. Four VMs route
 all egress traffic through the WireGuard VM rather than using the default gateway.
+Pocket ID is additionally ingress-restricted inside its VM: TCP port `11081`
+accepts only Blizzard's `10.100.0.1/32` bridge source so peer MicroVMs cannot
+bypass the Traefik and CrowdSec path.
 
 ```mermaid
 flowchart TD

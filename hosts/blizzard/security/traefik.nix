@@ -168,6 +168,14 @@ in
             csp = null;
           };
 
+          pocket-id-headers = traefikLib.mkSecurityHeaders {
+            # Pocket ID is the public WebAuthn/OIDC authority. Do not inject a
+            # CSP that can interfere with its UI, and never allow framing.
+            xFrameOptions = "DENY";
+            csp = null;
+            requestHeaders.X-Forwarded-Proto = "https";
+          };
+
           # Matrix needs relaxed headers for federated clients and well-known
           # discovery. Do not reuse this wildcard CORS/no-CSP profile outside
           # Matrix routes.

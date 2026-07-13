@@ -1,7 +1,7 @@
 ## MicroVM Configurations
 
 Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
-for lightweight virtualization. The flake currently defines 25 MicroVM
+for lightweight virtualization. The flake currently defines 26 MicroVM
 configurations for the `blizzard` host on a `10.100.0.0/24` tap bridge.
 
 ______________________________________________________________________
@@ -38,7 +38,7 @@ flowchart TB
     wg["wireguard-vm\n10.100.0.11\n(VPN gateway)"]
 
     subgraph direct["Direct-routed VMs (via bridge)"]
-        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli · trigger"]
+        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\npocket-id · prowlarr · radarr · readarr · searx\nsonarr · tautulli · trigger"]
     end
 
     subgraph wgrouted["WG-routed VMs (traffic via wireguard-vm)"]
@@ -78,6 +78,7 @@ ______________________________________________________________________
 | ombi | 10.100.0.41 | 11041 | 1 GB | 1 | Direct | Media request portal (legacy) |
 | overseerr | 10.100.0.40 | 11040 | 1 GB | 1 | Direct | Media request portal |
 | paperless | 10.100.0.61 | 11061 | 8 GB | 4 | Direct | Document management |
+| pocket-id | 10.100.0.81 | 11081 | 1 GB | 1 | Direct | Passkey-based OIDC identity provider |
 | prowlarr | 10.100.0.20 | 11020 | 1 GB | 1 | Direct | Indexer aggregator |
 | qbittorrent | 10.100.0.30 | 11030 | 2 GB | 1 | Via WG | Torrent client |
 | radarr | 10.100.0.22 | 11022 | 1 GB | 1 | Direct | Movie PVR |
