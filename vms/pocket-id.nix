@@ -7,6 +7,7 @@
 let
   reg = (import ./vm-registry.nix)."pocket-id";
   dataDir = "/var/lib/pocket-id";
+  proxySource = "10.100.0.1/32";
 in
 {
   imports = [
@@ -43,7 +44,15 @@ in
     };
   };
 
-  networking.firewall.allowedTCPPorts = [ reg.port ];
+  # Pocket ID trusts Cloudflare's client-IP header, so its backend must only be
+  # reachable through Blizzard's Traefik instance. A global allowedTCPPorts
+  # entry would let peer MicroVMs bypass Traefik and spoof that header.
+  networking = {
+    nftables.enable = true;
+    firewall.extraInputRules = ''
+      ip saddr ${proxySource} ip daddr ${reg.ip} tcp dport ${toString reg.port} accept comment "Pocket ID via Blizzard Traefik only"
+    '';
+  };
 
   services.pocket-id = {
     enable = true;
