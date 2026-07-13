@@ -137,6 +137,10 @@ in
       }
     ];
 
+    systemd.user.tmpfiles.rules = [
+      "d ${cfg.modelDir} 0755 - - -"
+    ];
+
     virtualisation.quadlet.containers.subgen-standalone = {
       inherit (cfg) autoStart;
       containerConfig = {
@@ -165,7 +169,7 @@ in
           WEBHOOKPORT = "9000";
           TRANSCRIBE_DEVICE = if cfg.gpu.enable then "cuda" else "cpu";
           CLEAR_VRAM_ON_COMPLETE = "True";
-          MODEL_PATH = "./models";
+          MODEL_PATH = "/subgen/models";
           DEBUG = "False";
         }
         // lib.optionalAttrs (cfg.forceDetectedLanguageTo != "") {
@@ -212,8 +216,6 @@ in
           }
         )
       ];
-
-      serviceConfig.TimeoutStartSec = "30s";
     };
   };
 }
