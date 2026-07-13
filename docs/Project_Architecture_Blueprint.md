@@ -413,6 +413,9 @@ ______________________________________________________________________
 
 All MicroVMs live on the `10.100.0.0/24` subnet bridged to the `blizzard` host. Four VMs route
 all egress traffic through the WireGuard VM rather than using the default gateway.
+Pocket ID is additionally ingress-restricted inside its VM: TCP port `11081`
+accepts only Blizzard's `10.100.0.1/32` bridge source so peer MicroVMs cannot
+bypass the Traefik and CrowdSec path.
 
 ```mermaid
 flowchart TD
