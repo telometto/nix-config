@@ -283,4 +283,14 @@
     mem = 12288;
     vcpu = 6;
   };
+
+  "pocket-id" = {
+    name = "pocket-id";
+    cid = 127;
+    mac = "02:00:00:00:00:1C";
+    ip = "10.100.0.81";
+    port = 11081;
+    mem = 1024;
+    vcpu = 1;
+  };
 }
