@@ -70,6 +70,7 @@ flowchart LR
 #### Operations
 
 - [sops-setup-guide.md](sops-setup-guide.md) — How to set up SOPS secrets and age keys
+- [pocket-id.md](pocket-id.md) — Deploy, bootstrap, operate, and recover the Pocket ID provider
 - [troubleshooting-trigger-vm.md](troubleshooting-trigger-vm.md) — Troubleshooting the trigger MicroVM
 
 ### Quick Links
@@ -81,6 +82,7 @@ flowchart LR
 | Understand the architecture | [Architecture Blueprint](Project_Architecture_Blueprint.md) |
 | Find option namespaces | [Reference: Architecture](reference-architecture.md) |
 | Review credential lifecycle | [Credential Lifecycle](credential-lifecycle.md) |
+| Operate Pocket ID | [Pocket ID Operations](pocket-id.md) |
 | Review security findings | [Security Audit](security-audit-2026-06-27.md) |
 | Learn why things work this way | [Explanation: Design](explanation-design.md) |
 
