@@ -37,10 +37,13 @@ flowchart LR
     SOPS --> VM
 ```
 
-The VM has no host port forward. Its service port is reachable on the MicroVM
-bridge and is published externally only through Cloudflare Tunnel and Traefik.
-Pocket ID trusts `CF-Connecting-IP` for audit logging and rate limiting, while
-unrestricted proxy trust remains disabled.
+The VM has no host port forward. Its nftables firewall accepts service traffic
+only from Blizzard's `10.100.0.1` bridge address, so peer MicroVMs cannot bypass
+Traefik or CrowdSec by connecting directly to port `11081`. The service is
+published externally only through Cloudflare Tunnel and Traefik.
+
+Pocket ID trusts `CF-Connecting-IP` for audit logging and rate limiting only on
+that restricted backend path; unrestricted proxy trust remains disabled.
 
 ______________________________________________________________________
 
@@ -127,6 +130,26 @@ ssh admin@10.100.0.81 systemctl is-active sops-install-secrets.service
 ssh admin@10.100.0.81 systemctl is-active pocket-id.service
 ssh admin@10.100.0.81 env HOST=127.0.0.1 PORT=11081 pocket-id healthcheck
 ```
+
+Before opening `/setup`, verify both sides of the backend firewall boundary.
+The first command runs on Blizzard and must succeed; run the second command
+from any other MicroVM and confirm that it times out or is refused:
+
+```bash
+curl --fail --silent --show-error \
+  http://10.100.0.81:11081/.well-known/openid-configuration
+
+curl --connect-timeout 3 --fail --silent --show-error \
+  http://10.100.0.81:11081/.well-known/openid-configuration
+```
+
+On the Pocket ID VM, the active rule can also be inspected with:
+
+```bash
+sudo nft list chain inet nixos-fw input-allow
+```
+
+It must contain the `10.100.0.1/32` source restriction for TCP port `11081`.
 
 ______________________________________________________________________
 
