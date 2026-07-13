@@ -89,6 +89,7 @@ result.
 In the private `nix-secrets` repository:
 
 1. Add the new age recipient to the appropriate creation rule in `.sops.yaml`.
+
 1. Add a 32-byte random value at the YAML key
    `pocket-id/encryption_key`:
 
@@ -172,11 +173,15 @@ ______________________________________________________________________
 Each relying application needs its own client:
 
 1. In Pocket ID, open **Settings**, **Admin**, then **OIDC Clients**.
+
 1. Create a client named for the application.
+
 1. Copy the application's exact HTTPS callback URL from its documentation.
    Do not use callback wildcards unless the application genuinely needs them.
+
 1. Store the generated client secret in `nix-secrets`, scoped to that
    application. Do not place it in a Nix setting or commit it here.
+
 1. Configure the application with:
 
    ```text
