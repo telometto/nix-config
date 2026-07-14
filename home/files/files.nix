@@ -18,8 +18,7 @@ in
   };
 
   config = lib.mkIf (cfg.enable && cfg.sshAllowedSigners != [ ]) {
-    home.file.".ssh/allowed_signers".text =
-      lib.concatStringsSep "\n" cfg.sshAllowedSigners + "\n";
+    home.file.".ssh/allowed_signers".text = lib.concatStringsSep "\n" cfg.sshAllowedSigners + "\n";
 
     programs.git.settings.gpg.ssh.allowedSignersFile =
       "${config.home.homeDirectory}/.ssh/allowed_signers";
