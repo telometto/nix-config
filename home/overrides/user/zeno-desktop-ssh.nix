@@ -22,7 +22,7 @@ in
   };
 
   programs.ssh.settings = {
-    "192.168.*".SetEnv = "TERM=xterm-256color";
+    "192.168.*".SetEnv.TERM = "xterm-256color";
 
     "github.com" = personalGitHub;
     "github-personal" = personalGitHub;
