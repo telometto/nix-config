@@ -1,11 +1,6 @@
 # User-specific configuration for zeno on blizzard host
 # This file is automatically imported only for zeno on blizzard
-{
-  lib,
-  config,
-  pkgs,
-  ...
-}:
+{ config, pkgs, ... }:
 {
   home.packages = with pkgs; [
     sqlite
@@ -16,6 +11,8 @@
     langs = "nb_NO.UTF-8";
 
     programs = {
+      development.git.signingKey = "${config.home.homeDirectory}/.ssh/zeno-blizzard.pub";
+
       fastfetch = {
         enable = true;
         extraModules = [
@@ -54,30 +51,6 @@
       };
     };
 
-    files = {
-      enable = true;
-
-      sshConfig = {
-        enable = true;
-
-        hosts = {
-          "*" = {
-            ForwardAgent = "yes";
-            AddKeysToAgent = "no";
-            Compression = "yes";
-          };
-
-          "github.com" = {
-            Hostname = "ssh.github.com";
-            Port = "443";
-            User = "git";
-            IdentityFile = "${config.home.homeDirectory}/.ssh/zeno-blizzard";
-          };
-
-        };
-      };
-    };
-
     services = {
       gpgAgent = {
         enable = true;
@@ -93,6 +66,14 @@
   };
 
   programs = {
+    ssh.settings."github.com" = {
+      HostName = "ssh.github.com";
+      Port = 443;
+      User = "git";
+      IdentitiesOnly = true;
+      IdentityFile = "${config.home.homeDirectory}/.ssh/zeno-blizzard";
+    };
+
     zsh.shellAliases = {
       # Kubernetes
       k = "kubectl";
