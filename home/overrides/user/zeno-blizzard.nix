@@ -8,8 +8,6 @@
   ];
 
   hm = {
-    langs = "nb_NO.UTF-8";
-
     programs = {
       development.git.signingKey = "${config.home.homeDirectory}/.ssh/zeno-blizzard.pub";
 

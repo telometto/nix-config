@@ -10,18 +10,14 @@
     pkgs.rendercv
   ];
 
-  hm = {
-    langs = "it_IT.UTF-8";
+  hm.programs = {
+    media = {
+      enable = true;
 
-    programs = {
-      media = {
-        enable = true;
-
-        mpv.enable = true;
-        yt-dlp.enable = true;
-      };
-
-      gaming.lutris.enable = lib.mkForce false;
+      mpv.enable = true;
+      yt-dlp.enable = true;
     };
+
+    gaming.lutris.enable = lib.mkForce false;
   };
 }
