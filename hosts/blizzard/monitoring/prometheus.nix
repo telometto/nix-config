@@ -63,6 +63,15 @@
         ];
       }
       {
+        job_name = "cloudflare";
+        scrape_interval = "1m";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:${toString config.sys.services.cloudflareMetrics.port}" ];
+          }
+        ];
+      }
+      {
         job_name = "arr-exporter";
         static_configs = [
           {
