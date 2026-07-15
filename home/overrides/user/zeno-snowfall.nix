@@ -38,8 +38,6 @@
   ]);
 
   hm = {
-    langs = "nb_NO.UTF-8";
-
     programs = {
       development = {
         extraPackages = [

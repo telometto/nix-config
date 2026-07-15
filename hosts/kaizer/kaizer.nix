@@ -6,9 +6,6 @@
   inputs,
   ...
 }:
-let
-  LOCALE = "it_IT.UTF-8";
-in
 {
   programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   networking = {
@@ -132,20 +129,6 @@ in
       ];
     };
   };
-
-  i18n.extraLocaleSettings = lib.mkForce (
-    lib.genAttrs [
-      "LC_ADDRESS"
-      "LC_IDENTIFICATION"
-      "LC_MEASUREMENT"
-      "LC_MONETARY"
-      "LC_NAME"
-      "LC_NUMERIC"
-      "LC_PAPER"
-      "LC_TELEPHONE"
-      "LC_TIME"
-    ] (_: LOCALE)
-  );
 
   hardware = {
     cpu.amd.updateMicrocode = lib.mkDefault true;
