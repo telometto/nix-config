@@ -13,7 +13,8 @@ Information reference for this repo's moving parts, options, and commands.
 | `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}` | The four physical hosts |
 | `nixosConfigurations.<vm-name>` (×25) | MicroVM guests defined in `vms/` |
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
-| `checks.x86_64-linux.formatting` | Formatting check (`nix flake check`) |
+| `checks.x86_64-linux.formatting` | treefmt formatting check |
+| `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
 | `devShells.x86_64-linux.default` | Dev shell with nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 ### `mkHost` — what it always injects
@@ -166,7 +167,7 @@ Operational tools used across the repo.
 | disko | Disk layout (included but not active) | `hosts/snowfall/disko.nix` (on hold) |
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
-`nix flake check` only runs the `checks.formatting` check. Full host evaluation (build testing) is done by the `validate-config.yml` CI workflow, not as a flake check.
+Locally, `nix flake check` evaluates and builds both the formatting check and the Cloudflare metrics test derivation. The `flake-check.yml` CI workflow first runs `nix flake check --no-build` to evaluate all flake outputs, then explicitly builds `checks.x86_64-linux.cloudflare-metrics` to run its Python unit tests. Full host evaluation is handled separately by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
 
@@ -236,9 +237,14 @@ nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel
 # Format all files (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff)
 nix fmt
 
-# Check formatting only (not a full host evaluation)
+# Evaluate and build the formatting and Cloudflare metrics checks
 nix flake check
-nix flake check --no-build   # skip builds
+
+# Evaluate all flake outputs without building them (as CI does first)
+nix flake check --no-build
+
+# Build and run only the Cloudflare metrics unit-test check
+nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs
 
 # Dev shell (includes nil, nixfmt, deadnix, statix, sops, ssh-to-age)
 nix develop

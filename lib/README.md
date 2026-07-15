@@ -132,7 +132,7 @@ in
     enable = true;
     provision.dashboards = {
       inherit (grafanaDashboards.community) node-exporter-full;
-      inherit (grafanaDashboards.custom) zfs-overview power-consumption;
+      inherit (grafanaDashboards.custom) cloudflare-overview zfs-overview power-consumption;
       # Or pull everything at once:
       # inherit (grafanaDashboards.all) node-exporter-full zfs-overview;
     };
@@ -158,6 +158,7 @@ in
 | Key | Source path | Description |
 |-----|-------------|-------------|
 | `custom.arr-services` | `dashboards/shared/arr-services.json` | Sonarr/Radarr/etc metrics |
+| `custom.cloudflare-overview` | `dashboards/host/blizzard/cloudflare-overview.json` | Cloudflare HTTP analytics, Access authentication activity, and collector health |
 | `custom.zfs-overview` | `dashboards/host/blizzard/zfs-overview.json` | ZFS pool and dataset metrics |
 | `custom.power-consumption` | `dashboards/shared/power-consumption.json` | Real-time power usage |
 | `custom.power-consumption-historical` | `dashboards/host/blizzard/power-consumption-historical.json` | Historical power data |

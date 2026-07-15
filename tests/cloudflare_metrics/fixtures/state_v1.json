@@ -1,0 +1,37 @@
+{
+  "access": {
+    "high_water": 1721000000,
+    "seen": {
+      "access-event": 1721000000
+    }
+  },
+  "analytics": {
+    "zone-id": {
+      "gap": false,
+      "high_water": 1721000000,
+      "name": "example.com",
+      "seen": {
+        "analytics-row": 1721000000
+      }
+    }
+  },
+  "series": {
+    "cloudflare_access_authentications_total": {
+      "[[\"application\",\"admin\"],[\"decision\",\"allowed\"],[\"owner\",\"false\"],[\"principal\",\"alice@example.com\"]]": 2,
+      "[[\"application\",\"admin\"],[\"decision\",\"allowed\"],[\"owner\",\"false\"],[\"principal\",\"bob@example.com\"]]": 3
+    },
+    "cloudflare_access_last_authentication_timestamp_seconds": {
+      "[[\"application\",\"admin\"],[\"decision\",\"allowed\"],[\"owner\",\"false\"],[\"principal\",\"alice@example.com\"]]": 1721000010,
+      "[[\"application\",\"admin\"],[\"decision\",\"allowed\"],[\"owner\",\"false\"],[\"principal\",\"bob@example.com\"]]": 1721000020
+    },
+    "cloudflare_http_requests_total": {
+      "[[\"host\",\"host-0.example\"],[\"status\",\"200\"],[\"zone\",\"example.com\"]]": 1,
+      "[[\"host\",\"host-1.example\"],[\"status\",\"200\"],[\"zone\",\"example.com\"]]": 2,
+      "[[\"host\",\"host-2.example\"],[\"status\",\"200\"],[\"zone\",\"example.com\"]]": 3,
+      "[[\"host\",\"host-3.example\"],[\"status\",\"200\"],[\"zone\",\"example.com\"]]": 4,
+      "[[\"host\",\"host-4.example\"],[\"status\",\"200\"],[\"zone\",\"example.com\"]]": 5,
+      "[[\"host\",\"host-5.example\"],[\"status\",\"200\"],[\"zone\",\"example.com\"]]": 6
+    }
+  },
+  "version": 1
+}
