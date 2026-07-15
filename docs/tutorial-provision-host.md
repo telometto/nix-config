@@ -112,6 +112,7 @@ for enabled users.
 ## Next Steps
 
 - Add host-wide HM overrides: `home/overrides/host/<hostname>.nix`
-- Add user-specific overrides: `home/overrides/user/<user>-<hostname>.nix`
+- Add cross-host user overrides: `home/overrides/user/<user>.nix`
+- Add user@host overrides: `home/overrides/user/<user>-<hostname>.nix`
 - Enable additional services via `sys.services.*` in the host file or
   dedicated files under `hosts/<hostname>/`

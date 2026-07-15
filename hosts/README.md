@@ -9,7 +9,7 @@ Per-machine NixOS configurations defining hardware, roles, users, and services.
 | [snowfall/](snowfall/) | Desktop | KDE | AMD GPU, distributed builds server, openrazer (RGB), Prometheus+Grafana+Traefik+Cloudflare tunnel, RAPL + electricity-price exporters |
 | [blizzard/](blizzard/) | Server | None | ZFS+NFS+Samba, full observability stack, MicroVM host, Tailscale subnet router (192.168.2.0/24 + 10.100.0.0/24), CrowdSec, VictoriaMetrics |
 | [avalanche/](avalanche/) | Desktop | GNOME | ThinkPad P51, nixos-hardware module, iwlwifi+BT coexistence workaround, VictoriaMetrics remote-write to blizzard |
-| [kaizer/](kaizer/) | Desktop | KDE | Two users (gianluca+luke; frankie disabled), Lanzaboote disabled, NVIDIA GPU (legacy open=false), Java Temurin 8/17/21 for Minecraft, Italian locale |
+| [kaizer/](kaizer/) | Desktop | KDE | Two users (gianluca+luke; frankie disabled), Lanzaboote disabled, NVIDIA GPU (legacy open=false), Java Temurin 8/17/21 for Minecraft, per-user localization |
 
 ### Host Structure
 

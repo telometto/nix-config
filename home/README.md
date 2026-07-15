@@ -111,9 +111,12 @@ in
 1. Implement `config = lib.mkIf cfg.enable { ... };`
 1. Module auto-loads via `hm-loader.nix`
 
-### Configuration Precedence
+### Configuration Composition
 
-Layers are applied from lowest priority (bottom) to highest (top):
+Modules are assembled in the following order. Import order does not itself set
+Nix option priority; use `lib.mkDefault`, `lib.mkOverride`, or `lib.mkForce`
+when definitions may overlap. User-wide defaults should normally use
+`lib.mkDefault` so a user-and-host override can replace them.
 
 ```mermaid
 flowchart TD
@@ -130,7 +133,7 @@ flowchart TD
     FRC["lib.mkForce (anywhere)"] -.->|"always wins"| M
 ```
 
-As a numbered list (low → high):
+As a numbered list:
 
 1. Auto-imported HM modules (output of `hm-loader.nix`, includes `home/base.nix` with `lib.mkDefault` values)
 1. Host-wide extra modules (`sys.home.extraModules`)
