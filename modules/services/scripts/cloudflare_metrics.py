@@ -9,6 +9,7 @@ applying the reported sample interval a second time.
 from __future__ import annotations
 
 import copy
+import errno
 import hashlib
 import json
 import logging
@@ -19,6 +20,7 @@ import signal
 import tempfile
 import threading
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -33,6 +35,7 @@ LOG = logging.getLogger("cloudflare-metrics")
 
 API_BASE = "https://api.cloudflare.com/client/v4"
 GRAPHQL_URL = "https://api.cloudflare.com/client/v4/graphql"
+STATE_VERSION = 2
 
 ANALYTICS_DELAY_SECONDS = 10 * 60
 ANALYTICS_BUCKET_SECONDS = 5 * 60
@@ -42,6 +45,30 @@ ANALYTICS_CHUNK_SECONDS = 6 * 60 * 60
 ANALYTICS_ROW_LIMIT = 10_000
 ACCESS_OVERLAP_SECONDS = 5 * 60
 ACCESS_SEEN_SECONDS = 8 * 24 * 60 * 60
+ACCESS_GRAPHQL_ROW_LIMIT = 10_000
+ACCESS_METRICS = frozenset(
+    {
+        "cloudflare_access_authentications_total",
+        "cloudflare_access_last_authentication_timestamp_seconds",
+    }
+)
+ACCESS_PRINCIPAL_TYPES = frozenset({"owner", "user", "service-token", "unknown"})
+
+# Keep durable state and the Prometheus exposition bounded even when Cloudflare
+# returns attacker-controlled or unexpectedly high-cardinality dimensions. One
+# slot per metric is reserved for the fixed overflow bucket.
+MAX_SERIES_PER_METRIC = 512
+MAX_LABEL_VALUE_LENGTH = 256
+OVERFLOW_LABELS = {"overflow": "true"}
+OVERFLOW_METRIC = "cloudflare_collector_series_overflow_total"
+
+ANALYTICS_DATASETS: dict[str, str] = {
+    "status": "httpRequestsAdaptiveGroups",
+    "cache": "httpRequestsAdaptiveGroups",
+    "country": "httpRequestsAdaptiveGroups",
+    "security": "httpRequestsAdaptiveGroups",
+    "visits": "httpRequestsAdaptiveGroups",
+}
 
 ANALYTICS_QUERY = r"""
 query CloudflareMetrics($zoneTag: string, $start: Time, $end: Time) {
@@ -127,6 +154,44 @@ query CloudflareMetrics($zoneTag: string, $start: Time, $end: Time) {
 }
 """
 
+ACCESS_NONIDENTITY_QUERY = r"""
+query CloudflareAccessNonIdentity(
+  $accountTag: string
+  $start: string
+  $end: string
+) {
+  viewer {
+    accounts(filter: {accountTag: $accountTag}) {
+      accessLoginRequestsAdaptiveGroups(
+        limit: 10000
+        orderBy: [datetime_ASC]
+        filter: {
+          datetime_geq: $start
+          datetime_leq: $end
+          identityProvider: "nonidentity"
+        }
+      ) {
+        dimensions {
+          datetime
+          isSuccessfulLogin
+          approvingPolicyId
+          cfRayId
+          ipAddress
+          userUuid
+          identityProvider
+          country
+          deviceId
+          mtlsStatus
+          mtlsCertSerialId
+          mtlsCommonName
+          serviceTokenId
+        }
+      }
+    }
+  }
+}
+"""
+
 
 METRIC_SPECS: dict[str, tuple[str, str]] = {
     "cloudflare_http_requests_total": (
@@ -185,11 +250,60 @@ METRIC_SPECS: dict[str, tuple[str, str]] = {
         "gauge",
         "Number of completed intervals awaiting catch-up when a poll began.",
     ),
+    OVERFLOW_METRIC: (
+        "counter",
+        "Series updates redirected to a bounded overflow bucket by source metric.",
+    ),
 }
+
+# This is the producer contract consumed by Prometheus alerts and Grafana. Each
+# entry declares the exact labels on a normal sample. Every bounded metric may
+# additionally emit the fixed ``overflow="true"`` sample when its series budget
+# is exhausted; mixing overflow with normal labels is deliberately forbidden.
+METRIC_LABEL_SCHEMAS: dict[str, tuple[frozenset[str], ...]] = {
+    "cloudflare_http_requests_total": (frozenset({"zone", "host", "status"}),),
+    "cloudflare_http_request_bytes_total": (frozenset({"zone", "host"}),),
+    "cloudflare_http_response_bytes_total": (frozenset({"zone", "host"}),),
+    "cloudflare_http_cache_requests_total": (
+        frozenset({"zone", "host", "cache_status"}),
+    ),
+    "cloudflare_http_requests_country_total": (frozenset({"zone", "country"}),),
+    "cloudflare_http_security_actions_total": (
+        frozenset({"zone", "host", "action", "source"}),
+    ),
+    "cloudflare_http_visits_total": (frozenset({"zone", "host"}),),
+    "cloudflare_access_authentications_total": (
+        frozenset({"app", "decision", "principal_type", "owner"}),
+    ),
+    "cloudflare_access_last_authentication_timestamp_seconds": (
+        frozenset({"app", "decision", "principal_type", "owner"}),
+    ),
+    "cloudflare_collector_last_success_timestamp_seconds": (frozenset({"poll"}),),
+    "cloudflare_collector_api_errors_total": (frozenset({"operation"}),),
+    "cloudflare_collector_sample_interval": (frozenset({"zone"}),),
+    "cloudflare_collector_state_gap": (frozenset({"zone"}),),
+    "cloudflare_collector_catch_up": (frozenset({"poll"}),),
+    OVERFLOW_METRIC: (frozenset({"metric"}),),
+}
+
+OVERFLOW_LABEL_SCHEMA = frozenset(OVERFLOW_LABELS)
+
+if METRIC_LABEL_SCHEMAS.keys() != METRIC_SPECS.keys():
+    raise RuntimeError(
+        "metric specifications and label schemas must have identical keys"
+    )
 
 
 class CloudflareError(RuntimeError):
     """Raised when Cloudflare returns an unsuccessful response."""
+
+
+class StateValidationError(ValueError):
+    """Raised when a supported collector state file has an invalid shape."""
+
+
+class UnsupportedStateVersion(ValueError):
+    """Raised when state requires collector code that is not available."""
 
 
 def parse_duration(value: str) -> int:
@@ -262,10 +376,11 @@ def normalize_word(value: Any, fallback: str = "unknown") -> str:
 
 
 def classify_principal(email: Any, owner_emails: set[str]) -> tuple[str, str]:
-    principal = str(email or "").strip().lower()
-    if not principal:
-        return "service-token", "false"
-    return principal, "true" if principal in owner_emails else "false"
+    normalized_email = str(email or "").strip().lower()
+    if not normalized_email:
+        return "unknown", "false"
+    is_owner = normalized_email in owner_emails
+    return ("owner" if is_owner else "user"), ("true" if is_owner else "false")
 
 
 def normalize_decision(event: Mapping[str, Any]) -> str:
@@ -284,17 +399,369 @@ def escape_label(value: Any) -> str:
     return str(value).replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
 
 
+def normalize_label_value(value: Any) -> str:
+    """Return a printable, length-bounded Prometheus label value."""
+    normalized = unicodedata.normalize("NFKC", str(value))
+    # Newlines are valid once escaped by ``escape_label``; replace the other
+    # control bytes so they cannot corrupt the text exposition format.
+    normalized = re.sub(r"[\x00-\x09\x0b-\x1f\x7f-\x9f]", " ", normalized).strip()
+    if len(normalized) <= MAX_LABEL_VALUE_LENGTH:
+        return normalized
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
+    prefix_length = max(0, MAX_LABEL_VALUE_LENGTH - len(digest) - 1)
+    return f"{normalized[:prefix_length]}~{digest}"
+
+
+def _normalized_labels(labels: Mapping[str, Any]) -> dict[str, str]:
+    return {
+        str(name): normalize_label_value(value)
+        for name, value in labels.items()
+    }
+
+
 def _series_key(labels: Mapping[str, str]) -> str:
-    return json.dumps(sorted(labels.items()), separators=(",", ":"), ensure_ascii=True)
+    return json.dumps(
+        sorted(_normalized_labels(labels).items()),
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
 
 
 def _series_labels(key: str) -> dict[str, str]:
     return dict(json.loads(key))
 
 
+def _private_access_labels(labels: Mapping[str, str]) -> dict[str, str]:
+    """Return the bounded Access label contract without identity material."""
+    if frozenset(labels) == OVERFLOW_LABEL_SCHEMA:
+        return dict(labels)
+    private_labels = dict(labels)
+    legacy_principal = private_labels.pop("principal", None)
+    owner = str(private_labels.get("owner", "false")).lower() == "true"
+    principal_type = str(private_labels.get("principal_type", "")).lower()
+
+    if principal_type not in ACCESS_PRINCIPAL_TYPES:
+        if owner:
+            principal_type = "owner"
+        elif legacy_principal == "service-token":
+            principal_type = "service-token"
+        elif legacy_principal:
+            principal_type = "user"
+        else:
+            principal_type = "unknown"
+
+    # Keep the redundant owner label internally consistent so consumers can
+    # use the simple owner=true|false contract without inspecting identity data.
+    owner = principal_type == "owner"
+    private_labels["principal_type"] = principal_type
+    private_labels["owner"] = "true" if owner else "false"
+    return private_labels
+
+
+def _private_access_series(metric: str, series: Mapping[str, Any]) -> dict[str, float]:
+    if metric not in ACCESS_METRICS:
+        return dict(series)
+
+    sanitized: dict[str, float] = {}
+    for key, value in series.items():
+        private_key = _series_key(_private_access_labels(_series_labels(key)))
+        number = float(value)
+        if metric == "cloudflare_access_authentications_total":
+            sanitized[private_key] = sanitized.get(private_key, 0.0) + number
+        else:
+            sanitized[private_key] = max(sanitized.get(private_key, number), number)
+    return sanitized
+
+
+def sanitize_legacy_access_series(state: dict[str, Any]) -> bool:
+    """Remove raw principals from persisted v1 state before it is exposed."""
+    changed = False
+    all_series = state.setdefault("series", {})
+    for metric in ACCESS_METRICS:
+        existing = all_series.get(metric)
+        if not existing:
+            continue
+        sanitized = _private_access_series(metric, existing)
+        if sanitized != existing:
+            all_series[metric] = sanitized
+            changed = True
+    return changed
+
+
+def _metric_type(metric: str) -> str:
+    spec = METRIC_SPECS.get(metric)
+    if spec is not None:
+        return spec[0]
+    return "counter" if metric.endswith("_total") else "gauge"
+
+
+def _merge_metric_value(metric: str, current: float | None, value: float) -> float:
+    if current is None:
+        return value
+    if _metric_type(metric) == "counter":
+        return current + value
+    return max(current, value)
+
+
+def _record_series_overflow(
+    state: dict[str, Any], metric: str, amount: float = 1
+) -> None:
+    """Increment bounded overflow telemetry without recursively instrumenting it."""
+    if metric == OVERFLOW_METRIC or metric not in METRIC_SPECS:
+        return
+    telemetry = state.setdefault("series", {}).setdefault(OVERFLOW_METRIC, {})
+    key = _series_key({"metric": metric})
+    overflow_key = _series_key(OVERFLOW_LABELS)
+    if key not in telemetry and len(telemetry) >= MAX_SERIES_PER_METRIC:
+        key = overflow_key
+    telemetry[key] = float(telemetry.get(key, 0)) + amount
+
+
+def _redirect_new_series(
+    state: dict[str, Any], metric: str, series: dict[str, float], key: str
+) -> str:
+    """Choose a bounded target, retaining deterministic smallest label keys."""
+    overflow_key = _series_key(OVERFLOW_LABELS)
+    if key in series or key == overflow_key:
+        return key
+
+    regular_capacity = max(1, MAX_SERIES_PER_METRIC - 1)
+    regular_keys = sorted(existing for existing in series if existing != overflow_key)
+    if len(regular_keys) < regular_capacity:
+        return key
+
+    largest = regular_keys[-1]
+    _record_series_overflow(state, metric)
+    if key > largest:
+        return overflow_key
+
+    evicted = float(series.pop(largest))
+    current = series.get(overflow_key)
+    series[overflow_key] = _merge_metric_value(metric, current, evicted)
+    return key
+
+
+def compact_series_state(state: dict[str, Any]) -> bool:
+    """Normalize and deterministically compact oversized persisted series maps."""
+    changed = False
+    all_series = state.setdefault("series", {})
+    metrics = sorted(metric for metric in all_series if metric != OVERFLOW_METRIC)
+    if OVERFLOW_METRIC in all_series:
+        metrics.append(OVERFLOW_METRIC)
+
+    for metric in metrics:
+        existing = all_series.get(metric)
+        if not isinstance(existing, Mapping):
+            continue
+        normalized: dict[str, float] = {}
+        for raw_key, raw_value in sorted(existing.items()):
+            labels = _series_labels(raw_key)
+            key = _series_key(labels)
+            number = float(raw_value)
+            if not math.isfinite(number):
+                continue
+            normalized[key] = _merge_metric_value(
+                metric, normalized.get(key), number
+            )
+
+        overflow_key = _series_key(OVERFLOW_LABELS)
+        regular_keys = sorted(key for key in normalized if key != overflow_key)
+        regular_capacity = max(1, MAX_SERIES_PER_METRIC - 1)
+        overflowed = regular_keys[regular_capacity:]
+        compacted = {
+            key: normalized[key]
+            for key in regular_keys[:regular_capacity]
+        }
+        overflow_value = normalized.get(overflow_key)
+        for key in overflowed:
+            overflow_value = _merge_metric_value(
+                metric, overflow_value, normalized[key]
+            )
+        if overflow_value is not None:
+            compacted[overflow_key] = overflow_value
+        if compacted != existing:
+            all_series[metric] = compacted
+            changed = True
+        if overflowed:
+            _record_series_overflow(state, metric, len(overflowed))
+
+    return changed
+
+
+def _state_version(state: Mapping[str, Any]) -> int:
+    version = state.get("version")
+    if isinstance(version, bool) or not isinstance(version, int):
+        raise StateValidationError("collector state version must be an integer")
+    return version
+
+
+def _finite_state_number(value: Any, path: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise StateValidationError(f"collector state {path} must be numeric")
+    try:
+        number = float(value)
+    except OverflowError as error:
+        raise StateValidationError(
+            f"collector state {path} must be finite"
+        ) from error
+    if not math.isfinite(number):
+        raise StateValidationError(f"collector state {path} must be finite")
+    return number
+
+
+def _validate_seen_map(value: Any, path: str) -> None:
+    if not isinstance(value, Mapping):
+        raise StateValidationError(f"collector state {path} must be an object")
+    for identity, timestamp in value.items():
+        if not isinstance(identity, str):
+            raise StateValidationError(
+                f"collector state {path} keys must be strings"
+            )
+        _finite_state_number(timestamp, f"{path}.{identity}")
+
+
+def _validate_optional_timestamp(value: Any, path: str) -> None:
+    if value is not None:
+        _finite_state_number(value, path)
+
+
+def _validate_series_key(key: Any, path: str) -> None:
+    if not isinstance(key, str):
+        raise StateValidationError(f"collector state {path} key must be a string")
+    try:
+        labels = json.loads(key)
+    except json.JSONDecodeError as error:
+        raise StateValidationError(
+            f"collector state {path} contains an invalid label key"
+        ) from error
+    if not isinstance(labels, list):
+        raise StateValidationError(
+            f"collector state {path} label key must be a list of pairs"
+        )
+    for pair in labels:
+        if not isinstance(pair, list) or len(pair) != 2:
+            raise StateValidationError(
+                f"collector state {path} label key must contain pairs"
+            )
+        name, value = pair
+        if not isinstance(name, str) or re.fullmatch(
+            r"[A-Za-z_][A-Za-z0-9_]*", name
+        ) is None:
+            raise StateValidationError(
+                f"collector state {path} contains an invalid label name"
+            )
+        if not isinstance(value, str):
+            raise StateValidationError(
+                f"collector state {path} label values must be strings"
+            )
+
+
+def validate_state(state: Any) -> None:
+    """Validate the persisted containers consumed by the collector."""
+    if not isinstance(state, Mapping):
+        raise StateValidationError("collector state root must be an object")
+    _state_version(state)
+
+    series = state.get("series")
+    if not isinstance(series, Mapping):
+        raise StateValidationError("collector state series must be an object")
+    for metric, samples in series.items():
+        if not isinstance(metric, str) or re.fullmatch(
+            r"[A-Za-z_:][A-Za-z0-9_:]*", metric
+        ) is None:
+            raise StateValidationError(
+                "collector state contains an invalid metric name"
+            )
+        if not isinstance(samples, Mapping):
+            raise StateValidationError(
+                f"collector state series.{metric} must be an object"
+            )
+        for key, value in samples.items():
+            _validate_series_key(key, f"series.{metric}")
+            _finite_state_number(value, f"series.{metric}")
+
+    analytics = state.get("analytics")
+    if not isinstance(analytics, Mapping):
+        raise StateValidationError("collector state analytics must be an object")
+    for zone_id, zone in analytics.items():
+        if not isinstance(zone_id, str) or not isinstance(zone, Mapping):
+            raise StateValidationError(
+                "collector state analytics entries must be named objects"
+            )
+        if not isinstance(zone.get("name"), str):
+            raise StateValidationError(
+                f"collector state analytics.{zone_id}.name must be a string"
+            )
+        _validate_optional_timestamp(
+            zone.get("high_water"), f"analytics.{zone_id}.high_water"
+        )
+        _validate_seen_map(zone.get("seen"), f"analytics.{zone_id}.seen")
+        if not isinstance(zone.get("gap"), bool):
+            raise StateValidationError(
+                f"collector state analytics.{zone_id}.gap must be boolean"
+            )
+
+    access = state.get("access")
+    if not isinstance(access, Mapping):
+        raise StateValidationError("collector state access must be an object")
+    _validate_optional_timestamp(access.get("high_water"), "access.high_water")
+    _validate_seen_map(access.get("seen"), "access.seen")
+
+
+def _migrate_v1_to_v2(state: dict[str, Any]) -> dict[str, Any]:
+    """Remove identity labels and bound durable metric series."""
+    sanitize_legacy_access_series(state)
+    compact_series_state(state)
+    state["version"] = 2
+    return state
+
+
+STATE_MIGRATIONS: dict[
+    int, Callable[[dict[str, Any]], dict[str, Any]]
+] = {
+    1: _migrate_v1_to_v2,
+}
+
+
+def _validate_migration_path(version: int) -> None:
+    if version > STATE_VERSION:
+        raise UnsupportedStateVersion(
+            f"collector state version {version} is newer than supported "
+            f"version {STATE_VERSION}"
+        )
+    if version < 1:
+        raise StateValidationError(
+            f"collector state version {version} is invalid"
+        )
+    cursor = version
+    while cursor < STATE_VERSION:
+        if cursor not in STATE_MIGRATIONS:
+            raise RuntimeError(
+                f"unsupported collector state migration from version {cursor}"
+            )
+        cursor += 1
+
+
+def migrate_state(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Apply every registered migration in order without mutating the input."""
+    version = _state_version(state)
+    _validate_migration_path(version)
+    migrated = copy.deepcopy(dict(state))
+    while version < STATE_VERSION:
+        migrated = STATE_MIGRATIONS[version](migrated)
+        next_version = _state_version(migrated)
+        if next_version != version + 1:
+            raise ValueError(
+                f"collector state migration {version} did not produce "
+                f"version {version + 1}"
+            )
+        version = next_version
+    return migrated
+
+
 def new_state() -> dict[str, Any]:
     state: dict[str, Any] = {
-        "version": 1,
+        "version": STATE_VERSION,
         "series": {},
         "analytics": {},
         "access": {"high_water": None, "seen": {}},
@@ -304,24 +771,49 @@ def new_state() -> dict[str, Any]:
     return state
 
 
+def _validate_metric_labels(metric: str, labels: Mapping[str, str]) -> None:
+    schemas = METRIC_LABEL_SCHEMAS.get(metric)
+    if schemas is None:
+        raise ValueError(f"unknown metric: {metric}")
+    actual = frozenset(labels)
+    if actual not in (*schemas, OVERFLOW_LABEL_SCHEMA):
+        expected = " or ".join(
+            "{" + ", ".join(sorted(schema)) + "}"
+            for schema in (*schemas, OVERFLOW_LABEL_SCHEMA)
+        )
+        rendered = "{" + ", ".join(sorted(str(label) for label in actual)) + "}"
+        raise ValueError(
+            f"invalid labels for {metric}: got {rendered}, expected {expected}"
+        )
+
+
 def add_series(
     state: dict[str, Any], metric: str, labels: Mapping[str, str], value: Any
 ) -> None:
+    _validate_metric_labels(metric, labels)
     number = float(value or 0)
     if not math.isfinite(number):
         return
     series = state.setdefault("series", {}).setdefault(metric, {})
     key = _series_key(labels)
-    series[key] = float(series.get(key, 0)) + number
+    target = _redirect_new_series(state, metric, series, key)
+    series[target] = float(series.get(target, 0)) + number
 
 
 def set_series(
     state: dict[str, Any], metric: str, labels: Mapping[str, str], value: Any
 ) -> None:
+    _validate_metric_labels(metric, labels)
     number = float(value or 0)
     if not math.isfinite(number):
         return
-    state.setdefault("series", {}).setdefault(metric, {})[_series_key(labels)] = number
+    series = state.setdefault("series", {}).setdefault(metric, {})
+    key = _series_key(labels)
+    target = _redirect_new_series(state, metric, series, key)
+    if target == _series_key(OVERFLOW_LABELS):
+        series[target] = _merge_metric_value(metric, series.get(target), number)
+    else:
+        series[target] = number
 
 
 def get_series(
@@ -332,11 +824,15 @@ def get_series(
 
 def render_metrics(state: Mapping[str, Any]) -> str:
     lines: list[str] = []
-    all_series = state.get("series", {})
+    render_state = {"series": copy.deepcopy(state.get("series", {}))}
+    sanitize_legacy_access_series(render_state)
+    compact_series_state(render_state)
+    all_series = render_state["series"]
     for metric, (metric_type, help_text) in METRIC_SPECS.items():
         lines.append(f"# HELP {metric} {help_text}")
         lines.append(f"# TYPE {metric} {metric_type}")
-        for key, value in sorted(all_series.get(metric, {}).items()):
+        metric_series = _private_access_series(metric, all_series.get(metric, {}))
+        for key, value in sorted(metric_series.items()):
             labels = _series_labels(key)
             suffix = ""
             if labels:
@@ -351,6 +847,26 @@ def render_metrics(state: Mapping[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _fsync_directory(path: Path) -> None:
+    if os.name != "posix" or not hasattr(os, "O_DIRECTORY"):
+        return
+    directory_fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        try:
+            os.fsync(directory_fd)
+        except OSError as error:
+            unsupported = {
+                errno.EINVAL,
+                getattr(errno, "ENOTSUP", errno.EINVAL),
+                getattr(errno, "EOPNOTSUPP", errno.EINVAL),
+            }
+            if error.errno not in unsupported:
+                raise
+            LOG.warning("directory fsync is unsupported for %s", path)
+    finally:
+        os.close(directory_fd)
+
+
 class StateStore:
     def __init__(self, path: str | Path):
         self.path = Path(path)
@@ -358,11 +874,99 @@ class StateStore:
     def load(self) -> dict[str, Any]:
         if not self.path.exists():
             return new_state()
-        with self.path.open(encoding="utf-8") as handle:
-            state = json.load(handle)
-        if state.get("version") != 1:
-            raise ValueError("unsupported collector state version")
+        try:
+            with self.path.open(encoding="utf-8") as handle:
+                state = json.load(handle)
+            if not isinstance(state, Mapping):
+                raise StateValidationError("collector state root must be an object")
+            version = _state_version(state)
+            _validate_migration_path(version)
+            validate_state(state)
+        except (
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+            StateValidationError,
+        ) as error:
+            return self._recover_invalid_state(error)
+
+        changed = False
+        if version < STATE_VERSION:
+            self._create_migration_backup(version)
+            state = migrate_state(state)
+            changed = True
+        if sanitize_legacy_access_series(state):
+            changed = True
+        if compact_series_state(state):
+            changed = True
+        validate_state(state)
+        if changed:
+            self.save(state)
         return state
+
+    def _next_quarantine_path(self) -> Path:
+        suffix = time.time_ns()
+        candidate = self.path.with_name(f"{self.path.name}.corrupt-{suffix}")
+        counter = 1
+        while candidate.exists():
+            candidate = self.path.with_name(
+                f"{self.path.name}.corrupt-{suffix}-{counter}"
+            )
+            counter += 1
+        return candidate
+
+    def _recover_invalid_state(self, error: Exception) -> dict[str, Any]:
+        quarantine = self._next_quarantine_path()
+        os.replace(self.path, quarantine)
+        os.chmod(quarantine, 0o600)
+        _fsync_directory(self.path.parent)
+        state = new_state()
+        self.save(state)
+        LOG.error(
+            "quarantined invalid collector state as %s: %s",
+            quarantine.name,
+            error,
+        )
+        return state
+
+    def migration_backup_path(self, version: int) -> Path:
+        return self.path.with_name(f"{self.path.name}.v{version}.bak")
+
+    def _create_migration_backup(self, version: int) -> Path:
+        """Durably preserve the original state once without overwriting it."""
+        backup_path = self.migration_backup_path(version)
+        if backup_path.exists():
+            return backup_path
+
+        temporary_name: str | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                "wb",
+                dir=self.path.parent,
+                prefix=f".{backup_path.name}.",
+                delete=False,
+            ) as handle:
+                temporary_name = handle.name
+                with self.path.open("rb") as source:
+                    while chunk := source.read(1024 * 1024):
+                        handle.write(chunk)
+                handle.flush()
+                os.fsync(handle.fileno())
+
+            os.chmod(temporary_name, 0o600)
+            try:
+                os.link(temporary_name, backup_path)
+            except FileExistsError:
+                pass
+            else:
+                os.chmod(backup_path, 0o600)
+                _fsync_directory(self.path.parent)
+            return backup_path
+        finally:
+            if temporary_name is not None:
+                try:
+                    os.unlink(temporary_name)
+                except FileNotFoundError:
+                    pass
 
     def save(self, state: Mapping[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -382,11 +986,7 @@ class StateStore:
                 os.fsync(handle.fileno())
             os.replace(temporary_name, self.path)
             temporary_name = None
-            directory_fd = os.open(self.path.parent, os.O_RDONLY | os.O_DIRECTORY)
-            try:
-                os.fsync(directory_fd)
-            finally:
-                os.close(directory_fd)
+            _fsync_directory(self.path.parent)
         finally:
             if temporary_name is not None:
                 try:
@@ -499,6 +1099,35 @@ class CloudflareAPI:
             per_page=1000,
         )
 
+    def query_nonidentity_access_logs(
+        self, start: float, end: float
+    ) -> list[dict[str, Any]]:
+        response = self._request_json(
+            "POST",
+            GRAPHQL_URL,
+            payload={
+                "query": ACCESS_NONIDENTITY_QUERY,
+                "variables": {
+                    "accountTag": self.account_id,
+                    "start": format_timestamp(start),
+                    "end": format_timestamp(end),
+                },
+            },
+        )
+        try:
+            accounts = response["data"]["viewer"]["accounts"]
+            account = accounts[0]
+            rows = account["accessLoginRequestsAdaptiveGroups"]
+        except (KeyError, IndexError, TypeError) as error:
+            raise CloudflareError(
+                "Cloudflare GraphQL response omitted Access login data"
+            ) from error
+        if not isinstance(rows, list) or not all(
+            isinstance(row, dict) for row in rows
+        ):
+            raise CloudflareError("Cloudflare GraphQL Access login data was invalid")
+        return rows
+
 
 def _analytics_identity(alias: str, row: Mapping[str, Any]) -> tuple[str, float]:
     dimensions = row.get("dimensions") or {}
@@ -525,7 +1154,7 @@ def apply_analytics_response(
     added = 0
     sample_intervals: list[float] = []
 
-    for alias in ("status", "cache", "country", "security", "visits"):
+    for alias in ANALYTICS_DATASETS:
         rows = response.get(alias) or []
         if not isinstance(rows, list):
             raise CloudflareError(f"GraphQL field {alias} was not a list")
@@ -634,43 +1263,117 @@ def _access_identity(event: Mapping[str, Any]) -> str:
     ).hexdigest()
 
 
+def _record_access_event(
+    state: dict[str, Any],
+    *,
+    identity: str,
+    event_time: float,
+    app: str,
+    decision: str,
+    principal_type: str,
+    owner: str,
+) -> bool:
+    access_state = state.setdefault("access", {"high_water": None, "seen": {}})
+    seen: dict[str, float] = access_state.setdefault("seen", {})
+    if identity in seen:
+        return False
+    labels = {
+        "app": app,
+        "decision": decision,
+        "principal_type": principal_type,
+        "owner": owner,
+    }
+    add_series(state, "cloudflare_access_authentications_total", labels, 1)
+    last = get_series(
+        state, "cloudflare_access_last_authentication_timestamp_seconds", labels
+    )
+    set_series(
+        state,
+        "cloudflare_access_last_authentication_timestamp_seconds",
+        labels,
+        max(last, event_time),
+    )
+    seen[identity] = event_time
+    return True
+
+
 def apply_access_events(
     state: dict[str, Any],
     events: Iterable[Mapping[str, Any]],
     apps: Mapping[str, str],
     owner_emails: set[str],
 ) -> int:
-    access_state = state.setdefault("access", {"high_water": None, "seen": {}})
-    seen: dict[str, float] = access_state.setdefault("seen", {})
     added = 0
     for event in events:
         event_time = parse_timestamp(event.get("created_at"))
         identity = _access_identity(event)
-        if identity in seen:
-            continue
-        principal, owner = classify_principal(event.get("user_email"), owner_emails)
+        principal_type, owner = classify_principal(
+            event.get("user_email"), owner_emails
+        )
         app_id = str(event.get("app_uid") or "")
         app = apps.get(app_id)
         if not app:
             app = normalize_hostname(event.get("app_domain"), app_id or "unknown")
-        labels = {
-            "app": app,
-            "decision": normalize_decision(event),
-            "principal": principal,
-            "owner": owner,
-        }
-        add_series(state, "cloudflare_access_authentications_total", labels, 1)
-        last = get_series(
-            state, "cloudflare_access_last_authentication_timestamp_seconds", labels
+        added += int(
+            _record_access_event(
+                state,
+                identity=identity,
+                event_time=event_time,
+                app=app,
+                decision=normalize_decision(event),
+                principal_type=principal_type,
+                owner=owner,
+            )
         )
-        set_series(
-            state,
-            "cloudflare_access_last_authentication_timestamp_seconds",
-            labels,
-            max(last, event_time),
+    return added
+
+
+def _nonidentity_access_identity(dimensions: Mapping[str, Any]) -> str:
+    if dimensions.get("cfRayId"):
+        return str(dimensions["cfRayId"])
+    return hashlib.sha256(
+        json.dumps(
+            ["graphql-nonidentity", dimensions],
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+
+
+def apply_nonidentity_access_events(
+    state: dict[str, Any], rows: Iterable[Mapping[str, Any]]
+) -> int:
+    """Apply GraphQL rows explicitly identified by Cloudflare as non-identity."""
+    added = 0
+    for row in rows:
+        dimensions = row.get("dimensions")
+        if not isinstance(dimensions, Mapping):
+            raise CloudflareError("Cloudflare GraphQL Access row omitted dimensions")
+        if normalize_word(dimensions.get("identityProvider")) != "nonidentity":
+            raise CloudflareError(
+                "Cloudflare GraphQL non-identity query returned an identity-based row"
+            )
+        successful = dimensions.get("isSuccessfulLogin")
+        if successful is True or successful == 1:
+            decision = "allowed"
+        elif successful is False or successful == 0:
+            decision = "denied"
+        else:
+            decision = "error"
+        service_token_id = str(dimensions.get("serviceTokenId") or "").strip()
+        added += int(
+            _record_access_event(
+                state,
+                identity=_nonidentity_access_identity(dimensions),
+                event_time=parse_timestamp(dimensions.get("datetime")),
+                # Cloudflare's published dataset does not expose an Access
+                # application identifier or domain for this event.
+                app="unknown",
+                decision=decision,
+                principal_type="service-token" if service_token_id else "unknown",
+                owner="false",
+            )
         )
-        seen[identity] = event_time
-        added += 1
     return added
 
 
@@ -699,7 +1402,7 @@ def query_complete_analytics(
     """
     response = api.query_analytics(zone_id, start, end)
     limited = False
-    for alias in ("status", "cache", "country", "security", "visits"):
+    for alias in ANALYTICS_DATASETS:
         rows = response.get(alias) or []
         if not isinstance(rows, list):
             raise CloudflareError(f"GraphQL field {alias} was not a list")
@@ -722,6 +1425,33 @@ def query_complete_analytics(
     ) + query_complete_analytics(api, zone_id, split, end, row_limit=row_limit)
 
 
+def query_complete_nonidentity_access(
+    api: CloudflareAPI,
+    start: float,
+    end: float,
+    *,
+    row_limit: int = ACCESS_GRAPHQL_ROW_LIMIT,
+) -> list[dict[str, Any]]:
+    """Fetch non-identity Access rows without advancing past truncation."""
+    rows = api.query_nonidentity_access_logs(start, end)
+    if len(rows) < row_limit:
+        return rows
+    if end - start <= 1:
+        raise CloudflareError(
+            "Cloudflare non-identity Access row limit reached within one second"
+        )
+    split = floor_timestamp(start + (end - start) / 2, 1)
+    if split <= start:
+        split = start + 1
+    if split >= end:
+        raise CloudflareError(
+            "unable to bisect a truncated non-identity Access response"
+        )
+    return query_complete_nonidentity_access(
+        api, start, split, row_limit=row_limit
+    ) + query_complete_nonidentity_access(api, split, end, row_limit=row_limit)
+
+
 class Collector:
     def __init__(
         self,
@@ -731,6 +1461,7 @@ class Collector:
         *,
         analytics_window: int = ANALYTICS_WINDOW_SECONDS,
         analytics_row_limit: int = ANALYTICS_ROW_LIMIT,
+        access_graphql_row_limit: int = ACCESS_GRAPHQL_ROW_LIMIT,
     ):
         self.api = api
         self.store = store
@@ -739,6 +1470,7 @@ class Collector:
         }
         self.analytics_window = analytics_window
         self.analytics_row_limit = analytics_row_limit
+        self.access_graphql_row_limit = access_graphql_row_limit
         self.lock = threading.RLock()
         self.state = store.load()
         self.zones: list[dict[str, Any]] = []
@@ -913,6 +1645,12 @@ class Collector:
             start = high_water - ACCESS_OVERLAP_SECONDS
             catch_up = max(0, int((now - high_water) / 60) - 1)
         try:
+            nonidentity_events = query_complete_nonidentity_access(
+                self.api,
+                start,
+                now,
+                row_limit=self.access_graphql_row_limit,
+            )
             events = self.api.list_access_logs(start, now)
         except CloudflareError:
             self.record_error("access")
@@ -920,6 +1658,9 @@ class Collector:
             return
 
         def apply(state: dict[str, Any]) -> None:
+            # Apply GraphQL first so a ray unexpectedly present in both sources
+            # retains the schema-backed non-identity classification.
+            apply_nonidentity_access_events(state, nonidentity_events)
             apply_access_events(state, events, self.apps, self.owner_emails)
             access_state = state.setdefault("access", {"high_water": None, "seen": {}})
             access_state["high_water"] = now
@@ -942,42 +1683,61 @@ class Collector:
                 now,
             )
 
-        self._commit(apply)
+        try:
+            self._commit(apply)
+        except (CloudflareError, TypeError, ValueError):
+            self.record_error("access")
+            LOG.exception("Cloudflare Access log response was invalid")
 
 
 class CollectorService:
     def __init__(
-        self, collector: Collector, analytics_interval: int, access_interval: int
+        self,
+        collector: Collector,
+        analytics_interval: int,
+        access_interval: int,
+        *,
+        clock: Callable[[], float] = time.time,
     ):
         self.collector = collector
         self.analytics_interval = analytics_interval
         self.access_interval = access_interval
+        self.clock = clock
         self.stop_event = threading.Event()
 
     def stop(self) -> None:
         self.stop_event.set()
 
+    def run_once(
+        self, now: float, next_analytics: float, next_access: float
+    ) -> tuple[float, float]:
+        """Run due polls once and return their next monotonic deadlines."""
+        if now >= next_analytics:
+            try:
+                self.collector.refresh_inventory(now)
+                self.collector.poll_analytics(now)
+            except Exception:  # keep serving the last durable metrics snapshot
+                self.collector.record_error("analytics-loop")
+                LOG.exception("unexpected analytics loop failure")
+            next_analytics = now + self.analytics_interval
+        if now >= next_access:
+            try:
+                self.collector.poll_access(now)
+            except Exception:  # keep serving the last durable metrics snapshot
+                self.collector.record_error("access-loop")
+                LOG.exception("unexpected Access loop failure")
+            next_access = now + self.access_interval
+        return next_analytics, next_access
+
     def run(self) -> None:
         next_analytics = 0.0
         next_access = 0.0
         while not self.stop_event.is_set():
-            now = time.time()
-            if now >= next_analytics:
-                try:
-                    self.collector.refresh_inventory(now)
-                    self.collector.poll_analytics(now)
-                except Exception:  # keep serving the last durable metrics snapshot
-                    self.collector.record_error("analytics-loop")
-                    LOG.exception("unexpected analytics loop failure")
-                next_analytics = now + self.analytics_interval
-            if now >= next_access:
-                try:
-                    self.collector.poll_access(now)
-                except Exception:  # keep serving the last durable metrics snapshot
-                    self.collector.record_error("access-loop")
-                    LOG.exception("unexpected Access loop failure")
-                next_access = now + self.access_interval
-            wait_for = max(0.1, min(next_analytics, next_access) - time.time())
+            now = self.clock()
+            next_analytics, next_access = self.run_once(
+                now, next_analytics, next_access
+            )
+            wait_for = max(0.1, min(next_analytics, next_access) - self.clock())
             self.stop_event.wait(min(wait_for, 5.0))
 
 
