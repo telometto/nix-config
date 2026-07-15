@@ -94,6 +94,7 @@ home/                         # Home Manager modules, hm.* namespace
   base.nix                    # shared HM defaults
   accounts/ desktop/ files/ programs/ security/ services/
   overrides/host/<host>.nix   # optional host-wide HM override (excl. from auto-load)
+  overrides/user/<user>.nix   # optional user-wide HM override (excl. from auto-load)
   overrides/user/<user>-<host>.nix  # optional user@host HM override (excl. from auto-load)
 
 hosts/<hostname>/             # Per-host config

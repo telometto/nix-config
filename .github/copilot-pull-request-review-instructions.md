@@ -83,8 +83,9 @@ Spend review effort on things that actually matter for this repo:
   list — those trees are auto-loaded; explicit imports cause double-loads
   or break the loader contract.
 - Flag files placed under `home/overrides/host/**` or
-  `home/overrides/user/**` that do not match the `<host>.nix` or
-  `<user>-<host>.nix` naming expected by `modules/core/home-users.nix`.
+  `home/overrides/user/**` that do not match the `<host>.nix`, `<user>.nix`,
+  or `<user>-<host>.nix` naming expected by `modules/core/home-users.nix`, unless
+  they are helper modules explicitly imported by one of those files.
 - Flag new options that leak outside the `sys.*` / `hm.*` namespaces
   without justification.
 
