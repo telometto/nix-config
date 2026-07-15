@@ -1,0 +1,36 @@
+[
+  {
+    "dimensions": {
+      "datetime": "2026-07-15T10:02:00Z",
+      "isSuccessfulLogin": 1,
+      "approvingPolicyId": "policy-one",
+      "cfRayId": "ray-service-token",
+      "ipAddress": "192.0.2.1",
+      "userUuid": "",
+      "identityProvider": "nonidentity",
+      "country": "NO",
+      "deviceId": "",
+      "mtlsStatus": "NONE",
+      "mtlsCertSerialId": "",
+      "mtlsCommonName": "",
+      "serviceTokenId": "service-token-id"
+    }
+  },
+  {
+    "dimensions": {
+      "datetime": "2026-07-15T10:03:00Z",
+      "isSuccessfulLogin": 0,
+      "approvingPolicyId": "",
+      "cfRayId": "ray-contextual",
+      "ipAddress": "192.0.2.2",
+      "userUuid": "",
+      "identityProvider": "nonidentity",
+      "country": "NO",
+      "deviceId": "device-id",
+      "mtlsStatus": "NONE",
+      "mtlsCertSerialId": "",
+      "mtlsCommonName": "",
+      "serviceTokenId": ""
+    }
+  }
+]
