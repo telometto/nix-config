@@ -9,6 +9,14 @@ let
 
   isNonEmptyPath = path: path != null && path != "";
 
+  positiveDurationType = lib.types.addCheck lib.types.str (
+    value:
+    builtins.match
+      "[[:space:]]*([0-9]*[1-9][0-9]*)[[:space:]]*(s|sec|m|min|h|hr|d|day)s?[[:space:]]*"
+      (lib.toLower value)
+    != null
+  );
+
   collector = pkgs.stdenvNoCC.mkDerivation {
     pname = "cloudflare-metrics";
     version = "0.1.0";
@@ -37,8 +45,9 @@ in
       default = null;
       description = ''
         Runtime path to a file containing the least-privilege Cloudflare API token.
-        The token requires Zone Read, Analytics Read, Access Audit Logs Read, and
-        Access Apps and Policies Read permissions.
+        The token requires Zone Read, Analytics Read for the monitored zones,
+        Account Analytics Read, Access Audit Logs Read, and Access Apps and
+        Policies Read permissions.
       '';
       example = "/run/secrets/cloudflare-metrics-api-token";
     };
@@ -61,15 +70,21 @@ in
     };
 
     analyticsInterval = lib.mkOption {
-      type = lib.types.str;
+      type = positiveDurationType;
       default = "5m";
-      description = "How often the collector polls Cloudflare HTTP analytics.";
+      description = ''
+        How often the collector polls Cloudflare HTTP analytics, as a positive
+        duration such as 30s, 5m, 2h, or 1d.
+      '';
     };
 
     accessInterval = lib.mkOption {
-      type = lib.types.str;
+      type = positiveDurationType;
       default = "1m";
-      description = "How often the collector polls Cloudflare Access authentication logs.";
+      description = ''
+        How often the collector polls Cloudflare Access authentication logs, as
+        a positive duration such as 30s, 5m, 2h, or 1d.
+      '';
     };
   };
 
