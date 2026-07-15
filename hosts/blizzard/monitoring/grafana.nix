@@ -18,6 +18,7 @@ in
 
     provision.dashboards = {
       "arr-services" = grafanaDashboards.custom.arr-services;
+      "cloudflare-overview" = grafanaDashboards.custom.cloudflare-overview;
       "kubernetes-cluster" = grafanaDashboards.community.kubernetes-cluster;
       "zfs-overview" = grafanaDashboards.custom.zfs-overview;
       "power-consumption" = grafanaDashboards.custom.power-consumption;
