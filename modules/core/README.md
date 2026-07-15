@@ -33,7 +33,7 @@ flowchart TD
     UO -->|"enabled users"| UN["users.nix\ncreates users.users.<name>"]
     UN -->|"per user"| HU["home-users.nix\nbuilds HM configs"]
     HU -->|"imports"| HL["hm-loader.nix\nauto-imports home/**"]
-    HU -->|"conditionally imports"| HO["home/overrides/host/<host>.nix\nhome/overrides/user/<user>-<host>.nix"]
+    HU -->|"conditionally imports"| HO["home/overrides/role/<role>.nix\nhome/overrides/host/<host>.nix\nhome/overrides/user/<user>.nix\nhome/overrides/user/<user>-<host>.nix"]
 ```
 
 ### Home Manager Integration
@@ -54,8 +54,10 @@ sys.home = {
 [home-users.nix](home-users.nix) automatically:
 
 1. Imports all modules via [hm-loader.nix](../../hm-loader.nix)
+1. Applies role overrides from `home/overrides/role/<role>.nix`
 1. Applies host overrides from `home/overrides/host/<hostname>.nix`
-1. Applies user overrides from `home/overrides/user/<user>-<host>.nix`
+1. Applies user-wide overrides from `home/overrides/user/<user>.nix`
+1. Applies user@host overrides from `home/overrides/user/<user>-<host>.nix`
 1. Enables desktop modules based on `sys.desktop.flavor`
 
 ### Secrets Management

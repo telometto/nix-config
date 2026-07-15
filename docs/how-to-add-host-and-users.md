@@ -43,6 +43,7 @@ nixosConfigurations = {
 1. (Optional) Add Home Manager overrides:
 
 - Host-wide: `home/overrides/host/<hostname>.nix`
+- User-wide: `home/overrides/user/<user>.nix`
 - User@host specific: `home/overrides/user/<user>-<hostname>.nix`
 
 7. Build or switch:
@@ -75,7 +76,17 @@ sys.virtualisation.microvm.instances.searx = {
 }
 ```
 
-**Add a per-user override:**
+**Add a cross-host per-user override:**
+
+```nix
+# home/overrides/user/<username>.nix
+{ lib, ... }:
+{
+  hm.langs = lib.mkDefault "nb_NO.UTF-8";
+}
+```
+
+**Add a per-user@host override:**
 
 ```nix
 # home/overrides/user/<username>-<hostname>.nix
