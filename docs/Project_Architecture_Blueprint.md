@@ -42,6 +42,7 @@ ______________________________________________________________________
 | `nixosConfigurations` | 4 named hosts + 25 `-vm` entries (merged from `vms/flake-microvms.nix`) |
 | `formatter.x86_64-linux` | treefmt wrapper (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
+| `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
@@ -461,7 +462,7 @@ ______________________________________________________________________
 |------|---------|---------|
 | `lib/constants.nix` | `{ tailscale.suffix = "mole-delta.ts.net"; }` | Loaded once as `consts` in `flake.nix`; shared strings across all modules |
 | `lib/traefik.nix` | `mkSecurityHeaders`, `mkRoutes`, `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`, `defaultPermissionsPolicy`, `defaultCsp` | Generates Traefik router/middleware config and Cloudflare tunnel assertions |
-| `lib/grafana-dashboards.nix` | `fetchGrafanaDashboard`, `community.*`, `custom.*`, `all` | Fetches Grafana.com dashboards by ID; bundles community (node-exporter-full, kubernetes-cluster) and custom (arr-services, zfs-overview, power-consumption, ups-monitoring, electricity-prices) sets |
+| `lib/grafana-dashboards.nix` | `fetchGrafanaDashboard`, `community.*`, `custom.*`, `all` | Fetches Grafana.com dashboards by ID; bundles community (node-exporter-full, kubernetes-cluster) and custom (arr-services, cloudflare-overview, zfs-overview, power-consumption, ups-monitoring, electricity-prices) sets |
 | `lib/grafana.nix` | `prometheusDatasource`, `mkRow`, `mkGauge`, `mkStat`, `mkTimeseries`, `mkBargauge`, `mkTarget`, `mkDashboard`, default field configs | Nix-native Grafana panel/dashboard builders |
 
 See `lib/README.md` for the full API reference.
@@ -549,12 +550,16 @@ ______________________________________________________________________
 | Task | Command |
 |------|---------|
 | Format all files | `nix fmt` |
-| Run flake checks (includes format check) | `nix flake check` |
+| Run all flake checks locally (formatting + Cloudflare metrics tests) | `nix flake check` |
 | Check with trace on failure | `nix flake check --show-trace` |
+| Evaluate all flake outputs without building | `nix flake check --no-build` |
+| Run only the Cloudflare metrics tests | `nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs` |
 | Build without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
 | Apply to current host | `sudo nixos-rebuild switch --flake .#<hostname>` |
 | Test without switching | `sudo nixos-rebuild test --flake .#<hostname>` |
 | Dry run (show what changes) | `nixos-rebuild dry-run --flake .#<hostname>` |
+
+The `flake-check.yml` CI workflow uses `nix flake check --no-build` for evaluation, then explicitly builds `checks.x86_64-linux.cloudflare-metrics` so the Python unit tests execute. Host evaluations run separately in `validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 
