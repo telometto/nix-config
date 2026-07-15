@@ -2,8 +2,8 @@ _: {
   sys.services.victoriametrics = {
     enable = true;
 
-    listenAddress = "0.0.0.0";
-    openFirewall = true;
+    listenAddress = "127.0.0.1";
+    openFirewall = false;
     retentionPeriod = "10y";
     prometheusRemoteWrite.enable = true;
 
