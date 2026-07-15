@@ -137,7 +137,25 @@
       // microvmConfigurations;
 
       formatter.${system} = treefmtEval.config.build.wrapper;
-      checks.${system}.formatting = treefmtEval.config.build.check inputs.self;
+      checks.${system} = {
+        formatting = treefmtEval.config.build.check inputs.self;
+
+        cloudflare-metrics =
+          nixpkgs.legacyPackages.${system}.runCommand "cloudflare-metrics-tests"
+            {
+              nativeBuildInputs = [ nixpkgs.legacyPackages.${system}.python3 ];
+            }
+            ''
+              mkdir -p work/modules/services/scripts work/tests/cloudflare_metrics
+              cp ${./modules/services/scripts/cloudflare_metrics.py} work/modules/services/scripts/cloudflare_metrics.py
+              cp ${./tests/cloudflare_metrics/test_cloudflare_metrics.py} work/tests/cloudflare_metrics/test_cloudflare_metrics.py
+              chmod -R u+w work
+
+              cd work
+              python -m unittest discover -s tests/cloudflare_metrics -p 'test_cloudflare_metrics.py'
+              touch $out
+            '';
+      };
 
       devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {
         packages = with nixpkgs.legacyPackages.${system}; [
