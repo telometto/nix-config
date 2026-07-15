@@ -75,17 +75,17 @@ in
             severity = "critical";
             from = 300;
             expr = ''
-              cloudflare_access_last_authentication_timestamp_seconds{decision="allowed", owner="false", principal!="service-token"} > time() - 300
+              cloudflare_access_last_authentication_timestamp_seconds{decision="allowed", owner="false", principal_type=~"user|unknown"} > time() - 300
             '';
-            summary = "Unexpected Cloudflare Access login: {{ $labels.principal }} to {{ $labels.app }}";
-            description = "Cloudflare Access allowed {{ $labels.principal }} into {{ $labels.app }} at {{ humanizeTimestamp $values.A.Value }}. Verify that this login was expected.";
+            summary = "Unexpected Cloudflare Access {{ $labels.principal_type }} login to {{ $labels.app }}";
+            description = "Cloudflare Access allowed a non-owner {{ $labels.principal_type }} identity into {{ $labels.app }} at {{ humanizeTimestamp $values.A.Value }}. Verify that this login was expected.";
           })
 
           (mkPrometheusRule {
             uid = "cf-repeated-access-denials";
             title = "Cloudflare repeated Access denials";
             expr = ''
-              sum by (app, principal) (
+              sum by (app, principal_type, owner) (
                 (
                   cloudflare_access_authentications_total{decision="denied"}
                   unless cloudflare_access_authentications_total{decision="denied"} offset 10m
@@ -93,8 +93,8 @@ in
                 or increase(cloudflare_access_authentications_total{decision="denied"}[10m])
               ) >= 5
             '';
-            summary = "Repeated Cloudflare Access denials for {{ $labels.principal }} on {{ $labels.app }}";
-            description = "Cloudflare Access denied {{ $labels.principal }} at least five times for {{ $labels.app }} in ten minutes (observed {{ $values.A.Value }} denials).";
+            summary = "Repeated Cloudflare Access denials for {{ $labels.principal_type }} identities on {{ $labels.app }}";
+            description = "Cloudflare Access denied {{ $labels.principal_type }} identities (owner={{ $labels.owner }}) at least five times for {{ $labels.app }} in ten minutes (observed {{ $values.A.Value }} denials).";
           })
 
           (mkPrometheusRule {
