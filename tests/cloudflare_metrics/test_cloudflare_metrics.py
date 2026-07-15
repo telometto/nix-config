@@ -233,8 +233,7 @@ class CardinalityBoundTests(unittest.TestCase):
     def test_random_host_series_are_collapsed_and_overflow_is_observable(self) -> None:
         state = cloudflare_metrics.new_state()
         hosts = [
-            f"{random.Random(seed).getrandbits(64):016x}.example"
-            for seed in range(20)
+            f"{random.Random(seed).getrandbits(64):016x}.example" for seed in range(20)
         ]
         metric = "cloudflare_http_requests_total"
 
@@ -262,9 +261,7 @@ class CardinalityBoundTests(unittest.TestCase):
             0,
         )
         samples = [
-            line
-            for line in rendered.splitlines()
-            if line.startswith(f"{metric}{'{'}")
+            line for line in rendered.splitlines() if line.startswith(f"{metric}{'{'}")
         ]
         self.assertEqual(len(samples), 4)
         self.assertIn(cloudflare_metrics.OVERFLOW_METRIC, rendered)
@@ -316,9 +313,7 @@ class CardinalityBoundTests(unittest.TestCase):
                     len(label), cloudflare_metrics.MAX_LABEL_VALUE_LENGTH
                 )
         samples = [
-            line
-            for line in rendered.splitlines()
-            if line.startswith(f"{metric}{'{'}")
+            line for line in rendered.splitlines() if line.startswith(f"{metric}{'{'}")
         ]
         self.assertEqual(len(samples), 4)
         self.assertEqual(
@@ -352,9 +347,7 @@ class StateMigrationTests(unittest.TestCase):
                 migrated = store.load()
 
         self.assertEqual(migrated["version"], cloudflare_metrics.STATE_VERSION)
-        access_total = migrated["series"][
-            "cloudflare_access_authentications_total"
-        ]
+        access_total = migrated["series"]["cloudflare_access_authentications_total"]
         self.assertEqual(len(access_total), 1)
         self.assertEqual(next(iter(access_total.values())), 5)
         for metric in cloudflare_metrics.ACCESS_METRICS:
@@ -428,9 +421,7 @@ class StateMigrationTests(unittest.TestCase):
         self.assertEqual(restored["version"], 1)
         legacy_labels = [
             cloudflare_metrics._series_labels(key)
-            for key in restored["series"][
-                "cloudflare_access_authentications_total"
-            ]
+            for key in restored["series"]["cloudflare_access_authentications_total"]
         ]
         self.assertTrue(all("principal" in labels for labels in legacy_labels))
 
@@ -497,9 +488,7 @@ class StateRecoveryTests(unittest.TestCase):
 
                 quarantine = next(path.parent.glob("state.json.corrupt-*"))
                 self.assertEqual(quarantine.read_bytes(), original)
-                self.assertEqual(
-                    recovered["version"], cloudflare_metrics.STATE_VERSION
-                )
+                self.assertEqual(recovered["version"], cloudflare_metrics.STATE_VERSION)
                 cloudflare_metrics.validate_state(recovered)
 
     def test_quarantine_names_are_unique_without_overwriting_evidence(self) -> None:
@@ -564,9 +553,7 @@ class FakeAPI:
             raise cloudflare_metrics.CloudflareError("fixture failure")
         return self.access_logs
 
-    def query_nonidentity_access_logs(
-        self, start: float, end: float
-    ) -> list[dict]:
+    def query_nonidentity_access_logs(self, start: float, end: float) -> list[dict]:
         self.nonidentity_calls.append((start, end))
         if self.fail or self.fail_operation == "graphql-access":
             raise cloudflare_metrics.CloudflareError("fixture failure")
@@ -691,11 +678,7 @@ class RecoveryTests(unittest.TestCase):
 
         self.assertEqual(rows, [])
         self.assertEqual(
-            sorted(
-                call
-                for call in api.nonidentity_calls
-                if call[1] - call[0] == 1
-            ),
+            sorted(call for call in api.nonidentity_calls if call[1] - call[0] == 1),
             [(0, 1), (1, 2), (2, 3), (3, 4)],
         )
 
@@ -799,9 +782,7 @@ class AccessTests(unittest.TestCase):
                 return {
                     "data": {
                         "viewer": {
-                            "accounts": [
-                                {"accessLoginRequestsAdaptiveGroups": []}
-                            ]
+                            "accounts": [{"accessLoginRequestsAdaptiveGroups": []}]
                         }
                     }
                 }
@@ -950,9 +931,7 @@ class AccessTests(unittest.TestCase):
         }
 
         self.assertEqual(
-            cloudflare_metrics.apply_nonidentity_access_events(
-                state, [graphql_event]
-            ),
+            cloudflare_metrics.apply_nonidentity_access_events(state, [graphql_event]),
             1,
         )
         self.assertEqual(
@@ -1040,10 +1019,10 @@ class AccessTests(unittest.TestCase):
         last_authentication[
             cloudflare_metrics._series_key(
                 {
-                "app": "Example app",
-                "decision": "allowed",
-                "principal": "owner@example.com",
-                "owner": "true",
+                    "app": "Example app",
+                    "decision": "allowed",
+                    "principal": "owner@example.com",
+                    "owner": "true",
                 }
             )
         ] = 1_700_000_000

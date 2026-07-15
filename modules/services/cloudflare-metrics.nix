@@ -11,10 +11,9 @@ let
 
   positiveDurationType = lib.types.addCheck lib.types.str (
     value:
-    builtins.match
-      "[[:space:]]*([0-9]*[1-9][0-9]*)[[:space:]]*(s|sec|m|min|h|hr|d|day)s?[[:space:]]*"
-      (lib.toLower value)
-    != null
+    builtins.match "[[:space:]]*([0-9]*[1-9][0-9]*)[[:space:]]*(s|sec|m|min|h|hr|d|day)s?[[:space:]]*" (
+      lib.toLower value
+    ) != null
   );
 
   collector = pkgs.stdenvNoCC.mkDerivation {

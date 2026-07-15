@@ -413,10 +413,7 @@ def normalize_label_value(value: Any) -> str:
 
 
 def _normalized_labels(labels: Mapping[str, Any]) -> dict[str, str]:
-    return {
-        str(name): normalize_label_value(value)
-        for name, value in labels.items()
-    }
+    return {str(name): normalize_label_value(value) for name, value in labels.items()}
 
 
 def _series_key(labels: Mapping[str, str]) -> str:
@@ -560,18 +557,13 @@ def compact_series_state(state: dict[str, Any]) -> bool:
             number = float(raw_value)
             if not math.isfinite(number):
                 continue
-            normalized[key] = _merge_metric_value(
-                metric, normalized.get(key), number
-            )
+            normalized[key] = _merge_metric_value(metric, normalized.get(key), number)
 
         overflow_key = _series_key(OVERFLOW_LABELS)
         regular_keys = sorted(key for key in normalized if key != overflow_key)
         regular_capacity = max(1, MAX_SERIES_PER_METRIC - 1)
         overflowed = regular_keys[regular_capacity:]
-        compacted = {
-            key: normalized[key]
-            for key in regular_keys[:regular_capacity]
-        }
+        compacted = {key: normalized[key] for key in regular_keys[:regular_capacity]}
         overflow_value = normalized.get(overflow_key)
         for key in overflowed:
             overflow_value = _merge_metric_value(
@@ -601,9 +593,7 @@ def _finite_state_number(value: Any, path: str) -> float:
     try:
         number = float(value)
     except OverflowError as error:
-        raise StateValidationError(
-            f"collector state {path} must be finite"
-        ) from error
+        raise StateValidationError(f"collector state {path} must be finite") from error
     if not math.isfinite(number):
         raise StateValidationError(f"collector state {path} must be finite")
     return number
@@ -614,9 +604,7 @@ def _validate_seen_map(value: Any, path: str) -> None:
         raise StateValidationError(f"collector state {path} must be an object")
     for identity, timestamp in value.items():
         if not isinstance(identity, str):
-            raise StateValidationError(
-                f"collector state {path} keys must be strings"
-            )
+            raise StateValidationError(f"collector state {path} keys must be strings")
         _finite_state_number(timestamp, f"{path}.{identity}")
 
 
@@ -644,9 +632,10 @@ def _validate_series_key(key: Any, path: str) -> None:
                 f"collector state {path} label key must contain pairs"
             )
         name, value = pair
-        if not isinstance(name, str) or re.fullmatch(
-            r"[A-Za-z_][A-Za-z0-9_]*", name
-        ) is None:
+        if (
+            not isinstance(name, str)
+            or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name) is None
+        ):
             raise StateValidationError(
                 f"collector state {path} contains an invalid label name"
             )
@@ -666,9 +655,10 @@ def validate_state(state: Any) -> None:
     if not isinstance(series, Mapping):
         raise StateValidationError("collector state series must be an object")
     for metric, samples in series.items():
-        if not isinstance(metric, str) or re.fullmatch(
-            r"[A-Za-z_:][A-Za-z0-9_:]*", metric
-        ) is None:
+        if (
+            not isinstance(metric, str)
+            or re.fullmatch(r"[A-Za-z_:][A-Za-z0-9_:]*", metric) is None
+        ):
             raise StateValidationError(
                 "collector state contains an invalid metric name"
             )
@@ -716,9 +706,7 @@ def _migrate_v1_to_v2(state: dict[str, Any]) -> dict[str, Any]:
     return state
 
 
-STATE_MIGRATIONS: dict[
-    int, Callable[[dict[str, Any]], dict[str, Any]]
-] = {
+STATE_MIGRATIONS: dict[int, Callable[[dict[str, Any]], dict[str, Any]]] = {
     1: _migrate_v1_to_v2,
 }
 
@@ -730,9 +718,7 @@ def _validate_migration_path(version: int) -> None:
             f"version {STATE_VERSION}"
         )
     if version < 1:
-        raise StateValidationError(
-            f"collector state version {version} is invalid"
-        )
+        raise StateValidationError(f"collector state version {version} is invalid")
     cursor = version
     while cursor < STATE_VERSION:
         if cursor not in STATE_MIGRATIONS:
@@ -1122,9 +1108,7 @@ class CloudflareAPI:
             raise CloudflareError(
                 "Cloudflare GraphQL response omitted Access login data"
             ) from error
-        if not isinstance(rows, list) or not all(
-            isinstance(row, dict) for row in rows
-        ):
+        if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
             raise CloudflareError("Cloudflare GraphQL Access login data was invalid")
         return rows
 

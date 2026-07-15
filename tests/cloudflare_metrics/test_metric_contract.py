@@ -20,9 +20,7 @@ cloudflare_metrics = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(cloudflare_metrics)
 
 METRIC_RE = re.compile(r"\b(cloudflare_[A-Za-z_:][A-Za-z0-9_:]*)\b")
-SELECTOR_RE = re.compile(
-    r"\b(cloudflare_[A-Za-z_:][A-Za-z0-9_:]*)\s*\{([^{}]*)\}"
-)
+SELECTOR_RE = re.compile(r"\b(cloudflare_[A-Za-z_:][A-Za-z0-9_:]*)\s*\{([^{}]*)\}")
 SELECTOR_LABEL_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*(?:=~|!~|!=|=)")
 VECTOR_LABEL_RE = re.compile(r"\b(?:by|without|on|ignoring)\s*\(([^()]*)\)")
 LABEL_VALUES_RE = re.compile(
