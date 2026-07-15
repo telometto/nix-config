@@ -408,7 +408,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Allowed human Access authentications whose principal is not in the encrypted owner allowlist.",
+      "description": "Allowed Access authentications from non-owner user or unknown identity types. Individual identities are intentionally not exported.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -461,7 +461,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(cloudflare_access_authentications_total{app=~\"$app\", decision=\"allowed\", owner=\"false\", principal!=\"service-token\"}[5m]))",
+          "expr": "sum(increase(cloudflare_access_authentications_total{app=~\"$app\", decision=\"allowed\", owner=\"false\", principal_type=~\"user|unknown\"}[5m]))",
           "instant": true,
           "legendFormat": "Unexpected logins",
           "range": false,
@@ -1234,7 +1234,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Most recent observed Access authentication per application, decision, principal, and owner classification. Principals are retained as labels by explicit policy.",
+      "description": "Most recent observed Access authentication per application, decision, bounded principal type, and owner classification. Individual identities are intentionally not exported.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1305,7 +1305,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max by (app, decision, principal, owner) (cloudflare_access_last_authentication_timestamp_seconds{app=~\"$app\"})",
+          "expr": "max by (app, decision, principal_type, owner) (cloudflare_access_last_authentication_timestamp_seconds{app=~\"$app\"}) * 1000",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -1313,7 +1313,7 @@
           "refId": "A"
         }
       ],
-      "title": "Latest Access authentication by app and principal",
+      "title": "Latest Access authentication by app and identity type",
       "transformations": [
         {
           "id": "organize",
@@ -1323,7 +1323,7 @@
             },
             "indexByName": {
               "app": 0,
-              "principal": 1,
+              "principal_type": 1,
               "decision": 2,
               "owner": 3,
               "Value": 4
@@ -1333,7 +1333,7 @@
               "app": "Application",
               "decision": "Decision",
               "owner": "Owner",
-              "principal": "Principal"
+              "principal_type": "Identity type"
             }
           }
         }
