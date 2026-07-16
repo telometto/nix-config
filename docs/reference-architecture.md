@@ -11,7 +11,7 @@ Information reference for this repo's moving parts, options, and commands.
 | Output | Description |
 |--------|-------------|
 | `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}` | The four physical hosts |
-| `nixosConfigurations.<vm-name>` (×25) | MicroVM guests defined in `vms/` |
+| `nixosConfigurations.<vm-name>` (×26) | MicroVM guests defined in `vms/` |
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
@@ -187,7 +187,7 @@ ______________________________________________________________________
 
 VMs do **not** use `system-loader.nix`. They are built with a minimal module set assembled by `vms/flake-microvms.nix::mkMicrovm`, which provides only what a VM needs. The physical hosts that run VMs use `microvm.host` (injected by `mkHost`).
 
-- [`vms/vm-registry.nix`](../vms/vm-registry.nix): Central data registry. Single source of truth for CID, MAC, IP, port, memory, vCPU, gateway, and DNS per VM.
+- [`vms/vm-registry.nix`](../vms/vm-registry.nix): Central data registry. Single source of truth for CID, MAC, IP, prefix, gateway, optional dedicated host bridge, port, memory, vCPU, and DNS per VM. Import-time validation rejects duplicate allocations, invalid subnets, tap/bridge collisions, and overlapping dedicated networks.
 - [`vms/mkMicrovmConfig.nix`](../vms/mkMicrovmConfig.nix): Helper function that generates common MicroVM infrastructure config (hypervisor, networking, volumes, shares) from a registry entry. Each VM file imports this and passes its registry entry plus any extra volumes or shares.
 - [`vms/base.nix`](../vms/base.nix): Shared hardened base config for all VMs. Includes SSH host keys, admin user, firewall, and stateVersion.
 

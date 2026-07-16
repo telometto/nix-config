@@ -2,17 +2,22 @@
 # Single source of truth - referenced by VM definitions, host expose config, and reverse proxy.
 #
 # Fields:
-#   name     - VM short name (used for hostname "${name}-vm" and tap "vm-${name}")
-#   cid      - vsock CID (must be unique, ≥ 3)
-#   mac      - TAP interface MAC address (must be unique)
-#   ip       - Static IP on the 10.100.0.0/24 bridge network
-#   port     - Primary service port (used by firewall, traefik, expose)
-#   mem      - RAM in MiB
-#   vcpu     - Virtual CPU count (default: 1)
-#   gateway  - Default gateway (default: 10.100.0.1; VPN-routed VMs use 10.100.0.11)
-#   dns      - DNS server (default: 1.1.1.1; some VMs use internal resolver 10.100.0.11)
-#   tapId    - Override TAP interface name (default: "vm-${name}", needed when name is too long)
-{
+#   name         - VM short name (used for hostname "${name}-vm" and tap "vm-${name}")
+#   cid          - vsock CID (must be unique, ≥ 3)
+#   mac          - TAP interface MAC address (must be unique)
+#   ip           - Static IP on the VM's bridge network
+#   prefixLength - IPv4 prefix length (default: 24)
+#   port         - Primary service port (used by firewall, traefik, expose)
+#   mem          - RAM in MiB
+#   vcpu         - Virtual CPU count (default: 1)
+#   gateway      - Default gateway (default: 10.100.0.1; VPN and dedicated networks override it)
+#   dns          - DNS server (default: 1.1.1.1; some VMs use internal resolver 10.100.0.11)
+#   tapId        - Override TAP interface name (default: "vm-${name}", needed when name is too long)
+#   hostBridge   - Optional dedicated host bridge; requires gateway and is created only while enabled
+let
+  validate = import ./validate-vm-registry.nix;
+in
+validate {
   adguard = {
     name = "adguard";
     cid = 100;
@@ -288,7 +293,10 @@
     name = "pocket-id";
     cid = 127;
     mac = "02:00:00:00:00:1C";
-    ip = "10.100.0.81";
+    ip = "10.100.1.2";
+    prefixLength = 30;
+    gateway = "10.100.1.1";
+    hostBridge = "pocket-id-br0";
     port = 11081;
     mem = 1024;
     vcpu = 1;
