@@ -3,12 +3,16 @@
 registry:
 let
   ipv4 = import ./ipv4.nix;
-  unique = values:
-    builtins.foldl' (result: value: if builtins.elem value result then result else result ++ [ value ]) [ ] values;
-  duplicateValues = values:
-    builtins.filter
-      (value: builtins.length (builtins.filter (candidate: candidate == value) values) > 1)
-      (unique values);
+  unique =
+    values:
+    builtins.foldl' (
+      result: value: if builtins.elem value result then result else result ++ [ value ]
+    ) [ ] values;
+  duplicateValues =
+    values:
+    builtins.filter (
+      value: builtins.length (builtins.filter (candidate: candidate == value) values) > 1
+    ) (unique values);
 
   entries = builtins.attrValues registry;
   entryName = entry: entry.name or "<unnamed>";
@@ -20,86 +24,89 @@ let
   duplicateMacs = duplicateValues (fieldValues "mac");
   duplicateIps = duplicateValues (fieldValues "ip");
   duplicatePorts = duplicateValues (fieldValues "port");
-  prefixIsValid = entry:
-    ipv4.validPrefix (prefixFor entry) && (prefixFor entry) >= 1 && (prefixFor entry) <= 31;
+  prefixIsValid =
+    entry: ipv4.validPrefix (prefixFor entry) && (prefixFor entry) >= 1 && (prefixFor entry) <= 31;
   invalidPrefixes = builtins.filter (entry: !prefixIsValid entry) entries;
   invalidIps = builtins.filter (entry: ipv4.parse (entry.ip or null) == null) entries;
   invalidGateways = builtins.filter (entry: ipv4.parse (gatewayFor entry) == null) entries;
-  mismatchedSubnets = builtins.filter
-    (entry:
-      prefixIsValid entry
-      && ipv4.parse (entry.ip or null) != null
-      && ipv4.parse (gatewayFor entry) != null
-      && !(ipv4.sameSubnet entry.ip (gatewayFor entry) (prefixFor entry)))
-    entries;
-  unusableIps = builtins.filter
-    (entry:
-      prefixIsValid entry
-      && ipv4.parse (entry.ip or null) != null
-      && !(ipv4.usableHostAddress entry.ip (prefixFor entry)))
-    entries;
-  unusableGateways = builtins.filter
-    (entry:
-      prefixIsValid entry
-      && ipv4.parse (gatewayFor entry) != null
-      && !(ipv4.usableHostAddress (gatewayFor entry) (prefixFor entry)))
-    entries;
-  identicalIpGateways = builtins.filter
-    (entry:
-      ipv4.parse (entry.ip or null) != null
-      && ipv4.parse (gatewayFor entry) != null
-      && ipv4.parse entry.ip == ipv4.parse (gatewayFor entry))
-    entries;
+  mismatchedSubnets = builtins.filter (
+    entry:
+    prefixIsValid entry
+    && ipv4.parse (entry.ip or null) != null
+    && ipv4.parse (gatewayFor entry) != null
+    && !(ipv4.sameSubnet entry.ip (gatewayFor entry) (prefixFor entry))
+  ) entries;
+  unusableIps = builtins.filter (
+    entry:
+    prefixIsValid entry
+    && ipv4.parse (entry.ip or null) != null
+    && !(ipv4.usableHostAddress entry.ip (prefixFor entry))
+  ) entries;
+  unusableGateways = builtins.filter (
+    entry:
+    prefixIsValid entry
+    && ipv4.parse (gatewayFor entry) != null
+    && !(ipv4.usableHostAddress (gatewayFor entry) (prefixFor entry))
+  ) entries;
+  identicalIpGateways = builtins.filter (
+    entry:
+    ipv4.parse (entry.ip or null) != null
+    && ipv4.parse (gatewayFor entry) != null
+    && ipv4.parse entry.ip == ipv4.parse (gatewayFor entry)
+  ) entries;
 
-  invalidTapIds = builtins.filter
-    (entry: !builtins.isString (tapIdFor entry) || tapIdFor entry == "")
-    entries;
+  invalidTapIds = builtins.filter (
+    entry: !builtins.isString (tapIdFor entry) || tapIdFor entry == ""
+  ) entries;
   duplicateTapIds = duplicateValues (map tapIdFor entries);
 
   sharedEntries = builtins.filter (entry: !(entry ? hostBridge)) entries;
   dedicatedEntries = builtins.filter (entry: entry ? hostBridge) entries;
   missingDedicatedGateways = builtins.filter (entry: !(entry ? gateway)) dedicatedEntries;
-  invalidHostBridges = builtins.filter
-    (entry: !builtins.isString entry.hostBridge || entry.hostBridge == "")
-    dedicatedEntries;
-  reservedHostBridges = builtins.filter
-    (entry: entry.hostBridge == "microvm-br0")
-    dedicatedEntries;
+  invalidHostBridges = builtins.filter (
+    entry: !builtins.isString entry.hostBridge || entry.hostBridge == ""
+  ) dedicatedEntries;
+  reservedHostBridges = builtins.filter (entry: entry.hostBridge == "microvm-br0") dedicatedEntries;
   duplicateHostBridges = duplicateValues (map (entry: entry.hostBridge) dedicatedEntries);
   networkInterval = entry: ipv4.networkInterval entry.ip (prefixFor entry);
-  networksOverlap = left: right:
-    left.first <= right.last && right.first <= left.last;
+  networksOverlap = left: right: left.first <= right.last && right.first <= left.last;
   sharedNetwork = ipv4.networkInterval "10.100.0.0" 24;
-  invalidSharedNetworks = builtins.filter
-    (entry:
-      prefixIsValid entry
-      && ipv4.parse (entry.ip or null) != null
-      && (prefixFor entry != 24 || (networkInterval entry).first != sharedNetwork.first))
-    sharedEntries;
-  sharedNetworkOverlaps = builtins.concatLists (map
-    (entry:
+  invalidSharedNetworks = builtins.filter (
+    entry:
+    prefixIsValid entry
+    && ipv4.parse (entry.ip or null) != null
+    && (prefixFor entry != 24 || (networkInterval entry).first != sharedNetwork.first)
+  ) sharedEntries;
+  sharedNetworkOverlaps = builtins.concatLists (
+    map (
+      entry:
       if networksOverlap (networkInterval entry) sharedNetwork then
         [ "${entryName entry} (${entry.hostBridge}) overlaps shared network 10.100.0.0/24" ]
       else
-        [ ])
-    dedicatedEntries);
-  dedicatedNetworkOverlaps = builtins.concatLists (builtins.genList
-    (leftIndex:
+        [ ]
+    ) dedicatedEntries
+  );
+  dedicatedNetworkOverlaps = builtins.concatLists (
+    builtins.genList (
+      leftIndex:
       let
         left = builtins.elemAt dedicatedEntries leftIndex;
         leftNetwork = networkInterval left;
       in
-      builtins.concatLists (builtins.genList
-        (rightOffset:
+      builtins.concatLists (
+        builtins.genList (
+          rightOffset:
           let
             right = builtins.elemAt dedicatedEntries (leftIndex + rightOffset + 1);
           in
           if networksOverlap leftNetwork (networkInterval right) then
             [ "${entryName left} (${left.hostBridge}) and ${entryName right} (${right.hostBridge})" ]
           else
-            [ ])
-        (builtins.length dedicatedEntries - leftIndex - 1)))
-    (builtins.length dedicatedEntries));
+            [ ]
+        ) (builtins.length dedicatedEntries - leftIndex - 1)
+      )
+    ) (builtins.length dedicatedEntries)
+  );
   overlappingNetworks = sharedNetworkOverlaps ++ dedicatedNetworkOverlaps;
 
   firstName = invalidEntries: entryName (builtins.head invalidEntries);

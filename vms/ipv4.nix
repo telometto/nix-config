@@ -13,13 +13,15 @@ let
     "9" = 9;
   };
 
-  stringToCharacters = value:
-    builtins.genList (index: builtins.substring index 1 value) (builtins.stringLength value);
+  stringToCharacters =
+    value: builtins.genList (index: builtins.substring index 1 value) (builtins.stringLength value);
 
-  parseDecimal = value:
+  parseDecimal =
+    value:
     builtins.foldl' (result: digit: result * 10 + digitValues.${digit}) 0 (stringToCharacters value);
 
-  parse = value:
+  parse =
+    value:
     if !builtins.isString value then
       null
     else
@@ -37,13 +39,12 @@ let
         else
           null;
 
-  pow2 = exponent:
-    if exponent == 0 then 1 else 2 * pow2 (exponent - 1);
+  pow2 = exponent: if exponent == 0 then 1 else 2 * pow2 (exponent - 1);
 
-  validPrefix = prefixLength:
-    builtins.isInt prefixLength && prefixLength >= 0 && prefixLength <= 32;
+  validPrefix = prefixLength: builtins.isInt prefixLength && prefixLength >= 0 && prefixLength <= 32;
 
-  networkInterval = address: prefixLength:
+  networkInterval =
+    address: prefixLength:
     let
       parsedAddress = parse address;
     in
@@ -59,14 +60,16 @@ let
         last = first + blockSize - 1;
       };
 
-  sameSubnet = left: right: prefixLength:
+  sameSubnet =
+    left: right: prefixLength:
     let
       leftNetwork = networkInterval left prefixLength;
       rightNetwork = networkInterval right prefixLength;
     in
     leftNetwork != null && rightNetwork != null && leftNetwork.first == rightNetwork.first;
 
-  usableHostAddress = address: prefixLength:
+  usableHostAddress =
+    address: prefixLength:
     let
       parsedAddress = parse address;
       interval = networkInterval address prefixLength;
