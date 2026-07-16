@@ -36,6 +36,7 @@ let
     }
     // lib.optionalAttrs (spec ? enable) { inherit (spec) enable; }
     // {
+      vmConfig = spec.vmConfig or { };
       portForward.ports = spec.portForwards or [ ];
       cfTunnel.ingress = mkPublicIngress (spec.ingressHosts or [ ]) // (spec.extraIngress or { });
       reverseProxy = spec.reverseProxy or { };
@@ -331,6 +332,7 @@ let
 
     "pocket-id" = {
       enable = true;
+      vmConfig.restartIfChanged = true;
       ingressHosts = [ "id" ];
       reverseProxy = {
         subdomain = "id";
