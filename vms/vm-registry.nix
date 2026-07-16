@@ -13,7 +13,11 @@
 #   gateway      - Default gateway (default: 10.100.0.1; VPN and dedicated networks override it)
 #   dns          - DNS server (default: 1.1.1.1; some VMs use internal resolver 10.100.0.11)
 #   tapId        - Override TAP interface name (default: "vm-${name}", needed when name is too long)
-{
+#   hostBridge   - Optional dedicated host bridge; requires gateway and is created only while enabled
+let
+  validate = import ./validate-vm-registry.nix;
+in
+validate {
   adguard = {
     name = "adguard";
     cid = 100;
@@ -292,6 +296,7 @@
     ip = "10.100.1.2";
     prefixLength = 30;
     gateway = "10.100.1.1";
+    hostBridge = "pocket-id-br0";
     port = 11081;
     mem = 1024;
     vcpu = 1;
