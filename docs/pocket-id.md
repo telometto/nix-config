@@ -26,21 +26,26 @@ flowchart LR
     User["User with passkey"]
     CF["Cloudflare DNS and Tunnel\nHTTPS edge"]
     Traefik["Traefik on Blizzard\nPocket ID headers + CrowdSec"]
-    VM["pocket-id-vm\n10.100.0.81:11081"]
+    VM["pocket-id-vm\n10.100.1.2:11081"]
     State["Encrypted flash storage\nSQLite + uploads"]
     SOPS["SOPS credential\nencryption key"]
 
     User -->|"HTTPS / OIDC"| CF
     CF -->|"Tunnel to localhost:80"| Traefik
-    Traefik -->|"Bridge HTTP"| VM
+    Traefik -->|"Dedicated bridge HTTP\n10.100.1.1 → 10.100.1.2"| VM
     VM --> State
     SOPS --> VM
 ```
 
-The VM has no host port forward. Its nftables firewall accepts service traffic
-only from Blizzard's `10.100.0.1` bridge address, so peer MicroVMs cannot bypass
-Traefik or CrowdSec by connecting directly to port `11081`. The service is
-published externally only through Cloudflare Tunnel and Traefik.
+The VM has no host port forward and is the only guest on the dedicated
+`pocket-id-br0` Layer-2 segment (`10.100.1.0/30`). Blizzard uses `10.100.1.1`
+and Pocket ID uses `10.100.1.2`; all peer MicroVMs remain on `microvm-br0`.
+Pocket ID's nftables firewall additionally accepts service traffic only from
+Blizzard's `10.100.1.1` address. Peer MicroVMs therefore cannot join or spoof
+the proxy-side Layer-2 path, or bypass Traefik and CrowdSec by connecting
+directly to port `11081`. The service is published externally only through
+Cloudflare Tunnel and Traefik. The dedicated subnet is not advertised through
+Tailscale.
 
 Pocket ID trusts `CF-Connecting-IP` for audit logging and rate limiting only on
 that restricted backend path; unrestricted proxy trust remains disabled.
@@ -81,7 +86,7 @@ fail. On Blizzard, derive the age recipient from the VM's presented persistent
 SSH host key without copying the private key:
 
 ```bash
-ssh-keyscan -t ed25519 10.100.0.81 | cut -d ' ' -f 2- | ssh-to-age
+ssh-keyscan -t ed25519 10.100.1.2 | cut -d ' ' -f 2- | ssh-to-age
 ```
 
 Confirm that the VM is using the expected registry address before trusting the
@@ -126,21 +131,31 @@ to decrypt it. Check the host and VM units:
 
 ```bash
 systemctl status microvm@pocket-id-vm.service
-ssh admin@10.100.0.81 systemctl is-active sops-install-secrets.service
-ssh admin@10.100.0.81 systemctl is-active pocket-id.service
-ssh admin@10.100.0.81 env HOST=127.0.0.1 PORT=11081 pocket-id healthcheck
+ssh admin@10.100.1.2 systemctl is-active sops-install-secrets.service
+ssh admin@10.100.1.2 systemctl is-active pocket-id.service
+ssh admin@10.100.1.2 env HOST=127.0.0.1 PORT=11081 pocket-id healthcheck
 ```
 
-Before opening `/setup`, verify both sides of the backend firewall boundary.
-The first command runs on Blizzard and must succeed; run the second command
-from any other MicroVM and confirm that it times out or is refused:
+Before opening `/setup`, verify the dedicated bridge membership on Blizzard:
+
+```bash
+bridge link show master pocket-id-br0
+bridge link show master microvm-br0
+```
+
+The first command must list `vm-pocket-id` as the only guest tap. The second
+must not list `vm-pocket-id`; if it does, do not continue with setup.
+
+Then verify both sides of the backend firewall boundary. The first command runs
+on Blizzard and must succeed; run the second command from any other MicroVM and
+confirm that it times out or is refused:
 
 ```bash
 curl --fail --silent --show-error \
-  http://10.100.0.81:11081/.well-known/openid-configuration
+  http://10.100.1.2:11081/.well-known/openid-configuration
 
 curl --connect-timeout 3 --fail --silent --show-error \
-  http://10.100.0.81:11081/.well-known/openid-configuration
+  http://10.100.1.2:11081/.well-known/openid-configuration
 ```
 
 On the Pocket ID VM, the active rule can also be inspected with:
@@ -149,7 +164,7 @@ On the Pocket ID VM, the active rule can also be inspected with:
 sudo nft list chain inet nixos-fw input-allow
 ```
 
-It must contain the `10.100.0.1/32` source restriction for TCP port `11081`.
+It must contain the `10.100.1.1/32` source restriction for TCP port `11081`.
 
 ______________________________________________________________________
 
