@@ -64,6 +64,7 @@ ______________________________________________________________________
 | [grafana.nix](grafana.nix) | `sys.services.grafana` | Host (blizzard) | Dashboards and alerting |
 | [grafana-cloud.nix](grafana-cloud.nix) | `sys.services.grafanaCloud` | Host | Grafana Cloud remote-write config |
 | [grafana-pushover.nix](grafana-pushover.nix) | `sys.services.grafanaPushover` | Host | Pushover alert contact point |
+| [cloudflare-metrics.nix](cloudflare-metrics.nix) | `sys.services.cloudflareMetrics` | Host (blizzard) | Cloudflare HTTP analytics and Access authentication Prometheus collector ([runbook](../../docs/cloudflare-metrics.md)) |
 | [prometheus.nix](prometheus.nix) | `sys.services.prometheus` | Host (blizzard) | Metrics collection |
 | [prometheus-exporters.nix](prometheus-exporters.nix) | `sys.services.prometheusExporters` | Host + VMs | System metrics exporters |
 | [victoriametrics.nix](victoriametrics.nix) | `sys.services.victoriametrics` | Host (blizzard) | Long-term time-series storage |

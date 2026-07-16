@@ -6,11 +6,17 @@ on:
             - "**.nix"
             - "flake.lock"
             - "treefmt.nix"
+            - "modules/services/scripts/cloudflare_metrics.py"
+            - "tests/cloudflare_metrics/**"
+            - "dashboards/host/blizzard/cloudflare-overview.json"
     push:
         branches: [main]
         paths:
             - "**.nix"
             - "flake.lock"
+            - "modules/services/scripts/cloudflare_metrics.py"
+            - "tests/cloudflare_metrics/**"
+            - "dashboards/host/blizzard/cloudflare-overview.json"
 
 concurrency:
     group: flake-check-${{ github.ref }}
@@ -54,3 +60,6 @@ jobs:
                     echo '```' >> $GITHUB_STEP_SUMMARY
                     exit 1
                   fi
+
+            - name: Run Cloudflare metrics tests
+              run: nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs

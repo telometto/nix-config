@@ -67,7 +67,13 @@ home/overrides/role/<role>.nix
 
 #### User Overrides
 
-Apply settings to a specific user on a specific host:
+Apply settings to a specific user on every host:
+
+```
+home/overrides/user/<username>.nix
+```
+
+Apply settings to a specific user on one host:
 
 ```
 home/overrides/user/<username>-<hostname>.nix
@@ -105,9 +111,12 @@ in
 1. Implement `config = lib.mkIf cfg.enable { ... };`
 1. Module auto-loads via `hm-loader.nix`
 
-### Configuration Precedence
+### Configuration Composition
 
-Layers are applied from lowest priority (bottom) to highest (top):
+Modules are assembled in the following order. Import order does not itself set
+Nix option priority; use `lib.mkDefault`, `lib.mkOverride`, or `lib.mkForce`
+when definitions may overlap. User-wide defaults should normally use
+`lib.mkDefault` so a user-and-host override can replace them.
 
 ```mermaid
 flowchart TD
@@ -116,21 +125,23 @@ flowchart TD
     C["3. sys.home.template\nhost-wide base template for all users"] --> D
     D["4. home/overrides/role/<role>.nix (if exists)"] --> E
     E["5. home/overrides/host/<hostname>.nix (if exists)"] --> F
-    F["6. home/overrides/user/<user>-<host>.nix (if exists)"] --> G
-    G["7. sys.home.users.<name>.extraModules / extraConfig"] --> M
+    F["6. home/overrides/user/<user>.nix (if exists)"] --> G
+    G["7. home/overrides/user/<user>-<host>.nix (if exists)"] --> U
+    U["8. sys.home.users.<name>.extraModules / extraConfig"] --> M
     M["Final Home Manager user config"]
     AD["autoDesktopConfig\nlib.mkDefault hm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"] -.->|"merged separately"| M
-    H["lib.mkForce (anywhere)"] -.->|"always wins"| M
+    FRC["lib.mkForce (anywhere)"] -.->|"always wins"| M
 ```
 
-As a numbered list (low → high):
+As a numbered list:
 
 1. Auto-imported HM modules (output of `hm-loader.nix`, includes `home/base.nix` with `lib.mkDefault` values)
 1. Host-wide extra modules (`sys.home.extraModules`)
 1. Base HM template (`sys.home.template`)
 1. Role overrides (`home/overrides/role/<role>.nix`)
 1. Host overrides (`home/overrides/host/<hostname>.nix`)
-1. User overrides (`home/overrides/user/<user>-<host>.nix`)
+1. User overrides (`home/overrides/user/<user>.nix`)
+1. User-and-host overrides (`home/overrides/user/<user>-<host>.nix`)
 1. Per-user `extraModules` / `extraConfig` (`sys.home.users.<name>.*`)
 
 `autoDesktopConfig` (`hm.desktop.<flavor>.enable = lib.mkDefault true`) is merged separately — it uses `lib.mkDefault` so any explicit `hm.desktop.*.enable` setting in any layer takes precedence.

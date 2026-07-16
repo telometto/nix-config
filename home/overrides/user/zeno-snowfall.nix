@@ -2,11 +2,12 @@
 # This file is automatically imported only for zeno on snowfall
 {
   lib,
-  config,
   pkgs,
   ...
 }:
 {
+  imports = [ ./zeno-desktop-ssh.nix ];
+
   # User-specific packages for admin on snowfall
   home.packages = [
     pkgs.polychromatic # Razer configuration tool
@@ -37,8 +38,6 @@
   ]);
 
   hm = {
-    langs = "nb_NO.UTF-8";
-
     programs = {
       development = {
         extraPackages = [
@@ -50,47 +49,9 @@
       };
     };
 
-    files = {
-      enable = true;
-
-      sshConfig = {
-        enable = true;
-
-        hosts = {
-          "*" = {
-            ForwardAgent = "yes";
-            AddKeysToAgent = "no";
-            Compression = "yes";
-          };
-
-          "github-personal" = {
-            Hostname = "ssh.github.com";
-            Port = "443";
-            User = "git";
-            IdentityFile = "${config.home.homeDirectory}/.ssh/github-key";
-          };
-
-          "github-work" = {
-            Hostname = "github.com";
-            User = "git";
-            IdentityFile = "${config.home.homeDirectory}/.ssh/amonomega";
-          };
-
-          "192.168.*" = {
-            IdentityFile = "${config.home.homeDirectory}/.ssh/id_ed25519";
-            IdentitiesOnly = "yes";
-            SetEnv = "TERM=xterm-256color";
-          };
-
-        };
-
-        allowedSigners = [
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPkY5zM9mkSM3E6V8S12QpLzdYgYtKMk2TETRhW5pykE 65364211+telometto@users.noreply.github.com"
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMdEoq7fpm5wfF6GKpOaebHJUccxcPimffler4ohmRsH 226052356+amonomega@users.noreply.github.com"
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINpFgTwAXaVs3LSoVuQsQoylu2G80QzkqFA751naKNUQ telometto@gitea"
-        ];
-      };
-    };
+    files.sshAllowedSigners = lib.mkAfter [
+      ''telometto@gitea namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINpFgTwAXaVs3LSoVuQsQoylu2G80QzkqFA751naKNUQ''
+    ];
 
     services = {
       sshAgent.enable = true;

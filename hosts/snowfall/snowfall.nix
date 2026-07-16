@@ -260,7 +260,6 @@ in
   };
 
   users.users.${VARS.users.zeno.user}.extraGroups = VARS.users.zeno.extraGroups ++ [
-    "libvirtd"
     "openrazer"
   ];
 
