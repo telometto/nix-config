@@ -139,7 +139,7 @@ ______________________________________________________________________
 ### Host-side enablement
 
 On `blizzard`, VMs are managed via `sys.virtualisation.microvm.instances.<name>` toggles.
-Some instances are currently disabled (e.g. `adguard`, `actual`, `lidarr`, `brave`, `immich`).
+Some instances are currently disabled (e.g. `adguard`, `actual`, `lidarr`, `brave`).
 Enabled instances are exposed via:
 
 ```nix
@@ -155,6 +155,11 @@ sys.virtualisation.microvm.instances.<name> = {
 
 Each instance toggle is independent, so a VM can remain active while
 selectively disabling its Cloudflare Tunnel or Traefik routing.
+
+`immich` is published at `https://photos.zzxyz.no` through Cloudflare Tunnel
+and Traefik. Its raw host port is not forwarded; `10.100.0.70:11070` remains
+the direct address on the MicroVM network and through the advertised Tailscale
+subnet route.
 
 ______________________________________________________________________
 
