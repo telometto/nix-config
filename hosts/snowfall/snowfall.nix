@@ -290,6 +290,11 @@ in
   hardware = {
     cpu.amd.updateMicrocode = lib.mkDefault true;
 
+    bluetooth = {
+      enable = true;
+      powerOnBoot = true;
+    };
+
     openrazer.enable = lib.mkDefault true;
 
     amdgpu.initrd.enable = lib.mkDefault true;
