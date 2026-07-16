@@ -7,7 +7,7 @@
 let
   reg = (import ./vm-registry.nix)."pocket-id";
   dataDir = "/var/lib/pocket-id";
-  proxySource = "${reg.gateway}/32";
+  blizzardSource = "${reg.gateway}/32";
 in
 {
   imports = [
@@ -45,15 +45,18 @@ in
   };
 
   # Pocket ID trusts Cloudflare's client-IP header, so its backend must only be
-  # reachable through Blizzard's Traefik instance. The dedicated bridge removes
-  # peer MicroVMs from the Layer-2 segment; this source rule retains an explicit
-  # service-level boundary as defense in depth.
+  # reachable through Blizzard's Traefik instance. Restrict administrative SSH
+  # to Blizzard as well, retaining explicit guest-level boundaries in addition
+  # to the host's cross-bridge forwarding policy.
   networking = {
     nftables.enable = true;
     firewall.extraInputRules = ''
-      ip saddr ${proxySource} ip daddr ${reg.ip} tcp dport ${toString reg.port} accept comment "Pocket ID via Blizzard Traefik only"
+      ip saddr ${blizzardSource} ip daddr ${reg.ip} tcp dport 22 accept comment "Pocket ID SSH from Blizzard only"
+      ip saddr ${blizzardSource} ip daddr ${reg.ip} tcp dport ${toString reg.port} accept comment "Pocket ID via Blizzard Traefik only"
     '';
   };
+
+  services.openssh.openFirewall = false;
 
   services.pocket-id = {
     enable = true;
