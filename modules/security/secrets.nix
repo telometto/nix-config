@@ -167,7 +167,25 @@
       default = null;
       description = ''
         Path to a file containing the Cloudflare Account ID.
-        Used by cloudflare-access-ip-updater service. Mapped from SOPS in core/sops.nix.
+        Used by Cloudflare API integrations. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    cloudflareMetricsApiTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the least-privilege Cloudflare metrics API token.
+        Used by cloudflare-metrics. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    cloudflareAccessOwnerEmailsFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing expected Cloudflare Access owner email addresses.
+        Used by cloudflare-metrics. Mapped from SOPS in core/sops.nix.
       '';
     };
 

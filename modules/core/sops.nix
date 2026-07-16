@@ -20,6 +20,7 @@ let
   hasCloudflared = config.sys.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
   hasCloudflareAccessIpUpdater = config.sys.services.cloudflareAccessIpUpdater.enable or false;
+  hasCloudflareMetrics = config.sys.services.cloudflareMetrics.enable or false;
   hasUps = config.sys.services.ups.enable or false;
   hasGitea = config.sys.services.gitea.enable or false;
   hasSeaweedfs = config.sys.services.seaweedfs.enable or false;
@@ -100,8 +101,14 @@ in
       }
       // whenEnabled hasCloudflareAccessIpUpdater {
         "cloudflare/access_api_token" = { };
-        "cloudflare/accountId" = { };
         "cloudflare/policyId" = { };
+      }
+      // whenEnabled (hasCloudflareAccessIpUpdater || hasCloudflareMetrics) {
+        "cloudflare/accountId" = { };
+      }
+      // whenEnabled hasCloudflareMetrics {
+        "cloudflare/metrics_api_token" = { };
+        "cloudflare/access_owner_emails" = { };
       }
       # UPS monitoring password (for NUT upsmon)
       // whenEnabled hasUps {
@@ -228,8 +235,16 @@ in
     }
     // whenEnabled hasCloudflareAccessIpUpdater {
       cloudflareAccessApiTokenFile = toString config.sops.secrets."cloudflare/access_api_token".path;
-      cloudflareAccountIdFile = toString config.sops.secrets."cloudflare/accountId".path;
       cloudflarePolicyIdFile = toString config.sops.secrets."cloudflare/policyId".path;
+    }
+    // whenEnabled (hasCloudflareAccessIpUpdater || hasCloudflareMetrics) {
+      cloudflareAccountIdFile = toString config.sops.secrets."cloudflare/accountId".path;
+    }
+    // whenEnabled hasCloudflareMetrics {
+      cloudflareMetricsApiTokenFile = toString config.sops.secrets."cloudflare/metrics_api_token".path;
+      cloudflareAccessOwnerEmailsFile =
+        toString
+          config.sops.secrets."cloudflare/access_owner_emails".path;
     }
     # UPS monitoring password
     // whenEnabled hasUps {

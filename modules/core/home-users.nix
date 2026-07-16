@@ -68,8 +68,11 @@ let
       # Path to host-specific override file
       hostOverridePath = ../../home/overrides/host/${config.networking.hostName}.nix;
 
-      # Path to user-specific config file
-      userConfigPath = ../../home/overrides/user/${username}-${config.networking.hostName}.nix;
+      # Path to user-specific override file (applies on every host)
+      userOverridePath = ../../home/overrides/user/${username}.nix;
+
+      # Path to user-and-host-specific override file
+      userHostOverridePath = ../../home/overrides/user/${username}-${config.networking.hostName}.nix;
     in
     lib.unique (
       [ ../../hm-loader.nix ]
@@ -81,8 +84,10 @@ let
       ) roleOverridePath)
       # Import host-override if it exists (applies to all users on this host)
       ++ (lib.optional (builtins.pathExists hostOverridePath) hostOverridePath)
-      # Import user-specific config if it exists (applies only to this user on this host)
-      ++ (lib.optional (builtins.pathExists userConfigPath) userConfigPath)
+      # Import user-override if it exists (applies to this user on every host)
+      ++ (lib.optional (builtins.pathExists userOverridePath) userOverridePath)
+      # Import user-and-host override if it exists (applies only to this user on this host)
+      ++ (lib.optional (builtins.pathExists userHostOverridePath) userHostOverridePath)
       ++ lib.toList (override.extraModules or [ ])
       ++ lib.toList (override.extraConfig.imports or [ ])
     );

@@ -21,6 +21,15 @@
       priceArea = "NO2";
     };
 
+    cloudflareMetrics = {
+      enable = true;
+
+      port = 11015;
+      apiTokenFile = config.sys.secrets.cloudflareMetricsApiTokenFile;
+      accountIdFile = config.sys.secrets.cloudflareAccountIdFile;
+      ownerEmailsFile = config.sys.secrets.cloudflareAccessOwnerEmailsFile;
+    };
+
     # UPS monitoring (Eaton 9130)
     ups = {
       enable = true;

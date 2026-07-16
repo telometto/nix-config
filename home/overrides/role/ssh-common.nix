@@ -1,30 +1,30 @@
-{ config, ... }:
+{
+  lib,
+  config,
+  ...
+}:
 {
   programs.ssh = {
+    enable = lib.mkDefault true;
     enableDefaultConfig = false;
 
     settings = {
       "*" = {
-        AddKeysToAgent = "no";
-        Compression = false;
-        ServerAliveInterval = 0;
-        ServerAliveCountMax = 3;
-        HashKnownHosts = false;
-        UserKnownHostsFile = "~/.ssh/known_hosts";
-        ControlMaster = "no";
-        ControlPath = "~/.ssh/master-%r@%n:%p";
-        ControlPersist = "no";
-      };
-      "github.com" = {
-        HostName = "ssh.github.com";
-        Port = 443;
-        User = "git";
-        IdentitiesOnly = true;
-        IdentityFile = "${config.home.homeDirectory}/.ssh/github-key";
+        AddKeysToAgent = lib.mkDefault "no";
+        Compression = lib.mkDefault false;
+        ControlMaster = lib.mkDefault "no";
+        ControlPath = lib.mkDefault "~/.ssh/master-%r@%n:%p";
+        ControlPersist = lib.mkDefault "no";
+        ForwardAgent = lib.mkDefault false;
+        HashKnownHosts = lib.mkDefault true;
+        ServerAliveCountMax = lib.mkDefault 3;
+        ServerAliveInterval = lib.mkDefault 0;
+        StrictHostKeyChecking = lib.mkDefault "ask";
+        UserKnownHostsFile = lib.mkDefault "~/.ssh/known_hosts";
       };
       "192.168.*" = {
-        IdentityFile = "${config.home.homeDirectory}/.ssh/id_ed25519";
-        IdentitiesOnly = true;
+        IdentitiesOnly = lib.mkDefault true;
+        IdentityFile = lib.mkDefault "${config.home.homeDirectory}/.ssh/id_ed25519";
       };
     };
   };

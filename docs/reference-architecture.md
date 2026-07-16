@@ -13,7 +13,8 @@ Information reference for this repo's moving parts, options, and commands.
 | `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}` | The four physical hosts |
 | `nixosConfigurations.<vm-name>` (×26) | MicroVM guests defined in `vms/` |
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
-| `checks.x86_64-linux.formatting` | Formatting check (`nix flake check`) |
+| `checks.x86_64-linux.formatting` | treefmt formatting check |
+| `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
 | `devShells.x86_64-linux.default` | Dev shell with nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 ### `mkHost` — what it always injects
@@ -47,7 +48,7 @@ Recursively imports every `.nix` file under `./hosts/${hostname}/`. The `hostnam
 
 ### `hm-loader.nix`
 
-Recursively imports every `.nix` file under `./home/`, **excluding** any path containing `/overrides/host/` or `/overrides/user/`. Overrides are excluded so they must be opted into explicitly per host or user — they do not bleed across machines. See [HM Override System](#hm-override-system) below.
+Recursively imports every `.nix` file under `./home/`, **excluding** override paths. `home-users.nix` opts into only the active role, host, user-wide, and user@host overrides. Host overrides stay machine-local; `home/overrides/user/<username>.nix` intentionally follows that user across machines. See [HM Override System](#hm-override-system) below.
 
 ______________________________________________________________________
 
@@ -81,7 +82,7 @@ All Home Manager options are defined under the `hm.*` namespace in `home/`.
 
 | Namespace | Defined in | Purpose |
 |-----------|-----------|---------|
-| `hm.langs` | `home/base.nix` | Default locale |
+| `hm.langs` | `home/base.nix` | Regional formatting locale; does not set UI language |
 | `hm.desktop.{gnome,kde,hyprland,xdg}.enable` | `home/desktop/` | Desktop environment integration |
 | `hm.programs.{browsers,development,terminal,media,social,gaming,gpg,tools,beets,fastfetch,packages}.enable` | `home/programs/` | User program bundles |
 | `hm.services.{gpgAgent,sshAgent}.enable` | `home/services/` | User-level background services |
@@ -93,21 +94,24 @@ ______________________________________________________________________
 
 ## HM Override System
 
-Home Manager config is assembled in layers. Lower layers supply defaults; higher layers win.
+Home Manager config is assembled in the following order. Import order does not
+itself set Nix option priority; overlapping definitions must use
+`lib.mkDefault`, `lib.mkOverride`, or `lib.mkForce` as appropriate.
 
 | Layer | File / mechanism | Scope |
 |-------|-----------------|-------|
-| 1. Module defaults | Individual `home/*.nix` option defaults | All users, all hosts |
-| 2. HM loader modules | All files under `home/` (via hm-loader) | All users, all hosts |
-| 3. Host-wide extra modules | `sys.home.extraModules` in host file | All users on that host |
-| 4. Base template | `sys.home.template` in host file | All users on that host |
-| 5. Auto desktop | `hm.desktop.<flavor>.enable = true` from `sys.desktop.flavor` (via `lib.mkDefault`) | All users on hosts with a desktop flavor |
-| 6. Host override | `home/overrides/host/<hostname>.nix` | All users on that specific host |
-| 7. User@host override | `home/overrides/user/<username>-<hostname>.nix` | Specific user on specific host |
+| 1. HM loader modules | All non-override files under `home/` (via hm-loader) | All users, all hosts |
+| 2. Host-wide extra modules | `sys.home.extraModules` in host file | All users on that host |
+| 3. Base template imports | `sys.home.template.imports` in host file | All users on that host |
+| 4. Role override | `home/overrides/role/<role>.nix` | All users on hosts with that role |
+| 5. Host override | `home/overrides/host/<hostname>.nix` | All users on that specific host |
+| 6. User-wide override | `home/overrides/user/<username>.nix` | Specific user on every host |
+| 7. User@host override | `home/overrides/user/<username>-<hostname>.nix` | Specific user on one host |
 | 8. User extra modules | `sys.home.users.<username>.extraModules` in host file | Specific user on that host |
-| 9. `extraConfig` | `sys.home.users.<username>.extraConfig` in host file | Specific user on that host |
+| 9. Per-user config | `sys.home.users.<username>.extraConfig` in host file | Specific user on that host |
 
-`lib.mkForce` in any override file always wins regardless of layer.
+`autoDesktopConfig` is merged separately with `lib.mkDefault`. `lib.mkForce`
+in any override file always wins regardless of import order.
 
 ### The `ssh-common.nix` exception
 
@@ -163,7 +167,7 @@ Operational tools used across the repo.
 | disko | Disk layout (included but not active) | `hosts/snowfall/disko.nix` (on hold) |
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
-`nix flake check` only runs the `checks.formatting` check. Full host evaluation (build testing) is done by the `validate-config.yml` CI workflow, not as a flake check.
+Locally, `nix flake check` evaluates and builds both the formatting check and the Cloudflare metrics test derivation. The `flake-check.yml` CI workflow first runs `nix flake check --no-build` to evaluate all flake outputs, then explicitly builds `checks.x86_64-linux.cloudflare-metrics` to run its Python unit tests. Full host evaluation is handled separately by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
 
@@ -233,9 +237,14 @@ nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel
 # Format all files (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff)
 nix fmt
 
-# Check formatting only (not a full host evaluation)
+# Evaluate and build the formatting and Cloudflare metrics checks
 nix flake check
-nix flake check --no-build   # skip builds
+
+# Evaluate all flake outputs without building them (as CI does first)
+nix flake check --no-build
+
+# Build and run only the Cloudflare metrics unit-test check
+nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs
 
 # Dev shell (includes nil, nixfmt, deadnix, statix, sops, ssh-to-age)
 nix develop

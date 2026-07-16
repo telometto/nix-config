@@ -13,7 +13,7 @@ ______________________________________________________________________
 This repository implements a modular NixOS flake configuration for 4 physical hosts and 26 MicroVMs.
 The design centres on three auto-loading mechanisms that eliminate manual `imports` lists, a
 two-namespace option system (`sys.*` / `hm.*`), role files that bundle machine-class defaults,
-and a layered Home Manager precedence stack that allows fine-grained per-user overrides without
+and layered Home Manager composition that allows fine-grained per-user overrides without
 forking configuration.
 
 The diagram below shows how the single entry point (`flake.nix`) fans out to every host and VM
@@ -42,6 +42,7 @@ ______________________________________________________________________
 | `nixosConfigurations` | 4 named hosts + 26 `-vm` entries (merged from `vms/flake-microvms.nix`) |
 | `formatter.x86_64-linux` | treefmt wrapper (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
+| `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
@@ -133,13 +134,14 @@ home/
 └── overrides/
     ├── role/         <role>.nix — all HM users on hosts with sys.role.<role>.enable = true
     ├── host/         <hostname>.nix — all users on that host
-    └── user/         <username>-<hostname>.nix — specific user on specific host
+    └── user/         <username>.nix — specific user on every host
+                      <username>-<hostname>.nix — specific user on one host
 
 hosts/
 ├── snowfall/         desktop/KDE, AMD GPU, Prometheus+Grafana+Traefik+Cloudflare, distributed-builds
 ├── blizzard/         server, ZFS+NFS+Samba, MicroVM host, Tailscale subnet router, CrowdSec, k3s
 ├── avalanche/        desktop/GNOME, ThinkPad P51, nixos-hardware, iwlwifi patches
-└── kaizer/           desktop/KDE, two users, NVIDIA, Java Temurin 8/17/21, Italian locale
+└── kaizer/           desktop/KDE, two users, NVIDIA, Java Temurin 8/17/21, per-user localization
 
 vms/                  MicroVM definitions (one .nix per VM + infrastructure files)
 lib/                  Nix helper functions (traefik, grafana, constants)
@@ -166,7 +168,7 @@ flowchart TD
 ```
 
 The override files (`home/overrides/role/`, `home/overrides/host/`, and `home/overrides/user/`) are **not** auto-imported;
-they are injected conditionally by `modules/core/home-users.nix` per user (role → host → user, in that precedence order).
+they are injected conditionally by `modules/core/home-users.nix` per user (role → host → user-wide → user@host). This is import order; Nix option priorities resolve overlapping definitions.
 
 ______________________________________________________________________
 
@@ -194,7 +196,7 @@ flowchart LR
         SOV[sys.overlays]
     end
     subgraph "hm.* (Home Manager — home/)"
-        HL[hm.langs.*]
+        HL[hm.langs]
         HD[hm.desktop\ngnome / kde / hyprland / xdg]
         HPR[hm.programs\nbrowsers / development / terminal\nmedia / social / gaming\ngpg / tools / beets / fastfetch / packages]
         HSV[hm.services\ngpgAgent / sshAgent]
@@ -303,12 +305,16 @@ flowchart TD
     L3["3. sys.home.template.imports\nhost-wide base template imports for all users"]
     L4["4. home/overrides/role/<role>.nix\n(if file exists and sys.role.<role>.enable = true)"]
     L5["5. home/overrides/host/<hostname>.nix\n(if file exists)"]
-    L6["6. home/overrides/user/<username>-<hostname>.nix\n(if file exists)"]
-    L7["7. sys.home.users.<name>.extraModules\n+ sys.home.users.<name>.extraConfig.imports"]
+    L6["6. home/overrides/user/<username>.nix\n(if file exists)"]
+    L7["7. home/overrides/user/<username>-<hostname>.nix\n(if file exists)"]
+    L8["8. sys.home.users.<name>.extraModules\n+ sys.home.users.<name>.extraConfig.imports"]
     AD["autoDesktopConfig\nmerged separately with lib.mkDefault\nhm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"]
-    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7 --> OUT[Merged HM config for user]
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7 --> L8 --> OUT[Merged HM config for user]
     AD --> OUT
 ```
+
+Import order does not itself determine which conflicting scalar option wins;
+shared defaults use `lib.mkDefault` or an explicit `lib.mkOverride` priority.
 
 `home/overrides/host/ssh-common.nix` is a shared SSH config fragment imported manually — it is
 not named after a hostname and therefore bypasses the auto-override path.
@@ -317,7 +323,7 @@ not named after a hostname and therefore bypasses the auto-override path.
 
 | Category | Sub-keys |
 |----------|----------|
-| `hm.langs` | language toolchains |
+| `hm.langs` | regional formatting locale |
 | `hm.desktop` | gnome, kde, hyprland, xdg |
 | `hm.programs` | browsers, development, terminal, media, social, gaming, gpg, tools, beets, fastfetch, packages |
 | `hm.services` | gpgAgent, sshAgent |
@@ -467,7 +473,7 @@ ______________________________________________________________________
 |------|---------|---------|
 | `lib/constants.nix` | `{ tailscale.suffix = "mole-delta.ts.net"; }` | Loaded once as `consts` in `flake.nix`; shared strings across all modules |
 | `lib/traefik.nix` | `mkSecurityHeaders`, `mkRoutes`, `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`, `defaultPermissionsPolicy`, `defaultCsp` | Generates Traefik router/middleware config and Cloudflare tunnel assertions |
-| `lib/grafana-dashboards.nix` | `fetchGrafanaDashboard`, `community.*`, `custom.*`, `all` | Fetches Grafana.com dashboards by ID; bundles community (node-exporter-full, kubernetes-cluster) and custom (arr-services, zfs-overview, power-consumption, ups-monitoring, electricity-prices) sets |
+| `lib/grafana-dashboards.nix` | `fetchGrafanaDashboard`, `community.*`, `custom.*`, `all` | Fetches Grafana.com dashboards by ID; bundles community (node-exporter-full, kubernetes-cluster) and custom (arr-services, cloudflare-overview, zfs-overview, power-consumption, ups-monitoring, electricity-prices) sets |
 | `lib/grafana.nix` | `prometheusDatasource`, `mkRow`, `mkGauge`, `mkStat`, `mkTimeseries`, `mkBargauge`, `mkTarget`, `mkDashboard`, default field configs | Nix-native Grafana panel/dashboard builders |
 
 See `lib/README.md` for the full API reference.
@@ -481,7 +487,7 @@ ______________________________________________________________________
 | `snowfall` | desktop | KDE | AMD GPU, openrazer, distributed-builds server, Prometheus + Grafana + Traefik + Cloudflare tunnel |
 | `blizzard` | server | none | ZFS + NFS + Samba, full monitoring stack, MicroVM host, Tailscale subnet router (192.168.2.0/24 + 10.100.0.0/24), CrowdSec |
 | `avalanche` | desktop | GNOME | ThinkPad P51, nixos-hardware, iwlwifi BT coexistence patches |
-| `kaizer` | desktop | KDE | Two users (gianluca + luke; frankie disabled), lanzaboote **disabled**, NVIDIA, Java Temurin 8/17/21, Italian locale |
+| `kaizer` | desktop | KDE | Two users (gianluca + luke; frankie disabled), lanzaboote **disabled**, NVIDIA, Java Temurin 8/17/21, per-user localization |
 
 ### Host file pattern
 
@@ -555,12 +561,16 @@ ______________________________________________________________________
 | Task | Command |
 |------|---------|
 | Format all files | `nix fmt` |
-| Run flake checks (includes format check) | `nix flake check` |
+| Run all flake checks locally (formatting + Cloudflare metrics tests) | `nix flake check` |
 | Check with trace on failure | `nix flake check --show-trace` |
+| Evaluate all flake outputs without building | `nix flake check --no-build` |
+| Run only the Cloudflare metrics tests | `nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs` |
 | Build without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
 | Apply to current host | `sudo nixos-rebuild switch --flake .#<hostname>` |
 | Test without switching | `sudo nixos-rebuild test --flake .#<hostname>` |
 | Dry run (show what changes) | `nixos-rebuild dry-run --flake .#<hostname>` |
+
+The `flake-check.yml` CI workflow uses `nix flake check --no-build` for evaluation, then explicitly builds `checks.x86_64-linux.cloudflare-metrics` so the Python unit tests execute. Host evaluations run separately in `validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 
@@ -614,7 +624,8 @@ ______________________________________________________________________
 
 1. Add the user to `nix-secrets` (`VARS.users.<username>`).
 1. Enable per-host: `sys.users.<username>.enable = true;` in the host file.
-1. Optionally add `home/overrides/user/<username>-<hostname>.nix` for per-user HM tweaks.
+1. Optionally add `home/overrides/user/<username>.nix` for cross-host HM defaults.
+1. Optionally add `home/overrides/user/<username>-<hostname>.nix` for host-specific HM tweaks.
 
 ### Add a service VM
 
@@ -627,7 +638,7 @@ ______________________________________________________________________
 
 1. Create `home/overrides/host/<hostname>.nix`.
 1. Any `hm.*` options set there apply to every user on that host.
-1. Use `lib.mkForce` when you need to override a value set at a lower precedence layer.
+1. Use `lib.mkForce` when you need to override a higher-priority option definition.
 
 ______________________________________________________________________
 

@@ -13,6 +13,7 @@ dashboards/
 └── host/
     └── blizzard/        # Host-specific dashboards
         ├── zfs-overview.json
+        ├── cloudflare-overview.json
         ├── power-consumption-historical.json
         └── ups-monitoring.json
 ```
@@ -32,6 +33,7 @@ dashboards/
 | Dashboard | Description | Data Source |
 |-----------|-------------|-------------|
 | [zfs-overview.json](host/blizzard/zfs-overview.json) | ZFS pool health and usage | ZFS exporter |
+| [cloudflare-overview.json](host/blizzard/cloudflare-overview.json) | Cloudflare HTTP analytics, Access authentication activity, and collector health | Cloudflare metrics collector |
 | [power-consumption-historical.json](host/blizzard/power-consumption-historical.json) | Historical power analysis | Prometheus/VictoriaMetrics |
 | [ups-monitoring.json](host/blizzard/ups-monitoring.json) | UPS status and battery | NUT exporter |
 
@@ -48,6 +50,7 @@ in
   sys.services.grafana.provision.dashboards = {
     inherit (grafanaDashboards.custom)
       zfs-overview
+      cloudflare-overview
       power-consumption
       ups-monitoring;
   };
