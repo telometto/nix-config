@@ -16,6 +16,7 @@
   cid,
   mac,
   ip,
+  prefixLength ? 24,
   mem,
   vcpu ? 1,
   gateway ? "10.100.0.1",
@@ -73,7 +74,7 @@
     # future ether device, etc.) can accidentally match this unit.
     matchConfig.MACAddress = mac;
     networkConfig = {
-      Address = [ "${ip}/24" ];
+      Address = [ "${ip}/${toString prefixLength}" ];
       Gateway = gateway;
       DNS = [ dns ];
       DHCP = "no";
