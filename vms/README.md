@@ -2,7 +2,8 @@
 
 Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
 for lightweight virtualization. The flake currently defines 26 MicroVM
-configurations for the `blizzard` host on a `10.100.0.0/24` tap bridge.
+configurations for the `blizzard` host. Most use the shared `10.100.0.0/24`
+tap bridge; Pocket ID uses a dedicated `10.100.1.0/30` host-to-VM bridge.
 
 ______________________________________________________________________
 
@@ -10,7 +11,7 @@ ______________________________________________________________________
 
 ```mermaid
 flowchart TD
-    A["vms/vm-registry.nix\n(CID · MAC · IP · port · mem · vcpu · gateway)"]
+    A["vms/vm-registry.nix\n(CID · MAC · IP · prefix · port · mem · vcpu · gateway)"]
     B["vms/mkMicrovmConfig.nix\n(NixOS module: microvm + networking)"]
     C["vms/base.nix\n(standard kernel · sysctl · AppArmor\nOpenSSH · admin user · firewall)"]
     D["vms/<name>.nix\n(service-specific config)"]
@@ -30,15 +31,16 @@ ______________________________________________________________________
 
 ```mermaid
 flowchart TB
-    subgraph host["blizzard — 10.100.0.1 (bridge)"]
-        bridge["10.100.0.0/24 tap bridge"]
+    subgraph host["blizzard"]
+        bridge["microvm-br0\n10.100.0.1/24 shared bridge"]
+        idbridge["pocket-id-br0\n10.100.1.1/30 dedicated bridge"]
     end
 
     adguard["adguard-vm\n10.100.0.10\n(DNS)"]
     wg["wireguard-vm\n10.100.0.11\n(VPN gateway)"]
 
     subgraph direct["Direct-routed VMs (via bridge)"]
-        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\npocket-id · prowlarr · radarr · readarr · searx\nsonarr · tautulli · trigger"]
+        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli · trigger"]
     end
 
     subgraph wgrouted["WG-routed VMs (traffic via wireguard-vm)"]
@@ -55,6 +57,9 @@ flowchart TB
     wg --> w2
     wg --> w3
     wg --> w4
+
+    pocket["pocket-id-vm\n10.100.1.2/30"]
+    idbridge --> pocket
 ```
 
 ______________________________________________________________________
@@ -78,7 +83,7 @@ ______________________________________________________________________
 | ombi | 10.100.0.41 | 11041 | 1 GB | 1 | Direct | Media request portal (legacy) |
 | overseerr | 10.100.0.40 | 11040 | 1 GB | 1 | Direct | Media request portal |
 | paperless | 10.100.0.61 | 11061 | 8 GB | 4 | Direct | Document management |
-| pocket-id | 10.100.0.81 | 11081 | 1 GB | 1 | Direct | Passkey-based OIDC identity provider |
+| pocket-id | 10.100.1.2 | 11081 | 1 GB | 1 | Dedicated | Passkey-based OIDC identity provider |
 | prowlarr | 10.100.0.20 | 11020 | 1 GB | 1 | Direct | Indexer aggregator |
 | qbittorrent | 10.100.0.30 | 11030 | 2 GB | 1 | Via WG | Torrent client |
 | radarr | 10.100.0.22 | 11022 | 1 GB | 1 | Direct | Movie PVR |
