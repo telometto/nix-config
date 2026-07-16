@@ -359,7 +359,7 @@ ______________________________________________________________________
 
 ```mermaid
 flowchart TD
-    REG["vms/vm-registry.nix\nSingle source of truth\nCID · MAC · IP · port · mem · vCPU\ngateway · dns · tapId per VM"]
+    REG["vms/vm-registry.nix\nSingle source of truth\nCID · MAC · IP · prefix · port · mem · vCPU\ngateway · dns · tapId per VM"]
     BASE["vms/base.nix\nBaseline for all VMs:\n• standard kernel linuxPackages\n  (NOT hardened — explicit)\n• sysctl hardening\n• AppArmor\n• hardened openssh\n• immutable users, single admin\n• stateVersion = 24.11"]
     MK["vms/mkMicrovmConfig.nix\nTransforms registry attrs into NixOS module:\nmicrovm.hypervisor = cloud-hypervisor\nmicrovm.vsock.cid\nmicrovm.mem / vcpu\nmicrovm.interfaces / volumes\nnetworking + systemd.network\nAuto-appends /persist volume\nand /nix/store virtiofs share"]
     SVC["vms/<name>.nix\nPer-VM service module\n(actual application config)"]
@@ -405,28 +405,34 @@ and therefore do not inherit host-only modules.
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Photo library |
 | mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Meal planning |
 | trigger | 10.100.0.80 | 11080 | 12 GB | 6 | Workflow automation |
-| pocket-id | 10.100.0.81 | 11081 | 1 GB | 1 | Passkey-based OIDC provider |
+| pocket-id | 10.100.1.2 | 11081 | 1 GB | 1 | Passkey-based OIDC provider |
 
 ______________________________________________________________________
 
 ## 10. Network Topology
 
-All MicroVMs live on the `10.100.0.0/24` subnet bridged to the `blizzard` host. Four VMs route
-all egress traffic through the WireGuard VM rather than using the default gateway.
-Pocket ID is additionally ingress-restricted inside its VM: TCP port `11081`
-accepts only Blizzard's `10.100.0.1/32` bridge source so peer MicroVMs cannot
-bypass the Traefik and CrowdSec path.
+All MicroVMs except Pocket ID live on the shared `10.100.0.0/24` subnet bridged
+to the `blizzard` host. Four VMs route all egress traffic through the WireGuard
+VM rather than using the default gateway. Pocket ID is the sole guest on
+`pocket-id-br0`, a dedicated `10.100.1.0/30` host-to-VM segment. Its TCP port
+`11081` additionally accepts only Blizzard's `10.100.1.1/32` source, so peer
+MicroVMs cannot join or spoof the proxy-side Layer-2 path, or bypass Traefik and
+CrowdSec.
 
 ```mermaid
 flowchart TD
-    HOST["blizzard host\n192.168.2.x / 10.100.0.1 bridge"]
+    HOST["blizzard host\n192.168.2.x\n10.100.0.1 + 10.100.1.1"]
     ADG["adguard-vm\n10.100.0.10\nDNS sinkhole"]
     WG["wireguard-vm\n10.100.0.11\nVPN gateway"]
     REST["Other VMs\n10.100.0.12–70\ndefault gateway = 10.100.0.1"]
+    PIDBR["pocket-id-br0\n10.100.1.0/30\ndedicated Layer 2"]
+    PID["pocket-id-vm\n10.100.1.2"]
 
     HOST --> ADG
     HOST --> WG
     HOST --> REST
+    HOST --> PIDBR
+    PIDBR --> PID
 
     QB["qbittorrent-vm\n10.100.0.30"]
     SAB["sabnzbd-vm\n10.100.0.31"]
@@ -447,6 +453,9 @@ flowchart TD
 
 WG-routed VMs (qbittorrent, sabnzbd, firefox, brave) set `gateway = 10.100.0.11` in the
 vm-registry. qbittorrent and sabnzbd also use `dns = 10.100.0.11` (wireguard-vm).
+The dedicated `10.100.1.0/30` identity segment is not advertised through
+Tailscale; administrative SSH and Traefik backend traffic originate on
+Blizzard.
 
 ______________________________________________________________________
 
