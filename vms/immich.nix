@@ -61,6 +61,7 @@ in
 
     environment = {
       TZ = "Europe/Oslo";
+      IMMICH_ALLOW_SETUP = "false";
       IMMICH_LOG_LEVEL = "log";
       IMMICH_TRUSTED_PROXIES = "10.100.0.1";
     };
@@ -68,10 +69,16 @@ in
     ml.enable = false;
 
     settings = {
-      machineLearning.urls = [
-        "http://10.100.0.1:3003"
-      ];
+      machineLearning = {
+        clip.modelName = "ViT-SO400M-16-SigLIP2-384__webli";
+        ocr.modelName = "LATIN__PP-OCRv5_mobile";
+        urls = [
+          "http://10.100.0.1:3003"
+        ];
+      };
+      oauth.autoRegister = false;
       server.externalDomain = "https://photos.${VARS.domains.public}";
+      storageTemplate.enabled = true;
     };
   };
 }
