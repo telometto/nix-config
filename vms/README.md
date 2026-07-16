@@ -150,10 +150,10 @@ sys.virtualisation.microvm.instances.<name> = {
 Each instance toggle is independent, so a VM can remain active while
 selectively disabling its Cloudflare Tunnel or Traefik routing.
 
-`immich` is enabled privately at `10.100.0.70:11070` for first-admin
-bootstrap. It intentionally has no raw host port forward, Cloudflare Tunnel
-ingress, or Traefik route until the setup endpoint can be disabled and the
-`photos` public route is flipped on.
+`immich` is published at `https://photos.zzxyz.no` through Cloudflare Tunnel
+and Traefik. Its raw host port is not forwarded; `10.100.0.70:11070` remains
+the direct address on the MicroVM network and through the advertised Tailscale
+subnet route.
 
 ______________________________________________________________________
 
