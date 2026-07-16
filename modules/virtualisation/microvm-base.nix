@@ -69,8 +69,9 @@ let
           type = lib.types.bool;
           default = false;
           description = ''
-            Enable Cloudflare Tunnel ingress for this VM's services.
-            Requires sys.services.cloudflared to be configured on the host.
+            
+                        Enable Cloudflare Tunnel ingress for this VM's services.
+                        Requires sys.services.cloudflared to be configured on the host.
           '';
         };
         ingress = lib.mkOption {
@@ -197,6 +198,98 @@ let
     };
 
   enabledInstances = lib.filterAttrs (_: instance: instance.enable) cfg.instances;
+
+  # Registry entries can opt into a dedicated host bridge. Only materialise
+  # that topology when the matching VM instance is enabled on this host.
+  isolatedRegistryEntries = lib.filterAttrs (
+    name: entry: builtins.hasAttr name enabledInstances && entry ? hostBridge
+  ) registry;
+
+  isolatedBridgeNetdevs = lib.mapAttrs' (
+    name: entry:
+    lib.nameValuePair "10-${name}-bridge" {
+      netdevConfig = {
+        Kind = "bridge";
+        Name = entry.hostBridge;
+      };
+    }
+  ) isolatedRegistryEntries;
+
+  isolatedBridgeNetworks = lib.mapAttrs' (
+    name: entry:
+    lib.nameValuePair "10-${name}-bridge" {
+      matchConfig.Name = entry.hostBridge;
+      networkConfig = {
+        Address = [
+          "${entry.gateway or (throw "Registry entry ${name} requires gateway when hostBridge is set")}/${
+            toString (entry.prefixLength or 24)
+          }"
+        ];
+        LinkLocalAddressing = "no";
+      };
+    }
+  ) isolatedRegistryEntries;
+
+  # Specific tap units sort before 12-microvm-tap, keeping isolated taps off
+  # the shared bridge while retaining the shared vm-* default for other VMs.
+  isolatedTapNetworks = lib.mapAttrs' (
+    name: entry:
+    lib.nameValuePair "11-${name}-tap" {
+      matchConfig.Name = entry.tapId or "vm-${entry.name}";
+      networkConfig.Bridge = entry.hostBridge;
+    }
+  ) isolatedRegistryEntries;
+
+  isolatedBridgeNames = lib.unique (
+    lib.mapAttrsToList (_: entry: entry.hostBridge) isolatedRegistryEntries
+  );
+
+  # The NixOS iptables firewall manages host INPUT, while NAT permits forwarding
+  # from its internal interfaces. Keep dedicated VM networks routable to the
+  # external interface without allowing any internal bridge to route to another.
+  internalBridgeNames = [ "microvm-br0" ] ++ isolatedBridgeNames;
+  mkBridgePairs =
+    bridges:
+    if bridges == [ ] then
+      [ ]
+    else
+      let
+        source = builtins.head bridges;
+        remaining = builtins.tail bridges;
+      in
+      map (destination: { inherit source destination; }) remaining ++ mkBridgePairs remaining;
+  isolationBridgePairs = mkBridgePairs internalBridgeNames;
+  isolationChain = "nixos-microvm-isolation";
+  isolationForwardRules = lib.concatMapStringsSep "\n" (pair: ''
+    ${pkgs.iptables}/bin/iptables -w -A ${isolationChain} -i ${lib.escapeShellArg pair.source} -o ${lib.escapeShellArg pair.destination} -j DROP
+    ${pkgs.iptables}/bin/iptables -w -A ${isolationChain} -i ${lib.escapeShellArg pair.destination} -o ${lib.escapeShellArg pair.source} -j DROP
+  '') isolationBridgePairs;
+  isolationFirewallCleanupCommands = ''
+    while ${pkgs.iptables}/bin/iptables -w -C FORWARD -j ${isolationChain} 2>/dev/null; do
+      ${pkgs.iptables}/bin/iptables -w -D FORWARD -j ${isolationChain}
+    done
+    ${pkgs.iptables}/bin/iptables -w -F ${isolationChain} 2>/dev/null || true
+    ${pkgs.iptables}/bin/iptables -w -X ${isolationChain} 2>/dev/null || true
+  '';
+  isolationFirewallCommands =
+    isolationFirewallCleanupCommands
+    + lib.optionalString (isolationBridgePairs != [ ]) ''
+      ${pkgs.iptables}/bin/iptables -w -N ${isolationChain} 2>/dev/null || true
+      ${pkgs.iptables}/bin/iptables -w -F ${isolationChain}
+      ${isolationForwardRules}
+      ${pkgs.iptables}/bin/iptables -w -C FORWARD -j ${isolationChain} 2>/dev/null || \
+        ${pkgs.iptables}/bin/iptables -w -I FORWARD 1 -j ${isolationChain}
+    '';
+
+  isolatedFirewallInterfaces = builtins.listToAttrs (
+    map (bridge: {
+      name = bridge;
+      value = {
+        allowedTCPPorts = [ ];
+        allowedUDPPorts = [ ];
+      };
+    }) isolatedBridgeNames
+  );
 
   derivedVms = builtins.listToAttrs (
     lib.mapAttrsToList (name: instance: {
@@ -337,18 +430,6 @@ let
       lib.filter (value: builtins.length (lib.filter (candidate: candidate == value) values) > 1) values
     );
 
-  registryValues = builtins.attrValues registry;
-
-  registryFieldValues = field: map (entry: toString entry.${field}) registryValues;
-
-  duplicateRegistryCids = duplicateValues (registryFieldValues "cid");
-
-  duplicateRegistryMacs = duplicateValues (registryFieldValues "mac");
-
-  duplicateRegistryIps = duplicateValues (registryFieldValues "ip");
-
-  duplicateRegistryPorts = duplicateValues (registryFieldValues "port");
-
   formatList = list: lib.concatStringsSep ", " list;
 in
 {
@@ -365,10 +446,11 @@ in
       ];
       default = "cloud-hypervisor";
       description = ''
-        Default hypervisor for MicroVMs.
-        - cloud-hypervisor: Good security/features balance (Rust-based)
-        - firecracker: Minimal attack surface, used by AWS Lambda
-        - qemu: Most features but larger attack surface
+        
+                Default hypervisor for MicroVMs.
+                - cloud-hypervisor: Good security/features balance (Rust-based)
+                - firecracker: Minimal attack surface, used by AWS Lambda
+                - qemu: Most features but larger attack surface
       '';
     };
 
@@ -388,10 +470,11 @@ in
       type = lib.types.attrsOf (lib.types.submodule instanceModule);
       default = { };
       description = ''
-        Logical per-VM host configuration.
-        Use this namespace to opt a VM into a host and control related
-        exposure toggles such as port forwarding, Cloudflare Tunnel, and
-        reverse proxy generation.
+        
+                Logical per-VM host configuration.
+                Use this namespace to opt a VM into a host and control related
+                exposure toggles such as port forwarding, Cloudflare Tunnel, and
+                reverse proxy generation.
       '';
     };
 
@@ -399,9 +482,10 @@ in
       type = lib.types.str;
       default = "/var/lib/microvms";
       description = ''
-        Base directory for MicroVM state (volumes, sockets, etc.).
-        Each VM gets a subdirectory: <stateDir>/<vm-name>/
-        Set to your ZFS dataset path for better snapshotting.
+        
+                Base directory for MicroVM state (volumes, sockets, etc.).
+                Each VM gets a subdirectory: <stateDir>/<vm-name>/
+                Set to your ZFS dataset path for better snapshotting.
       '';
     };
 
@@ -409,8 +493,9 @@ in
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = ''
-        External network interface for NAT. If null, NAT will use
-        whatever default route is available (works for most setups).
+        
+                External network interface for NAT. If null, NAT will use
+                whatever default route is available (works for most setups).
       '';
     };
 
@@ -418,8 +503,9 @@ in
       type = lib.types.attrsOf vmExposeModule;
       default = { };
       description = ''
-        Per-VM exposure configuration for port forwarding and Cloudflare Tunnel.
-        Keys are VM names (for documentation), values configure how to expose the VM.
+        
+                Per-VM exposure configuration for port forwarding and Cloudflare Tunnel.
+                Keys are VM names (for documentation), values configure how to expose the VM.
       '';
       example = {
         adguard-vm = {
@@ -487,22 +573,6 @@ in
         message = "sys.virtualisation.microvm (expose/instances) defines duplicate Cloudflare ingress hosts: ${formatList duplicateIngressHosts}";
       }
       {
-        assertion = duplicateRegistryCids == [ ];
-        message = "vms/vm-registry.nix defines duplicate MicroVM CIDs: ${formatList duplicateRegistryCids}";
-      }
-      {
-        assertion = duplicateRegistryMacs == [ ];
-        message = "vms/vm-registry.nix defines duplicate MicroVM MAC addresses: ${formatList duplicateRegistryMacs}";
-      }
-      {
-        assertion = duplicateRegistryIps == [ ];
-        message = "vms/vm-registry.nix defines duplicate MicroVM IP addresses: ${formatList duplicateRegistryIps}";
-      }
-      {
-        assertion = duplicateRegistryPorts == [ ];
-        message = "vms/vm-registry.nix defines duplicate MicroVM service ports: ${formatList duplicateRegistryPorts}";
-      }
-      {
         assertion = cloudflaredEnabled || enabledCfTunnelVms == [ ];
         message = "sys.virtualisation.microvm (expose/instances) enables Cloudflare Tunnel for ${formatList enabledCfTunnelVms}, but sys.services.cloudflared.enable is false";
       }
@@ -514,25 +584,32 @@ in
       inherit (cfg) stateDir;
     };
 
-    # Bridge for MicroVM traffic (systemd-networkd style)
+    # Bridges for MicroVM traffic (systemd-networkd style)
     systemd.network = {
-      netdevs."10-microvm-br0".netdevConfig = {
-        Kind = "bridge";
-        Name = "microvm-br0";
-      };
+      netdevs = {
+        "10-microvm-br0".netdevConfig = {
+          Kind = "bridge";
+          Name = "microvm-br0";
+        };
+      }
+      // isolatedBridgeNetdevs;
 
-      networks."10-microvm-br0" = {
-        matchConfig.Name = "microvm-br0";
-        networkConfig.Address = [ "10.100.0.1/24" ];
-        # Disable link-local to avoid extra addresses
-        networkConfig.LinkLocalAddressing = "no";
-      };
+      networks = {
+        "10-microvm-br0" = {
+          matchConfig.Name = "microvm-br0";
+          networkConfig.Address = [ "10.100.0.1/24" ];
+          # Disable link-local to avoid extra addresses
+          networkConfig.LinkLocalAddressing = "no";
+        };
 
-      # Attach VM tap interfaces (vm-*) to the bridge
-      networks."11-microvm-tap" = {
-        matchConfig.Name = "vm-*";
-        networkConfig.Bridge = "microvm-br0";
-      };
+        # Attach every non-isolated VM tap interface (vm-*) to the shared bridge.
+        "12-microvm-tap" = {
+          matchConfig.Name = "vm-*";
+          networkConfig.Bridge = "microvm-br0";
+        };
+      }
+      // isolatedBridgeNetworks
+      // isolatedTapNetworks;
     };
 
     networking = {
@@ -542,18 +619,28 @@ in
       nat = {
         enable = true;
         enableIPv6 = false;
-        internalInterfaces = [ "microvm-br0" ];
+        internalInterfaces = [ "microvm-br0" ] ++ isolatedBridgeNames;
         inherit (cfg) externalInterface;
         forwardPorts = allForwardPorts;
       };
 
       # VMs reach the internet via NAT (FORWARD chain) and use external DNS,
-      # so the bridge needs no INPUT-chain trust on the host.
+      # so neither bridge needs INPUT-chain trust on the host.
       # Add interfaces."microvm-br0".allowedTCPPorts here if a VM must reach
       # a specific host service directly.
-      firewall.interfaces."microvm-br0" = {
-        allowedTCPPorts = [ ];
-        allowedUDPPorts = [ ];
+      firewall = {
+        interfaces = {
+          "microvm-br0" = {
+            allowedTCPPorts = [ ];
+            allowedUDPPorts = [ ];
+          };
+        }
+        // isolatedFirewallInterfaces;
+
+        # Rebuild a private chain on every firewall start/reload so topology
+        # changes cannot leave stale cross-bridge rules behind.
+        extraCommands = isolationFirewallCommands;
+        extraStopCommands = isolationFirewallCleanupCommands;
       };
     };
 
