@@ -43,9 +43,9 @@ let
     !prefixIsValid
     || parsedIp == null
     || hostBridge != null
-    || (configuredNetwork != null
-      && prefixLength == 24
-      && configuredNetwork.first == sharedNetwork.first);
+    || (
+      configuredNetwork != null && prefixLength == 24 && configuredNetwork.first == sharedNetwork.first
+    );
 in
 {
   assertions = [

@@ -69,8 +69,9 @@ let
           type = lib.types.bool;
           default = false;
           description = ''
-            Enable Cloudflare Tunnel ingress for this VM's services.
-            Requires sys.services.cloudflared to be configured on the host.
+            
+                        Enable Cloudflare Tunnel ingress for this VM's services.
+                        Requires sys.services.cloudflared to be configured on the host.
           '';
         };
         ingress = lib.mkOption {
@@ -220,7 +221,9 @@ let
       matchConfig.Name = entry.hostBridge;
       networkConfig = {
         Address = [
-          "${entry.gateway or (throw "Registry entry ${name} requires gateway when hostBridge is set")}/${toString (entry.prefixLength or 24)}"
+          "${entry.gateway or (throw "Registry entry ${name} requires gateway when hostBridge is set")}/${
+            toString (entry.prefixLength or 24)
+          }"
         ];
         LinkLocalAddressing = "no";
       };
@@ -443,10 +446,11 @@ in
       ];
       default = "cloud-hypervisor";
       description = ''
-        Default hypervisor for MicroVMs.
-        - cloud-hypervisor: Good security/features balance (Rust-based)
-        - firecracker: Minimal attack surface, used by AWS Lambda
-        - qemu: Most features but larger attack surface
+        
+                Default hypervisor for MicroVMs.
+                - cloud-hypervisor: Good security/features balance (Rust-based)
+                - firecracker: Minimal attack surface, used by AWS Lambda
+                - qemu: Most features but larger attack surface
       '';
     };
 
@@ -466,10 +470,11 @@ in
       type = lib.types.attrsOf (lib.types.submodule instanceModule);
       default = { };
       description = ''
-        Logical per-VM host configuration.
-        Use this namespace to opt a VM into a host and control related
-        exposure toggles such as port forwarding, Cloudflare Tunnel, and
-        reverse proxy generation.
+        
+                Logical per-VM host configuration.
+                Use this namespace to opt a VM into a host and control related
+                exposure toggles such as port forwarding, Cloudflare Tunnel, and
+                reverse proxy generation.
       '';
     };
 
@@ -477,9 +482,10 @@ in
       type = lib.types.str;
       default = "/var/lib/microvms";
       description = ''
-        Base directory for MicroVM state (volumes, sockets, etc.).
-        Each VM gets a subdirectory: <stateDir>/<vm-name>/
-        Set to your ZFS dataset path for better snapshotting.
+        
+                Base directory for MicroVM state (volumes, sockets, etc.).
+                Each VM gets a subdirectory: <stateDir>/<vm-name>/
+                Set to your ZFS dataset path for better snapshotting.
       '';
     };
 
@@ -487,8 +493,9 @@ in
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = ''
-        External network interface for NAT. If null, NAT will use
-        whatever default route is available (works for most setups).
+        
+                External network interface for NAT. If null, NAT will use
+                whatever default route is available (works for most setups).
       '';
     };
 
@@ -496,8 +503,9 @@ in
       type = lib.types.attrsOf vmExposeModule;
       default = { };
       description = ''
-        Per-VM exposure configuration for port forwarding and Cloudflare Tunnel.
-        Keys are VM names (for documentation), values configure how to expose the VM.
+        
+                Per-VM exposure configuration for port forwarding and Cloudflare Tunnel.
+                Keys are VM names (for documentation), values configure how to expose the VM.
       '';
       example = {
         adguard-vm = {
