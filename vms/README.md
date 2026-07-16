@@ -184,9 +184,11 @@ ______________________________________________________________________
 - Secrets are injected per-VM via sops-nix. Services that read
   `/run/secrets/*` at startup should declare `after` and `requires` on
   `sops-install-secrets.service` to avoid boot-order races.
-- Network access is limited to the tap bridge; inter-VM traffic is only
-  possible where explicitly configured (e.g. firefly-importer → firefly over
-  the internal bridge).
+- VMs on the shared `microvm-br0` bridge can reach one another at Layer 2 unless
+  a guest firewall denies the traffic. Pocket ID is the exception: it uses a
+  dedicated bridge with host-level Layer-3 forwarding filters, and its guest
+  firewall accepts TCP ports `22` and `11081` only from Blizzard's dedicated
+  bridge address.
 
 ______________________________________________________________________
 

@@ -1,6 +1,6 @@
 # Architecture Risks and Improvements
 
-> **Last reviewed: 2026-06-30**
+> **Last reviewed: 2026-07-16**
 
 This report captures documentation drift, operational risks, and future
 improvement opportunities discovered during a source-guided architecture
@@ -20,7 +20,8 @@ implicit conventions.
 Most important follow-ups:
 
 1. Resolve or document the standalone `flaresolverr` MicroVM scaffold.
-1. Add registry-level MicroVM validation for CID, MAC, IP, and port uniqueness.
+1. Keep registry and output validation aligned as new MicroVM allocation fields
+   are introduced.
 1. Enforce mutually exclusive host roles or document the convention more
    strongly.
 1. Keep credential lifecycle guidance and private `VARS.users` validation
@@ -42,6 +43,9 @@ ______________________________________________________________________
   exposure problems, including duplicate forwarded ports, duplicate Cloudflare
   ingress hosts, missing VM flakes for enabled instances, and missing IPs for
   port-forwarded instances.
+- `vms/vm-registry.nix` validates allocation uniqueness, IPv4 prefixes and
+  gateways, effective tap IDs, dedicated bridges, and subnet overlap whenever
+  the registry is imported.
 
 ______________________________________________________________________
 
@@ -71,8 +75,8 @@ ______________________________________________________________________
 
 Current source state:
 
-- `vms/flake-microvms.nix` wires 25 `*-vm` outputs.
-- `vms/vm-registry.nix` contains 26 registry entries.
+- `vms/flake-microvms.nix` wires 26 `*-vm` outputs.
+- `vms/vm-registry.nix` contains 27 registry entries.
 - `vms/flaresolverr.nix` exists as a standalone VM definition.
 - `hosts/blizzard/virtualisation/microvms.nix` does not enable a standalone
   `flaresolverr` instance.
@@ -81,8 +85,8 @@ Current source state:
 
 ```mermaid
 flowchart LR
-    R["vm-registry.nix\n26 entries"] --> F["vms/*.nix files\nstandalone flaresolverr exists"]
-    F --> O["flake-microvms.nix\n25 wired VM outputs"]
+    R["vm-registry.nix\n27 entries"] --> F["vms/*.nix files\nstandalone flaresolverr exists"]
+    F --> O["flake-microvms.nix\n26 wired VM outputs"]
     O --> H["blizzard microvm instances\nno standalone flaresolverr"]
     R --> P["prowlarr-vm\nuses registry.flaresolverr.port"]
     P --> S["services.flaresolverr\nruns inside prowlarr-vm"]
@@ -91,7 +95,7 @@ flowchart LR
 
 Recommended action: decide whether `flaresolverr` should be a standalone VM,
 an intentionally embedded service inside `prowlarr-vm`, or removed as leftover
-scaffolding. Until then, documentation should describe **25 wired MicroVM
+scaffolding. Until then, documentation should describe **26 wired MicroVM
 outputs** and call out this exception.
 
 ### Stale architecture blueprint facts
@@ -106,7 +110,7 @@ ______________________________________________________________________
 
 | Area | Risk | Impact | Suggested improvement |
 |------|------|--------|-----------------------|
-| MicroVM registry | CID, MAC, IP, and port uniqueness are documented but not validated at registry level | Runtime network conflicts can be subtle | Add assertions or a CI script that checks `vms/vm-registry.nix` allocations |
+| MicroVM registry | New allocation fields can outgrow the current validation contract | Invalid network allocations can break evaluation or activation | Extend `validate-vm-registry.nix` whenever the registry schema gains a new allocation field |
 | Registry/output drift | Registry entries and VM files can diverge from `flake-microvms.nix` outputs | Docs and host enablement can point at non-existent VM outputs | Validate registry entries against wired outputs, with explicit exceptions |
 | Role selection | `sys.role.desktop.enable` and `sys.role.server.enable` are independent booleans | A host can accidentally enable both role bundles | Add an assertion that at most one role is enabled, or migrate to a role enum |
 | Home overrides | `modules/core/home-users.nix` uses `builtins.pathExists` for conditional override imports | The behavior is convenient but implicit | Keep the pattern documented and consider a lightweight override inventory check |
@@ -149,8 +153,6 @@ ______________________________________________________________________
 
 These are intentionally not implemented in this documentation pass.
 
-1. Add MicroVM registry validation for duplicate CID, MAC, IP, and service
-   ports.
 1. Resolve the `flaresolverr` standalone VM drift.
 1. Add a role exclusivity assertion in the role module layer.
 1. Extend credential lifecycle checks if private `vars.nix` metadata becomes
