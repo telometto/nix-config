@@ -8,6 +8,10 @@ let
   cfg = config.sys.virtualisation.microvm;
   registry = import ../../vms/vm-registry.nix;
   mkVmName = name: "${name}-vm";
+  pocketId = registry."pocket-id";
+  pocketIdBridge = "pocket-id-br0";
+  pocketIdPrefixLength = pocketId.prefixLength or 24;
+  pocketIdTap = pocketId.tapId or "vm-${pocketId.name}";
 
   # Port forward submodule
   portForwardModule = lib.types.submodule {
@@ -514,11 +518,18 @@ in
       inherit (cfg) stateDir;
     };
 
-    # Bridge for MicroVM traffic (systemd-networkd style)
+    # Bridges for MicroVM traffic (systemd-networkd style)
     systemd.network = {
       netdevs."10-microvm-br0".netdevConfig = {
         Kind = "bridge";
         Name = "microvm-br0";
+      };
+
+      # Keep the identity provider off the shared Layer-2 segment. Only the
+      # Blizzard host and Pocket ID's tap are members of this bridge.
+      netdevs."10-pocket-id-br0".netdevConfig = {
+        Kind = "bridge";
+        Name = pocketIdBridge;
       };
 
       networks."10-microvm-br0" = {
@@ -528,8 +539,23 @@ in
         networkConfig.LinkLocalAddressing = "no";
       };
 
-      # Attach VM tap interfaces (vm-*) to the bridge
-      networks."11-microvm-tap" = {
+      networks."10-pocket-id-br0" = {
+        matchConfig.Name = pocketIdBridge;
+        networkConfig = {
+          Address = [ "${pocketId.gateway}/${toString pocketIdPrefixLength}" ];
+          LinkLocalAddressing = "no";
+        };
+      };
+
+      # networkd uses the first matching .network file. Match Pocket ID's tap
+      # before the generic vm-* unit so it cannot join the shared bridge.
+      networks."11-pocket-id-tap" = {
+        matchConfig.Name = pocketIdTap;
+        networkConfig.Bridge = pocketIdBridge;
+      };
+
+      # Attach every other VM tap interface (vm-*) to the shared bridge.
+      networks."12-microvm-tap" = {
         matchConfig.Name = "vm-*";
         networkConfig.Bridge = "microvm-br0";
       };
@@ -542,16 +568,24 @@ in
       nat = {
         enable = true;
         enableIPv6 = false;
-        internalInterfaces = [ "microvm-br0" ];
+        internalInterfaces = [
+          "microvm-br0"
+          pocketIdBridge
+        ];
         inherit (cfg) externalInterface;
         forwardPorts = allForwardPorts;
       };
 
       # VMs reach the internet via NAT (FORWARD chain) and use external DNS,
-      # so the bridge needs no INPUT-chain trust on the host.
+      # so neither bridge needs INPUT-chain trust on the host.
       # Add interfaces."microvm-br0".allowedTCPPorts here if a VM must reach
       # a specific host service directly.
       firewall.interfaces."microvm-br0" = {
+        allowedTCPPorts = [ ];
+        allowedUDPPorts = [ ];
+      };
+
+      firewall.interfaces."pocket-id-br0" = {
         allowedTCPPorts = [ ];
         allowedUDPPorts = [ ];
       };
