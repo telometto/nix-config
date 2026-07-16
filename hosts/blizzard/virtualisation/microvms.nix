@@ -297,13 +297,12 @@ let
 
     immich = {
       enable = true;
-      # Stage 1: boot privately for first-admin setup. For the public route,
-      # set ingressHosts = [ "photos" ], reverseProxy.enable = true, and
-      # IMMICH_ALLOW_SETUP=false in the VM environment after setup is complete.
+      # Keep the VM port off the host while publishing it through the managed
+      # Cloudflare Tunnel and Traefik route.
       portForwards = [ ];
-      ingressHosts = [ ];
+      ingressHosts = [ "photos" ];
       reverseProxy = {
-        enable = false;
+        enable = true;
         subdomain = "photos";
         url = vmUrl "immich";
         middlewares = [
