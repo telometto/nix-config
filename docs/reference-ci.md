@@ -29,6 +29,17 @@ runs `nix fmt` (formatting only, no evaluation), and `update-dashboards.yml` use
 Without this secret, any workflow that evaluates the flake will fail with an
 SSH authentication error.
 
+**PAT_TOKEN requirement:** `update-nix-lock.yml` uses a personal access token
+when it creates or updates the lock-file pull request. A PR opened with the
+built-in `GITHUB_TOKEN` does not trigger the validation workflows that gate
+auto-merge.
+
+For a fine-grained token, grant this repository read/write access to
+**Contents** and **Pull requests**. For a classic token, grant the `repo` scope.
+Store it as the repository Actions secret `PAT_TOKEN`, and rotate the secret
+before the token expires. The workflow validates the token before installing
+Nix and reports whether it is missing, invalid, or lacks push access.
+
 ______________________________________________________________________
 
 ### Auto-Merge Chain
