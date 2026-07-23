@@ -1692,7 +1692,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "A non-zero value means collector state fell outside Cloudflare's available analytics window and the missing interval cannot be recovered.",
+      "description": "A non-zero value means a zone or Access feed fell outside its bounded recovery window and the missing interval cannot be recovered.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1761,11 +1761,23 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max by (zone) (cloudflare_collector_state_gap)",
+          "expr": "max by (zone) (cloudflare_collector_state_gap{zone=~\".+\"})",
           "instant": true,
           "legendFormat": "{{zone}}",
           "range": false,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "max by (poll) (cloudflare_collector_state_gap{poll=~\".+\"})",
+          "instant": true,
+          "legendFormat": "{{poll}}",
+          "range": false,
+          "refId": "B"
         }
       ],
       "title": "Irreversible history gaps",
