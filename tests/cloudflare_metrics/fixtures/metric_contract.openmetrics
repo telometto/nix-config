@@ -2,59 +2,55 @@
 # TYPE cloudflare_http_requests_total counter
 cloudflare_http_requests_total{host="www.example.com",status="200",zone="example.com"} 1
 cloudflare_http_requests_total{overflow="true"} 101
-# HELP cloudflare_http_request_bytes_total Estimated HTTP request bytes collected from Cloudflare adaptive analytics.
-# TYPE cloudflare_http_request_bytes_total counter
-cloudflare_http_request_bytes_total{host="www.example.com",zone="example.com"} 2
-cloudflare_http_request_bytes_total{overflow="true"} 102
-# HELP cloudflare_http_response_bytes_total Estimated HTTP response bytes collected from Cloudflare adaptive analytics.
+# HELP cloudflare_http_response_bytes_total Estimated HTTP data transfer collected from Cloudflare adaptive analytics.
 # TYPE cloudflare_http_response_bytes_total counter
-cloudflare_http_response_bytes_total{host="www.example.com",zone="example.com"} 3
-cloudflare_http_response_bytes_total{overflow="true"} 103
+cloudflare_http_response_bytes_total{host="www.example.com",zone="example.com"} 2
+cloudflare_http_response_bytes_total{overflow="true"} 102
 # HELP cloudflare_http_cache_requests_total Estimated Cloudflare HTTP requests by cache status.
 # TYPE cloudflare_http_cache_requests_total counter
-cloudflare_http_cache_requests_total{cache_status="hit",host="www.example.com",zone="example.com"} 4
-cloudflare_http_cache_requests_total{overflow="true"} 104
+cloudflare_http_cache_requests_total{cache_status="hit",host="www.example.com",zone="example.com"} 3
+cloudflare_http_cache_requests_total{overflow="true"} 103
 # HELP cloudflare_http_requests_country_total Estimated Cloudflare HTTP requests by client country.
 # TYPE cloudflare_http_requests_country_total counter
-cloudflare_http_requests_country_total{country="NO",zone="example.com"} 5
-cloudflare_http_requests_country_total{overflow="true"} 105
+cloudflare_http_requests_country_total{country="NO",zone="example.com"} 4
+cloudflare_http_requests_country_total{overflow="true"} 104
 # HELP cloudflare_http_security_actions_total Estimated Cloudflare HTTP requests by aggregate security action.
 # TYPE cloudflare_http_security_actions_total counter
-cloudflare_http_security_actions_total{action="block",host="www.example.com",source="waf",zone="example.com"} 6
-cloudflare_http_security_actions_total{overflow="true"} 106
+cloudflare_http_security_actions_total{action="block",host="www.example.com",source="waf",zone="example.com"} 5
+cloudflare_http_security_actions_total{overflow="true"} 105
 # HELP cloudflare_http_visits_total Estimated Cloudflare visits collected from adaptive analytics.
 # TYPE cloudflare_http_visits_total counter
-cloudflare_http_visits_total{host="www.example.com",zone="example.com"} 7
-cloudflare_http_visits_total{overflow="true"} 107
+cloudflare_http_visits_total{host="www.example.com",zone="example.com"} 6
+cloudflare_http_visits_total{overflow="true"} 106
 # HELP cloudflare_access_authentications_total Cloudflare Access authentication events.
 # TYPE cloudflare_access_authentications_total counter
-cloudflare_access_authentications_total{app="example-app",decision="allowed",owner="false",principal_type="user"} 8
-cloudflare_access_authentications_total{overflow="true"} 108
+cloudflare_access_authentications_total{app="example-app",decision="allowed",owner="false",principal_type="user"} 7
+cloudflare_access_authentications_total{overflow="true"} 107
 # HELP cloudflare_access_last_authentication_timestamp_seconds Unix timestamp of the latest Cloudflare Access authentication event.
 # TYPE cloudflare_access_last_authentication_timestamp_seconds gauge
-cloudflare_access_last_authentication_timestamp_seconds{app="example-app",decision="allowed",owner="false",principal_type="user"} 9
-cloudflare_access_last_authentication_timestamp_seconds{overflow="true"} 109
+cloudflare_access_last_authentication_timestamp_seconds{app="example-app",decision="allowed",owner="false",principal_type="user"} 8
+cloudflare_access_last_authentication_timestamp_seconds{overflow="true"} 108
 # HELP cloudflare_collector_last_success_timestamp_seconds Unix timestamp of the collector's latest successful poll.
 # TYPE cloudflare_collector_last_success_timestamp_seconds gauge
-cloudflare_collector_last_success_timestamp_seconds{overflow="true"} 110
-cloudflare_collector_last_success_timestamp_seconds{poll="analytics"} 10
+cloudflare_collector_last_success_timestamp_seconds{overflow="true"} 109
+cloudflare_collector_last_success_timestamp_seconds{poll="analytics"} 9
 # HELP cloudflare_collector_api_errors_total Cloudflare API or collector state errors by operation.
 # TYPE cloudflare_collector_api_errors_total counter
-cloudflare_collector_api_errors_total{operation="analytics"} 11
-cloudflare_collector_api_errors_total{overflow="true"} 111
+cloudflare_collector_api_errors_total{operation="analytics"} 10
+cloudflare_collector_api_errors_total{overflow="true"} 110
 # HELP cloudflare_collector_sample_interval Largest Cloudflare adaptive sample interval observed in the latest query.
 # TYPE cloudflare_collector_sample_interval gauge
-cloudflare_collector_sample_interval{overflow="true"} 112
-cloudflare_collector_sample_interval{zone="example.com"} 12
+cloudflare_collector_sample_interval{overflow="true"} 111
+cloudflare_collector_sample_interval{zone="example.com"} 11
 # HELP cloudflare_collector_state_gap Whether an irreversible analytics history gap has been detected.
 # TYPE cloudflare_collector_state_gap gauge
-cloudflare_collector_state_gap{overflow="true"} 113
-cloudflare_collector_state_gap{zone="example.com"} 13
+cloudflare_collector_state_gap{overflow="true"} 112
+cloudflare_collector_state_gap{zone="example.com"} 12
 # HELP cloudflare_collector_catch_up Number of completed intervals awaiting catch-up when a poll began.
 # TYPE cloudflare_collector_catch_up gauge
-cloudflare_collector_catch_up{overflow="true"} 114
-cloudflare_collector_catch_up{poll="analytics"} 14
+cloudflare_collector_catch_up{overflow="true"} 113
+cloudflare_collector_catch_up{poll="analytics"} 13
 # HELP cloudflare_collector_series_overflow_total Series updates redirected to a bounded overflow bucket by source metric.
 # TYPE cloudflare_collector_series_overflow_total counter
-cloudflare_collector_series_overflow_total{metric="cloudflare_http_requests_total"} 15
-cloudflare_collector_series_overflow_total{overflow="true"} 115
+cloudflare_collector_series_overflow_total{metric="cloudflare_http_requests_total"} 14
+cloudflare_collector_series_overflow_total{overflow="true"} 114
