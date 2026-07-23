@@ -26,7 +26,8 @@ The collector reads:
 - the active zone inventory and HTTP adaptive analytics
 - the Access application inventory
 - identity-based Access authentication logs
-- non-identity Access login events, including service-token events
+- non-identity Access login events, including service-token events, when the
+  token is authorized for the supplemental account analytics dataset
 
 Prometheus scrapes the collector once per minute. The collector defaults to a
 five-minute analytics poll and a one-minute Access poll. HTTP analytics are
@@ -35,9 +36,14 @@ delay. Adaptive analytics values are Cloudflare estimates.
 
 Identity-based Access logs come from the Access REST endpoint. Non-identity
 events come from the account-scoped GraphQL
-`accessLoginRequestsAdaptiveGroups` dataset. Both sources share the Access
-high-water mark and Ray ID deduplication state, so a Ray returned by both paths
-is counted once.
+`accessLoginRequestsAdaptiveGroups` dataset. The identity feed is authoritative
+for owner detection and continues when the supplemental GraphQL query is not
+authorized. Both sources use Ray ID deduplication state, so a Ray returned by
+both paths is counted once.
+
+Cloudflare's adaptive HTTP dataset exposes response data transfer through
+`edgeResponseBytes`; it does not expose request-body bytes. The dashboard's
+data-transfer panels therefore report response data transfer only.
 
 Cloudflare's published GraphQL fields for this dataset do not include an
 Access application ID or domain. Non-identity events therefore use
@@ -53,16 +59,17 @@ ______________________________________________________________________
 Create a dedicated token for this collector. Do not reuse a Global API Key or
 a token that can modify Cloudflare resources.
 
-The token needs these read-only permissions:
+The token needs these read-only permissions for core monitoring:
 
 - Zone Read
 - Analytics Read for each monitored zone
-- Account Analytics Read
 - Access Audit Logs Read
 - Access Apps and Policies Read
 
-`Account Analytics Read` is required for the account-scoped non-identity
-Access dataset. See Cloudflare's
+Add `Account Analytics Read` if supplemental non-identity Access events are
+required. A failure of that optional query is exposed as
+`operation="access_nonidentity"` but does not suppress identity-login
+monitoring. See Cloudflare's
 [Analytics API token guide](https://developers.cloudflare.com/analytics/graphql-api/getting-started/authentication/api-token-auth/)
 and [Access login GraphQL example](https://developers.cloudflare.com/analytics/graphql-api/tutorials/querying-access-login-events/).
 
@@ -207,7 +214,9 @@ prove that Cloudflare polling is succeeding. In the metrics response, verify:
 
 - `cloudflare_collector_last_success_timestamp_seconds` exists for
   `inventory`, `analytics`, and `access`
-- `cloudflare_collector_api_errors_total` is not increasing
+- `cloudflare_collector_api_errors_total` is not increasing for `inventory`,
+  `analytics`, or `access`; `access_nonidentity` indicates only the optional
+  supplemental feed
 - `cloudflare_collector_state_gap` is zero for every zone
 - `cloudflare_collector_catch_up` returns to zero after recovery
 - Access series use only the bounded `principal_type` values and contain no
@@ -239,11 +248,12 @@ Grafana evaluates the Cloudflare alert group every minute.
 | Security-action burst | Warning | At least 25 actions other than `allow`, `skip`, or `unknown` for one zone and host in 10 minutes |
 | Origin failure anomaly | Warning | More than 5% of at least 20 requests returned 5xx in 10 minutes, sustained for 5 minutes |
 | Collector failure | Warning | The scrape target is missing or down, or the analytics or Access poll has not succeeded for 15 minutes |
-| Unrecoverable history gap | Warning | Any zone reports a state gap, or the gap metric is absent |
+| Unrecoverable history gap | Warning | Any zone explicitly reports a state gap |
 
-No-data is alerting for collector failure and history gap. Alert notifications
-must contain bounded classifications and application or host context, never a
-raw email address.
+No-data is alerting for collector failure. A missing gap metric is covered by
+collector failure until analytics succeeds; it is not itself proof that
+history was lost. Alert notifications must contain bounded classifications
+and application or host context, never a raw email address.
 
 ______________________________________________________________________
 
@@ -442,10 +452,11 @@ restart loop, inspect the quarantine/save error and filesystem permissions.
 ### API authorization or empty inventory
 
 An increasing `cloudflare_collector_api_errors_total` with operation
-`inventory`, `analytics`, or `access` points to an API or response problem.
-Confirm the token's read permissions, account scope, zone scope, account ID,
-and Cloudflare API availability. Active zones outside the token's resource
-scope are not collected.
+`inventory`, `analytics`, or `access` points to a core API or response problem.
+`access_nonidentity` is the optional GraphQL feed and does not block identity
+login monitoring. Confirm the token's read permissions, account scope, zone
+scope, account ID, and Cloudflare API availability. Active zones outside the
+token's resource scope are not collected.
 
 ### Healthy endpoint but stale metrics
 
@@ -456,14 +467,15 @@ last durable snapshot when a poll fails.
 
 ### Access events are absent
 
-Check the Access Audit Logs Read and Account Analytics Read permissions and the
-account ID. On first start only the latest minute is requested. The REST path
-covers identity-based authentication and the GraphQL path covers events that
-Cloudflare explicitly marks as non-identity. GraphQL non-identity events appear
-under `app="unknown"` because the published dataset does not provide an
-application identifier. If either source fails, the shared Access high-water
-mark is not advanced and `cloudflare_collector_api_errors_total{operation="access"}`
-increments.
+Check Access Audit Logs Read, the account ID, and the token's account resource
+scope. On first start only the latest minute is requested. The REST path covers
+identity-based authentication and drives the Access success timestamp. The
+GraphQL path adds events that Cloudflare explicitly marks as non-identity and
+requires Account Analytics Read. Those supplemental events appear under
+`app="unknown"` because the published dataset does not provide an application
+identifier. A REST failure leaves the Access high-water mark unchanged and
+increments `operation="access"`; a GraphQL-only failure increments
+`operation="access_nonidentity"` while identity monitoring continues.
 
 ### Analytics are delayed or catching up
 
@@ -476,9 +488,11 @@ advancing the high-water mark past missing rows.
 
 ### History-gap alert
 
-Back up the state and inspect the journal and gap metric by zone. The gap means
-the durable high-water mark fell outside the collector's analytics window, so
-the omitted interval cannot be reconstructed by this service. Record the
+Back up the state and inspect the journal and gap metric by zone. An explicit
+value of `1` means the durable high-water mark fell outside the collector's
+analytics window, so the omitted interval cannot be reconstructed by this
+service. An absent metric means analytics has not succeeded yet and is handled
+by the collector-failure alert; it is not evidence of a gap. Record a confirmed
 incident and continuity boundary. Reset state only as a deliberate recovery
 decision after accepting the additional counter reset and first-start data
 loss.
