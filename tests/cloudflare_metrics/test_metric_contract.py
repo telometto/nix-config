@@ -130,6 +130,23 @@ def _representative_state() -> dict:
 
 
 class MetricContractTests(unittest.TestCase):
+    def test_alerts_separate_missing_telemetry_from_confirmed_history_gaps(
+        self,
+    ) -> None:
+        source = ALERTS.read_text(encoding="utf-8")
+        gap_rule = source.split('uid = "cf-history-gap";', 1)[1].split("})", 1)[0]
+
+        self.assertNotIn("absent(cloudflare_collector_state_gap)", gap_rule)
+        self.assertNotIn('noDataState = "Alerting";', gap_rule)
+        self.assertIn(
+            'absent(cloudflare_collector_last_success_timestamp_seconds{poll="analytics"})',
+            source,
+        )
+        self.assertIn(
+            'absent(cloudflare_collector_last_success_timestamp_seconds{poll="access"})',
+            source,
+        )
+
     def test_runtime_rejects_unknown_metrics_and_label_shapes(self) -> None:
         state = cloudflare_metrics.new_state()
         with self.assertRaisesRegex(ValueError, "unknown metric"):
