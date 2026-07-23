@@ -85,6 +85,17 @@ in
         a positive duration such as 30s, 5m, 2h, or 1d.
       '';
     };
+
+    enableNonIdentityAccess = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Whether to collect supplemental non-identity Access events from the
+        account analytics GraphQL dataset. Enable this only when the API token
+        has Account Analytics Read permission. While disabled, GraphQL-only
+        non-identity authentications are outside the collector's coverage.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -114,6 +125,7 @@ in
         LISTEN_PORT = toString cfg.port;
         ANALYTICS_INTERVAL = cfg.analyticsInterval;
         ACCESS_INTERVAL = cfg.accessInterval;
+        ENABLE_NONIDENTITY_ACCESS = lib.boolToString cfg.enableNonIdentityAccess;
       };
 
       serviceConfig = {
