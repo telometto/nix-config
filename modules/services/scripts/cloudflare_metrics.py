@@ -1788,9 +1788,7 @@ class Collector:
                 apply_access_events(state, events, self.apps, self.owner_emails)
                 access_state = state["access"]
                 access_state["high_water"] = now
-                access_state["gap"] = (
-                    bool(access_state.get("gap")) or identity_gap
-                )
+                access_state["gap"] = bool(access_state.get("gap")) or identity_gap
                 prune_access_seen(state, now)
                 set_series(
                     state,
