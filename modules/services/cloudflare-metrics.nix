@@ -45,8 +45,8 @@ in
       description = ''
         Runtime path to a file containing the least-privilege Cloudflare API token.
         The token requires Zone Read, Analytics Read for the monitored zones,
-        Account Analytics Read, Access Audit Logs Read, and Access Apps and
-        Policies Read permissions.
+        Access Audit Logs Read, and Access Apps and Policies Read permissions.
+        Account Analytics Read adds the optional non-identity Access feed.
       '';
       example = "/run/secrets/cloudflare-metrics-api-token";
     };
@@ -85,6 +85,17 @@ in
         a positive duration such as 30s, 5m, 2h, or 1d.
       '';
     };
+
+    enableNonIdentityAccess = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Whether to collect supplemental non-identity Access events from the
+        account analytics GraphQL dataset. Enable this only when the API token
+        has Account Analytics Read permission. While disabled, GraphQL-only
+        non-identity authentications are outside the collector's coverage.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -106,18 +117,15 @@ in
     systemd.services.cloudflare-metrics = {
       description = "Cloudflare analytics and Access Prometheus collector";
       wantedBy = [ "multi-user.target" ];
-      after = [
-        "network-online.target"
-        "sops-install-secrets.service"
-      ];
+      after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
-      requires = [ "sops-install-secrets.service" ];
 
       environment = {
         LISTEN_ADDRESS = "127.0.0.1";
         LISTEN_PORT = toString cfg.port;
         ANALYTICS_INTERVAL = cfg.analyticsInterval;
         ACCESS_INTERVAL = cfg.accessInterval;
+        ENABLE_NONIDENTITY_ACCESS = lib.boolToString cfg.enableNonIdentityAccess;
       };
 
       serviceConfig = {

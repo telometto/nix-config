@@ -157,30 +157,45 @@ in
               (
                 (
                   (min(up{job="cloudflare"}) < bool 1)
-                  or absent(up{job="cloudflare"})
+                  or absent(sum(up{job="cloudflare"}))
                 )
                 +
                 (
-                  (time() - min(cloudflare_collector_last_success_timestamp_seconds{poll=~"analytics|access"}) > bool 900)
-                  or absent(cloudflare_collector_last_success_timestamp_seconds{poll=~"analytics|access"})
+                  (time() - min(cloudflare_collector_last_success_timestamp_seconds{poll="analytics"}) > bool 900)
+                  or absent(sum(cloudflare_collector_last_success_timestamp_seconds{poll="analytics"}))
+                )
+                +
+                (
+                  (time() - min(cloudflare_collector_last_success_timestamp_seconds{poll="access"}) > bool 900)
+                  or absent(sum(cloudflare_collector_last_success_timestamp_seconds{poll="access"}))
+                )
+                +
+                (
+                  (
+                    (min(cloudflare_collector_poll_enabled{poll="access_nonidentity"}) == bool 1)
+                    or vector(0)
+                  )
+                  *
+                  (
+                    (time() - min(cloudflare_collector_last_success_timestamp_seconds{poll="access_nonidentity"}) > bool 900)
+                    or absent(sum(cloudflare_collector_last_success_timestamp_seconds{poll="access_nonidentity"}))
+                  )
                 )
               ) > bool 0
             '';
             summary = "Cloudflare metrics collection is unhealthy";
-            description = "The Cloudflare Prometheus target is down, missing, or has not completed a successful API poll for at least 15 minutes. Check cloudflare-metrics.service and its API errors.";
+            description = "The Cloudflare Prometheus target is down, missing, or a required or explicitly enabled API poll has not succeeded for at least 15 minutes. Check cloudflare-metrics.service and its API errors.";
           })
 
           (mkPrometheusRule {
             uid = "cf-history-gap";
             title = "Cloudflare unrecoverable history gap";
             from = 300;
-            noDataState = "Alerting";
             expr = ''
-              (max(cloudflare_collector_state_gap) > bool 0)
-              or absent(cloudflare_collector_state_gap)
+              max(cloudflare_collector_state_gap) > 0
             '';
             summary = "Cloudflare metrics contain an unrecoverable history gap";
-            description = "Collector state is outside Cloudflare's available analytics window, or the gap metric is missing. The affected interval cannot be reconstructed and should be investigated.";
+            description = "A collector cursor is outside its bounded recovery window. The affected interval cannot be reconstructed and should be investigated.";
           })
         ];
       }

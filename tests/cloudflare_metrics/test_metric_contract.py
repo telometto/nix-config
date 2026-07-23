@@ -69,6 +69,17 @@ def _alert_promql() -> Iterable[tuple[str, str]]:
             yield f"alerts.expr[{index}]", expression
 
 
+def _alert_rule_source(uid: str) -> str:
+    source = ALERTS.read_text(encoding="utf-8")
+    marker = f'uid = "{uid}";'
+    marker_index = source.index(marker)
+    start = source.rfind("(mkPrometheusRule {", 0, marker_index)
+    end = source.index("\n          })", marker_index)
+    if start < 0:
+        raise AssertionError(f"could not find start of alert rule {uid}")
+    return source[start:end]
+
+
 def _normal_labels(metric: str) -> frozenset[str]:
     return frozenset().union(*cloudflare_metrics.METRIC_LABEL_SCHEMAS[metric])
 
@@ -92,7 +103,13 @@ def _representative_state() -> dict:
         "version": cloudflare_metrics.STATE_VERSION,
         "series": {},
         "analytics": {},
-        "access": {"high_water": None, "seen": {}},
+        "access": {
+            "high_water": None,
+            "nonidentity_high_water": None,
+            "seen": {},
+            "gap": False,
+            "nonidentity_gap": False,
+        },
     }
     values = {
         "action": "block",
@@ -130,6 +147,37 @@ def _representative_state() -> dict:
 
 
 class MetricContractTests(unittest.TestCase):
+    def test_alerts_separate_missing_telemetry_from_confirmed_history_gaps(
+        self,
+    ) -> None:
+        failure_rule = _alert_rule_source("cf-collector-failure")
+        gap_rule = _alert_rule_source("cf-history-gap")
+
+        self.assertNotIn("absent(cloudflare_collector_state_gap)", gap_rule)
+        self.assertNotIn('noDataState = "Alerting";', gap_rule)
+        self.assertIn("max(cloudflare_collector_state_gap) > 0", gap_rule)
+        self.assertIn(
+            'absent(sum(cloudflare_collector_last_success_timestamp_seconds{poll="analytics"}))',
+            failure_rule,
+        )
+        self.assertIn(
+            'absent(sum(cloudflare_collector_last_success_timestamp_seconds{poll="access"}))',
+            failure_rule,
+        )
+        self.assertIn(
+            'cloudflare_collector_poll_enabled{poll="access_nonidentity"}',
+            failure_rule,
+        )
+        self.assertIn(
+            'absent(sum(cloudflare_collector_last_success_timestamp_seconds{poll="access_nonidentity"}))',
+            failure_rule,
+        )
+        self.assertIn('absent(sum(up{job="cloudflare"}))', failure_rule)
+        self.assertNotIn(
+            "or absent(cloudflare_collector_last_success_timestamp_seconds",
+            failure_rule,
+        )
+
     def test_runtime_rejects_unknown_metrics_and_label_shapes(self) -> None:
         state = cloudflare_metrics.new_state()
         with self.assertRaisesRegex(ValueError, "unknown metric"):
