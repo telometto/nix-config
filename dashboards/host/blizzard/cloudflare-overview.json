@@ -105,7 +105,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Estimated request plus response bytes per second.",
+      "description": "Estimated response data transfer per second. Cloudflare's adaptive HTTP dataset does not expose request-body bytes.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -154,14 +154,14 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(cloudflare_http_request_bytes_total{zone=~\"$zone\", host=~\"$host\"}[5m])) + sum(rate(cloudflare_http_response_bytes_total{zone=~\"$zone\", host=~\"$host\"}[5m]))",
+          "expr": "sum(rate(cloudflare_http_response_bytes_total{zone=~\"$zone\", host=~\"$host\"}[5m]))",
           "instant": true,
-          "legendFormat": "Bandwidth",
+          "legendFormat": "Data transfer",
           "range": false,
           "refId": "A"
         }
       ],
-      "title": "Bandwidth (estimated)",
+      "title": "Data transfer (estimated)",
       "type": "stat"
     },
     {
@@ -582,7 +582,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Estimated request and response byte rates by hostname.",
+      "description": "Estimated response data-transfer rate by hostname.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -661,24 +661,13 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (host) (rate(cloudflare_http_request_bytes_total{zone=~\"$zone\", host=~\"$host\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} request",
+          "expr": "sum by (host) (rate(cloudflare_http_response_bytes_total{zone=~\"$zone\", host=~\"$host\"}[$__rate_interval]))",
+          "legendFormat": "{{host}}",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum by (host) (rate(cloudflare_http_response_bytes_total{zone=~\"$zone\", host=~\"$host\"}[$__rate_interval]))",
-          "legendFormat": "{{host}} response",
-          "range": true,
-          "refId": "B"
         }
       ],
-      "title": "Bandwidth by hostname (estimated)",
+      "title": "Data transfer by hostname (estimated)",
       "type": "timeseries"
     },
     {
