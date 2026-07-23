@@ -416,6 +416,39 @@ class StateMigrationTests(unittest.TestCase):
         ]
         self.assertTrue(all("principal" in labels for labels in legacy_labels))
 
+    def test_v2_migration_splits_access_cursors_and_removes_retired_metric(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "state.json"
+            state = cloudflare_metrics.new_state()
+            state["version"] = 2
+            state["access"]["high_water"] = 9000
+            for field in ("nonidentity_high_water", "gap", "nonidentity_gap"):
+                state["access"].pop(field)
+            state["series"]["cloudflare_http_request_bytes_total"] = {
+                cloudflare_metrics._series_key(
+                    {"zone": "example.com", "host": "www.example.com"}
+                ): 123
+            }
+            path.write_text(json.dumps(state), encoding="utf-8")
+
+            with mock.patch.object(cloudflare_metrics, "_fsync_directory"):
+                migrated = cloudflare_metrics.StateStore(path).load()
+
+            self.assertEqual(migrated["version"], cloudflare_metrics.STATE_VERSION)
+            self.assertEqual(migrated["access"]["high_water"], 9000)
+            self.assertEqual(migrated["access"]["nonidentity_high_water"], 9000)
+            self.assertFalse(migrated["access"]["gap"])
+            self.assertTrue(migrated["access"]["nonidentity_gap"])
+            self.assertNotIn(
+                "cloudflare_http_request_bytes_total",
+                migrated["series"],
+            )
+            self.assertTrue(
+                cloudflare_metrics.StateStore(path).migration_backup_path(2).exists()
+            )
+
 
 class StateRecoveryTests(unittest.TestCase):
     def test_corrupt_json_and_utf8_are_quarantined_and_replaced(self) -> None:
@@ -525,6 +558,7 @@ class FakeAPI:
         self.access_logs = access_logs or []
         self.nonidentity_logs = nonidentity_logs or []
         self.analytics_calls: list[tuple[str, float, float]] = []
+        self.access_calls: list[tuple[float, float]] = []
         self.nonidentity_calls: list[tuple[float, float]] = []
 
     def list_zones(self) -> list[dict]:
@@ -540,6 +574,7 @@ class FakeAPI:
         return self.response
 
     def list_access_logs(self, start: float, end: float) -> list[dict]:
+        self.access_calls.append((start, end))
         if self.fail or self.fail_operation == "rest-access":
             raise cloudflare_metrics.CloudflareError("fixture failure")
         return self.access_logs
@@ -815,7 +850,9 @@ class AccessTests(unittest.TestCase):
             ("unknown", "false"),
         )
 
-    def test_access_events_are_deduplicated_and_keep_last_timestamp(self) -> None:
+    def test_access_events_are_deduplicated_and_keep_unknown_rows_alertable(
+        self,
+    ) -> None:
         state = cloudflare_metrics.new_state()
         events = [
             {
@@ -869,6 +906,7 @@ class AccessTests(unittest.TestCase):
             ),
             1,
         )
+        self.assertIn("ray-two", state["access"]["seen"])
 
     def test_nonidentity_fixture_classifies_service_tokens_and_unknown_context(
         self,
@@ -918,7 +956,7 @@ class AccessTests(unittest.TestCase):
             "created_at": "2026-07-15T10:02:00Z",
             "app_uid": "app-id",
             "allowed": True,
-            "user_email": "",
+            "user_email": "guest@example.com",
         }
 
         self.assertEqual(
@@ -965,6 +1003,7 @@ class AccessTests(unittest.TestCase):
     def test_nonidentity_failure_does_not_suppress_identity_monitoring(self) -> None:
         state = cloudflare_metrics.new_state()
         state["access"]["high_water"] = 9000
+        state["access"]["nonidentity_high_water"] = 9000
         collector = cloudflare_metrics.Collector(
             FakeAPI(
                 fail_operation="graphql-access",
@@ -980,6 +1019,7 @@ class AccessTests(unittest.TestCase):
             ),
             MemoryStore(state),
             {"owner@example.com"},
+            enable_nonidentity_access=True,
         )
         collector.apps = {"app-id": "Example app"}
 
@@ -987,6 +1027,7 @@ class AccessTests(unittest.TestCase):
 
         snapshot = collector.snapshot()
         self.assertEqual(snapshot["access"]["high_water"], 12_000)
+        self.assertEqual(snapshot["access"]["nonidentity_high_water"], 9000)
         self.assertEqual(
             cloudflare_metrics.get_series(
                 snapshot,
@@ -1017,6 +1058,49 @@ class AccessTests(unittest.TestCase):
             1,
         )
 
+    def test_graphql_outage_keeps_ambiguous_rest_event_visible_as_unknown(
+        self,
+    ) -> None:
+        state = cloudflare_metrics.new_state()
+        state["access"]["high_water"] = 9000
+        state["access"]["nonidentity_high_water"] = 9000
+        collector = cloudflare_metrics.Collector(
+            FakeAPI(
+                fail_operation="graphql-access",
+                access_logs=[
+                    {
+                        "ray_id": "ray-service-token",
+                        "created_at": "2026-07-15T10:00:00Z",
+                        "app_uid": "app-id",
+                        "allowed": True,
+                        "user_email": "",
+                    }
+                ],
+            ),
+            MemoryStore(state),
+            {"owner@example.com"},
+            enable_nonidentity_access=True,
+        )
+
+        collector.poll_access(12_000)
+
+        snapshot = collector.snapshot()
+        self.assertEqual(snapshot["access"]["high_water"], 12_000)
+        self.assertIn("ray-service-token", snapshot["access"]["seen"])
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_access_authentications_total",
+                {
+                    "app": "Example app",
+                    "decision": "allowed",
+                    "principal_type": "unknown",
+                    "owner": "false",
+                },
+            ),
+            1,
+        )
+
     def test_identity_failure_does_not_advance_access_high_water(self) -> None:
         state = cloudflare_metrics.new_state()
         state["access"]["high_water"] = 9000
@@ -1041,6 +1125,170 @@ class AccessTests(unittest.TestCase):
             ),
             1,
         )
+
+    def test_identity_failure_does_not_suppress_nonidentity_monitoring(self) -> None:
+        state = cloudflare_metrics.new_state()
+        state["access"]["high_water"] = 9000
+        state["access"]["nonidentity_high_water"] = 9000
+        api = FakeAPI(
+            fail_operation="rest-access",
+            nonidentity_logs=nonidentity_access_fixture(),
+        )
+        collector = cloudflare_metrics.Collector(
+            api,
+            MemoryStore(state),
+            {"owner@example.com"},
+            enable_nonidentity_access=True,
+        )
+
+        collector.poll_access(12_000)
+
+        snapshot = collector.snapshot()
+        self.assertEqual(snapshot["access"]["high_water"], 9000)
+        self.assertEqual(snapshot["access"]["nonidentity_high_water"], 12_000)
+        self.assertEqual(api.nonidentity_calls, [(8700, 12_000)])
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_collector_last_success_timestamp_seconds",
+                {"poll": "access_nonidentity"},
+            ),
+            12_000,
+        )
+
+    def test_malformed_nonidentity_row_does_not_suppress_identity_monitoring(
+        self,
+    ) -> None:
+        state = cloudflare_metrics.new_state()
+        state["access"]["high_water"] = 9000
+        state["access"]["nonidentity_high_water"] = 9000
+        api = FakeAPI(
+            access_logs=[
+                {
+                    "ray_id": "ray-owner",
+                    "created_at": "2026-07-15T10:00:00Z",
+                    "app_uid": "app-id",
+                    "allowed": True,
+                    "user_email": "owner@example.com",
+                }
+            ],
+            nonidentity_logs=[{"dimensions": {"identityProvider": "google"}}],
+        )
+        collector = cloudflare_metrics.Collector(
+            api,
+            MemoryStore(state),
+            {"owner@example.com"},
+            enable_nonidentity_access=True,
+        )
+        collector.apps = {"app-id": "Example app"}
+
+        collector.poll_access(12_000)
+
+        snapshot = collector.snapshot()
+        self.assertEqual(snapshot["access"]["high_water"], 12_000)
+        self.assertEqual(snapshot["access"]["nonidentity_high_water"], 9000)
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_collector_api_errors_total",
+                {"operation": "access_nonidentity"},
+            ),
+            1,
+        )
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_access_authentications_total",
+                {
+                    "app": "Example app",
+                    "decision": "allowed",
+                    "principal_type": "owner",
+                    "owner": "true",
+                },
+            ),
+            1,
+        )
+
+    def test_nonidentity_recovery_uses_its_own_cursor_after_long_outage(self) -> None:
+        state = cloudflare_metrics.new_state()
+        state["access"]["high_water"] = 11_000
+        state["access"]["nonidentity_high_water"] = 9000
+        api = FakeAPI(fail_operation="graphql-access")
+        collector = cloudflare_metrics.Collector(
+            api,
+            MemoryStore(state),
+            {"owner@example.com"},
+            enable_nonidentity_access=True,
+        )
+
+        collector.poll_access(12_000)
+        api.fail_operation = None
+        collector.poll_access(12_600)
+
+        snapshot = collector.snapshot()
+        self.assertEqual(snapshot["access"]["high_water"], 12_600)
+        self.assertEqual(snapshot["access"]["nonidentity_high_water"], 12_600)
+        self.assertEqual(api.nonidentity_calls, [(8700, 12_000), (8700, 12_600)])
+
+    def test_optional_nonidentity_feed_is_not_queried_when_disabled(self) -> None:
+        api = FakeAPI(fail_operation="graphql-access")
+        collector = cloudflare_metrics.Collector(
+            api,
+            MemoryStore(),
+            {"owner@example.com"},
+        )
+
+        collector.poll_access(12_000)
+
+        snapshot = collector.snapshot()
+        self.assertEqual(api.nonidentity_calls, [])
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_collector_poll_enabled",
+                {"poll": "access_nonidentity"},
+            ),
+            0,
+        )
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_collector_api_errors_total",
+                {"operation": "access_nonidentity"},
+            ),
+            0,
+        )
+
+    def test_access_recovery_is_bounded_and_latches_each_source_gap(self) -> None:
+        now = 1_000_000
+        oldest = now - cloudflare_metrics.ACCESS_SEEN_SECONDS
+        state = cloudflare_metrics.new_state()
+        state["access"]["high_water"] = oldest - 1
+        state["access"]["nonidentity_high_water"] = oldest - 1
+        api = FakeAPI()
+        collector = cloudflare_metrics.Collector(
+            api,
+            MemoryStore(state),
+            {"owner@example.com"},
+            enable_nonidentity_access=True,
+        )
+
+        collector.poll_access(now)
+
+        snapshot = collector.snapshot()
+        self.assertEqual(api.access_calls, [(oldest, now)])
+        self.assertEqual(api.nonidentity_calls, [(oldest, now)])
+        self.assertTrue(snapshot["access"]["gap"])
+        self.assertTrue(snapshot["access"]["nonidentity_gap"])
+        for poll in ("access", "access_nonidentity"):
+            self.assertEqual(
+                cloudflare_metrics.get_series(
+                    snapshot,
+                    "cloudflare_collector_state_gap",
+                    {"poll": poll},
+                ),
+                1,
+            )
 
     def test_legacy_principal_series_are_aggregated_without_identity_labels(
         self,
@@ -1294,6 +1542,12 @@ class UtilityTests(unittest.TestCase):
         self.assertEqual(cloudflare_metrics.parse_duration("1min"), 60)
         with self.assertRaises(ValueError):
             cloudflare_metrics.parse_duration("tomorrow")
+
+    def test_boolean_parser_is_strict(self) -> None:
+        self.assertTrue(cloudflare_metrics.parse_bool(" TRUE "))
+        self.assertFalse(cloudflare_metrics.parse_bool("false"))
+        with self.assertRaises(ValueError):
+            cloudflare_metrics.parse_bool("yes")
 
 
 if __name__ == "__main__":

@@ -34,23 +34,28 @@ cloudflare_access_last_authentication_timestamp_seconds{overflow="true"} 108
 # TYPE cloudflare_collector_last_success_timestamp_seconds gauge
 cloudflare_collector_last_success_timestamp_seconds{overflow="true"} 109
 cloudflare_collector_last_success_timestamp_seconds{poll="analytics"} 9
+# HELP cloudflare_collector_poll_enabled Whether an optional collector poll is enabled.
+# TYPE cloudflare_collector_poll_enabled gauge
+cloudflare_collector_poll_enabled{overflow="true"} 110
+cloudflare_collector_poll_enabled{poll="analytics"} 10
 # HELP cloudflare_collector_api_errors_total Cloudflare API or collector state errors by operation.
 # TYPE cloudflare_collector_api_errors_total counter
-cloudflare_collector_api_errors_total{operation="analytics"} 10
-cloudflare_collector_api_errors_total{overflow="true"} 110
+cloudflare_collector_api_errors_total{operation="analytics"} 11
+cloudflare_collector_api_errors_total{overflow="true"} 111
 # HELP cloudflare_collector_sample_interval Largest Cloudflare adaptive sample interval observed in the latest query.
 # TYPE cloudflare_collector_sample_interval gauge
-cloudflare_collector_sample_interval{overflow="true"} 111
-cloudflare_collector_sample_interval{zone="example.com"} 11
-# HELP cloudflare_collector_state_gap Whether an irreversible analytics history gap has been detected.
+cloudflare_collector_sample_interval{overflow="true"} 112
+cloudflare_collector_sample_interval{zone="example.com"} 12
+# HELP cloudflare_collector_state_gap Whether an irreversible collector history gap has been detected.
 # TYPE cloudflare_collector_state_gap gauge
-cloudflare_collector_state_gap{overflow="true"} 112
-cloudflare_collector_state_gap{zone="example.com"} 12
+cloudflare_collector_state_gap{overflow="true"} 113
+cloudflare_collector_state_gap{poll="analytics"} 13
+cloudflare_collector_state_gap{zone="example.com"} 13
 # HELP cloudflare_collector_catch_up Number of completed intervals awaiting catch-up when a poll began.
 # TYPE cloudflare_collector_catch_up gauge
-cloudflare_collector_catch_up{overflow="true"} 113
-cloudflare_collector_catch_up{poll="analytics"} 13
+cloudflare_collector_catch_up{overflow="true"} 114
+cloudflare_collector_catch_up{poll="analytics"} 14
 # HELP cloudflare_collector_series_overflow_total Series updates redirected to a bounded overflow bucket by source metric.
 # TYPE cloudflare_collector_series_overflow_total counter
-cloudflare_collector_series_overflow_total{metric="cloudflare_http_requests_total"} 14
-cloudflare_collector_series_overflow_total{overflow="true"} 114
+cloudflare_collector_series_overflow_total{metric="cloudflare_http_requests_total"} 15
+cloudflare_collector_series_overflow_total{overflow="true"} 115
