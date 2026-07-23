@@ -161,8 +161,13 @@ in
                 )
                 +
                 (
-                  (time() - min(cloudflare_collector_last_success_timestamp_seconds{poll=~"analytics|access"}) > bool 900)
-                  or absent(cloudflare_collector_last_success_timestamp_seconds{poll=~"analytics|access"})
+                  (time() - min(cloudflare_collector_last_success_timestamp_seconds{poll="analytics"}) > bool 900)
+                  or absent(cloudflare_collector_last_success_timestamp_seconds{poll="analytics"})
+                )
+                +
+                (
+                  (time() - min(cloudflare_collector_last_success_timestamp_seconds{poll="access"}) > bool 900)
+                  or absent(cloudflare_collector_last_success_timestamp_seconds{poll="access"})
                 )
               ) > bool 0
             '';
@@ -174,13 +179,11 @@ in
             uid = "cf-history-gap";
             title = "Cloudflare unrecoverable history gap";
             from = 300;
-            noDataState = "Alerting";
             expr = ''
-              (max(cloudflare_collector_state_gap) > bool 0)
-              or absent(cloudflare_collector_state_gap)
+              max(cloudflare_collector_state_gap) > 0
             '';
             summary = "Cloudflare metrics contain an unrecoverable history gap";
-            description = "Collector state is outside Cloudflare's available analytics window, or the gap metric is missing. The affected interval cannot be reconstructed and should be investigated.";
+            description = "Collector state is outside Cloudflare's available analytics window. The affected interval cannot be reconstructed and should be investigated.";
           })
         ];
       }
