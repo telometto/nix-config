@@ -85,7 +85,7 @@ query CloudflareMetrics($zoneTag: string, $start: Time, $end: Time) {
       ) {
         count
         avg { sampleInterval }
-        sum { clientRequestBytes edgeResponseBytes }
+        sum { edgeResponseBytes }
         dimensions {
           datetimeFiveMinutes
           clientRequestHTTPHost
@@ -198,13 +198,9 @@ METRIC_SPECS: dict[str, tuple[str, str]] = {
         "counter",
         "Estimated Cloudflare HTTP requests collected from adaptive analytics.",
     ),
-    "cloudflare_http_request_bytes_total": (
-        "counter",
-        "Estimated HTTP request bytes collected from Cloudflare adaptive analytics.",
-    ),
     "cloudflare_http_response_bytes_total": (
         "counter",
-        "Estimated HTTP response bytes collected from Cloudflare adaptive analytics.",
+        "Estimated HTTP data transfer collected from Cloudflare adaptive analytics.",
     ),
     "cloudflare_http_cache_requests_total": (
         "counter",
@@ -262,7 +258,6 @@ METRIC_SPECS: dict[str, tuple[str, str]] = {
 # is exhausted; mixing overflow with normal labels is deliberately forbidden.
 METRIC_LABEL_SCHEMAS: dict[str, tuple[frozenset[str], ...]] = {
     "cloudflare_http_requests_total": (frozenset({"zone", "host", "status"}),),
-    "cloudflare_http_request_bytes_total": (frozenset({"zone", "host"}),),
     "cloudflare_http_response_bytes_total": (frozenset({"zone", "host"}),),
     "cloudflare_http_cache_requests_total": (
         frozenset({"zone", "host", "cache_status"}),
@@ -1169,12 +1164,6 @@ def apply_analytics_response(
                 )
                 add_series(
                     state,
-                    "cloudflare_http_request_bytes_total",
-                    {"zone": zone_name, "host": host},
-                    sums.get("clientRequestBytes", 0),
-                )
-                add_series(
-                    state,
                     "cloudflare_http_response_bytes_total",
                     {"zone": zone_name, "host": host},
                     sums.get("edgeResponseBytes", 0),
@@ -1629,17 +1618,31 @@ class Collector:
             start = high_water - ACCESS_OVERLAP_SECONDS
             catch_up = max(0, int((now - high_water) / 60) - 1)
         try:
+            events = self.api.list_access_logs(start, now)
+        except CloudflareError:
+            self.record_error("access")
+            LOG.exception("Cloudflare identity Access log poll failed")
+            return
+
+        try:
             nonidentity_events = query_complete_nonidentity_access(
                 self.api,
                 start,
                 now,
                 row_limit=self.access_graphql_row_limit,
             )
-            events = self.api.list_access_logs(start, now)
-        except CloudflareError:
-            self.record_error("access")
-            LOG.exception("Cloudflare Access log poll failed")
-            return
+        except CloudflareError as error:
+            # The REST feed contains the user identities needed for owner
+            # detection. Non-identity GraphQL events are supplemental and may
+            # require broader account analytics authorization, so their
+            # failure must not suppress identity-login monitoring.
+            nonidentity_events = []
+            self.record_error("access_nonidentity")
+            LOG.warning(
+                "Cloudflare non-identity Access log poll failed; continuing "
+                "with identity logs: %s",
+                error,
+            )
 
         def apply(state: dict[str, Any]) -> None:
             # Apply GraphQL first so a ray unexpectedly present in both sources
