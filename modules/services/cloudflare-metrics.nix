@@ -45,8 +45,8 @@ in
       description = ''
         Runtime path to a file containing the least-privilege Cloudflare API token.
         The token requires Zone Read, Analytics Read for the monitored zones,
-        Account Analytics Read, Access Audit Logs Read, and Access Apps and
-        Policies Read permissions.
+        Access Audit Logs Read, and Access Apps and Policies Read permissions.
+        Account Analytics Read adds the optional non-identity Access feed.
       '';
       example = "/run/secrets/cloudflare-metrics-api-token";
     };
@@ -106,12 +106,8 @@ in
     systemd.services.cloudflare-metrics = {
       description = "Cloudflare analytics and Access Prometheus collector";
       wantedBy = [ "multi-user.target" ];
-      after = [
-        "network-online.target"
-        "sops-install-secrets.service"
-      ];
+      after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
-      requires = [ "sops-install-secrets.service" ];
 
       environment = {
         LISTEN_ADDRESS = "127.0.0.1";
