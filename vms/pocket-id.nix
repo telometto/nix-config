@@ -2,6 +2,7 @@
   config,
   inputs,
   VARS,
+  lib,
   ...
 }:
 let
@@ -26,6 +27,8 @@ in
       }
     ))
   ];
+
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   # The VM's persistent SSH host key is its SOPS age identity. On first boot,
   # add that recipient and pocket-id/encryption_key to the private nix-secrets
