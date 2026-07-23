@@ -174,7 +174,7 @@ class MetricContractTests(unittest.TestCase):
         )
         self.assertIn('absent(sum(up{job="cloudflare"}))', failure_rule)
         self.assertNotIn(
-            'or absent(cloudflare_collector_last_success_timestamp_seconds',
+            "or absent(cloudflare_collector_last_success_timestamp_seconds",
             failure_rule,
         )
 
