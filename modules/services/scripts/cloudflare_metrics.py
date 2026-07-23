@@ -35,7 +35,7 @@ LOG = logging.getLogger("cloudflare-metrics")
 
 API_BASE = "https://api.cloudflare.com/client/v4"
 GRAPHQL_URL = "https://api.cloudflare.com/client/v4/graphql"
-STATE_VERSION = 2
+STATE_VERSION = 3
 
 ANALYTICS_DELAY_SECONDS = 10 * 60
 ANALYTICS_BUCKET_SECONDS = 5 * 60
@@ -85,7 +85,7 @@ query CloudflareMetrics($zoneTag: string, $start: Time, $end: Time) {
       ) {
         count
         avg { sampleInterval }
-        sum { clientRequestBytes edgeResponseBytes }
+        sum { edgeResponseBytes }
         dimensions {
           datetimeFiveMinutes
           clientRequestHTTPHost
@@ -198,13 +198,9 @@ METRIC_SPECS: dict[str, tuple[str, str]] = {
         "counter",
         "Estimated Cloudflare HTTP requests collected from adaptive analytics.",
     ),
-    "cloudflare_http_request_bytes_total": (
-        "counter",
-        "Estimated HTTP request bytes collected from Cloudflare adaptive analytics.",
-    ),
     "cloudflare_http_response_bytes_total": (
         "counter",
-        "Estimated HTTP response bytes collected from Cloudflare adaptive analytics.",
+        "Estimated HTTP data transfer collected from Cloudflare adaptive analytics.",
     ),
     "cloudflare_http_cache_requests_total": (
         "counter",
@@ -234,6 +230,10 @@ METRIC_SPECS: dict[str, tuple[str, str]] = {
         "gauge",
         "Unix timestamp of the collector's latest successful poll.",
     ),
+    "cloudflare_collector_poll_enabled": (
+        "gauge",
+        "Whether an optional collector poll is enabled.",
+    ),
     "cloudflare_collector_api_errors_total": (
         "counter",
         "Cloudflare API or collector state errors by operation.",
@@ -244,7 +244,7 @@ METRIC_SPECS: dict[str, tuple[str, str]] = {
     ),
     "cloudflare_collector_state_gap": (
         "gauge",
-        "Whether an irreversible analytics history gap has been detected.",
+        "Whether an irreversible collector history gap has been detected.",
     ),
     "cloudflare_collector_catch_up": (
         "gauge",
@@ -262,7 +262,6 @@ METRIC_SPECS: dict[str, tuple[str, str]] = {
 # is exhausted; mixing overflow with normal labels is deliberately forbidden.
 METRIC_LABEL_SCHEMAS: dict[str, tuple[frozenset[str], ...]] = {
     "cloudflare_http_requests_total": (frozenset({"zone", "host", "status"}),),
-    "cloudflare_http_request_bytes_total": (frozenset({"zone", "host"}),),
     "cloudflare_http_response_bytes_total": (frozenset({"zone", "host"}),),
     "cloudflare_http_cache_requests_total": (
         frozenset({"zone", "host", "cache_status"}),
@@ -279,9 +278,13 @@ METRIC_LABEL_SCHEMAS: dict[str, tuple[frozenset[str], ...]] = {
         frozenset({"app", "decision", "principal_type", "owner"}),
     ),
     "cloudflare_collector_last_success_timestamp_seconds": (frozenset({"poll"}),),
+    "cloudflare_collector_poll_enabled": (frozenset({"poll"}),),
     "cloudflare_collector_api_errors_total": (frozenset({"operation"}),),
     "cloudflare_collector_sample_interval": (frozenset({"zone"}),),
-    "cloudflare_collector_state_gap": (frozenset({"zone"}),),
+    "cloudflare_collector_state_gap": (
+        frozenset({"zone"}),
+        frozenset({"poll"}),
+    ),
     "cloudflare_collector_catch_up": (frozenset({"poll"}),),
     OVERFLOW_METRIC: (frozenset({"metric"}),),
 }
@@ -326,6 +329,15 @@ def parse_duration(value: str) -> int:
     if amount <= 0:
         raise ValueError("duration must be positive")
     return amount * multiplier
+
+
+def parse_bool(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    raise ValueError(f"unsupported boolean: {value!r}")
 
 
 def parse_timestamp(value: str | None) -> float:
@@ -649,7 +661,7 @@ def validate_state(state: Any) -> None:
     """Validate the persisted containers consumed by the collector."""
     if not isinstance(state, Mapping):
         raise StateValidationError("collector state root must be an object")
-    _state_version(state)
+    version = _state_version(state)
 
     series = state.get("series")
     if not isinstance(series, Mapping):
@@ -696,6 +708,16 @@ def validate_state(state: Any) -> None:
         raise StateValidationError("collector state access must be an object")
     _validate_optional_timestamp(access.get("high_water"), "access.high_water")
     _validate_seen_map(access.get("seen"), "access.seen")
+    if version >= 3:
+        _validate_optional_timestamp(
+            access.get("nonidentity_high_water"),
+            "access.nonidentity_high_water",
+        )
+        for field in ("gap", "nonidentity_gap"):
+            if not isinstance(access.get(field), bool):
+                raise StateValidationError(
+                    f"collector state access.{field} must be boolean"
+                )
 
 
 def _migrate_v1_to_v2(state: dict[str, Any]) -> dict[str, Any]:
@@ -706,8 +728,25 @@ def _migrate_v1_to_v2(state: dict[str, Any]) -> dict[str, Any]:
     return state
 
 
+def _migrate_v2_to_v3(state: dict[str, Any]) -> dict[str, Any]:
+    """Split Access cursors and remove the retired request-byte series."""
+    access = state.setdefault("access", {"high_water": None, "seen": {}})
+    legacy_high_water = access.get("high_water")
+    access["nonidentity_high_water"] = legacy_high_water
+    access["gap"] = False
+    # V2 advanced one shared cursor after a successful REST poll even when the
+    # supplemental GraphQL poll failed. Preserve that cursor to avoid a
+    # disruptive backfill, but record that its non-identity continuity cannot
+    # be proven.
+    access["nonidentity_gap"] = legacy_high_water is not None
+    state.setdefault("series", {}).pop("cloudflare_http_request_bytes_total", None)
+    state["version"] = 3
+    return state
+
+
 STATE_MIGRATIONS: dict[int, Callable[[dict[str, Any]], dict[str, Any]]] = {
     1: _migrate_v1_to_v2,
+    2: _migrate_v2_to_v3,
 }
 
 
@@ -750,10 +789,22 @@ def new_state() -> dict[str, Any]:
         "version": STATE_VERSION,
         "series": {},
         "analytics": {},
-        "access": {"high_water": None, "seen": {}},
+        "access": {
+            "high_water": None,
+            "nonidentity_high_water": None,
+            "seen": {},
+            "gap": False,
+            "nonidentity_gap": False,
+        },
     }
     set_series(state, "cloudflare_collector_catch_up", {"poll": "analytics"}, 0)
     set_series(state, "cloudflare_collector_catch_up", {"poll": "access"}, 0)
+    set_series(
+        state,
+        "cloudflare_collector_catch_up",
+        {"poll": "access_nonidentity"},
+        0,
+    )
     return state
 
 
@@ -1169,12 +1220,6 @@ def apply_analytics_response(
                 )
                 add_series(
                     state,
-                    "cloudflare_http_request_bytes_total",
-                    {"zone": zone_name, "host": host},
-                    sums.get("clientRequestBytes", 0),
-                )
-                add_series(
-                    state,
                     "cloudflare_http_response_bytes_total",
                     {"zone": zone_name, "host": host},
                     sums.get("edgeResponseBytes", 0),
@@ -1257,7 +1302,16 @@ def _record_access_event(
     principal_type: str,
     owner: str,
 ) -> bool:
-    access_state = state.setdefault("access", {"high_water": None, "seen": {}})
+    access_state = state.setdefault(
+        "access",
+        {
+            "high_water": None,
+            "nonidentity_high_water": None,
+            "seen": {},
+            "gap": False,
+            "nonidentity_gap": False,
+        },
+    )
     seen: dict[str, float] = access_state.setdefault("seen", {})
     if identity in seen:
         return False
@@ -1436,6 +1490,31 @@ def query_complete_nonidentity_access(
     ) + query_complete_nonidentity_access(api, split, end, row_limit=row_limit)
 
 
+def access_poll_window(
+    high_water: Any,
+    now: float,
+) -> tuple[float, int, bool]:
+    """Return a bounded Access query start, catch-up count, and gap status."""
+    if high_water is None:
+        return now - 60, 0, False
+    cursor = float(high_water)
+    oldest = now - ACCESS_SEEN_SECONDS
+    gap = cursor < oldest
+    start = max(cursor - ACCESS_OVERLAP_SECONDS, oldest)
+    catch_up = max(0, int((now - cursor) / 60) - 1)
+    return start, catch_up, gap
+
+
+def prune_access_seen(state: dict[str, Any], now: float) -> None:
+    access_state = state["access"]
+    cutoff = now - ACCESS_SEEN_SECONDS
+    access_state["seen"] = {
+        identity: timestamp
+        for identity, timestamp in access_state.get("seen", {}).items()
+        if float(timestamp) >= cutoff
+    }
+
+
 class Collector:
     def __init__(
         self,
@@ -1446,6 +1525,7 @@ class Collector:
         analytics_window: int = ANALYTICS_WINDOW_SECONDS,
         analytics_row_limit: int = ANALYTICS_ROW_LIMIT,
         access_graphql_row_limit: int = ACCESS_GRAPHQL_ROW_LIMIT,
+        enable_nonidentity_access: bool = False,
     ):
         self.api = api
         self.store = store
@@ -1455,8 +1535,15 @@ class Collector:
         self.analytics_window = analytics_window
         self.analytics_row_limit = analytics_row_limit
         self.access_graphql_row_limit = access_graphql_row_limit
+        self.enable_nonidentity_access = enable_nonidentity_access
         self.lock = threading.RLock()
         self.state = store.load()
+        set_series(
+            self.state,
+            "cloudflare_collector_poll_enabled",
+            {"poll": "access_nonidentity"},
+            1 if self.enable_nonidentity_access else 0,
+        )
         self.zones: list[dict[str, Any]] = []
         self.apps: dict[str, str] = {}
 
@@ -1620,58 +1707,113 @@ class Collector:
                 return
 
         snapshot = self.snapshot()
-        high_water = snapshot.get("access", {}).get("high_water")
-        if high_water is None:
-            start = now - 60
-            catch_up = 0
-        else:
-            high_water = float(high_water)
-            start = high_water - ACCESS_OVERLAP_SECONDS
-            catch_up = max(0, int((now - high_water) / 60) - 1)
+        access_snapshot = snapshot.get("access", {})
+        identity_start, identity_catch_up, identity_gap = access_poll_window(
+            access_snapshot.get("high_water"),
+            now,
+        )
+        nonidentity_start, nonidentity_catch_up, nonidentity_gap = access_poll_window(
+            access_snapshot.get("nonidentity_high_water"),
+            now,
+        )
+
+        events: list[dict[str, Any]] | None = None
         try:
-            nonidentity_events = query_complete_nonidentity_access(
-                self.api,
-                start,
-                now,
-                row_limit=self.access_graphql_row_limit,
-            )
-            events = self.api.list_access_logs(start, now)
+            events = self.api.list_access_logs(identity_start, now)
         except CloudflareError:
             self.record_error("access")
-            LOG.exception("Cloudflare Access log poll failed")
-            return
+            LOG.exception("Cloudflare identity Access log poll failed")
 
-        def apply(state: dict[str, Any]) -> None:
-            # Apply GraphQL first so a ray unexpectedly present in both sources
-            # retains the schema-backed non-identity classification.
-            apply_nonidentity_access_events(state, nonidentity_events)
-            apply_access_events(state, events, self.apps, self.owner_emails)
-            access_state = state.setdefault("access", {"high_water": None, "seen": {}})
-            access_state["high_water"] = now
-            cutoff = now - ACCESS_SEEN_SECONDS
-            access_state["seen"] = {
-                identity: timestamp
-                for identity, timestamp in access_state.get("seen", {}).items()
-                if float(timestamp) >= cutoff
-            }
-            set_series(
-                state,
-                "cloudflare_collector_catch_up",
-                {"poll": "access"},
-                catch_up,
-            )
-            set_series(
-                state,
-                "cloudflare_collector_last_success_timestamp_seconds",
-                {"poll": "access"},
-                now,
-            )
+        nonidentity_events: list[dict[str, Any]] | None = None
+        if self.enable_nonidentity_access:
+            try:
+                nonidentity_events = query_complete_nonidentity_access(
+                    self.api,
+                    nonidentity_start,
+                    now,
+                    row_limit=self.access_graphql_row_limit,
+                )
+            except CloudflareError as error:
+                # The REST feed contains the user identities needed for owner
+                # detection. Non-identity GraphQL events are supplemental and
+                # require broader account analytics authorization, so their
+                # failure must not suppress identity-login monitoring.
+                self.record_error("access_nonidentity")
+                LOG.warning(
+                    "Cloudflare non-identity Access log poll failed; continuing "
+                    "with identity logs: %s",
+                    error,
+                )
 
-        try:
-            self._commit(apply)
-        except (CloudflareError, TypeError, ValueError):
-            self.record_error("access")
-            LOG.exception("Cloudflare Access log response was invalid")
+        if nonidentity_events is not None:
+
+            def apply_nonidentity(state: dict[str, Any]) -> None:
+                # Apply the schema-backed feed first so a Ray unexpectedly
+                # present in both sources keeps its non-identity classification.
+                apply_nonidentity_access_events(state, nonidentity_events)
+                access_state = state["access"]
+                access_state["nonidentity_high_water"] = now
+                access_state["nonidentity_gap"] = (
+                    bool(access_state.get("nonidentity_gap")) or nonidentity_gap
+                )
+                prune_access_seen(state, now)
+                set_series(
+                    state,
+                    "cloudflare_collector_state_gap",
+                    {"poll": "access_nonidentity"},
+                    1 if access_state["nonidentity_gap"] else 0,
+                )
+                set_series(
+                    state,
+                    "cloudflare_collector_catch_up",
+                    {"poll": "access_nonidentity"},
+                    nonidentity_catch_up,
+                )
+                set_series(
+                    state,
+                    "cloudflare_collector_last_success_timestamp_seconds",
+                    {"poll": "access_nonidentity"},
+                    now,
+                )
+
+            try:
+                self._commit(apply_nonidentity)
+            except (CloudflareError, TypeError, ValueError):
+                self.record_error("access_nonidentity")
+                LOG.exception("Cloudflare non-identity Access response was invalid")
+
+        if events is not None:
+
+            def apply_identity(state: dict[str, Any]) -> None:
+                apply_access_events(state, events, self.apps, self.owner_emails)
+                access_state = state["access"]
+                access_state["high_water"] = now
+                access_state["gap"] = bool(access_state.get("gap")) or identity_gap
+                prune_access_seen(state, now)
+                set_series(
+                    state,
+                    "cloudflare_collector_state_gap",
+                    {"poll": "access"},
+                    1 if access_state["gap"] else 0,
+                )
+                set_series(
+                    state,
+                    "cloudflare_collector_catch_up",
+                    {"poll": "access"},
+                    identity_catch_up,
+                )
+                set_series(
+                    state,
+                    "cloudflare_collector_last_success_timestamp_seconds",
+                    {"poll": "access"},
+                    now,
+                )
+
+            try:
+                self._commit(apply_identity)
+            except (CloudflareError, TypeError, ValueError):
+                self.record_error("access")
+                LOG.exception("Cloudflare identity Access response was invalid")
 
 
 class CollectorService:
@@ -1786,11 +1928,15 @@ def main() -> None:
     listen_port = int(os.environ.get("LISTEN_PORT", "11015"))
     analytics_interval = parse_duration(os.environ.get("ANALYTICS_INTERVAL", "5m"))
     access_interval = parse_duration(os.environ.get("ACCESS_INTERVAL", "1m"))
+    enable_nonidentity_access = parse_bool(
+        os.environ.get("ENABLE_NONIDENTITY_ACCESS", "false")
+    )
 
     collector = Collector(
         CloudflareAPI(api_token, account_id),
         StateStore(state_directory / "state.json"),
         owner_emails,
+        enable_nonidentity_access=enable_nonidentity_access,
     )
     service = CollectorService(collector, analytics_interval, access_interval)
     worker = threading.Thread(target=service.run, name="cloudflare-poller", daemon=True)
