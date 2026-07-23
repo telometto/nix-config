@@ -38,10 +38,7 @@ def analytics_fixture() -> dict:
             {
                 "count": 42,
                 "avg": {"sampleInterval": 10},
-                "sum": {
-                    "clientRequestBytes": 123,
-                    "edgeResponseBytes": 456,
-                },
+                "sum": {"edgeResponseBytes": 456},
                 "dimensions": {
                     "datetimeFiveMinutes": bucket,
                     "clientRequestHTTPHost": "WWW.Example.COM.:443",
@@ -108,6 +105,8 @@ class AnalyticsTests(unittest.TestCase):
         )
 
         self.assertEqual(query_aliases, cloudflare_metrics.ANALYTICS_DATASETS)
+        self.assertIn("edgeResponseBytes", cloudflare_metrics.ANALYTICS_QUERY)
+        self.assertNotIn("clientRequestBytes", cloudflare_metrics.ANALYTICS_QUERY)
 
     def test_graphql_aggregation_preserves_estimated_values(self) -> None:
         state = cloudflare_metrics.new_state()
@@ -124,14 +123,6 @@ class AnalyticsTests(unittest.TestCase):
                 {"zone": "example.com", "host": "www.example.com", "status": "200"},
             ),
             42,
-        )
-        self.assertEqual(
-            cloudflare_metrics.get_series(
-                state,
-                "cloudflare_http_request_bytes_total",
-                {"zone": "example.com", "host": "www.example.com"},
-            ),
-            123,
         )
         self.assertEqual(
             cloudflare_metrics.get_series(
@@ -971,30 +962,85 @@ class AccessTests(unittest.TestCase):
             state["series"].get("cloudflare_access_authentications_total", {}), {}
         )
 
-    def test_access_high_water_does_not_advance_when_either_api_fails(self) -> None:
-        for operation in ("graphql-access", "rest-access"):
-            with self.subTest(operation=operation):
-                state = cloudflare_metrics.new_state()
-                state["access"]["high_water"] = 9000
-                collector = cloudflare_metrics.Collector(
-                    FakeAPI(fail_operation=operation),
-                    MemoryStore(state),
-                    {"owner@example.com"},
-                )
-                collector.apps = {"app-id": "Example app"}
+    def test_nonidentity_failure_does_not_suppress_identity_monitoring(self) -> None:
+        state = cloudflare_metrics.new_state()
+        state["access"]["high_water"] = 9000
+        collector = cloudflare_metrics.Collector(
+            FakeAPI(
+                fail_operation="graphql-access",
+                access_logs=[
+                    {
+                        "ray_id": "ray-owner",
+                        "created_at": "2026-07-15T10:00:00Z",
+                        "app_uid": "app-id",
+                        "allowed": True,
+                        "user_email": "owner@example.com",
+                    }
+                ],
+            ),
+            MemoryStore(state),
+            {"owner@example.com"},
+        )
+        collector.apps = {"app-id": "Example app"}
 
-                collector.poll_access(12_000)
+        collector.poll_access(12_000)
 
-                snapshot = collector.snapshot()
-                self.assertEqual(snapshot["access"]["high_water"], 9000)
-                self.assertEqual(
-                    cloudflare_metrics.get_series(
-                        snapshot,
-                        "cloudflare_collector_api_errors_total",
-                        {"operation": "access"},
-                    ),
-                    1,
-                )
+        snapshot = collector.snapshot()
+        self.assertEqual(snapshot["access"]["high_water"], 12_000)
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_collector_last_success_timestamp_seconds",
+                {"poll": "access"},
+            ),
+            12_000,
+        )
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_collector_api_errors_total",
+                {"operation": "access_nonidentity"},
+            ),
+            1,
+        )
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_access_authentications_total",
+                {
+                    "app": "Example app",
+                    "decision": "allowed",
+                    "principal_type": "owner",
+                    "owner": "true",
+                },
+            ),
+            1,
+        )
+
+    def test_identity_failure_does_not_advance_access_high_water(self) -> None:
+        state = cloudflare_metrics.new_state()
+        state["access"]["high_water"] = 9000
+        api = FakeAPI(fail_operation="rest-access")
+        collector = cloudflare_metrics.Collector(
+            api,
+            MemoryStore(state),
+            {"owner@example.com"},
+        )
+        collector.apps = {"app-id": "Example app"}
+
+        collector.poll_access(12_000)
+
+        snapshot = collector.snapshot()
+        self.assertEqual(snapshot["access"]["high_water"], 9000)
+        self.assertEqual(api.nonidentity_calls, [])
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_collector_api_errors_total",
+                {"operation": "access"},
+            ),
+            1,
+        )
 
     def test_legacy_principal_series_are_aggregated_without_identity_labels(
         self,
