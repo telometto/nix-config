@@ -206,6 +206,11 @@ User signup is restricted to expiring tokens:
 1. Send the generated link to the intended user through a trusted channel.
 1. Have the user create their account and register their own passkey.
 
+Signup does not grant access to OIDC clients because the default signup group
+list remains empty. Users may manage their own Pocket ID account details and
+passkeys, while an administrator controls access to each relying application
+by assigning its dedicated allowed group.
+
 SMTP is intentionally not configured. Email-assisted recovery, email
 verification, and login notifications therefore remain unavailable. The
 administrator can create a one-time access link from the user menu or, from a
@@ -227,6 +232,8 @@ Each relying application needs its own client:
 
 1. Copy the application's exact HTTPS callback URL from its documentation.
    Do not use callback wildcards unless the application genuinely needs them.
+   Application-specific callback schemes, such as Immich's mobile callback,
+   must also be registered exactly.
 
 1. Create or select a dedicated group for the application, review every
    member, and add that group under **Allowed User Groups**. Do not choose
@@ -249,8 +256,17 @@ Each relying application needs its own client:
 Because SMTP and email verification are disabled, Pocket ID leaves the
 `email_verified` claim false. Applications that require a verified email need
 a deliberate per-application decision or a later SMTP rollout. For Immich,
-the client deliberately does not request the email scope; follow the staged
-linking and recovery procedure in [Immich OAuth Operations](immich.md).
+the restricted allowed group is the admission control and the email claim is
+used only to create the account on its first approved login. Do not manually
+pre-create an unlinked Immich account; follow the lifecycle and recovery
+procedure in [Immich OAuth Operations](immich.md).
+
+The pinned Pocket ID 2.9.0 release predates
+`ALLOW_INSECURE_CALLBACK_URLS`. It still requires an authorization callback to
+match the client's registered list, but it does not globally reject an
+administrator-configured non-loopback HTTP callback. Do not register such a
+callback. Enforcing that additional guard requires Pocket ID 2.11 or newer and
+must be handled as a separately reviewed package upgrade.
 
 ______________________________________________________________________
 
