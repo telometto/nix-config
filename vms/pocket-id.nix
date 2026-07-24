@@ -78,6 +78,8 @@ in
 
       TRUSTED_PLATFORM = "CF-Connecting-IP";
       UI_CONFIG_DISABLED = true;
+      REQUIRE_USER_EMAIL = true;
+      ALLOW_OWN_ACCOUNT_EDIT = true;
       ALLOW_USER_SIGNUPS = "withToken";
       ANALYTICS_DISABLED = true;
       VERSION_CHECK_DISABLED = true;
