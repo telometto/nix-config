@@ -17,6 +17,7 @@ let
         "gitea"
         "firefly-iii"
         "firefly-iii-data-importer"
+        "pocket-id"
         "seerr"
       ];
       # nixpkgs-unstable = [ "cloud-hypervisor" ];
