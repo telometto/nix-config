@@ -7,13 +7,15 @@ Issuer: https://id.<public-domain>
 Application: https://photos.<public-domain>
 ```
 
-The checked-in configuration deliberately keeps automatic registration and
-automatic OAuth launch disabled. Password login remains enabled as a recovery
-path. These are safety invariants, not unfinished rollout steps.
+The checked-in configuration uses Pocket ID as the sole interactive login
+authority. Automatic registration and automatic OAuth launch are enabled, and
+Immich password login is disabled. Pocket ID's per-client allowed group is the
+admission boundary: creating a Pocket ID account does not by itself grant
+access to Immich.
 
 ______________________________________________________________________
 
-## Why migration is staged
+## Identity and admission model
 
 The pinned Immich 2.7.5 release first looks up an OAuth identity by its stable
 OIDC `sub`. If no identity is linked, it can match an existing Immich account
@@ -21,18 +23,27 @@ by email and link it before applying the `autoRegister` setting. It does not
 require the OIDC `email_verified` claim for that match.
 
 Pocket ID does not verify email in this deployment because SMTP is not
-configured. To keep an unverified or self-selected email from reaching that
-linking branch, the deployment enforces all of the following:
+configured. Email is nevertheless required to create a new Immich account.
+The deployment therefore treats group membership, not the email claim, as the
+authorization decision and enforces all of the following:
 
-- The Immich client requests `openid profile`, deliberately omitting `email`.
 - The Immich OIDC client is restricted to a reviewed Pocket ID group.
-- Existing users link OAuth while already authenticated to Immich.
-- Immich automatic registration remains disabled.
-- Password login remains available for a tested local administrator.
+- Pocket ID signup requires an administrator-issued token and grants no groups
+  by default.
+- Every account that existed in Immich before passwordless mode was linked to
+  its intended Pocket ID identity.
+- Administrators do not manually pre-create future Immich accounts.
+- The Immich client requests `openid email profile` and creates an account
+  only on the first login of a user admitted by the allowed group.
+- Linked users are resolved by stable OIDC `sub` before their editable email
+  is considered.
+- Immich password login remains disabled.
 
-Do not enable automatic registration, automatic launch, or password-only
-lockout without a new security review and an upstream identity-linking control
-that does not trust an unverified email.
+An unlinked, manually pre-created Immich account would reintroduce the unsafe
+email-linking path. Do not create one while this model is active. If migration
+or recovery creates an unlinked account, remove its prospective user from the
+allowed group and follow the controlled linking procedure below before
+restoring access.
 
 ______________________________________________________________________
 
@@ -65,15 +76,16 @@ between Pocket ID, `vms/immich.nix`, and the SOPS key
 The configured OIDC parameters are:
 
 ```text
-Scopes: openid profile
+Scopes: openid email profile
 ID token signing algorithm: RS256
 Userinfo signing algorithm: none
 Token endpoint authentication: client_secret_post
 ```
 
-The actual scope is `openid profile`; `email` is intentionally absent. Pocket
-ID releases email claims only for the email scope, while Immich's authenticated
-link endpoint needs only the stable OIDC `sub`.
+The actual scope is `openid email profile`. Immich requires the email claim
+when automatically creating an account. The claim is profile data, not the
+authorization control: Pocket ID must first admit the user through the
+client's reviewed allowed group.
 
 The mobile custom-scheme callback is required by the Immich apps. If Pocket ID
 ever stops accepting it, use Immich's HTTPS
@@ -122,59 +134,78 @@ rotation.
 
 ______________________________________________________________________
 
-## Link existing users safely
+## Link an existing account safely
 
-Complete this procedure for every existing Immich user before treating OAuth
-as their login method:
+All accounts that existed before passwordless mode were linked and tested.
+Use this maintenance procedure only if a restore or migration introduces an
+unlinked Immich account:
 
-1. In Immich administration, inventory the user's current email.
+1. Remove the Pocket ID user from the Immich client's allowed group.
+1. Temporarily set `passwordLogin.enabled = true` and `autoLaunch = false`,
+   deploy the change, and limit the maintenance window.
+1. In Immich administration, inventory the account's current email.
 1. In Pocket ID, verify the intended person's identity and group membership.
    Do not use email equality as proof that the accounts belong to the same
    person.
-1. Add the Pocket ID user to the restricted Immich group.
-1. Have the user sign in to Immich with their existing local credentials.
+1. Have the user sign in to Immich with a temporary local credential delivered
+   through a trusted channel.
+1. Only after that authenticated Immich session is active, add the Pocket ID
+   user to the restricted Immich group.
 1. Open **Account Settings**, then **OAuth**, and link the Pocket ID identity
    from that authenticated session.
+1. Restore `passwordLogin.enabled = false` and `autoLaunch = true`, deploy, and
+   confirm that local password login is rejected.
 1. Sign out and confirm that **Login with Pocket ID** returns the same Immich
    account, library, and role.
 1. Test the mobile app with the same non-administrator account.
 
-Do not use a direct OAuth login for an unlinked existing account. With the
-email scope omitted and automatic registration disabled, it is expected to be
-rejected. The authenticated settings flow establishes the stable OIDC `sub`
-without relying on email-based account discovery.
+Do not use a direct OAuth login for an unlinked existing account. Immich can
+match it by an unverified or self-selected email before applying
+`autoRegister`; the authenticated settings flow establishes the intended
+stable OIDC `sub` without using email as proof of identity.
 
 ### Onboard a new user
 
-Automatic registration stays disabled. For a new user:
+Automatic registration is the normal onboarding path:
 
-1. Have an administrator create and verify the Pocket ID identity.
-1. Add it to the restricted Immich group.
-1. Create the Immich account with the user's intended local email. Do not use
-   email equality as the OAuth linking mechanism.
-1. Give the user a one-time local onboarding credential through a trusted
-   channel.
-1. Have the user sign in locally, link OAuth from account settings, and then
-   validate web and mobile OAuth login.
+1. Create the Pocket ID user or issue a short-lived, single-use signup token.
+1. Have the user register their passkey and complete their Pocket ID profile.
+   Signup alone must not assign the Immich group.
+1. Review the intended user's identity, then add them to the restricted Immich
+   group.
+1. Do not create a corresponding account in Immich.
+1. Have the user choose **Login with Pocket ID**. Their first approved login
+   creates and links the Immich account.
+1. Validate web and mobile OAuth login.
+
+Removing a user from the allowed group prevents new Pocket ID authorization
+for Immich, but does not necessarily terminate an already active Immich
+session. For immediate revocation, also disable the Immich user or revoke its
+sessions through Immich administration.
 
 ______________________________________________________________________
 
 ## Break-glass recovery
 
-Keep the local Immich administrator credential in the approved password
-manager and test it after every authentication change.
+Pocket ID is the login-availability boundary. Protect its database, encryption
+key, administrator passkeys, and documented snapshot/export recovery path.
+Register an independent backup passkey for the Pocket ID administrator and
+test the CLI one-time-access procedure before relying on passwordless Immich
+login.
+
+If a user loses every passkey while Pocket ID remains available, generate a
+short-lived one-time access link from Pocket ID administration or its CLI.
 
 If Pocket ID is unavailable:
 
-1. Open `https://photos.<public-domain>/auth/login?autoLaunch=0`.
-1. Sign in with the local administrator credential.
-1. Inspect Immich and Pocket ID health before changing account links.
-1. If an extended outage requires it, set `oauth.enabled = false` in
-   `vms/immich.nix`, deploy, and restore OAuth only after a non-admin test
-   succeeds.
-
-Never disable password login until an independently tested recovery mechanism
-exists.
+1. Preserve any active Immich administrator session.
+1. Inspect and restore Pocket ID using [Pocket ID Operations](pocket-id.md).
+1. Verify Pocket ID discovery, an administrator login, and a non-admin Immich
+   login before declaring recovery complete.
+1. As a last resort only, temporarily set `passwordLogin.enabled = true` and
+   `autoLaunch = false`, deploy, and use
+   `https://photos.<public-domain>/auth/login?autoLaunch=0`.
+1. Restore passwordless settings immediately after Pocket ID login succeeds.
 
 ______________________________________________________________________
 
@@ -183,7 +214,8 @@ ______________________________________________________________________
 Pocket ID client-secret regeneration can interrupt OAuth logins. Use a short
 maintenance window:
 
-1. Confirm the local Immich administrator login works.
+1. Keep an active Immich administrator session and confirm Pocket ID
+   administrator and console recovery access.
 1. Regenerate the Immich client secret in Pocket ID.
 1. Immediately replace `immich/oauth_client_secret` in `nix-secrets`, update
    the affected SOPS recipients, commit, and refresh the locked private input.
@@ -192,8 +224,9 @@ maintenance window:
 1. Verify a non-admin web login and a mobile login.
 1. Check `journalctl -u immich-server.service` for OIDC or credential errors.
 
-If validation fails, use the local administrator path; do not add the email
-scope or weaken the allowed-group control to restore access.
+If validation fails, use the active administrator session or roll back the
+secret/configuration together. Do not make the client unrestricted, enable
+insecure callbacks, or leave password login enabled to restore access.
 
 ______________________________________________________________________
 
@@ -238,11 +271,15 @@ service, verify:
 
 - the client ID matches `oauthClientId` in `vms/immich.nix`
 - all three callback URLs are exact
-- the configured scopes remain exactly `openid profile`
+- the configured scopes remain exactly `openid email profile`
 - only the reviewed Immich group is allowed
+- Pocket ID signup does not assign the Immich group by default
 - the SOPS secret matches the active Pocket ID client
-- `autoRegister` and `autoLaunch` remain disabled
-- password login and the local administrator credential still work
+- `autoRegister` and `autoLaunch` remain enabled
+- password login remains disabled
+- no manually pre-created or restored Immich account is left unlinked
+- a newly approved non-admin user can register through Pocket ID
+- no non-loopback plain-HTTP callback is registered in Pocket ID
 - exactly one CSP response header is present
 
 ______________________________________________________________________
