@@ -75,30 +75,29 @@ in
 
     credentials.ENCRYPTION_KEY = config.sops.secrets."pocket-id/encryption_key".path;
 
-    settings =
-      {
-        APP_URL = "https://id.${VARS.domains.public}";
-        HOST = "0.0.0.0";
-        PORT = reg.port;
+    settings = {
+      APP_URL = "https://id.${VARS.domains.public}";
+      HOST = "0.0.0.0";
+      PORT = reg.port;
 
-        DB_CONNECTION_STRING = "${dataDir}/pocket-id.db";
-        FILE_BACKEND = "filesystem";
-        UPLOAD_PATH = "${dataDir}/uploads";
+      DB_CONNECTION_STRING = "${dataDir}/pocket-id.db";
+      FILE_BACKEND = "filesystem";
+      UPLOAD_PATH = "${dataDir}/uploads";
 
-        TRUSTED_PLATFORM = "CF-Connecting-IP";
-        UI_CONFIG_DISABLED = true;
-        REQUIRE_USER_EMAIL = true;
-        ALLOW_OWN_ACCOUNT_EDIT = true;
-        ALLOW_USER_SIGNUPS = "withToken";
-        ANALYTICS_DISABLED = true;
-        VERSION_CHECK_DISABLED = true;
-      }
-      // lib.optionalAttrs (lib.versionAtLeast pocketIdVersion "2.11.0") {
-        # Pocket ID 2.10 enforces this policy by default. Version 2.11 made
-        # insecure non-loopback HTTP callbacks configurable and defaulted the
-        # compatibility switch to true, so keep the earlier secure behavior.
-        ALLOW_INSECURE_CALLBACK_URLS = false;
-      };
+      TRUSTED_PLATFORM = "CF-Connecting-IP";
+      UI_CONFIG_DISABLED = true;
+      REQUIRE_USER_EMAIL = true;
+      ALLOW_OWN_ACCOUNT_EDIT = true;
+      ALLOW_USER_SIGNUPS = "withToken";
+      ANALYTICS_DISABLED = true;
+      VERSION_CHECK_DISABLED = true;
+    }
+    // lib.optionalAttrs (lib.versionAtLeast pocketIdVersion "2.11.0") {
+      # Pocket ID 2.10 enforces this policy by default. Version 2.11 made
+      # insecure non-loopback HTTP callbacks configurable and defaulted the
+      # compatibility switch to true, so keep the earlier secure behavior.
+      ALLOW_INSECURE_CALLBACK_URLS = false;
+    };
   };
 
   # Keep the exact packaged CLI available for health checks and the documented
