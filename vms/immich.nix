@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   VARS,
   lib,
@@ -43,7 +44,12 @@ in
     age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
     useSystemdActivation = true;
 
-    secrets = { };
+    secrets."immich/oauth_client_secret" = {
+      owner = "immich";
+      group = "immich";
+      mode = "0400";
+      restartUnits = [ "immich-server.service" ];
+    };
   };
 
   networking.firewall.allowedTCPPorts = [ reg.port ];
@@ -76,7 +82,20 @@ in
           "http://10.100.0.1:3003"
         ];
       };
-      oauth.autoRegister = false;
+      oauth = {
+        enabled = true;
+        issuerUrl = "https://id.${VARS.domains.public}";
+        clientId = "52bc6bc3-5c98-4f4b-bd00-b27318fd7801";
+        clientSecret._secret = config.sops.secrets."immich/oauth_client_secret".path;
+        scope = "openid email profile";
+        signingAlgorithm = "RS256";
+        profileSigningAlgorithm = "none";
+        tokenEndpointAuthMethod = "client_secret_post";
+        buttonText = "Login with Pocket ID";
+        autoRegister = true;
+        autoLaunch = true;
+      };
+      passwordLogin.enabled = false;
       server.externalDomain = "https://photos.${VARS.domains.public}";
       storageTemplate.enabled = true;
     };
