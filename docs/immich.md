@@ -201,16 +201,77 @@ login.
 If a user loses every passkey while Pocket ID remains available, generate a
 short-lived one-time access link from Pocket ID administration or its CLI.
 
-If Pocket ID is unavailable:
+If Pocket ID is unavailable but Immich and its database remain healthy:
 
 1. Preserve any active Immich administrator session.
+
+1. From a root shell inside `immich-vm`, define this helper. It uses the exact
+   package, environment, and supplementary group of the running NixOS service
+   rather than a different Immich package or an incomplete shell environment:
+
+   ```bash
+   run_immich_admin() {
+     local immich_server immich_admin
+
+     immich_server="$(
+       systemctl show immich-server.service --property=ExecStart --value |
+         sed -n 's/.*path=\([^ ;]*\).*/\1/p'
+     )"
+     immich_admin="${immich_server%/*}/immich-admin"
+
+     test -x "$immich_admin" || {
+       echo "Unable to locate immich-admin from immich-server.service" >&2
+       return 1
+     }
+
+     systemd-run --wait --pty --collect \
+       --property=User=immich \
+       --property=Group=immich \
+       --property="SupplementaryGroups=$(
+         systemctl show immich-server.service \
+           --property=SupplementaryGroups --value
+       )" \
+       --property="Environment=$(
+         systemctl show immich-server.service --property=Environment --value
+       )" \
+       "$immich_admin" "$@"
+   }
+
+   run_immich_admin list-users
+   ```
+
+   Stop if the read-only `list-users` check fails.
+
 1. Inspect and restore Pocket ID using [Pocket ID Operations](pocket-id.md).
-1. Verify Pocket ID discovery, an administrator login, and a non-admin Immich
-   login before declaring recovery complete.
+
 1. As a last resort only, temporarily set `passwordLogin.enabled = true` and
-   `autoLaunch = false`, deploy, and use
+   `autoLaunch = false`, then deploy.
+
+1. In the same root shell, run:
+
+   ```bash
+   run_immich_admin reset-admin-password
+   ```
+
+   Confirm that the displayed account is the intended Immich administrator.
+   Leave the password prompt empty so Immich generates a one-time recovery
+   password. Keep it only in the secure terminal session and do not save it in
+   shell history, this repository, or `nix-secrets`.
+
+1. Sign in with the administrator email and generated password at
    `https://photos.<public-domain>/auth/login?autoLaunch=0`.
-1. Restore passwordless settings immediately after Pocket ID login succeeds.
+
+1. Verify Pocket ID discovery, an administrator login, and a non-admin Immich
+   login before declaring identity recovery complete.
+
+1. Restore `passwordLogin.enabled = false` and `autoLaunch = true`, then deploy.
+
+1. Run `run_immich_admin reset-admin-password` again, leave the prompt empty,
+   and immediately discard the newly generated value. This invalidates the
+   emergency password while password login remains disabled.
+
+1. Sign out and confirm both that Pocket ID login succeeds and that local
+   password login is rejected.
 
 ______________________________________________________________________
 
@@ -229,9 +290,24 @@ maintenance window:
 1. Verify a non-admin web login and a mobile login.
 1. Check `journalctl -u immich-server.service` for OIDC or credential errors.
 
-If validation fails, use the active administrator session or roll back the
-secret/configuration together. Do not make the client unrestricted, enable
-insecure callbacks, or leave password login enabled to restore access.
+If validation fails, do not restore an older SOPS value by itself: regenerating
+the Pocket ID client secret invalidates the previous value. Prefer forward
+recovery:
+
+1. Regenerate the client secret again in Pocket ID so there is one known
+   current value.
+1. Replace `immich/oauth_client_secret` with that value in `nix-secrets`,
+   update the affected SOPS recipients, commit, and refresh the locked private
+   input.
+1. Deploy Blizzard and repeat the web, mobile, and journal checks above.
+
+Rolling back to an older secret is valid only when the Pocket ID database is
+also restored to a snapshot containing the matching client-secret record.
+Coordinate that state restore with the corresponding older SOPS value and
+account for any newer Pocket ID changes the database rollback would discard.
+An unrelated Immich configuration rollback must keep the current Pocket ID
+secret synchronized. Do not make the client unrestricted, enable insecure
+callbacks, or leave password login enabled to restore access.
 
 ______________________________________________________________________
 
