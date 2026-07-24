@@ -7,6 +7,9 @@
 }:
 let
   reg = (import ./vm-registry.nix).immich;
+  # Pocket ID assigns this public identifier. Keep it in sync with the
+  # restricted Immich client documented in docs/immich.md.
+  oauthClientId = "52bc6bc3-5c98-4f4b-bd00-b27318fd7801";
 in
 {
   imports = [
@@ -68,6 +71,8 @@ in
     environment = {
       TZ = "Europe/Oslo";
       IMMICH_ALLOW_SETUP = "false";
+      # Immich 2.7+ ships a CSP that is kept in sync with its frontend.
+      IMMICH_HELMET_FILE = "true";
       IMMICH_LOG_LEVEL = "log";
       IMMICH_TRUSTED_PROXIES = "10.100.0.1";
     };
@@ -85,19 +90,33 @@ in
       oauth = {
         enabled = true;
         issuerUrl = "https://id.${VARS.domains.public}";
-        clientId = "52bc6bc3-5c98-4f4b-bd00-b27318fd7801";
+        clientId = oauthClientId;
         clientSecret._secret = config.sops.secrets."immich/oauth_client_secret".path;
-        scope = "openid email profile";
+        # The authenticated linking flow needs only the stable OIDC subject.
+        # Omitting email keeps login callbacks out of Immich 2.7.5's unsafe
+        # automatic email-linking branch.
+        scope = "openid profile";
         signingAlgorithm = "RS256";
         profileSigningAlgorithm = "none";
         tokenEndpointAuthMethod = "client_secret_post";
         buttonText = "Login with Pocket ID";
-        autoRegister = true;
-        autoLaunch = true;
+        # Existing accounts must be linked from an authenticated user-settings
+        # session before OAuth is used to log in. See docs/immich.md.
+        autoRegister = false;
+        autoLaunch = false;
       };
-      passwordLogin.enabled = false;
+      # Keep a tested local administrator path if Pocket ID is unavailable.
+      passwordLogin.enabled = true;
       server.externalDomain = "https://photos.${VARS.domains.public}";
       storageTemplate.enabled = true;
     };
+  };
+
+  # sops-nix queues restartUnits before atomically switching /run/secrets.
+  # This ordering makes systemd defer Immich's credential snapshot until the
+  # new secret generation is active.
+  systemd.services.immich-server = {
+    after = [ "sops-install-secrets.service" ];
+    requires = [ "sops-install-secrets.service" ];
   };
 }

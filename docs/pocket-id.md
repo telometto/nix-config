@@ -228,6 +228,10 @@ Each relying application needs its own client:
 1. Copy the application's exact HTTPS callback URL from its documentation.
    Do not use callback wildcards unless the application genuinely needs them.
 
+1. Create or select a dedicated group for the application, review every
+   member, and add that group under **Allowed User Groups**. Do not choose
+   unrestricted access for an application that links accounts by email.
+
 1. Store the generated client secret in `nix-secrets`, scoped to that
    application. Do not place it in a Nix setting or commit it here.
 
@@ -244,7 +248,9 @@ Each relying application needs its own client:
 
 Because SMTP and email verification are disabled, Pocket ID leaves the
 `email_verified` claim false. Applications that require a verified email need
-a deliberate per-application decision or a later SMTP rollout.
+a deliberate per-application decision or a later SMTP rollout. For Immich,
+the client deliberately does not request the email scope; follow the staged
+linking and recovery procedure in [Immich OAuth Operations](immich.md).
 
 ______________________________________________________________________
 
@@ -339,5 +345,6 @@ ______________________________________________________________________
 
 - [Pocket ID installation](https://pocket-id.org/docs/setup/installation)
 - [Environment variables](https://pocket-id.org/docs/configuration/environment-variables)
+- [Allowed user groups](https://pocket-id.org/docs/configuration/allowed-groups)
 - [User management](https://pocket-id.org/docs/setup/user-management)
 - [Data export and import](https://pocket-id.org/docs/setup/data-export-import)
