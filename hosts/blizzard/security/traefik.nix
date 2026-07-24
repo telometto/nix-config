@@ -151,6 +151,9 @@ in
           gitea-xfp-https.headers.customRequestHeaders.X-Forwarded-Proto = "https";
 
           immich-headers = traefikLib.mkSecurityHeaders {
+            # Immich's app shell manages dynamic frontend assets that are
+            # incompatible with the shared strict CSP.
+            csp = null;
             requestHeaders.X-Forwarded-Proto = "https";
           };
 
