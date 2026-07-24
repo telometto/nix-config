@@ -279,7 +279,8 @@ service, verify:
 - password login remains disabled
 - no manually pre-created or restored Immich account is left unlinked
 - a newly approved non-admin user can register through Pocket ID
-- no non-loopback plain-HTTP callback is registered in Pocket ID
+- Pocket ID remains at version 2.10 or newer and rejects non-loopback
+  plain-HTTP callbacks
 - exactly one CSP response header is present
 
 ______________________________________________________________________
