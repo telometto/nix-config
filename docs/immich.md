@@ -54,9 +54,12 @@ between Pocket ID, `vms/immich.nix`, and the SOPS key
 `immich/oauth_client_secret`.
 
 1. In Pocket ID, create a dedicated group such as `immich-users`.
+
 1. Review every member through a trusted identity channel. Do not use a
    matching email address as proof that two accounts belong to the same person.
+
 1. Create a confidential OIDC client named `Immich`.
+
 1. Register these exact callback URLs:
 
    ```text
@@ -67,9 +70,11 @@ between Pocket ID, `vms/immich.nix`, and the SOPS key
 
 1. Under **Allowed User Groups**, select only the reviewed Immich group. Do
    not make the client unrestricted.
+
 1. Confirm that the generated client ID exactly matches
    `oauthClientId` in `vms/immich.nix`. Pocket ID assigns this value; if the
    client is recreated, update the Nix value and its SOPS secret together.
+
 1. Store the generated secret at `immich/oauth_client_secret` in the private
    `nix-secrets` flake. Never commit the secret to this repository.
 
@@ -255,6 +260,7 @@ After every Immich upgrade:
 1. In a clean browser session, verify the login page, thumbnails, full images,
    map tiles, video playback, and an upload while checking the console for CSP
    violations.
+
 1. Verify OAuth login and an upload from the mobile app.
 
 If the header is absent, do not leave the service deployed without either
