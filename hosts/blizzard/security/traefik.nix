@@ -151,6 +151,11 @@ in
           gitea-xfp-https.headers.customRequestHeaders.X-Forwarded-Proto = "https";
 
           immich-headers = traefikLib.mkSecurityHeaders {
+            # Immich 2.7+ serves its packaged Helmet policy when
+            # IMMICH_HELMET_FILE=true in vms/immich.nix. Avoid injecting a
+            # second, incompatible proxy policy; re-check the response header
+            # and web/mobile flows after every Immich upgrade.
+            csp = null;
             requestHeaders.X-Forwarded-Proto = "https";
           };
 
