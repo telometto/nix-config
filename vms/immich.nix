@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   VARS,
   lib,
@@ -6,6 +7,9 @@
 }:
 let
   reg = (import ./vm-registry.nix).immich;
+  # Pocket ID assigns this public identifier. Keep it in sync with the
+  # restricted Immich client documented in docs/immich.md.
+  oauthClientId = "52bc6bc3-5c98-4f4b-bd00-b27318fd7801";
 in
 {
   imports = [
@@ -43,7 +47,12 @@ in
     age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
     useSystemdActivation = true;
 
-    secrets = { };
+    secrets."immich/oauth_client_secret" = {
+      owner = "immich";
+      group = "immich";
+      mode = "0400";
+      restartUnits = [ "immich-server.service" ];
+    };
   };
 
   networking.firewall.allowedTCPPorts = [ reg.port ];
@@ -62,6 +71,8 @@ in
     environment = {
       TZ = "Europe/Oslo";
       IMMICH_ALLOW_SETUP = "false";
+      # Immich 2.7+ ships a CSP that is kept in sync with its frontend.
+      IMMICH_HELMET_FILE = "true";
       IMMICH_LOG_LEVEL = "log";
       IMMICH_TRUSTED_PROXIES = "10.100.0.1";
     };
@@ -76,9 +87,37 @@ in
           "http://10.100.0.1:3003"
         ];
       };
-      oauth.autoRegister = false;
+      oauth = {
+        enabled = true;
+        issuerUrl = "https://id.${VARS.domains.public}";
+        clientId = oauthClientId;
+        clientSecret._secret = config.sops.secrets."immich/oauth_client_secret".path;
+        # Email is required when Immich creates an account on its first
+        # approved Pocket ID login. The restricted Pocket ID client group is
+        # the admission boundary; do not pre-create unlinked Immich accounts.
+        scope = "openid email profile";
+        signingAlgorithm = "RS256";
+        profileSigningAlgorithm = "none";
+        tokenEndpointAuthMethod = "client_secret_post";
+        buttonText = "Login with Pocket ID";
+        # Existing accounts were linked before this passwordless mode was
+        # enabled. New accounts are created only after Pocket ID admits the
+        # user through the client's reviewed allowed group.
+        autoRegister = true;
+        autoLaunch = true;
+      };
+      # Pocket ID is the sole interactive login authority.
+      passwordLogin.enabled = false;
       server.externalDomain = "https://photos.${VARS.domains.public}";
       storageTemplate.enabled = true;
     };
+  };
+
+  # sops-nix queues restartUnits before atomically switching /run/secrets.
+  # This ordering makes systemd defer Immich's credential snapshot until the
+  # new secret generation is active.
+  systemd.services.immich-server = {
+    after = [ "sops-install-secrets.service" ];
+    requires = [ "sops-install-secrets.service" ];
   };
 }
