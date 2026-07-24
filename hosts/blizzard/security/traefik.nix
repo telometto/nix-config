@@ -154,6 +154,13 @@ in
             requestHeaders.X-Forwarded-Proto = "https";
           };
 
+          sabnzbd-headers = traefikLib.mkSecurityHeaders {
+            # SABnzbd's web UI uses inline/dynamic frontend assets. Keep the
+            # no-CSP exception scoped to this route.
+            csp = null;
+            requestHeaders.X-Forwarded-Proto = "https";
+          };
+
           # Django CSRF requires the Referer header, which "no-referrer" strips.
           # See: https://github.com/paperless-ngx/paperless-ngx/discussions/5684
           csrf-safe-headers = traefikLib.mkSecurityHeaders {
