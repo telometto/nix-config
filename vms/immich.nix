@@ -92,21 +92,22 @@ in
         issuerUrl = "https://id.${VARS.domains.public}";
         clientId = oauthClientId;
         clientSecret._secret = config.sops.secrets."immich/oauth_client_secret".path;
-        # The authenticated linking flow needs only the stable OIDC subject.
-        # Omitting email keeps login callbacks out of Immich 2.7.5's unsafe
-        # automatic email-linking branch.
-        scope = "openid profile";
+        # Email is required when Immich creates an account on its first
+        # approved Pocket ID login. The restricted Pocket ID client group is
+        # the admission boundary; do not pre-create unlinked Immich accounts.
+        scope = "openid email profile";
         signingAlgorithm = "RS256";
         profileSigningAlgorithm = "none";
         tokenEndpointAuthMethod = "client_secret_post";
         buttonText = "Login with Pocket ID";
-        # Existing accounts must be linked from an authenticated user-settings
-        # session before OAuth is used to log in. See docs/immich.md.
-        autoRegister = false;
-        autoLaunch = false;
+        # Existing accounts were linked before this passwordless mode was
+        # enabled. New accounts are created only after Pocket ID admits the
+        # user through the client's reviewed allowed group.
+        autoRegister = true;
+        autoLaunch = true;
       };
-      # Keep a tested local administrator path if Pocket ID is unavailable.
-      passwordLogin.enabled = true;
+      # Pocket ID is the sole interactive login authority.
+      passwordLogin.enabled = false;
       server.externalDomain = "https://photos.${VARS.domains.public}";
       storageTemplate.enabled = true;
     };
