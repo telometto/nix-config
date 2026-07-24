@@ -206,6 +206,10 @@ let
       reverseProxy = {
         subdomain = "sab";
         url = vmUrl "sabnzbd";
+        middlewares = [
+          "sabnzbd-headers"
+          "crowdsec"
+        ];
       };
     };
 
