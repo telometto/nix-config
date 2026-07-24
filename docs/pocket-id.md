@@ -261,12 +261,19 @@ used only to create the account on its first approved login. Do not manually
 pre-create an unlinked Immich account; follow the lifecycle and recovery
 procedure in [Immich OAuth Operations](immich.md).
 
-The pinned Pocket ID 2.9.0 release predates
-`ALLOW_INSECURE_CALLBACK_URLS`. It still requires an authorization callback to
-match the client's registered list, but it does not globally reject an
-administrator-configured non-loopback HTTP callback. Do not register such a
-callback. Enforcing that additional guard requires Pocket ID 2.11 or newer and
-must be handled as a separately reviewed package upgrade.
+This deployment intentionally overlays Pocket ID from the pinned
+`nixpkgs-unstable` input and requires version 2.10 or newer. Pocket ID 2.10
+rejects plain-HTTP callback URLs on non-loopback hosts by default while
+preserving loopback HTTP and application-specific callback schemes. Version
+2.11 introduced `ALLOW_INSECURE_CALLBACK_URLS` and defaulted it to `true` for
+compatibility; the Nix configuration sets it to `false` whenever the installed
+version supports it. Evaluation fails below version 2.10 so removing the
+overlay cannot silently reopen this boundary.
+
+Before deploying any Pocket ID version change, take a fresh snapshot or
+logical export. After rebuilding, verify the health check, discovery endpoint,
+an existing administrator login, and a non-admin relying-application login
+before treating the upgrade as complete.
 
 ______________________________________________________________________
 
