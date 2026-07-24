@@ -332,7 +332,7 @@ let
     };
 
     trigger = {
-      enable = true;
+      enable = false;
       ingressHosts = [ "triggers" ];
       reverseProxy = {
         subdomain = "triggers";
