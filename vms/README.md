@@ -166,6 +166,28 @@ Tunnel ingress and the matching Traefik router and service, applies CrowdSec,
 and uses strict security headers unless a registered compatibility policy is
 selected.
 
+```mermaid
+flowchart LR
+    DECL["instances.<name>.publication\nhostname label + policy"]
+    REG["vm-registry.nix\nVM IP + primary port"]
+    POL["publicationPolicyMiddlewares\nnamed compatibility policies"]
+    PUB["microvm-base.nix\nvalidate + derive publication"]
+    CF["Cloudflare Tunnel ingress\nhostname → localhost:80"]
+    TR["Traefik router + service\npolicy middleware + CrowdSec"]
+    VM["Enabled MicroVM\nhttp://registry IP:port"]
+    CLIENT["Public HTTP client"]
+    BESPOKE["Host and bespoke routes\nfor example Matrix"]
+
+    DECL --> PUB
+    REG --> PUB
+    POL --> PUB
+    PUB --> CF
+    PUB --> TR
+    CLIENT --> CF --> TR --> VM
+    BESPOKE -.->|configured explicitly| CF
+    BESPOKE -.->|configured explicitly| TR
+```
+
 Compatibility-policy middleware mappings live in
 `hosts/blizzard/security/traefik.nix`. Host-level routes and exceptional
 multi-host or path routing, such as Matrix discovery, remain explicit in the
@@ -221,3 +243,5 @@ ______________________________________________________________________
 - [modules/services/README.md](../modules/services/README.md) — Service module catalog
 - [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
 - [vm-registry.nix](vm-registry.nix) — Single source of truth for all VM parameters
+- [Infrastructure context](../CONTEXT.md) — Canonical publication terminology
+- [ADR 0001](../docs/adr/0001-model-public-http-publication-as-instance-intent.md) — Publication interface decision
