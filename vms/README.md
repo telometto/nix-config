@@ -138,23 +138,38 @@ ______________________________________________________________________
 
 ### Host-side enablement
 
-On `blizzard`, VMs are managed via `sys.virtualisation.microvm.instances.<name>` toggles.
-Some instances are currently disabled (e.g. `adguard`, `actual`, `lidarr`, `brave`).
-Enabled instances are exposed via:
+On `blizzard`, VMs are managed via
+`sys.virtualisation.microvm.instances.<name>`. Some instances are currently
+disabled (for example `adguard`, `actual`, `lidarr`, and `brave`).
 
 ```nix
 sys.virtualisation.microvm.instances.<name> = {
   enable = true;
-  # Optional overrides:
-  autostart = true;
-  portForward.enable = true;
-  cfTunnel.enable = true;
-  reverseProxy.enable = true;
+
+  # Optional transport-layer reachability:
+  portForward.ports = [ ... ];
+
+  # Optional standard public HTTP publication:
+  publication = {
+    enable = true;
+    hostname = "service";
+    policy = "strict";
+  };
 };
 ```
 
-Each instance toggle is independent, so a VM can remain active while
-selectively disabling its Cloudflare Tunnel or Traefik routing.
+Enabling an instance never publishes it automatically. A standard publication
+is an independent opt-in that maps one hostname under the canonical public
+domain to the VM's IP and primary port from
+[vm-registry.nix](vm-registry.nix). The host module renders both Cloudflare
+Tunnel ingress and the matching Traefik router and service, applies CrowdSec,
+and uses strict security headers unless a registered compatibility policy is
+selected.
+
+Compatibility-policy middleware mappings live in
+`hosts/blizzard/security/traefik.nix`. Host-level routes and exceptional
+multi-host or path routing, such as Matrix discovery, remain explicit in the
+Cloudflare and Traefik host configurations.
 
 `immich` is published at `https://photos.zzxyz.no` through Cloudflare Tunnel
 and Traefik. Its raw host port is not forwarded; `10.100.0.70:11070` remains
@@ -180,6 +195,9 @@ ______________________________________________________________________
    service-specific NixOS config.
 1. Wire it up in [flake-microvms.nix](flake-microvms.nix) using `mkMicrovm`.
 1. Enable on the host: `sys.virtualisation.microvm.instances.<name>.enable = true`.
+1. If it needs the standard public HTTP path, explicitly enable
+   `instances.<name>.publication` with one hostname and a registered
+   compatibility policy.
 
 ______________________________________________________________________
 
