@@ -37,7 +37,7 @@ flowchart LR
 | [modules/](modules/) | System modules (`sys.*` options) — auto-loaded |
 | [home/](home/) | Home Manager modules (`hm.*` options) — auto-loaded |
 | [hosts/](hosts/) | Host configurations — auto-loaded per host |
-| [vms/](vms/) | MicroVM definitions (25 wired VM outputs) |
+| [vms/](vms/) | MicroVM definitions (26 wired VM outputs) |
 | [containers/](containers/) | Rootless Podman containers (Home Manager modules) |
 | [lib/](lib/) | Shared helpers (Traefik, Grafana, constants) |
 | [dashboards/](dashboards/) | Grafana dashboard JSON files |

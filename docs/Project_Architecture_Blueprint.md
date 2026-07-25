@@ -43,6 +43,7 @@ ______________________________________________________________________
 | `formatter.x86_64-linux` | treefmt wrapper (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
+| `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
@@ -382,6 +383,27 @@ flowchart TD
 Note: MicroVMs use `cloud-hypervisor` as the hypervisor. They do **not** use `system-loader.nix`
 and therefore do not inherit host-only modules.
 
+### Host-side lifecycle and public HTTP publication
+
+The physical host manages instances through
+`sys.virtualisation.microvm.instances.<name>`. Enabling an instance starts the
+VM but never publishes it. Standard public HTTP publication is a separate,
+instance-local intent containing one hostname label and one named compatibility
+policy.
+
+`modules/virtualisation/microvm-base.nix` combines that intent with the
+canonical public domain, the registry-owned VM IP and primary port, and the
+host's compatibility-policy mapping. It validates the complete publication,
+then renders Cloudflare Tunnel ingress and the matching Traefik router/service
+together. CrowdSec is mandatory, and the built-in strict security policy cannot
+be overridden.
+
+Raw port forwarding remains a separate transport concern. Host services and
+bespoke multi-host or path routes, including Matrix discovery, remain explicit
+in the host Cloudflare and Traefik configuration. See the canonical
+[publication diagram and configuration example](../vms/README.md#host-side-enablement)
+and [ADR 0001](adr/0001-model-public-http-publication-as-instance-intent.md).
+
 ### VM inventory
 
 | VM | IP | Port | RAM | vCPU | Notes |
@@ -472,7 +494,7 @@ ______________________________________________________________________
 | File | Exports | Purpose |
 |------|---------|---------|
 | `lib/constants.nix` | `{ tailscale.suffix = "mole-delta.ts.net"; }` | Loaded once as `consts` in `flake.nix`; shared strings across all modules |
-| `lib/traefik.nix` | `mkSecurityHeaders`, `mkRoutes`, `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`, `defaultPermissionsPolicy`, `defaultCsp` | Generates Traefik router/middleware config and Cloudflare tunnel assertions |
+| `lib/traefik.nix` | `mkSecurityHeaders`, `mkRoutes`, `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`, `defaultPermissionsPolicy`, `defaultCsp` | Generates shared headers and host-service or bespoke route config; standard MicroVM publication is rendered by `microvm-base.nix` |
 | `lib/grafana-dashboards.nix` | `fetchGrafanaDashboard`, `community.*`, `custom.*`, `all` | Fetches Grafana.com dashboards by ID; bundles community (node-exporter-full, kubernetes-cluster) and custom (arr-services, cloudflare-overview, zfs-overview, power-consumption, ups-monitoring, electricity-prices) sets |
 | `lib/grafana.nix` | `prometheusDatasource`, `mkRow`, `mkGauge`, `mkStat`, `mkTimeseries`, `mkBargauge`, `mkTarget`, `mkDashboard`, default field configs | Nix-native Grafana panel/dashboard builders |
 
@@ -561,16 +583,20 @@ ______________________________________________________________________
 | Task | Command |
 |------|---------|
 | Format all files | `nix fmt` |
-| Run all flake checks locally (formatting + Cloudflare metrics tests) | `nix flake check` |
+| Run all flake checks locally | `nix flake check` |
 | Check with trace on failure | `nix flake check --show-trace` |
 | Evaluate all flake outputs without building | `nix flake check --no-build` |
 | Run only the Cloudflare metrics tests | `nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs` |
+| Run only the MicroVM publication tests | `nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs` |
 | Build without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
 | Apply to current host | `sudo nixos-rebuild switch --flake .#<hostname>` |
 | Test without switching | `sudo nixos-rebuild test --flake .#<hostname>` |
 | Dry run (show what changes) | `nixos-rebuild dry-run --flake .#<hostname>` |
 
-The `flake-check.yml` CI workflow uses `nix flake check --no-build` for evaluation, then explicitly builds `checks.x86_64-linux.cloudflare-metrics` so the Python unit tests execute. Host evaluations run separately in `validate-config.yml`.
+The `flake-check.yml` CI workflow uses `nix flake check --no-build` for
+evaluation, then explicitly builds the Cloudflare metrics and MicroVM
+publication checks so their tests execute. Host evaluations run separately in
+`validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 

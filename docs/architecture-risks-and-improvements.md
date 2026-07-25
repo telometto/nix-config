@@ -1,11 +1,10 @@
 # Architecture Risks and Improvements
 
-> **Last reviewed: 2026-07-16**
+> **Last reviewed: 2026-07-25**
 
 This report captures documentation drift, operational risks, and future
 improvement opportunities discovered during a source-guided architecture
-review. It is intentionally documentation-only: no code, secrets, flake inputs,
-or workflow behavior were changed as part of this audit.
+review.
 
 ______________________________________________________________________
 
@@ -26,7 +25,6 @@ Most important follow-ups:
    strongly.
 1. Keep credential lifecycle guidance and private `VARS.users` validation
    aligned as the private schema evolves.
-1. Revisit default Traefik CSP compatibility trade-offs.
 
 ______________________________________________________________________
 
@@ -39,10 +37,14 @@ ______________________________________________________________________
 - System options live under `sys.*`; Home Manager options live under `hm.*`.
 - `modules/core/sops.nix` only declares service-specific secrets when their
   consumers are enabled, which avoids dangling SOPS requirements.
-- `modules/virtualisation/microvm-base.nix` already validates many host-side
-  exposure problems, including duplicate forwarded ports, duplicate Cloudflare
-  ingress hosts, missing VM flakes for enabled instances, and missing IPs for
-  port-forwarded instances.
+- `modules/virtualisation/microvm-base.nix` keeps VM lifecycle, transport-layer
+  forwarding, and public HTTP publication distinct. It rejects duplicate
+  forwarded ports and invalid or partial publications, including disabled or
+  unregistered targets, duplicate hostnames, unknown policies, and missing
+  Cloudflare or Traefik adapters.
+- Standard MicroVM publications render Cloudflare Tunnel and Traefik
+  configuration from one instance-local intent, with mandatory CrowdSec and a
+  closed set of route-scoped compatibility policies.
 - `vms/vm-registry.nix` validates allocation uniqueness, IPv4 prefixes and
   gateways, effective tap IDs, dedicated bridges, and subnet overlap whenever
   the registry is imported.
@@ -124,7 +126,7 @@ ______________________________________________________________________
 | Area | Risk | Current mitigation | Future improvement |
 |------|------|--------------------|--------------------|
 | Secret files | `.gitignore` excludes `nix-secrets/`, `vars/`, and `result`, but not `.env` variants | `security-audit.yml` runs secret scanning | Add `.env`, `.env.local`, `.env.*.local`, `*.key`, `*.pem`, and `*.crt` to `.gitignore` in a config cleanup pass |
-| Traefik CSP | `lib/traefik.nix` default CSP permits `'unsafe-inline'` and `'unsafe-eval'` | Central helper makes future changes straightforward | Move toward nonce/hash-based CSP where service compatibility allows |
+| Publication compatibility policies | Some applications cannot use the strict security-header baseline unchanged | Compatibility exceptions are named, route-scoped, centrally mapped, and still include CrowdSec | Keep exceptions narrow and remove policies when workloads become compatible with `strict` |
 | SOPS access | Missing host recipients cause activation/runtime failures for secret consumers | Private `nix-secrets` and CI deploy key keep secrets out of this repo | Keep `docs/sops-setup-guide.md` as the single source of truth for recipient setup |
 | Log redaction | `.github/scripts/redact-secrets.sh` handles common token/key patterns | CI failure output is filtered before summaries | Periodically expand patterns for new token formats and environment names |
 
@@ -158,8 +160,6 @@ These are intentionally not implemented in this documentation pass.
 1. Extend credential lifecycle checks if private `vars.nix` metadata becomes
    mandatory instead of advisory.
 1. Extend `.gitignore` for common local secret file patterns.
-1. Review Traefik CSP defaults and introduce stricter per-service policies
-   where compatible.
 1. Add a workflow or script check for host discovery and VM registry/output
    consistency.
 
@@ -179,7 +179,10 @@ ______________________________________________________________________
 - [`vms/prowlarr.nix`](../vms/prowlarr.nix)
 - [`vms/flaresolverr.nix`](../vms/flaresolverr.nix)
 - [`hosts/blizzard/virtualisation/microvms.nix`](../hosts/blizzard/virtualisation/microvms.nix)
+- [`hosts/blizzard/security/traefik.nix`](../hosts/blizzard/security/traefik.nix)
+- [`hosts/blizzard/services/cloudflared.nix`](../hosts/blizzard/services/cloudflared.nix)
 - [`lib/traefik.nix`](../lib/traefik.nix)
+- [`tests/microvm-publication.nix`](../tests/microvm-publication.nix)
 - [`treefmt.nix`](../treefmt.nix)
 - [`.github/workflows/flake-check.yml`](../.github/workflows/flake-check.yml)
 - [`.github/workflows/validate-config.yml`](../.github/workflows/validate-config.yml)

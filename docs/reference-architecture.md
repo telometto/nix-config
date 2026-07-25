@@ -15,6 +15,7 @@ Information reference for this repo's moving parts, options, and commands.
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
+| `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `devShells.x86_64-linux.default` | Dev shell with nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 ### `mkHost` — what it always injects
@@ -167,7 +168,11 @@ Operational tools used across the repo.
 | disko | Disk layout (included but not active) | `hosts/snowfall/disko.nix` (on hold) |
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
-Locally, `nix flake check` evaluates and builds both the formatting check and the Cloudflare metrics test derivation. The `flake-check.yml` CI workflow first runs `nix flake check --no-build` to evaluate all flake outputs, then explicitly builds `checks.x86_64-linux.cloudflare-metrics` to run its Python unit tests. Full host evaluation is handled separately by the `validate-config.yml` CI workflow.
+Locally, `nix flake check` evaluates and builds the formatting, Cloudflare
+metrics, and MicroVM publication checks. The `flake-check.yml` CI workflow first
+runs `nix flake check --no-build` to evaluate all flake outputs, then explicitly
+builds both executable test checks. Full host evaluation is handled separately
+by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
 
@@ -193,6 +198,35 @@ VMs do **not** use `system-loader.nix`. They are built with a minimal module set
 
 See [`vms/README.md`](../vms/README.md) for the full VM list and per-VM details.
 
+### Host-side instance lifecycle and publication
+
+[`modules/virtualisation/microvm-base.nix`](../modules/virtualisation/microvm-base.nix)
+owns host-side MicroVM lifecycle, raw port forwarding, and the standard public
+HTTP publication path.
+
+| Option | Purpose |
+|--------|---------|
+| `sys.virtualisation.microvm.instances.<name>.enable` | Start and manage the registered VM instance |
+| `sys.virtualisation.microvm.instances.<name>.portForward.ports` | Optional transport-layer forwarding, independent of publication |
+| `sys.virtualisation.microvm.instances.<name>.publication.enable` | Explicitly enable standard public HTTP publication |
+| `sys.virtualisation.microvm.instances.<name>.publication.hostname` | One DNS label under the canonical public domain |
+| `sys.virtualisation.microvm.instances.<name>.publication.policy` | Named compatibility policy; defaults to the built-in `strict` policy |
+| `sys.virtualisation.microvm.publication.canonicalDomain` | Domain suffix for standard publications |
+| `services.traefik.publicationPolicyMiddlewares` | Host-owned mapping from compatibility-policy names to Traefik middleware implementations |
+
+For each enabled publication, the module derives the backend from the VM
+registry and renders Cloudflare Tunnel ingress plus a matching Traefik router
+and service. CrowdSec is appended automatically. The built-in `strict` policy
+uses `security-headers` and cannot be redefined.
+
+Evaluation rejects publications with disabled instances, missing or malformed
+hostnames, unknown policies or registry targets, duplicate hostnames, an
+unset canonical domain, or disabled Cloudflare/Traefik adapters. Host routes,
+raw port forwarding, and bespoke multi-host or path routes such as Matrix stay
+outside this interface. See the
+[publication diagram](../vms/README.md#host-side-enablement) and
+[ADR 0001](adr/0001-model-public-http-publication-as-instance-intent.md).
+
 ______________________________________________________________________
 
 ## Podman Containers (quadlet-nix)
@@ -210,6 +244,9 @@ ______________________________________________________________________
 - `mkSecurityHeaders { ... }`: Generate Traefik middleware attrsets with customisable security response headers (X-Frame-Options, CSP, etc.). Pass `null` to any header to omit it.
 - `mkRoutes { domain; defaultMiddlewares? }`: Generate `{ routers; services; }` from a concise routing table mapping service names to subdomains and URLs.
 - `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`: Per-service reverse proxy options used by `modules/services/*.nix`.
+
+These helpers support host services and bespoke routes. Standard public
+MicroVM routes use the publication interface described above.
 
 ______________________________________________________________________
 
@@ -237,7 +274,7 @@ nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel
 # Format all files (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff)
 nix fmt
 
-# Evaluate and build the formatting and Cloudflare metrics checks
+# Evaluate and build all checks
 nix flake check
 
 # Evaluate all flake outputs without building them (as CI does first)
@@ -245,6 +282,9 @@ nix flake check --no-build
 
 # Build and run only the Cloudflare metrics unit-test check
 nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs
+
+# Build and run only the MicroVM publication contract check
+nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
 
 # Dev shell (includes nil, nixfmt, deadnix, statix, sops, ssh-to-age)
 nix develop
