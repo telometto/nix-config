@@ -8,19 +8,7 @@
 }:
 let
   reg = import ../../../vms/vm-registry.nix;
-  vmUrl = name: "http://${reg.${name}.ip}:${toString reg.${name}.port}";
   immichMlProxyPort = 3003;
-
-  localhostUrl = "http://localhost:80";
-
-  mkPublicIngress =
-    subdomains:
-    builtins.listToAttrs (
-      map (subdomain: {
-        name = "${subdomain}.${VARS.domains.public}";
-        value = localhostUrl;
-      }) subdomains
-    );
 
   mkPortForward =
     proto: sourcePort: destPort:
@@ -41,8 +29,7 @@ let
     // {
       vmConfig = spec.vmConfig or { };
       portForward.ports = spec.portForwards or [ ];
-      cfTunnel.ingress = mkPublicIngress (spec.ingressHosts or [ ]) // (spec.extraIngress or { });
-      reverseProxy = spec.reverseProxy or { };
+      publication = spec.publication or { };
     };
 
   vmSpecs = {
@@ -54,144 +41,105 @@ let
         (mkPortForward "tcp" 853 null)
         (mkPortForward "tcp" 11010 null)
       ];
-      ingressHosts = [ "adguard" ];
+      publication.hostname = "adguard";
     };
 
     actual = {
       enable = false;
-      ingressHosts = [ "actual" ];
-      reverseProxy = {
-        subdomain = "actual";
-        url = vmUrl "actual";
-      };
+      publication.hostname = "actual";
     };
 
     searx = {
       enable = true;
-      ingressHosts = [ "search" ];
-      reverseProxy = {
-        subdomain = "search";
-        url = vmUrl "searx";
+      publication = {
+        enable = true;
+        hostname = "search";
       };
     };
 
     overseerr = {
       enable = true;
-      ingressHosts = [ "requests" ];
-      reverseProxy = {
-        subdomain = "requests";
-        url = vmUrl "overseerr";
-        middlewares = [
-          "plex-headers"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "requests";
+        policy = "plex-compatible";
       };
     };
 
     ombi = {
       enable = false;
-      ingressHosts = [ "ombi" ];
-      reverseProxy = {
-        subdomain = "ombi";
-        url = vmUrl "ombi";
-      };
+      publication.hostname = "ombi";
     };
 
     tautulli = {
       enable = true;
-      ingressHosts = [ "tautulli" ];
-      reverseProxy = {
-        subdomain = "tautulli";
-        url = vmUrl "tautulli";
-        middlewares = [
-          "plex-headers"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "tautulli";
+        policy = "plex-compatible";
       };
     };
 
     gitea = {
       enable = true;
-      ingressHosts = [ "git" ];
-      reverseProxy = {
-        subdomain = "git";
-        url = vmUrl "gitea";
-        middlewares = [
-          "security-headers"
-          "gitea-xfp-https"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "git";
+        policy = "strict-forwarded-https";
       };
     };
 
     sonarr = {
       enable = true;
-      ingressHosts = [ "series" ];
-      reverseProxy = {
-        subdomain = "series";
-        url = vmUrl "sonarr";
-        middlewares = [
-          "app-compat-headers"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "series";
+        policy = "legacy-app-shell";
       };
     };
 
     radarr = {
       enable = true;
-      ingressHosts = [ "movies" ];
-      reverseProxy = {
-        subdomain = "movies";
-        url = vmUrl "radarr";
-        middlewares = [
-          "app-compat-headers"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "movies";
+        policy = "legacy-app-shell";
       };
     };
 
     prowlarr = {
       enable = true;
-      ingressHosts = [ "indexer" ];
-      reverseProxy = {
-        subdomain = "indexer";
-        url = vmUrl "prowlarr";
-        middlewares = [
-          "app-compat-headers"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "indexer";
+        policy = "legacy-app-shell";
       };
     };
 
     bazarr = {
       enable = true;
-      ingressHosts = [ "subs" ];
-      reverseProxy = {
-        subdomain = "subs";
-        url = vmUrl "bazarr";
-        middlewares = [
-          "app-compat-headers"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "subs";
+        policy = "legacy-app-shell";
       };
     };
 
     readarr = {
       enable = true;
-      ingressHosts = [ "books" ];
-      reverseProxy = {
-        subdomain = "books";
-        url = vmUrl "readarr";
-        middlewares = [
-          "app-compat-headers"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "books";
+        policy = "legacy-app-shell";
       };
     };
 
     lidarr = {
       enable = false;
-      ingressHosts = [ "music" ];
+      publication = {
+        hostname = "music";
+        policy = "legacy-app-shell";
+      };
     };
 
     qbittorrent = {
@@ -202,14 +150,10 @@ let
     sabnzbd = {
       enable = true;
       portForwards = [ (mkPortForward "tcp" 11031 null) ];
-      ingressHosts = [ "sab" ];
-      reverseProxy = {
-        subdomain = "sab";
-        url = vmUrl "sabnzbd";
-        middlewares = [
-          "sabnzbd-headers"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "sab";
+        policy = "sabnzbd-ui";
       };
     };
 
@@ -224,14 +168,10 @@ let
         (mkPortForward "tcp" 11052 null)
         (mkPortForward "tcp" 11053 null)
       ];
-      ingressHosts = [ "ff" ];
-      reverseProxy = {
-        subdomain = "ff";
-        url = vmUrl "firefox";
-        middlewares = [
-          "firefox-headers"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "ff";
+        policy = "browser-in-browser";
       };
     };
 
@@ -241,62 +181,41 @@ let
         (mkPortForward "tcp" 11054 null)
         (mkPortForward "tcp" 11055 null)
       ];
-      ingressHosts = [ "brave" ];
+      publication = {
+        hostname = "brave";
+        policy = "browser-in-browser";
+      };
     };
 
     matrix-synapse = {
       enable = true;
       portForwards = [ (mkPortForward "tcp" 11060 null) ];
-      ingressHosts = [ "matrix" ];
-      extraIngress = {
-        "${VARS.domains.public}" = localhostUrl;
-      };
-      reverseProxy = {
-        enable = false;
-        subdomain = "matrix";
-        url = vmUrl "matrix-synapse";
-      };
     };
 
     paperless = {
       enable = false;
       portForwards = [ (mkPortForward "tcp" 11061 null) ];
-      ingressHosts = [ "docs" ];
-      reverseProxy = {
-        subdomain = "docs";
-        url = vmUrl "paperless";
-        middlewares = [
-          "csrf-safe-headers"
-          "crowdsec"
-        ];
+      publication = {
+        hostname = "docs";
+        policy = "csrf-compatible";
       };
     };
 
     firefly = {
       enable = false;
       portForwards = [ (mkPortForward "tcp" 11062 null) ];
-      ingressHosts = [ "finance" ];
-      reverseProxy = {
-        subdomain = "finance";
-        url = vmUrl "firefly";
-        middlewares = [
-          "firefly-headers"
-          "crowdsec"
-        ];
+      publication = {
+        hostname = "finance";
+        policy = "firefly-proxy";
       };
     };
 
     "firefly-importer" = {
       enable = false;
       portForwards = [ (mkPortForward "tcp" 11063 null) ];
-      ingressHosts = [ "finimport" ];
-      reverseProxy = {
-        subdomain = "finimport";
-        url = vmUrl "firefly-importer";
-        middlewares = [
-          "firefly-headers"
-          "crowdsec"
-        ];
+      publication = {
+        hostname = "finimport";
+        policy = "firefly-proxy";
       };
     };
 
@@ -305,56 +224,34 @@ let
       # Keep the VM port off the host while publishing it through the managed
       # Cloudflare Tunnel and Traefik route.
       portForwards = [ ];
-      ingressHosts = [ "photos" ];
-      reverseProxy = {
+      publication = {
         enable = true;
-        subdomain = "photos";
-        url = vmUrl "immich";
-        middlewares = [
-          "immich-headers"
-          "crowdsec"
-        ];
+        hostname = "photos";
+        policy = "immich-web";
       };
     };
 
     mealie = {
       enable = false;
       portForwards = [ (mkPortForward "tcp" 11071 null) ];
-      ingressHosts = [ "recipes" ];
-      reverseProxy = {
-        subdomain = "recipes";
-        url = vmUrl "mealie";
-        middlewares = [
-          "security-headers"
-          "crowdsec"
-        ];
-      };
+      publication.hostname = "recipes";
     };
 
     trigger = {
       enable = false;
-      ingressHosts = [ "triggers" ];
-      reverseProxy = {
-        subdomain = "triggers";
-        url = vmUrl "trigger";
-        middlewares = [
-          "trigger-headers"
-          "crowdsec"
-        ];
+      publication = {
+        hostname = "triggers";
+        policy = "dynamic-app-shell";
       };
     };
 
     "pocket-id" = {
       enable = true;
       vmConfig.restartIfChanged = true;
-      ingressHosts = [ "id" ];
-      reverseProxy = {
-        subdomain = "id";
-        url = vmUrl "pocket-id";
-        middlewares = [
-          "pocket-id-headers"
-          "crowdsec"
-        ];
+      publication = {
+        enable = true;
+        hostname = "id";
+        policy = "oidc-provider";
       };
     };
   };
@@ -392,6 +289,7 @@ in
 
       externalInterface = "enp8s0";
       stateDir = "/flash/enc/vms";
+      publication.canonicalDomain = VARS.domains.public;
 
       instances = builtins.mapAttrs mkInstance vmSpecs;
     };
