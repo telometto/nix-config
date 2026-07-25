@@ -89,6 +89,10 @@ Enable in a host file: `sys.role.desktop.enable = true;`
 - `vms/vm-registry.nix` — single source of truth for CID, MAC, IP, memory, vCPU per VM.
 - `vms/mkMicrovmConfig.nix` — helper that generates common network/storage config from a registry entry.
 - `vms/base.nix` — shared hardened base (SSH keys, admin user, firewall).
+- `modules/virtualisation/microvm-base.nix` — host-side instance lifecycle, NAT forwarding, and standard public HTTP publication.
+- Standard publication is explicit under `sys.virtualisation.microvm.instances.<name>.publication`; enabling a VM never publishes it automatically.
+- A publication supplies only `enable`, one hostname label, and a compatibility-policy name. The module derives the registry target and renders Cloudflare Tunnel plus Traefik configuration.
+- Compatibility-policy middleware mappings live beside the host Traefik configuration. Raw port forwarding and bespoke routes such as Matrix stay outside the publication interface.
 
 ### Lib helpers
 
@@ -104,6 +108,7 @@ Enable in a host file: `sys.role.desktop.enable = true;`
 | New system feature | `modules/<category>/<name>.nix` | Auto-loaded; use `sys.*` options |
 | New HM feature | `home/<category>/<name>.nix` | Auto-loaded; use `hm.*` options |
 | New host | `hosts/<hostname>/` | Register in `flake.nix` via `mkHost` |
+| Standard public MicroVM route | `hosts/<hostname>/virtualisation/microvms.nix` | Enable `instances.<name>.publication`; use a registered compatibility policy |
 | Per-host HM tweak | `home/overrides/host/<hostname>.nix` | Imported explicitly by HM |
 | Per-user HM tweak | `home/overrides/user/<user>-<host>.nix` | Imported explicitly by HM |
 | Sensitive data | `nix-secrets` flake (`VARS`) | Never commit to this repo |
