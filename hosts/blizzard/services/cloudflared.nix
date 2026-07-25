@@ -6,13 +6,15 @@
     tunnelId = "ce54cb73-83b2-4628-8246-26955d280641";
     credentialsFile = config.sys.secrets.cloudflaredCredentialsFile;
 
-    # VM-specific tunnel routes are declared per-VM via cfTunnel in microvms.nix.
-    # Only host-level services that are not managed by a MicroVM belong here.
+    # Standard MicroVM publications are rendered from microvms.nix. Only
+    # host-level services and bespoke routes such as Matrix belong here.
     ingress = {
       "dashboard.${VARS.domains.public}" = "http://localhost:80";
       "metrics.${VARS.domains.public}" = "http://localhost:80";
       "lingarr.${VARS.domains.public}" = "http://localhost:80";
       "nominatim.${VARS.domains.public}" = "http://localhost:80";
+      "matrix.${VARS.domains.public}" = "http://localhost:80";
+      "${VARS.domains.public}" = "http://localhost:80";
     };
   };
 }
