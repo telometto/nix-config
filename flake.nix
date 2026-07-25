@@ -162,6 +162,12 @@
               python -m unittest discover -s tests/cloudflare_metrics -p 'test_*.py'
               touch $out
             '';
+
+        microvm-publication = import ./tests/microvm-publication.nix {
+          inherit self;
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
       };
 
       devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {
