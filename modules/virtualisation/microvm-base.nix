@@ -169,12 +169,8 @@ let
     ) (builtins.attrValues requestedPublications)
     ++ lib.optional (requestedPublicationNames != [ ]) "crowdsec"
   );
-  availableTraefikMiddlewares = lib.unique (
-    lib.flatten (
-      lib.mapAttrsToList (
-        _: file: builtins.attrNames (file.settings.http.middlewares or { })
-      ) config.services.traefik.dynamic.files
-    )
+  availableTraefikMiddlewares = builtins.attrNames (
+    config.services.traefik.dynamic.files.core.settings.http.middlewares or { }
   );
   publicationMissingMiddlewares = lib.filter (
     middleware: !(lib.elem middleware availableTraefikMiddlewares)
@@ -498,7 +494,7 @@ in
       }
       {
         assertion = publicationMissingMiddlewares == [ ];
-        message = "sys.virtualisation.microvm.instances selects publication middleware that is not defined in services.traefik.dynamic.files: ${formatList publicationMissingMiddlewares}";
+        message = "sys.virtualisation.microvm.instances selects publication middleware that is not defined in services.traefik.dynamic.files.core: ${formatList publicationMissingMiddlewares}";
       }
       {
         assertion = !strictPolicyOverridden;
