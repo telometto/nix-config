@@ -46,7 +46,10 @@ let
       policy = lib.mkOption {
         type = lib.types.str;
         default = "strict";
-        description = "Publication compatibility policy.";
+        description = ''
+          Registered publication compatibility policy whose middleware
+          references must exist.
+        '';
       };
     };
   };
@@ -54,6 +57,19 @@ let
   instanceModule =
     { name, config, ... }:
     {
+      imports = [
+        (lib.mkRemovedOptionModule [ "cfTunnel" ] ''
+          Use publication for managed public HTTP routes, or define a bespoke
+          host-level Cloudflare Tunnel ingress when the standard publication
+          contract is not sufficient.
+        '')
+        (lib.mkRemovedOptionModule [ "reverseProxy" ] ''
+          Use publication for managed public HTTP routes, or define a bespoke
+          host-level Traefik route when the standard publication contract is
+          not sufficient.
+        '')
+      ];
+
       options = {
         enable = lib.mkEnableOption "MicroVM instance ${name}";
 
@@ -115,6 +131,20 @@ let
   strictPolicyOverridden = builtins.hasAttr "strict" config.services.traefik.publicationPolicyMiddlewares;
   requestedPublications = lib.filterAttrs (_: instance: instance.publication.enable) cfg.instances;
   requestedPublicationNames = builtins.attrNames requestedPublications;
+  canonicalDomainLabels =
+    if cfg.publication.canonicalDomain == null then
+      [ ]
+    else
+      lib.splitString "." cfg.publication.canonicalDomain;
+  canonicalDomainValid =
+    cfg.publication.canonicalDomain == null
+    || (
+      builtins.stringLength cfg.publication.canonicalDomain <= 253
+      && builtins.length canonicalDomainLabels >= 2
+      && lib.all (
+        label: builtins.match "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" label != null
+      ) canonicalDomainLabels
+    );
   publicationMissingHostnames = builtins.attrNames (
     lib.filterAttrs (_: instance: instance.publication.hostname == null) requestedPublications
   );
@@ -130,6 +160,25 @@ let
       _: instance: !(builtins.hasAttr instance.publication.policy publicationPolicies)
     ) requestedPublications
   );
+  requestedPublicationMiddlewares = lib.unique (
+    lib.concatMap (
+      instance:
+      lib.optionals (builtins.hasAttr instance.publication.policy publicationPolicies) (
+        publicationPolicies.${instance.publication.policy}
+      )
+    ) (builtins.attrValues requestedPublications)
+    ++ lib.optional (requestedPublicationNames != [ ]) "crowdsec"
+  );
+  availableTraefikMiddlewares = lib.unique (
+    lib.flatten (
+      lib.mapAttrsToList (
+        _: file: builtins.attrNames (file.settings.http.middlewares or { })
+      ) config.services.traefik.dynamic.files
+    )
+  );
+  publicationMissingMiddlewares = lib.filter (
+    middleware: !(lib.elem middleware availableTraefikMiddlewares)
+  ) requestedPublicationMiddlewares;
   publicationUnknownTargets = lib.filter (
     name: !(builtins.hasAttr name registry)
   ) requestedPublicationNames;
@@ -343,6 +392,23 @@ let
   formatList = list: lib.concatStringsSep ", " list;
 in
 {
+  imports = [
+    (lib.mkRemovedOptionModule [ "sys" "virtualisation" "microvm" "hypervisor" ] ''
+      The host-wide hypervisor option was not applied to generated instances.
+      Configure the hypervisor in each guest configuration when required.
+    '')
+    (lib.mkRemovedOptionModule [ "sys" "virtualisation" "microvm" "autostart" ] ''
+      Use sys.virtualisation.microvm.instances.<name>.autostart instead.
+    '')
+    (lib.mkRemovedOptionModule [ "sys" "virtualisation" "microvm" "vms" ] ''
+      Use sys.virtualisation.microvm.instances.<name>.flake and vmConfig instead.
+    '')
+    (lib.mkRemovedOptionModule [ "sys" "virtualisation" "microvm" "expose" ] ''
+      Use sys.virtualisation.microvm.instances.<name>.portForward and
+      sys.virtualisation.microvm.instances.<name>.publication instead.
+    '')
+  ];
+
   options.sys.virtualisation.microvm = {
     enable = lib.mkEnableOption "microvm.nix host for running lightweight VMs";
 
@@ -360,7 +426,7 @@ in
       canonicalDomain = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
-        description = "Canonical domain used by public HTTP publications.";
+        description = "Lowercase DNS domain used by public HTTP publications.";
       };
 
     };
@@ -415,6 +481,10 @@ in
         message = "sys.virtualisation.microvm.publication.canonicalDomain must be set when publications are enabled";
       }
       {
+        assertion = canonicalDomainValid;
+        message = "sys.virtualisation.microvm.publication.canonicalDomain must be a lowercase DNS domain with at least two valid labels";
+      }
+      {
         assertion = publicationMissingHostnames == [ ];
         message = "sys.virtualisation.microvm.instances enables publication without a hostname for: ${formatList publicationMissingHostnames}";
       }
@@ -425,6 +495,10 @@ in
       {
         assertion = publicationUnknownPolicies == [ ];
         message = "sys.virtualisation.microvm.instances selects unknown publication policies for: ${formatList publicationUnknownPolicies}";
+      }
+      {
+        assertion = publicationMissingMiddlewares == [ ];
+        message = "sys.virtualisation.microvm.instances selects publication middleware that is not defined in services.traefik.dynamic.files: ${formatList publicationMissingMiddlewares}";
       }
       {
         assertion = !strictPolicyOverridden;
