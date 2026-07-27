@@ -107,8 +107,10 @@ def _representative_state() -> dict:
             "high_water": None,
             "nonidentity_high_water": None,
             "seen": {},
+            "nonidentity_seen": {},
             "gap": False,
             "nonidentity_gap": False,
+            "identity_backfill": False,
         },
     }
     values = {
