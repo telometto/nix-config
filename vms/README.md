@@ -260,6 +260,7 @@ ______________________________________________________________________
 ### Related documentation
 
 - [microvm.nix upstream](https://github.com/microvm-nix/microvm.nix)
+- [Immich backup and recovery](../docs/immich-backup.md) — Offsite image backup, retention, and restore runbook
 - [modules/services/README.md](../modules/services/README.md) — Service module catalog
 - [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
 - [vm-registry.nix](vm-registry.nix) — Single source of truth for all VM parameters

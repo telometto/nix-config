@@ -7,6 +7,7 @@
 }:
 let
   reg = (import ./vm-registry.nix).immich;
+  storage = import ./immich-storage.nix;
   # Pocket ID assigns this public identifier. Keep it in sync with the
   # restricted Immich client documented in docs/immich.md.
   oauthClientId = "52bc6bc3-5c98-4f4b-bd00-b27318fd7801";
@@ -19,18 +20,8 @@ in
     (import ./mkMicrovmConfig.nix (
       reg
       // {
-        volumes = [
-          {
-            mountPoint = "/var/lib/immich";
-            image = "immich-state.img";
-            size = 1048576;
-          }
-          {
-            mountPoint = "/var/lib/postgresql";
-            image = "postgresql-state.img";
-            size = 10240;
-          }
-        ];
+        volumes = storage.microvmVolumes;
+        persistVolume = storage.microvmPersistVolume;
       }
     ))
   ];
