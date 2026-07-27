@@ -29,6 +29,8 @@ in
   sys = {
     role.desktop.enable = true;
 
+    security.sandflyTarget.enable = true;
+
     desktop.flavor = "kde";
 
     users = {

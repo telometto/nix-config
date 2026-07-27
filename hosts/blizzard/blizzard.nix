@@ -24,6 +24,8 @@
   sys = {
     role.server.enable = true;
 
+    security.sandflyTarget.enable = true;
+
     users.zeno.enable = true;
 
     nix.distributedBuilds = {
