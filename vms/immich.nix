@@ -6,6 +6,7 @@
 }:
 let
   reg = (import ./vm-registry.nix).immich;
+  storage = import ./immich-storage.nix;
 in
 {
   imports = [
@@ -15,18 +16,8 @@ in
     (import ./mkMicrovmConfig.nix (
       reg
       // {
-        volumes = [
-          {
-            mountPoint = "/var/lib/immich";
-            image = "immich-state.img";
-            size = 1048576;
-          }
-          {
-            mountPoint = "/var/lib/postgresql";
-            image = "postgresql-state.img";
-            size = 10240;
-          }
-        ];
+        volumes = storage.microvmVolumes;
+        persistVolume = storage.microvmPersistVolume;
       }
     ))
   ];
