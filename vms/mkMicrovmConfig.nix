@@ -9,8 +9,9 @@
 #     }))
 #   ];
 #
-# The /persist volume and /nix/store share are appended automatically.
-# Caller only needs to provide service-specific volumes and shares.
+# The /persist volume and /nix/store share are appended automatically. A caller
+# may override persistVolume when storage metadata is shared with another
+# consumer, such as a backup job.
 {
   name,
   cid,
@@ -24,6 +25,11 @@
   tapId ? "vm-${name}",
   hostBridge ? null,
   volumes ? [ ],
+  persistVolume ? {
+    mountPoint = "/persist";
+    image = "persist.img";
+    size = 64;
+  },
   extraShares ? [ ],
   extraRoutes ? [ ],
   ...
@@ -88,13 +94,7 @@ in
     vsock.cid = cid;
     inherit mem vcpu;
 
-    volumes = volumes ++ [
-      {
-        mountPoint = "/persist";
-        image = "persist.img";
-        size = 64;
-      }
-    ];
+    volumes = volumes ++ [ persistVolume ];
 
     interfaces = [
       {
