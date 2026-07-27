@@ -35,7 +35,7 @@ LOG = logging.getLogger("cloudflare-metrics")
 
 API_BASE = "https://api.cloudflare.com/client/v4"
 GRAPHQL_URL = "https://api.cloudflare.com/client/v4/graphql"
-STATE_VERSION = 3
+STATE_VERSION = 4
 
 ANALYTICS_DELAY_SECONDS = 10 * 60
 ANALYTICS_BUCKET_SECONDS = 5 * 60
@@ -224,7 +224,7 @@ METRIC_SPECS: dict[str, tuple[str, str]] = {
     ),
     "cloudflare_access_last_authentication_timestamp_seconds": (
         "gauge",
-        "Unix timestamp of the latest Cloudflare Access authentication event.",
+        "Unix timestamp of the latest Cloudflare Access authentication event by identity.",
     ),
     "cloudflare_collector_last_success_timestamp_seconds": (
         "gauge",
@@ -275,7 +275,7 @@ METRIC_LABEL_SCHEMAS: dict[str, tuple[frozenset[str], ...]] = {
         frozenset({"app", "decision", "principal_type", "owner"}),
     ),
     "cloudflare_access_last_authentication_timestamp_seconds": (
-        frozenset({"app", "decision", "principal_type", "owner"}),
+        frozenset({"app", "decision", "identity", "principal_type", "owner"}),
     ),
     "cloudflare_collector_last_success_timestamp_seconds": (frozenset({"poll"}),),
     "cloudflare_collector_poll_enabled": (frozenset({"poll"}),),
@@ -440,14 +440,17 @@ def _series_labels(key: str) -> dict[str, str]:
     return dict(json.loads(key))
 
 
-def _private_access_labels(labels: Mapping[str, str]) -> dict[str, str]:
-    """Return the bounded Access label contract without identity material."""
+def _normalized_access_labels(metric: str, labels: Mapping[str, str]) -> dict[str, str]:
+    """Return the bounded Access label contract for one metric."""
     if frozenset(labels) == OVERFLOW_LABEL_SCHEMA:
         return dict(labels)
-    private_labels = dict(labels)
-    legacy_principal = private_labels.pop("principal", None)
-    owner = str(private_labels.get("owner", "false")).lower() == "true"
-    principal_type = str(private_labels.get("principal_type", "")).lower()
+    normalized_labels = dict(labels)
+    legacy_principal = normalized_labels.pop("principal", None)
+    identity = normalized_labels.pop("identity", None) or legacy_principal
+    app = normalized_labels.pop("application", normalized_labels.get("app", "unknown"))
+    decision = normalized_labels.get("decision", "error")
+    owner = str(normalized_labels.get("owner", "false")).lower() == "true"
+    principal_type = str(normalized_labels.get("principal_type", "")).lower()
 
     if principal_type not in ACCESS_PRINCIPAL_TYPES:
         if owner:
@@ -459,42 +462,77 @@ def _private_access_labels(labels: Mapping[str, str]) -> dict[str, str]:
         else:
             principal_type = "unknown"
 
-    # Keep the redundant owner label internally consistent so consumers can
-    # use the simple owner=true|false contract without inspecting identity data.
+    # Keep the redundant owner label internally consistent so consumers can use
+    # the simple owner=true|false contract without inspecting the identity.
     owner = principal_type == "owner"
-    private_labels["principal_type"] = principal_type
-    private_labels["owner"] = "true" if owner else "false"
-    return private_labels
+    result = {
+        "app": normalize_label_value(app),
+        "decision": normalize_word(decision, "error"),
+        "principal_type": principal_type,
+        "owner": "true" if owner else "false",
+    }
+    if metric == "cloudflare_access_last_authentication_timestamp_seconds":
+        if principal_type in {"owner", "user"}:
+            result["identity"] = (
+                str(identity).strip().lower() if identity else "not-recorded"
+            )
+        else:
+            result["identity"] = principal_type
+    return result
 
 
-def _private_access_series(metric: str, series: Mapping[str, Any]) -> dict[str, float]:
+def _normalized_access_series(
+    metric: str, series: Mapping[str, Any]
+) -> dict[str, float]:
     if metric not in ACCESS_METRICS:
         return dict(series)
 
     sanitized: dict[str, float] = {}
     for key, value in series.items():
-        private_key = _series_key(_private_access_labels(_series_labels(key)))
+        normalized_key = _series_key(
+            _normalized_access_labels(metric, _series_labels(key))
+        )
         number = float(value)
         if metric == "cloudflare_access_authentications_total":
-            sanitized[private_key] = sanitized.get(private_key, 0.0) + number
+            sanitized[normalized_key] = sanitized.get(normalized_key, 0.0) + number
         else:
-            sanitized[private_key] = max(sanitized.get(private_key, number), number)
+            sanitized[normalized_key] = max(
+                sanitized.get(normalized_key, number), number
+            )
     return sanitized
 
 
-def sanitize_legacy_access_series(state: dict[str, Any]) -> bool:
-    """Remove raw principals from persisted v1 state before it is exposed."""
+def normalize_access_series(state: dict[str, Any]) -> bool:
+    """Migrate Access series to the current bounded label contracts."""
     changed = False
     all_series = state.setdefault("series", {})
     for metric in ACCESS_METRICS:
         existing = all_series.get(metric)
         if not existing:
             continue
-        sanitized = _private_access_series(metric, existing)
-        if sanitized != existing:
-            all_series[metric] = sanitized
+        normalized = _normalized_access_series(metric, existing)
+        if normalized != existing:
+            all_series[metric] = normalized
             changed = True
     return changed
+
+
+def drop_unrecorded_access_identities(state: dict[str, Any]) -> bool:
+    """Drop migration placeholders after the bounded identity backfill."""
+    metric = "cloudflare_access_last_authentication_timestamp_seconds"
+    all_series = state.setdefault("series", {})
+    existing = all_series.get(metric)
+    if not existing:
+        return False
+    retained = {
+        key: value
+        for key, value in existing.items()
+        if _series_labels(key).get("identity") != "not-recorded"
+    }
+    if retained == existing:
+        return False
+    all_series[metric] = retained
+    return True
 
 
 def _metric_type(metric: str) -> str:
@@ -718,11 +756,15 @@ def validate_state(state: Any) -> None:
                 raise StateValidationError(
                     f"collector state access.{field} must be boolean"
                 )
+    if version >= 4 and not isinstance(access.get("identity_backfill"), bool):
+        raise StateValidationError(
+            "collector state access.identity_backfill must be boolean"
+        )
 
 
 def _migrate_v1_to_v2(state: dict[str, Any]) -> dict[str, Any]:
-    """Remove identity labels and bound durable metric series."""
-    sanitize_legacy_access_series(state)
+    """Normalize Access labels and bound durable metric series."""
+    normalize_access_series(state)
     compact_series_state(state)
     state["version"] = 2
     return state
@@ -744,9 +786,19 @@ def _migrate_v2_to_v3(state: dict[str, Any]) -> dict[str, Any]:
     return state
 
 
+def _migrate_v3_to_v4(state: dict[str, Any]) -> dict[str, Any]:
+    """Add dashboard identity labels and schedule one bounded REST backfill."""
+    normalize_access_series(state)
+    access = state.setdefault("access", {})
+    access["identity_backfill"] = True
+    state["version"] = 4
+    return state
+
+
 STATE_MIGRATIONS: dict[int, Callable[[dict[str, Any]], dict[str, Any]]] = {
     1: _migrate_v1_to_v2,
     2: _migrate_v2_to_v3,
+    3: _migrate_v3_to_v4,
 }
 
 
@@ -795,6 +847,7 @@ def new_state() -> dict[str, Any]:
             "seen": {},
             "gap": False,
             "nonidentity_gap": False,
+            "identity_backfill": False,
         },
     }
     set_series(state, "cloudflare_collector_catch_up", {"poll": "analytics"}, 0)
@@ -862,13 +915,13 @@ def get_series(
 def render_metrics(state: Mapping[str, Any]) -> str:
     lines: list[str] = []
     render_state = {"series": copy.deepcopy(state.get("series", {}))}
-    sanitize_legacy_access_series(render_state)
+    normalize_access_series(render_state)
     compact_series_state(render_state)
     all_series = render_state["series"]
     for metric, (metric_type, help_text) in METRIC_SPECS.items():
         lines.append(f"# HELP {metric} {help_text}")
         lines.append(f"# TYPE {metric} {metric_type}")
-        metric_series = _private_access_series(metric, all_series.get(metric, {}))
+        metric_series = _normalized_access_series(metric, all_series.get(metric, {}))
         for key, value in sorted(metric_series.items()):
             labels = _series_labels(key)
             suffix = ""
@@ -931,7 +984,7 @@ class StateStore:
             self._create_migration_backup(version)
             state = migrate_state(state)
             changed = True
-        if sanitize_legacy_access_series(state):
+        if normalize_access_series(state):
             changed = True
         if compact_series_state(state):
             changed = True
@@ -1295,12 +1348,14 @@ def _access_identity(event: Mapping[str, Any]) -> str:
 def _record_access_event(
     state: dict[str, Any],
     *,
-    identity: str,
+    event_id: str,
     event_time: float,
     app: str,
     decision: str,
+    identity: str,
     principal_type: str,
     owner: str,
+    refresh_duplicate_identity: bool = False,
 ) -> bool:
     access_state = state.setdefault(
         "access",
@@ -1310,29 +1365,40 @@ def _record_access_event(
             "seen": {},
             "gap": False,
             "nonidentity_gap": False,
+            "identity_backfill": False,
         },
     )
     seen: dict[str, float] = access_state.setdefault("seen", {})
-    if identity in seen:
+    already_seen = event_id in seen
+    if already_seen and not refresh_duplicate_identity:
         return False
-    labels = {
+    aggregate_labels = {
         "app": app,
         "decision": decision,
         "principal_type": principal_type,
         "owner": owner,
     }
-    add_series(state, "cloudflare_access_authentications_total", labels, 1)
+    identity_labels = aggregate_labels | {"identity": identity}
+    if not already_seen:
+        add_series(
+            state,
+            "cloudflare_access_authentications_total",
+            aggregate_labels,
+            1,
+        )
     last = get_series(
-        state, "cloudflare_access_last_authentication_timestamp_seconds", labels
+        state,
+        "cloudflare_access_last_authentication_timestamp_seconds",
+        identity_labels,
     )
     set_series(
         state,
         "cloudflare_access_last_authentication_timestamp_seconds",
-        labels,
+        identity_labels,
         max(last, event_time),
     )
-    seen[identity] = event_time
-    return True
+    seen[event_id] = event_time
+    return not already_seen
 
 
 def apply_access_events(
@@ -1340,6 +1406,8 @@ def apply_access_events(
     events: Iterable[Mapping[str, Any]],
     apps: Mapping[str, str],
     owner_emails: set[str],
+    *,
+    refresh_duplicate_identities: bool = False,
 ) -> int:
     added = 0
     for event in events:
@@ -1348,6 +1416,9 @@ def apply_access_events(
         principal_type, owner = classify_principal(
             event.get("user_email"), owner_emails
         )
+        display_identity = str(event.get("user_email") or "").strip().lower()
+        if not display_identity:
+            display_identity = "unknown"
         app_id = str(event.get("app_uid") or "")
         app = apps.get(app_id)
         if not app:
@@ -1355,12 +1426,16 @@ def apply_access_events(
         added += int(
             _record_access_event(
                 state,
-                identity=identity,
+                event_id=identity,
                 event_time=event_time,
                 app=app,
                 decision=normalize_decision(event),
+                identity=display_identity,
                 principal_type=principal_type,
                 owner=owner,
+                refresh_duplicate_identity=(
+                    refresh_duplicate_identities and principal_type in {"owner", "user"}
+                ),
             )
         )
     return added
@@ -1402,12 +1477,13 @@ def apply_nonidentity_access_events(
         added += int(
             _record_access_event(
                 state,
-                identity=_nonidentity_access_identity(dimensions),
+                event_id=_nonidentity_access_identity(dimensions),
                 event_time=parse_timestamp(dimensions.get("datetime")),
                 # Cloudflare's published dataset does not expose an Access
                 # application identifier or domain for this event.
                 app="unknown",
                 decision=decision,
+                identity="service-token" if service_token_id else "unknown",
                 principal_type="service-token" if service_token_id else "unknown",
                 owner="false",
             )
@@ -1708,10 +1784,16 @@ class Collector:
 
         snapshot = self.snapshot()
         access_snapshot = snapshot.get("access", {})
-        identity_start, identity_catch_up, identity_gap = access_poll_window(
-            access_snapshot.get("high_water"),
-            now,
-        )
+        identity_backfill = bool(access_snapshot.get("identity_backfill"))
+        if identity_backfill:
+            identity_start = now - ACCESS_SEEN_SECONDS
+            identity_catch_up = 0
+            identity_gap = False
+        else:
+            identity_start, identity_catch_up, identity_gap = access_poll_window(
+                access_snapshot.get("high_water"),
+                now,
+            )
         nonidentity_start, nonidentity_catch_up, nonidentity_gap = access_poll_window(
             access_snapshot.get("nonidentity_high_water"),
             now,
@@ -1785,9 +1867,18 @@ class Collector:
         if events is not None:
 
             def apply_identity(state: dict[str, Any]) -> None:
-                apply_access_events(state, events, self.apps, self.owner_emails)
+                apply_access_events(
+                    state,
+                    events,
+                    self.apps,
+                    self.owner_emails,
+                    refresh_duplicate_identities=identity_backfill,
+                )
+                if identity_backfill:
+                    drop_unrecorded_access_identities(state)
                 access_state = state["access"]
                 access_state["high_water"] = now
+                access_state["identity_backfill"] = False
                 access_state["gap"] = bool(access_state.get("gap")) or identity_gap
                 prune_access_seen(state, now)
                 set_series(
