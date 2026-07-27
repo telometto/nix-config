@@ -4,6 +4,129 @@
   self,
 }:
 let
+  lib = pkgs.lib;
+
+  productionCfg = blizzard.config;
+  productionTunnel =
+    productionCfg.services.cloudflared.tunnels.${productionCfg.sys.services.cloudflared.tunnelId};
+  productionHttp = productionCfg.services.traefik.dynamicConfigOptions.http;
+  productionPublicationHttp =
+    productionCfg.services.traefik.dynamic.files.microvm-publications.settings.http;
+
+  # Keep this inventory explicit so a production publication cannot disappear,
+  # change host, lose policy middleware, or point at a different backend
+  # without updating the expected contract.
+  productionPublications = {
+    bazarr = {
+      hostname = "subs";
+      middlewares = [ "app-compat-headers" ];
+      backend = "http://10.100.0.23:11023";
+    };
+    firefox = {
+      hostname = "ff";
+      middlewares = [ "firefox-headers" ];
+      backend = "http://10.100.0.52:11052";
+    };
+    gitea = {
+      hostname = "git";
+      middlewares = [
+        "security-headers"
+        "gitea-xfp-https"
+      ];
+      backend = "http://10.100.0.50:11050";
+    };
+    immich = {
+      hostname = "photos";
+      middlewares = [ "immich-headers" ];
+      backend = "http://10.100.0.70:11070";
+    };
+    matrix-synapse = {
+      hostname = "matrix";
+      middlewares = [ "matrix-headers" ];
+      backend = "http://10.100.0.60:11060";
+    };
+    overseerr = {
+      hostname = "requests";
+      middlewares = [ "plex-headers" ];
+      backend = "http://10.100.0.40:11040";
+    };
+    pocket-id = {
+      hostname = "id";
+      middlewares = [ "pocket-id-headers" ];
+      backend = "http://10.100.1.2:11081";
+    };
+    prowlarr = {
+      hostname = "indexer";
+      middlewares = [ "app-compat-headers" ];
+      backend = "http://10.100.0.20:11020";
+    };
+    radarr = {
+      hostname = "movies";
+      middlewares = [ "app-compat-headers" ];
+      backend = "http://10.100.0.22:11022";
+    };
+    readarr = {
+      hostname = "books";
+      middlewares = [ "app-compat-headers" ];
+      backend = "http://10.100.0.24:11024";
+    };
+    sabnzbd = {
+      hostname = "sab";
+      middlewares = [ "sabnzbd-headers" ];
+      backend = "http://10.100.0.31:11031";
+    };
+    searx = {
+      hostname = "search";
+      middlewares = [ "security-headers" ];
+      backend = "http://10.100.0.12:11012";
+    };
+    sonarr = {
+      hostname = "series";
+      middlewares = [ "app-compat-headers" ];
+      backend = "http://10.100.0.21:11021";
+    };
+    tautulli = {
+      hostname = "tautulli";
+      middlewares = [ "plex-headers" ];
+      backend = "http://10.100.0.42:11042";
+    };
+  };
+
+  expectedProductionPublicationHttp = {
+    routers = lib.mapAttrs (name: publication: {
+      rule = "Host(`${publication.hostname}.zzxyz.no`)";
+      service = name;
+      entryPoints = [ "web" ];
+      middlewares = publication.middlewares ++ [ "crowdsec" ];
+    }) productionPublications;
+    services = lib.mapAttrs (_: publication: {
+      loadBalancer.servers = [ { url = publication.backend; } ];
+    }) productionPublications;
+  };
+
+  expectedProductionTunnelOrigins = builtins.listToAttrs (
+    lib.mapAttrsToList (_: publication: {
+      name = "${publication.hostname}.zzxyz.no";
+      value = "http://localhost:80";
+    }) productionPublications
+  );
+  actualProductionTunnelOrigins = builtins.listToAttrs (
+    lib.mapAttrsToList (_: publication: {
+      name = "${publication.hostname}.zzxyz.no";
+      value = productionTunnel.ingress."${publication.hostname}.zzxyz.no";
+    }) productionPublications
+  );
+
+  expectedMatrixWellKnownRouter = {
+    rule = "Host(`zzxyz.no`) && PathPrefix(`/.well-known/matrix/`)";
+    service = "matrix-synapse";
+    entryPoints = [ "web" ];
+    middlewares = [
+      "matrix-headers"
+      "crowdsec"
+    ];
+  };
+
   publishedQbittorrent = blizzard.extendModules {
     modules = [
       {
@@ -179,7 +302,84 @@ let
   };
 
   invalidHostnameEvaluation = builtins.tryEval invalidHostname.config.system.build.toplevel.drvPath;
+
+  invalidCanonicalDomain = blizzard.extendModules {
+    modules = [
+      (
+        { lib, ... }:
+        {
+          sys.virtualisation.microvm.publication.canonicalDomain =
+            lib.mkForce "https://not-a-domain.example";
+        }
+      )
+    ];
+  };
+
+  invalidCanonicalDomainEvaluation =
+    builtins.tryEval invalidCanonicalDomain.config.system.build.toplevel.drvPath;
+
+  undefinedMiddleware = blizzard.extendModules {
+    modules = [
+      {
+        services.traefik.publicationPolicyMiddlewares.undefined-middleware = [
+          "middleware-name-typo"
+        ];
+        sys.virtualisation.microvm.instances.qbittorrent.publication = {
+          enable = true;
+          hostname = "downloads-undefined-middleware-test";
+          policy = "undefined-middleware";
+        };
+      }
+    ];
+  };
+
+  undefinedMiddlewareEvaluation =
+    builtins.tryEval undefinedMiddleware.config.system.build.toplevel.drvPath;
+
+  removedHostOption = blizzard.extendModules {
+    modules = [
+      {
+        sys.virtualisation.microvm.autostart = [ "qbittorrent-vm" ];
+      }
+    ];
+  };
+
+  removedHostOptionEvaluation =
+    builtins.tryEval removedHostOption.config.system.build.toplevel.drvPath;
+
+  removedInstanceOption = blizzard.extendModules {
+    modules = [
+      {
+        sys.virtualisation.microvm.instances.qbittorrent.cfTunnel.enable = true;
+      }
+    ];
+  };
+
+  removedInstanceOptionEvaluation =
+    builtins.tryEval removedInstanceOption.config.system.build.toplevel.drvPath;
+
+  matrixPublicationDisabled = blizzard.extendModules {
+    modules = [
+      (
+        { lib, ... }:
+        {
+          sys.virtualisation.microvm.instances.matrix-synapse.publication.enable =
+            lib.mkForce false;
+        }
+      )
+    ];
+  };
+
+  matrixDisabledCfg = matrixPublicationDisabled.config;
+  matrixDisabledTunnel =
+    matrixDisabledCfg.services.cloudflared.tunnels.${matrixDisabledCfg.sys.services.cloudflared.tunnelId};
+  matrixDisabledHttp = matrixDisabledCfg.services.traefik.dynamicConfigOptions.http;
+  matrixDisabledPublicationHttp =
+    matrixDisabledCfg.services.traefik.dynamic.files.microvm-publications.settings.http;
 in
+assert productionPublicationHttp == expectedProductionPublicationHttp;
+assert actualProductionTunnelOrigins == expectedProductionTunnelOrigins;
+assert productionHttp.routers.matrix-well-known == expectedMatrixWellKnownRouter;
 assert actual == expected;
 assert !disabledTargetEvaluation.success;
 assert !missingTraefikEvaluation.success;
@@ -194,4 +394,12 @@ assert !missingCloudflareEvaluation.success;
 assert !unknownPolicyEvaluation.success;
 assert !missingRegistryTargetEvaluation.success;
 assert !invalidHostnameEvaluation.success;
+assert !invalidCanonicalDomainEvaluation.success;
+assert !undefinedMiddlewareEvaluation.success;
+assert !removedHostOptionEvaluation.success;
+assert !removedInstanceOptionEvaluation.success;
+assert !(builtins.hasAttr "matrix.zzxyz.no" matrixDisabledTunnel.ingress);
+assert !(builtins.hasAttr "matrix-synapse" matrixDisabledPublicationHttp.routers);
+assert !(builtins.hasAttr "matrix-synapse" matrixDisabledPublicationHttp.services);
+assert !(builtins.hasAttr "matrix-well-known" matrixDisabledHttp.routers);
 pkgs.runCommand "microvm-publication-tests" { } "touch $out"
