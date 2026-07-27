@@ -206,6 +206,11 @@ User signup is restricted to expiring tokens:
 1. Send the generated link to the intended user through a trusted channel.
 1. Have the user create their account and register their own passkey.
 
+Signup does not grant access to OIDC clients because the default signup group
+list remains empty. Users may manage their own Pocket ID account details and
+passkeys, while an administrator controls access to each relying application
+by assigning its dedicated allowed group.
+
 SMTP is intentionally not configured. Email-assisted recovery, email
 verification, and login notifications therefore remain unavailable. The
 administrator can create a one-time access link from the user menu or, from a
@@ -227,6 +232,12 @@ Each relying application needs its own client:
 
 1. Copy the application's exact HTTPS callback URL from its documentation.
    Do not use callback wildcards unless the application genuinely needs them.
+   Application-specific callback schemes, such as Immich's mobile callback,
+   must also be registered exactly.
+
+1. Create or select a dedicated group for the application, review every
+   member, and add that group under **Allowed User Groups**. Do not choose
+   unrestricted access for an application that links accounts by email.
 
 1. Store the generated client secret in `nix-secrets`, scoped to that
    application. Do not place it in a Nix setting or commit it here.
@@ -244,7 +255,25 @@ Each relying application needs its own client:
 
 Because SMTP and email verification are disabled, Pocket ID leaves the
 `email_verified` claim false. Applications that require a verified email need
-a deliberate per-application decision or a later SMTP rollout.
+a deliberate per-application decision or a later SMTP rollout. For Immich,
+the restricted allowed group is the admission control and the email claim is
+used only to create the account on its first approved login. Do not manually
+pre-create an unlinked Immich account; follow the lifecycle and recovery
+procedure in [Immich OAuth Operations](immich.md).
+
+This deployment intentionally overlays Pocket ID from the pinned
+`nixpkgs-unstable` input and requires version 2.10 or newer. Pocket ID 2.10
+rejects plain-HTTP callback URLs on non-loopback hosts by default while
+preserving loopback HTTP and application-specific callback schemes. Version
+2.11 introduced `ALLOW_INSECURE_CALLBACK_URLS` and defaulted it to `true` for
+compatibility; the Nix configuration sets it to `false` whenever the installed
+version supports it. Evaluation fails below version 2.10 so removing the
+overlay cannot silently reopen this boundary.
+
+Before deploying any Pocket ID version change, take a fresh snapshot or
+logical export. After rebuilding, verify the health check, discovery endpoint,
+an existing administrator login, and a non-admin relying-application login
+before treating the upgrade as complete.
 
 ______________________________________________________________________
 
@@ -339,5 +368,6 @@ ______________________________________________________________________
 
 - [Pocket ID installation](https://pocket-id.org/docs/setup/installation)
 - [Environment variables](https://pocket-id.org/docs/configuration/environment-variables)
+- [Allowed user groups](https://pocket-id.org/docs/configuration/allowed-groups)
 - [User management](https://pocket-id.org/docs/setup/user-management)
 - [Data export and import](https://pocket-id.org/docs/setup/data-export-import)
