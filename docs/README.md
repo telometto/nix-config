@@ -25,12 +25,14 @@ flowchart LR
     subgraph Reference["Information-Oriented"]
         RA["Reference: Architecture\nreference-architecture.md"]
         RC["Reference: CI\nreference-ci.md"]
+        CTX["Infrastructure Context\n../CONTEXT.md"]
         CL["Credential Lifecycle\ncredential-lifecycle.md"]
         SA["Security Audit\nsecurity-audit-2026-06-27.md"]
         BP["Architecture Blueprint\nProject_Architecture_Blueprint.md"]
     end
     subgraph Understanding["Understanding-Oriented"]
         EX["Explanation: Design\nexplanation-design.md"]
+        ADR["Architecture Decisions\nadr/"]
     end
 ```
 
@@ -50,6 +52,8 @@ flowchart LR
 
 - [reference-architecture.md](reference-architecture.md) —
   Quick reference for options and patterns
+- [CONTEXT.md](../CONTEXT.md) —
+  Canonical infrastructure domain language
 - [reference-ci.md](reference-ci.md) —
   CI workflows, checks, and automation
 - [credential-lifecycle.md](credential-lifecycle.md) —
@@ -64,6 +68,7 @@ flowchart LR
 #### Explanation
 
 - [explanation-design.md](explanation-design.md) — Design decisions and rationale
+- [adr/0001-model-public-http-publication-as-instance-intent.md](adr/0001-model-public-http-publication-as-instance-intent.md) — Why standard public HTTP publication is modeled as instance intent
 - [architecture-risks-and-improvements.md](architecture-risks-and-improvements.md) — Known risks and improvement backlog
 - [security-audit-2026-06-01.md](security-audit-2026-06-01.md) — Security audit report (2026-06-01)
 
@@ -82,6 +87,8 @@ flowchart LR
 | Add a new user | [How-To: Add Hosts and Users](how-to-add-host-and-users.md) |
 | Understand the architecture | [Architecture Blueprint](Project_Architecture_Blueprint.md) |
 | Find option namespaces | [Reference: Architecture](reference-architecture.md) |
+| Use the canonical infrastructure language | [Infrastructure Context](../CONTEXT.md) |
+| Review architecture decisions | [Public HTTP Publication ADR](adr/0001-model-public-http-publication-as-instance-intent.md) |
 | Review credential lifecycle | [Credential Lifecycle](credential-lifecycle.md) |
 | Operate Pocket ID | [Pocket ID Operations](pocket-id.md) |
 | Operate Immich OAuth | [Immich OAuth Operations](immich.md) |

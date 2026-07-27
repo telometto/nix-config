@@ -7,26 +7,8 @@
   ...
 }:
 let
-  reg = import ../../../vms/vm-registry.nix;
   traefikLib = import ../../../lib/traefik.nix { inherit lib; };
-  vmUrl = name: "http://${reg.${name}.ip}:${toString reg.${name}.port}";
   vmInstances = config.sys.virtualisation.microvm.instances;
-  enabledVmReverseProxies = lib.filterAttrs (
-    _: instance: instance.enable && instance.reverseProxy.enable
-  ) vmInstances;
-  generatedVmRoutes = builtins.mapAttrs (
-    _: instance:
-    {
-      inherit (instance.reverseProxy)
-        subdomain
-        url
-        entryPoints
-        ;
-    }
-    // lib.optionalAttrs (instance.reverseProxy.middlewares != null) {
-      inherit (instance.reverseProxy) middlewares;
-    }
-  ) enabledVmReverseProxies;
   hostRoutes = {
     lingarr = {
       subdomain = "lingarr";
@@ -41,8 +23,10 @@ let
       url = "http://127.0.0.1:11080";
     };
   };
-  generated = traefikLib.mkRoutes { domain = VARS.domains.public; } (generatedVmRoutes // hostRoutes);
-  matrixSynapseEnabled = vmInstances."matrix-synapse".enable or false;
+  generated = traefikLib.mkRoutes { domain = VARS.domains.public; } hostRoutes;
+  matrixSynapsePublished =
+    (vmInstances."matrix-synapse".enable or false)
+    && (vmInstances."matrix-synapse".publication.enable or false);
 
   trustedIPs = [
     "127.0.0.1/32"
@@ -64,6 +48,23 @@ let
   plexCsp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
 in
 {
+  services.traefik.publicationPolicyMiddlewares = {
+    browser-in-browser = [ "firefox-headers" ];
+    csrf-compatible = [ "csrf-safe-headers" ];
+    dynamic-app-shell = [ "trigger-headers" ];
+    firefly-proxy = [ "firefly-headers" ];
+    immich-web = [ "immich-headers" ];
+    legacy-app-shell = [ "app-compat-headers" ];
+    matrix-compatible = [ "matrix-headers" ];
+    oidc-provider = [ "pocket-id-headers" ];
+    plex-compatible = [ "plex-headers" ];
+    sabnzbd-ui = [ "sabnzbd-headers" ];
+    strict-forwarded-https = [
+      "security-headers"
+      "gitea-xfp-https"
+    ];
+  };
+
   # Trust model: Traefik ↔ VM communication uses plain HTTP over an isolated
   # bridge network (10.100.0.0/24) that is not routable from external networks.
   services.traefik = {
@@ -237,27 +238,19 @@ in
               middlewares = [ "security-headers" ];
             };
           }
-          // lib.optionalAttrs matrixSynapseEnabled {
-            matrix-synapse = {
-              rule = "Host(`matrix.${VARS.domains.public}`)";
-              service = "matrix-synapse";
-              entryPoints = [ "web" ];
-              middlewares = [ "matrix-headers" ];
-            };
-
+          // lib.optionalAttrs matrixSynapsePublished {
             matrix-well-known = {
               rule = "Host(`${VARS.domains.public}`) && PathPrefix(`/.well-known/matrix/`)";
               service = "matrix-synapse";
               entryPoints = [ "web" ];
-              middlewares = [ "matrix-headers" ];
+              middlewares = [
+                "matrix-headers"
+                "crowdsec"
+              ];
             };
           };
 
-        services =
-          generated.services
-          // lib.optionalAttrs matrixSynapseEnabled {
-            matrix-synapse.loadBalancer.servers = [ { url = vmUrl "matrix-synapse"; } ];
-          };
+        services = generated.services;
       };
     };
   };

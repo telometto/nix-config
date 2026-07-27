@@ -45,6 +45,11 @@ set of options (domain, pathPrefix, cfTunnel, etc.) and the same Traefik
 router/service config block. These helpers generate both from a single
 descriptor.
 
+These helpers remain appropriate for host services and bespoke routes.
+Standard public MicroVM routes use the provider-neutral publication interface
+in `modules/virtualisation/microvm-base.nix`; see
+[vms/README.md](../vms/README.md#host-side-enablement).
+
 **Usage pattern — adding reverse-proxy options to a service module:**
 
 ```nix

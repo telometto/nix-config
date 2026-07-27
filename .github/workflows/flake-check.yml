@@ -6,6 +6,7 @@ on:
             - "**.nix"
             - "flake.lock"
             - "treefmt.nix"
+            - ".github/workflows/flake-check.yml"
             - "modules/services/scripts/cloudflare_metrics.py"
             - "tests/cloudflare_metrics/**"
             - "dashboards/host/blizzard/cloudflare-overview.json"
@@ -14,6 +15,7 @@ on:
         paths:
             - "**.nix"
             - "flake.lock"
+            - ".github/workflows/flake-check.yml"
             - "modules/services/scripts/cloudflare_metrics.py"
             - "tests/cloudflare_metrics/**"
             - "dashboards/host/blizzard/cloudflare-overview.json"
@@ -47,19 +49,23 @@ jobs:
 
             - name: Run flake check
               run: |
-                  echo "## 🔍 Flake Check Results" >> $GITHUB_STEP_SUMMARY
                   output_file=$(mktemp)
                   trap 'rm -f "$output_file"' EXIT
-
-                  if nix flake check --no-build >"$output_file" 2>&1; then
-                    echo "✅ All flake outputs evaluate successfully" >> $GITHUB_STEP_SUMMARY
-                  else
-                    echo "❌ Flake check failed" >> $GITHUB_STEP_SUMMARY
-                    echo '```' >> $GITHUB_STEP_SUMMARY
-                    bash .github/scripts/redact-secrets.sh < "$output_file" >> $GITHUB_STEP_SUMMARY
-                    echo '```' >> $GITHUB_STEP_SUMMARY
-                    exit 1
-                  fi
+                  {
+                    echo "## 🔍 Flake Check Results"
+                    if nix flake check --no-build >"$output_file" 2>&1; then
+                      echo "✅ All flake outputs evaluate successfully"
+                    else
+                      echo "❌ Flake check failed"
+                      echo '```'
+                      bash .github/scripts/redact-secrets.sh < "$output_file"
+                      echo '```'
+                      exit 1
+                    fi
+                  } >> "$GITHUB_STEP_SUMMARY"
 
             - name: Run Cloudflare metrics tests
               run: nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs
+
+            - name: Run MicroVM publication tests
+              run: nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
