@@ -64,6 +64,15 @@ in
         default = "/api/v1/write";
         description = "URL path for Prometheus remote write endpoint";
       };
+
+      excludedMetricNames = lib.mkOption {
+        type = lib.types.listOf (lib.types.strMatching "[A-Za-z_:][A-Za-z0-9_:]*");
+        default = [ ];
+        description = ''
+          Exact Prometheus metric names to keep in local Prometheus without
+          copying them into long-term VictoriaMetrics storage.
+        '';
+      };
     };
 
     # Grafana datasource integration
@@ -179,14 +188,21 @@ in
               max_backoff = "5s";
             };
 
-            # Add hostname label to all metrics
-            write_relabel_configs = [
-              {
-                source_labels = [ "__address__" ];
-                target_label = "source_host";
-                replacement = config.networking.hostName;
-              }
-            ];
+            write_relabel_configs =
+              lib.optionals (cfg.prometheusRemoteWrite.excludedMetricNames != [ ]) [
+                {
+                  source_labels = [ "__name__" ];
+                  regex = lib.concatStringsSep "|" cfg.prometheusRemoteWrite.excludedMetricNames;
+                  action = "drop";
+                }
+              ]
+              ++ [
+                {
+                  source_labels = [ "__address__" ];
+                  target_label = "source_host";
+                  replacement = config.networking.hostName;
+                }
+              ];
           }
         ];
 

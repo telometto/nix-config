@@ -317,6 +317,60 @@ class CardinalityBoundTests(unittest.TestCase):
         )
         self.assertEqual(save.call_count, 1)
 
+    def test_identity_capacity_retains_newest_emails_and_prunes_expired_rows(
+        self,
+    ) -> None:
+        state = cloudflare_metrics.new_state()
+        metric = cloudflare_metrics.ACCESS_IDENTITY_METRIC
+
+        with mock.patch.object(cloudflare_metrics, "MAX_SERIES_PER_METRIC", 4):
+            for timestamp in range(1, 5):
+                cloudflare_metrics.set_series(
+                    state,
+                    metric,
+                    {
+                        "app": "Example app",
+                        "decision": "allowed",
+                        "identity": f"user-{timestamp}@example.com",
+                        "principal_type": "user",
+                        "owner": "false",
+                    },
+                    timestamp,
+                )
+
+        labels = [
+            cloudflare_metrics._series_labels(key)
+            for key in state["series"][metric]
+            if key != cloudflare_metrics._series_key(cloudflare_metrics.OVERFLOW_LABELS)
+        ]
+        self.assertEqual(
+            {item["identity"] for item in labels},
+            {
+                "user-2@example.com",
+                "user-3@example.com",
+                "user-4@example.com",
+            },
+        )
+        self.assertGreater(
+            cloudflare_metrics.get_series(
+                state,
+                cloudflare_metrics.OVERFLOW_METRIC,
+                {"metric": metric},
+            ),
+            0,
+        )
+
+        cloudflare_metrics.prune_access_seen(
+            state,
+            cloudflare_metrics.ACCESS_SEEN_SECONDS + 4,
+        )
+
+        retained = [
+            cloudflare_metrics._series_labels(key).get("identity")
+            for key in state["series"][metric]
+        ]
+        self.assertEqual(retained, ["user-4@example.com"])
+
 
 class StateMigrationTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -346,6 +400,10 @@ class StateMigrationTests(unittest.TestCase):
                 labels = cloudflare_metrics._series_labels(key)
                 self.assertNotIn("principal", labels)
                 self.assertEqual(labels["principal_type"], "user")
+                if metric == "cloudflare_access_last_authentication_timestamp_seconds":
+                    self.assertIn("identity", labels)
+                else:
+                    self.assertNotIn("identity", labels)
 
         request_series = migrated["series"]["cloudflare_http_requests_total"]
         self.assertEqual(len(request_series), 4)
@@ -354,6 +412,21 @@ class StateMigrationTests(unittest.TestCase):
             cloudflare_metrics._series_key(cloudflare_metrics.OVERFLOW_LABELS),
             request_series,
         )
+
+    def test_historical_migrations_do_not_call_current_access_normalizer(
+        self,
+    ) -> None:
+        state = json.loads(self.fixture)
+
+        with mock.patch.object(
+            cloudflare_metrics,
+            "normalize_access_series",
+            side_effect=AssertionError("current normalizer must not run"),
+        ):
+            migrated = cloudflare_metrics.migrate_state(state)
+
+        self.assertEqual(migrated["version"], cloudflare_metrics.STATE_VERSION)
+        self.assertIn("nonidentity_seen", migrated["access"])
 
     def test_v1_backup_is_restrictive_and_repeated_load_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -448,6 +521,48 @@ class StateMigrationTests(unittest.TestCase):
             self.assertTrue(
                 cloudflare_metrics.StateStore(path).migration_backup_path(2).exists()
             )
+            self.assertTrue(migrated["access"]["identity_backfill"])
+
+    def test_v4_migration_rebuilds_only_the_identity_gauge(self) -> None:
+        state = cloudflare_metrics.new_state()
+        state["version"] = 4
+        state["access"].pop("nonidentity_seen")
+        state["access"]["identity_backfill"] = False
+        aggregate_labels = {
+            "app": "Example app",
+            "decision": "allowed",
+            "principal_type": "user",
+            "owner": "false",
+        }
+        cloudflare_metrics.add_series(
+            state,
+            "cloudflare_access_authentications_total",
+            aggregate_labels,
+            7,
+        )
+        cloudflare_metrics.set_series(
+            state,
+            cloudflare_metrics.ACCESS_IDENTITY_METRIC,
+            aggregate_labels | {"identity": "guest@example.com"},
+            1_700_000_000,
+        )
+
+        migrated = cloudflare_metrics.migrate_state(state)
+
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                migrated,
+                "cloudflare_access_authentications_total",
+                aggregate_labels,
+            ),
+            7,
+        )
+        self.assertEqual(
+            migrated["series"][cloudflare_metrics.ACCESS_IDENTITY_METRIC],
+            {},
+        )
+        self.assertTrue(migrated["access"]["identity_backfill"])
+        self.assertEqual(migrated["access"]["nonidentity_seen"], {})
 
 
 class StateRecoveryTests(unittest.TestCase):
@@ -834,7 +949,7 @@ class AccessTests(unittest.TestCase):
             ("owner", "true"),
         )
 
-    def test_non_owner_email_is_classified_without_exposing_the_email(
+    def test_non_owner_email_is_classified_as_user(
         self,
     ) -> None:
         self.assertEqual(
@@ -896,6 +1011,20 @@ class AccessTests(unittest.TestCase):
         self.assertEqual(
             cloudflare_metrics.get_series(
                 state,
+                "cloudflare_access_last_authentication_timestamp_seconds",
+                {
+                    "app": "Example app",
+                    "decision": "allowed",
+                    "identity": "guest@example.com",
+                    "principal_type": "user",
+                    "owner": "false",
+                },
+            ),
+            cloudflare_metrics.parse_timestamp("2026-07-15T10:00:00Z"),
+        )
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                state,
                 "cloudflare_access_authentications_total",
                 {
                     "app": "Example app",
@@ -907,6 +1036,82 @@ class AccessTests(unittest.TestCase):
             1,
         )
         self.assertIn("ray-two", state["access"]["seen"])
+
+    def test_identity_backfill_populates_email_without_double_counting(self) -> None:
+        event_time = cloudflare_metrics.parse_timestamp("2026-07-15T10:00:00Z")
+        now = event_time + 60
+        state = cloudflare_metrics.new_state()
+        state["access"]["high_water"] = now - 60
+        state["access"]["identity_backfill"] = True
+        state["access"]["seen"]["ray-owner"] = event_time
+        aggregate_labels = {
+            "app": "Example app",
+            "decision": "allowed",
+            "principal_type": "owner",
+            "owner": "true",
+        }
+        cloudflare_metrics.add_series(
+            state,
+            "cloudflare_access_authentications_total",
+            aggregate_labels,
+            1,
+        )
+        cloudflare_metrics.set_series(
+            state,
+            "cloudflare_access_last_authentication_timestamp_seconds",
+            aggregate_labels | {"identity": "not-recorded"},
+            event_time,
+        )
+        api = FakeAPI(
+            access_logs=[
+                {
+                    "ray_id": "ray-owner",
+                    "created_at": "2026-07-15T10:00:00Z",
+                    "app_uid": "app-id",
+                    "allowed": True,
+                    "user_email": "Owner@Example.com",
+                }
+            ]
+        )
+        collector = cloudflare_metrics.Collector(
+            api,
+            MemoryStore(state),
+            {"owner@example.com"},
+        )
+        collector.apps = {"app-id": "Example app"}
+
+        collector.poll_access(now)
+
+        snapshot = collector.snapshot()
+        self.assertEqual(
+            api.access_calls,
+            [(now - cloudflare_metrics.ACCESS_SEEN_SECONDS, now)],
+        )
+        self.assertFalse(snapshot["access"]["identity_backfill"])
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_access_authentications_total",
+                aggregate_labels,
+            ),
+            1,
+        )
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_access_last_authentication_timestamp_seconds",
+                aggregate_labels | {"identity": "owner@example.com"},
+            ),
+            event_time,
+        )
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                "cloudflare_access_last_authentication_timestamp_seconds",
+                aggregate_labels | {"identity": "not-recorded"},
+            ),
+            0,
+        )
 
     def test_nonidentity_fixture_classifies_service_tokens_and_unknown_context(
         self,
@@ -969,6 +1174,7 @@ class AccessTests(unittest.TestCase):
                 [rest_event],
                 {"app-id": "Example app"},
                 {"owner@example.com"},
+                refresh_duplicate_identities=True,
             ),
             0,
         )
@@ -984,6 +1190,122 @@ class AccessTests(unittest.TestCase):
                 },
             ),
             1,
+        )
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                state,
+                cloudflare_metrics.ACCESS_IDENTITY_METRIC,
+                {
+                    "app": "Example app",
+                    "decision": "allowed",
+                    "identity": "guest@example.com",
+                    "principal_type": "user",
+                    "owner": "false",
+                },
+            ),
+            0,
+        )
+
+    def test_identity_backfill_refreshes_nonidentity_authority_first(self) -> None:
+        graphql_event = nonidentity_access_fixture()[0]
+        event_time = cloudflare_metrics.parse_timestamp(
+            graphql_event["dimensions"]["datetime"]
+        )
+        now = event_time + 60
+        state = cloudflare_metrics.new_state()
+        state["access"]["high_water"] = now - 60
+        state["access"]["nonidentity_high_water"] = now - 60
+        state["access"]["identity_backfill"] = True
+        state["access"]["seen"]["ray-service-token"] = event_time
+        api = FakeAPI(
+            access_logs=[
+                {
+                    "ray_id": "ray-service-token",
+                    "created_at": graphql_event["dimensions"]["datetime"],
+                    "app_uid": "app-id",
+                    "allowed": True,
+                    "user_email": "guest@example.com",
+                }
+            ],
+            nonidentity_logs=[graphql_event],
+        )
+        collector = cloudflare_metrics.Collector(
+            api,
+            MemoryStore(state),
+            {"owner@example.com"},
+            enable_nonidentity_access=True,
+        )
+        collector.apps = {"app-id": "Example app"}
+
+        collector.poll_access(now)
+
+        snapshot = collector.snapshot()
+        expected_window = (now - cloudflare_metrics.ACCESS_SEEN_SECONDS, now)
+        self.assertEqual(api.access_calls, [expected_window])
+        self.assertEqual(api.nonidentity_calls, [expected_window])
+        self.assertFalse(snapshot["access"]["identity_backfill"])
+        self.assertIn(
+            "ray-service-token",
+            snapshot["access"]["nonidentity_seen"],
+        )
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                cloudflare_metrics.ACCESS_IDENTITY_METRIC,
+                {
+                    "app": "Example app",
+                    "decision": "allowed",
+                    "identity": "guest@example.com",
+                    "principal_type": "user",
+                    "owner": "false",
+                },
+            ),
+            0,
+        )
+
+    def test_identity_backfill_waits_for_enabled_nonidentity_feed(self) -> None:
+        event_time = cloudflare_metrics.parse_timestamp("2026-07-15T10:02:00Z")
+        now = event_time + 60
+        state = cloudflare_metrics.new_state()
+        state["access"]["identity_backfill"] = True
+        state["access"]["seen"]["ray-service-token"] = event_time
+        api = FakeAPI(
+            fail_operation="graphql-access",
+            access_logs=[
+                {
+                    "ray_id": "ray-service-token",
+                    "created_at": "2026-07-15T10:02:00Z",
+                    "app_uid": "app-id",
+                    "allowed": True,
+                    "user_email": "guest@example.com",
+                }
+            ],
+        )
+        collector = cloudflare_metrics.Collector(
+            api,
+            MemoryStore(state),
+            {"owner@example.com"},
+            enable_nonidentity_access=True,
+        )
+        collector.apps = {"app-id": "Example app"}
+
+        collector.poll_access(now)
+
+        snapshot = collector.snapshot()
+        self.assertTrue(snapshot["access"]["identity_backfill"])
+        self.assertEqual(
+            cloudflare_metrics.get_series(
+                snapshot,
+                cloudflare_metrics.ACCESS_IDENTITY_METRIC,
+                {
+                    "app": "Example app",
+                    "decision": "allowed",
+                    "identity": "guest@example.com",
+                    "principal_type": "user",
+                    "owner": "false",
+                },
+            ),
+            0,
         )
 
     def test_identity_graphql_row_fails_closed(self) -> None:
@@ -1290,7 +1612,7 @@ class AccessTests(unittest.TestCase):
                 1,
             )
 
-    def test_legacy_principal_series_are_aggregated_without_identity_labels(
+    def test_legacy_principal_series_keep_identity_only_on_latest_gauge(
         self,
     ) -> None:
         state = cloudflare_metrics.new_state()
@@ -1324,7 +1646,6 @@ class AccessTests(unittest.TestCase):
         rendered = cloudflare_metrics.render_metrics(state)
 
         self.assertNotIn("principal=", rendered)
-        self.assertNotIn("@example.com", rendered)
         self.assertIn(
             "cloudflare_access_authentications_total"
             '{app="Example app",decision="allowed",owner="false",'
@@ -1333,15 +1654,21 @@ class AccessTests(unittest.TestCase):
         )
         self.assertIn(
             "cloudflare_access_last_authentication_timestamp_seconds"
-            '{app="Example app",decision="allowed",owner="true",'
+            '{app="Example app",decision="allowed",identity="owner@example.com",'
+            'owner="true",'
             'principal_type="owner"} 1700000000',
             rendered,
         )
 
-        self.assertTrue(cloudflare_metrics.sanitize_legacy_access_series(state))
+        self.assertTrue(cloudflare_metrics.normalize_access_series(state))
         for metric in cloudflare_metrics.ACCESS_METRICS:
             for key in state["series"].get(metric, {}):
-                self.assertNotIn("principal", cloudflare_metrics._series_labels(key))
+                labels = cloudflare_metrics._series_labels(key)
+                self.assertNotIn("principal", labels)
+                if metric == "cloudflare_access_last_authentication_timestamp_seconds":
+                    self.assertIn("identity", labels)
+                else:
+                    self.assertNotIn("identity", labels)
 
 
 class RuntimeCollector:

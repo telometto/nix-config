@@ -50,6 +50,13 @@ Cloudflare's adaptive HTTP dataset exposes response data transfer through
 `edgeResponseBytes`; it does not expose request-body bytes. The dashboard's
 data-transfer panels therefore report response data transfer only.
 
+The cache-served ratio uses the selected dashboard time range and counts
+`hit`, `revalidated`, `stale`, and `updating` as responses served from cache.
+`dynamic`, `none`, `bypass`, `miss`, and `expired` remain in the denominator.
+A value near zero is therefore expected when tunneled applications mostly send
+dynamic or non-cacheable responses; it is not evidence that the collector is
+broken.
+
 Cloudflare's published GraphQL fields for this dataset do not include an
 Access application ID or domain. Non-identity events therefore use
 `app="unknown"`; do not interpret that label as an unknown application in the
@@ -122,15 +129,19 @@ policy. Access itself remains enforced by Cloudflare.
 
 The exported Access identity labels have a bounded contract:
 
-| Event identity | `principal_type` | `owner` |
-|----------------|------------------|---------|
-| Email exactly matches the owner list | `owner` | `true` |
-| Other non-empty user email | `user` | `false` |
-| Verified non-identity service-token event | `service-token` | `false` |
-| Missing or ambiguous identity | `unknown` | `false` |
+| Event identity | `identity` on latest-event gauge | `principal_type` | `owner` |
+|----------------|----------------------------------|------------------|---------|
+| Email exactly matches the owner list | Normalized email | `owner` | `true` |
+| Other non-empty user email | Normalized email | `user` | `false` |
+| Verified non-identity service-token event | `service-token` | `service-token` | `false` |
+| Missing or ambiguous identity | `unknown` | `unknown` | `false` |
 
-Raw email addresses must not appear in Prometheus labels, durable metric
-series, dashboards, or alert notifications. An `unknown` identity is not
+The cumulative `cloudflare_access_authentications_total` counter deliberately
+omits the email to keep its cardinality bounded by application and principal
+class. The latest-event gauge includes the normalized email as `identity` so
+Grafana can show who authenticated and the unexpected-login alert can identify
+the principal. Cloudflare's Access authentication log API exposes
+`user_email`; it does not expose a GitHub username. An `unknown` identity is not
 trusted and must remain eligible for the unexpected-login alert. Only a
 verified non-identity event may be classified as `service-token`.
 
@@ -233,8 +244,9 @@ prove that Cloudflare polling is succeeding. In the metrics response, verify:
   supplemental feed
 - `cloudflare_collector_state_gap` is zero for every zone
 - `cloudflare_collector_catch_up` returns to zero after recovery
-- Access series use only the bounded `principal_type` values and contain no
-  raw email label
+- Access series use only the bounded `principal_type` values; raw email appears
+  only as the normalized `identity` label on
+  `cloudflare_access_last_authentication_timestamp_seconds`
 
 ### Prometheus scrape
 
@@ -246,8 +258,9 @@ curl --fail --silent --show-error \
 
 The result should contain a sample with value `1`. Then check Grafana's
 Cloudflare folder for the provisioned dashboard and alert group. Dashboard
-history comes from VictoriaMetrics, while Grafana-managed alerts use the local
-Prometheus datasource.
+history comes from VictoriaMetrics except for the identity-bearing latest
+authentication table, which uses local Prometheus. Grafana-managed alerts also
+use the local Prometheus datasource.
 
 ______________________________________________________________________
 
@@ -258,6 +271,7 @@ Grafana evaluates the Cloudflare alert group every minute.
 | Alert | Severity | Condition |
 |-------|----------|-----------|
 | Unexpected Access login | Critical | A non-owner user or unknown identity observed by an enabled feed was allowed in the last 5 minutes; verified service tokens are excluded |
+| Access identity visibility reduced | Critical | The bounded latest-identity gauge overflowed in the last 5 minutes; newest identities remain visible, but older detail was compacted |
 | Repeated Access denials | Warning | At least 5 denials for one application and principal class in 10 minutes |
 | Security-action burst | Warning | At least 25 actions other than `allow`, `skip`, or `unknown` for one zone and host in 10 minutes |
 | Origin failure anomaly | Warning | More than 5% of at least 20 requests returned 5xx in 10 minutes, sustained for 5 minutes |
@@ -267,12 +281,18 @@ Grafana evaluates the Cloudflare alert group every minute.
 No-data is alerting for collector failure. A missing gap metric is covered by
 the success checks for required and explicitly enabled polls; an intentionally
 disabled optional poll is excluded. Missing gap telemetry is not itself proof
-that history was lost. Alert notifications must contain bounded classifications
-and application or host context, never a raw email address.
+that history was lost. Cloudflare Pushover notifications intentionally include
+alert summaries; an unexpected-login summary includes the normalized email and
+application so the recipient can identify an unauthorized user. Treat the
+Pushover account, devices, and notification previews as sensitive monitoring
+destinations.
 
-The unexpected-login rule always covers REST identity events, including
-ambiguous REST rows retained as `unknown`. GraphQL-only non-identity events are
-covered only when `enableNonIdentityAccess = true`.
+The collector retains the newest identity samples when the series limit is
+reached, so normal REST identity events, including ambiguous rows retained as
+`unknown`, remain directly alertable. A separate critical overflow alert warns
+if an authentication flood exceeds the amount of per-email detail that can be
+retained safely. GraphQL-only non-identity events are covered only when
+`enableNonIdentityAccess = true`.
 
 ______________________________________________________________________
 
@@ -290,36 +310,44 @@ With `DynamicUser=true`, systemd may back this path with
 depending on the backing-directory implementation.
 
 The JSON file contains metric counters, per-zone and per-feed Access high-water
-marks, deduplication identifiers, gap status, and the bounded active metric
-series.
-Writes use a temporary file, `fsync`, and an atomic replacement. The collector
-prunes expired deduplication entries and compacts excess metric series, but
-compacting local state does not delete samples already remote-written to
-VictoriaMetrics.
+marks, deduplication identifiers, authoritative non-identity Ray IDs, gap
+status, and the bounded active metric series. Writes use a temporary file,
+`fsync`, and an atomic replacement. The collector prunes deduplication records
+and latest-authentication identity rows after eight days and compacts excess
+metric series. Retention pruning runs before each Access poll, including when
+the Cloudflare API is unavailable. Compaction cannot delete samples written
+before this release.
 
 Treat the state and its backups as sensitive operational data. They contain
-zone, host, application, authentication-decision, and identity-class metadata.
-Legacy state or backups created before identity-label hardening may contain raw
-email addresses.
+zone, host, application, authentication-decision, identity-class, and up to
+eight days of Access email metadata.
 
 ### State schema migration
 
-The current state schema is version 3. Before migrating an older state, the
+The current state schema is version 5. Before migrating an older state, the
 collector creates a version-specific backup such as
-`/var/lib/cloudflare-metrics/state.json.v1.bak` or `state.json.v2.bak` in the
-same private state directory with mode `0600`. It never overwrites an existing
-backup.
+`/var/lib/cloudflare-metrics/state.json.v1.bak`, `state.json.v2.bak`, or
+`state.json.v3.bak`, or `state.json.v4.bak` in the same private state directory
+with mode `0600`. It never overwrites an existing backup.
 
-Version 1 to version 2 removes legacy principal labels and compacts excess
+Version 1 to version 2 normalizes legacy principal labels and compacts excess
 metric series. Version 2 to version 3 gives the identity and optional
 non-identity Access feeds independent cursors and gap flags, and deletes the
 retired `cloudflare_http_request_bytes_total` series from local durable state.
 Because version 2 did not retain independent GraphQL continuity evidence, the
 migration preserves its shared cursor but marks the non-identity gap when that
-cursor is non-empty. A direct upgrade from version 1 applies both migrations in
-order and retains the original version 1 backup. Later starts validate version
-3 and rewrite it only if privacy sanitization or bounded-series compaction
-repairs are still required; migration backups are never changed.
+cursor is non-empty. Version 3 to version 4 adds the latest-event `identity`
+label and schedules one bounded eight-day REST-log backfill. Deduplication
+prevents that backfill from incrementing previously counted authentication
+events. Version 4 to version 5 clears and rebuilds only the identity-bearing
+gauge, records authoritative GraphQL non-identity Ray IDs, and leaves
+cumulative counters untouched so the REST backfill cannot duplicate a verified
+service token as a user. Each historical migration owns a frozen transformation
+rather than calling the current label normalizer. A direct upgrade from version
+1 applies every migration in order and retains the original version 1 backup.
+Later starts validate version 5 and rewrite it only if label normalization or
+bounded-series compaction repairs are still required; migration backups are
+never changed.
 
 The collector applies registered migrations one version at a time. A state file
 from a newer collector fails closed and is not reset, backed up, or overwritten.
@@ -332,7 +360,7 @@ Malformed JSON, invalid UTF-8, non-finite metric values, invalid label keys,
 and structurally invalid supported-version containers are treated as
 corrupt evidence. The collector atomically renames the file beside the active
 state as `state.json.corrupt-<timestamp>`, restricts it to mode `0600`, writes a
-fresh valid version 3 state, and continues. The journal records the quarantine
+fresh valid version 5 state, and continues. The journal records the quarantine
 filename and validation error without logging state contents.
 
 Recovery has the same counter reset and limited-history consequences as state
@@ -410,11 +438,12 @@ than hand-editing the schema.
 
 ### Roll back across a state migration
 
-The automatic `state.json.v1.bak` or `state.json.v2.bak` is specifically the
-rollback point for the collector release that expects that version. A version 1
-backup can contain raw Access email labels, so keep every migration backup
-root-only. Stop the service, roll back the NixOS generation or collector
-package first, then restore the matching backup without changing it:
+The automatic `state.json.v1.bak`, `state.json.v2.bak`, `state.json.v3.bak`, or
+`state.json.v4.bak` is specifically the rollback point for the collector
+release that expects that version. Backups can contain raw Access email labels,
+so keep every migration backup root-only. Stop the service, roll back the NixOS
+generation or collector package first, then restore the matching backup without
+changing it:
 
 ```bash
 sudo systemctl stop cloudflare-metrics.service
@@ -429,9 +458,9 @@ sudo systemctl start cloudflare-metrics.service
 ```
 
 Choose the backup version expected by the rolled-back collector. Do not restore
-an older backup while continuing to run the version 3 collector; it will
+an older backup while continuing to run the version 5 collector; it will
 intentionally migrate the file again. After rollback, verify the service and
-metrics as described below. Preserve the version 3 state separately if you may
+metrics as described below. Preserve the version 5 state separately if you may
 roll forward again.
 
 ### Upgrade impact: response data transfer
@@ -447,32 +476,54 @@ retired metric before deployment. Previously remote-written samples remain in
 VictoriaMetrics until its retention policy removes them; the migration only
 cleans the collector's local state.
 
+### Upgrade impact: Access identity backfill
+
+Version 4 performs one bounded REST-log backfill over the last eight days to
+populate the latest-authentication email column. Version 5 clears that gauge
+without resetting cumulative counters, then backfills the enabled GraphQL
+non-identity feed over the same window first and records its Ray IDs. This
+removes any v4 duplicate user classification before REST identities are
+reconstructed. Existing Ray IDs remain in the deduplication map, so the
+backfill refreshes the latest-event gauge without incrementing authentication
+counters a second time. When the supplemental feed is enabled, its backfill
+must also succeed before duplicate REST identities are refreshed or the marker
+is cleared. New REST events are still processed while that retry is pending.
+The marker is inactive on normal restarts after a complete backfill.
+
 ______________________________________________________________________
 
 ## Privacy and cardinality
 
 The collector intentionally exports operational dimensions including zone,
 host, HTTP status, cache status, country, security action and source,
-application, decision, principal type, and owner status. Application and host
-names can still reveal infrastructure even when direct identifiers are
-removed, so restrict access to Prometheus, VictoriaMetrics, Grafana, backups,
-and alert destinations.
+application, decision, principal type, owner status, and normalized Access
+email on the latest-event gauge. The email-bearing gauge is excluded from
+VictoriaMetrics remote write and is queried from local Prometheus by the
+identity table and alerts. Local Prometheus retains samples according to its
+15-day policy, while the collector stops exporting an identity row after eight
+days. Restrict access to Prometheus, Grafana, state backups, and alert
+destinations because these surfaces reveal infrastructure and user identity.
+Identity samples remote-written before this exclusion was deployed remain in
+VictoriaMetrics until its retention policy removes them or they are deleted
+administratively.
 
-Raw Access email addresses are secret input used only for owner
-classification. They must not cross the collector boundary into metric labels
-or notifications. Search both local and long-term storage after upgrading from
-an older collector if raw principal labels may already have been ingested.
+Raw Access email is used for owner classification and for the explicitly
+requested latest-authentication dashboard column. It is not added to cumulative
+authentication counters or long-term VictoriaMetrics storage. The metric and
+any unexpected-login Pushover notification containing it must be treated as
+sensitive monitoring data.
 
 Host and application labels can be influenced by request or Cloudflare
 inventory data. Label values are normalized to at most 256 characters, and
 each metric retains at most 512 durable series, including one fixed overflow
-bucket. Overflowed counter values are summed and gauge values retain their
-maximum, so aggregate health remains useful even when detailed dimensions are
-compacted. `cloudflare_collector_series_overflow_total{metric="..."}` counts
-updates redirected into an overflow bucket. Alert on or investigate any
-increase rather than increasing the limit; it indicates lost dimensional
-detail. Long-term storage retention is a separate policy and continues to
-retain samples after local series compaction.
+bucket. Overflowed counter values are summed. The identity gauge prioritizes
+the newest timestamps, ensuring a new email is visible instead of being
+discarded merely because its label sorts after existing entries.
+`cloudflare_collector_series_overflow_total{metric="..."}` counts updates
+redirected into an overflow bucket, and a critical alert watches the
+identity-gauge counter. Investigate any increase rather than increasing the
+limit; it indicates an authentication flood or lost older dimensional detail.
+Long-term retention remains separate for metrics that are remote-written.
 
 ______________________________________________________________________
 
@@ -518,8 +569,12 @@ snapshot when a poll fails.
 Check Access Audit Logs Read, the account ID, and the token's account resource
 scope. On first start only the latest minute is requested. The REST path covers
 identity-based authentication and drives the Access success timestamp. The
-GraphQL path is disabled by default; when explicitly enabled, it adds events
-that Cloudflare marks as non-identity and requires Account Analytics Read.
+version 4 migration is the exception: it performs one bounded eight-day REST
+backfill to populate latest-event email labels without double-counting. Version
+5 queries the enabled GraphQL path over that same migration window first so
+verified service-token Ray IDs remain authoritative. The GraphQL path is
+disabled by default; when explicitly enabled, it adds events that Cloudflare
+marks as non-identity and requires Account Analytics Read.
 Those supplemental events appear under `app="unknown"` because the published
 dataset does not provide an application identifier. REST rows without a user
 email remain conservatively classified as `unknown`; only the schema-backed

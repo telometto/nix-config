@@ -107,8 +107,10 @@ def _representative_state() -> dict:
             "high_water": None,
             "nonidentity_high_water": None,
             "seen": {},
+            "nonidentity_seen": {},
             "gap": False,
             "nonidentity_gap": False,
+            "identity_backfill": False,
         },
     }
     values = {
@@ -118,6 +120,7 @@ def _representative_state() -> dict:
         "country": "NO",
         "decision": "allowed",
         "host": "www.example.com",
+        "identity": "user@example.com",
         "metric": "cloudflare_http_requests_total",
         "operation": "analytics",
         "owner": "false",

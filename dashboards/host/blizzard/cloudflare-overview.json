@@ -169,7 +169,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Share of estimated cache requests reported as hit or revalidated.",
+      "description": "Share of all edge requests Cloudflare reported as hit, revalidated, stale, or updating over the selected dashboard time range. Low values are expected for dynamic or uncached tunneled applications.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -229,14 +229,14 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "100 * sum(rate(cloudflare_http_cache_requests_total{zone=~\"$zone\", host=~\"$host\", cache_status=~\"hit|revalidated\"}[5m])) / clamp_min(sum(rate(cloudflare_http_cache_requests_total{zone=~\"$zone\", host=~\"$host\"}[5m])), 1)",
+          "expr": "100 * sum(increase(cloudflare_http_cache_requests_total{zone=~\"$zone\", host=~\"$host\", cache_status=~\"hit|revalidated|stale|updating\"}[$__range])) / clamp_min(sum(increase(cloudflare_http_cache_requests_total{zone=~\"$zone\", host=~\"$host\"}[$__range])), 1)",
           "instant": true,
           "legendFormat": "Cache hit ratio",
           "range": false,
           "refId": "A"
         }
       ],
-      "title": "Cache-hit ratio (estimated)",
+      "title": "Requests served from cache (estimated)",
       "type": "stat"
     },
     {
@@ -408,7 +408,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Allowed Access authentications from non-owner user or unknown identity types. Individual identities are intentionally not exported.",
+      "description": "Allowed Access authentications from non-owner user or unknown identity types during the last five minutes. The latest-authentication table shows the normalized email when Cloudflare provides one.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1221,9 +1221,9 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "prometheus"
       },
-      "description": "Most recent observed Access authentication per application, decision, bounded principal type, and owner classification. Individual identities are intentionally not exported.",
+      "description": "Most recent observed Access authentication per application and normalized email identity from local Prometheus. Cloudflare Access authentication logs expose user_email but do not expose a GitHub username; non-identity events remain classified as service-token or unknown.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1291,10 +1291,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "max by (app, decision, principal_type, owner) (cloudflare_access_last_authentication_timestamp_seconds{app=~\"$app\"}) * 1000",
+          "expr": "max by (app, identity, decision, principal_type, owner) (cloudflare_access_last_authentication_timestamp_seconds{app=~\"$app\"}) * 1000",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -1302,7 +1302,7 @@
           "refId": "A"
         }
       ],
-      "title": "Latest Access authentication by app and identity type",
+      "title": "Latest Access authentication by app and identity",
       "transformations": [
         {
           "id": "organize",
@@ -1312,15 +1312,17 @@
             },
             "indexByName": {
               "app": 0,
-              "principal_type": 1,
-              "decision": 2,
-              "owner": 3,
-              "Value": 4
+              "identity": 1,
+              "principal_type": 2,
+              "decision": 3,
+              "owner": 4,
+              "Value": 5
             },
             "renameByName": {
               "Value": "Last authentication",
               "app": "Application",
               "decision": "Decision",
+              "identity": "Identity (email)",
               "owner": "Owner",
               "principal_type": "Identity type"
             }
