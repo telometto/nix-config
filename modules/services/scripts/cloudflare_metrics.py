@@ -550,22 +550,16 @@ def _migrate_v1_access_series(state: dict[str, Any]) -> None:
             continue
         migrated: dict[str, float] = {}
         for key, value in existing.items():
-            migrated_key = _series_key(
-                _migrate_v1_access_labels(_series_labels(key))
-            )
+            migrated_key = _series_key(_migrate_v1_access_labels(_series_labels(key)))
             number = float(value)
             if metric == "cloudflare_access_authentications_total":
                 migrated[migrated_key] = migrated.get(migrated_key, 0.0) + number
             else:
-                migrated[migrated_key] = max(
-                    migrated.get(migrated_key, number), number
-                )
+                migrated[migrated_key] = max(migrated.get(migrated_key, number), number)
         all_series[metric] = migrated
 
 
-def _migrate_v3_access_labels(
-    metric: str, labels: Mapping[str, str]
-) -> dict[str, str]:
+def _migrate_v3_access_labels(metric: str, labels: Mapping[str, str]) -> dict[str, str]:
     """Return the immutable version-4 Access label contract."""
     if frozenset(labels) == OVERFLOW_LABEL_SCHEMA:
         return dict(labels)
@@ -618,9 +612,7 @@ def _migrate_v3_access_series(state: dict[str, Any]) -> None:
             if metric == "cloudflare_access_authentications_total":
                 migrated[migrated_key] = migrated.get(migrated_key, 0.0) + number
             else:
-                migrated[migrated_key] = max(
-                    migrated.get(migrated_key, number), number
-                )
+                migrated[migrated_key] = max(migrated.get(migrated_key, number), number)
         all_series[metric] = migrated
 
 
@@ -1754,9 +1746,7 @@ def prune_access_seen(state: dict[str, Any], now: float) -> None:
     series = state.setdefault("series", {}).get(ACCESS_IDENTITY_METRIC)
     if series:
         state["series"][ACCESS_IDENTITY_METRIC] = {
-            key: value
-            for key, value in series.items()
-            if float(value) >= cutoff
+            key: value for key, value in series.items() if float(value) >= cutoff
         }
 
 
@@ -2059,8 +2049,7 @@ class Collector:
 
             def apply_identity(state: dict[str, Any]) -> None:
                 complete_identity_backfill = identity_backfill and (
-                    not self.enable_nonidentity_access
-                    or nonidentity_backfill_succeeded
+                    not self.enable_nonidentity_access or nonidentity_backfill_succeeded
                 )
                 apply_access_events(
                     state,

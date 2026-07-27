@@ -66,9 +66,7 @@ in
       };
 
       excludedMetricNames = lib.mkOption {
-        type = lib.types.listOf (
-          lib.types.strMatching "[A-Za-z_:][A-Za-z0-9_:]*"
-        );
+        type = lib.types.listOf (lib.types.strMatching "[A-Za-z_:][A-Za-z0-9_:]*");
         default = [ ];
         description = ''
           Exact Prometheus metric names to keep in local Prometheus without
