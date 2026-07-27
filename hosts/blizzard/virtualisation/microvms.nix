@@ -190,6 +190,11 @@ let
     matrix-synapse = {
       enable = true;
       portForwards = [ (mkPortForward "tcp" 11060 null) ];
+      publication = {
+        enable = true;
+        hostname = "matrix";
+        policy = "matrix-compatible";
+      };
     };
 
     paperless = {
