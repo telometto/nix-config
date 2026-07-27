@@ -164,9 +164,9 @@ let
   requestedPublicationMiddlewares = lib.unique (
     lib.concatMap (
       instance:
-      lib.optionals (builtins.hasAttr instance.publication.policy publicationPolicies) (
+      lib.optionals (builtins.hasAttr instance.publication.policy publicationPolicies)
         publicationPolicies.${instance.publication.policy}
-      )
+
     ) (builtins.attrValues requestedPublications)
     ++ lib.optional (requestedPublicationNames != [ ]) "crowdsec"
   );
@@ -442,10 +442,10 @@ in
       type = lib.types.str;
       default = "/var/lib/microvms";
       description = ''
-        
-                Base directory for MicroVM state (volumes, sockets, etc.).
-                Each VM gets a subdirectory: <stateDir>/<vm-name>/
-                Set to your ZFS dataset path for better snapshotting.
+
+        Base directory for MicroVM state (volumes, sockets, etc.).
+        Each VM gets a subdirectory: <stateDir>/<vm-name>/
+        Set to your ZFS dataset path for better snapshotting.
       '';
     };
 
@@ -453,9 +453,9 @@ in
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = ''
-        
-                External network interface for NAT. If null, NAT will use
-                whatever default route is available (works for most setups).
+
+        External network interface for NAT. If null, NAT will use
+        whatever default route is available (works for most setups).
       '';
     };
 
