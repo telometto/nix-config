@@ -1221,9 +1221,9 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "prometheus"
       },
-      "description": "Most recent observed Access authentication per application and normalized email identity. Cloudflare Access authentication logs expose user_email but do not expose a GitHub username; non-identity events remain classified as service-token or unknown.",
+      "description": "Most recent observed Access authentication per application and normalized email identity from local Prometheus. Cloudflare Access authentication logs expose user_email but do not expose a GitHub username; non-identity events remain classified as service-token or unknown.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1291,7 +1291,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "max by (app, identity, decision, principal_type, owner) (cloudflare_access_last_authentication_timestamp_seconds{app=~\"$app\"}) * 1000",
