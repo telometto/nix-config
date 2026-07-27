@@ -118,6 +118,7 @@ def _representative_state() -> dict:
         "country": "NO",
         "decision": "allowed",
         "host": "www.example.com",
+        "identity": "user@example.com",
         "metric": "cloudflare_http_requests_total",
         "operation": "analytics",
         "owner": "false",
