@@ -58,8 +58,9 @@ let
 in
 {
   # Grafana-managed alerts intentionally use the stable local Prometheus UID.
-  # The dashboard uses VictoriaMetrics for long-term queries, but that
-  # datasource deliberately has no stable UID on Blizzard.
+  # Most dashboard panels use VictoriaMetrics for long-term queries, but that
+  # datasource deliberately has no stable UID on Blizzard. Identity-bearing
+  # dashboard and alert queries use this local Prometheus UID.
   services.grafana.provision.alerting.rules.settings = {
     apiVersion = 1;
     groups = [
@@ -79,6 +80,24 @@ in
             '';
             summary = "Unexpected Cloudflare Access login by {{ $labels.identity }} to {{ $labels.app }}";
             description = "Cloudflare Access allowed the non-owner {{ $labels.principal_type }} identity {{ $labels.identity }} into {{ $labels.app }} at {{ humanizeTimestamp $values.A.Value }}. Verify that this login was expected.";
+          })
+
+          (mkPrometheusRule {
+            uid = "cf-access-identity-overflow";
+            title = "Cloudflare Access identity visibility reduced";
+            severity = "critical";
+            from = 300;
+            expr = ''
+              sum(
+                (
+                  cloudflare_collector_series_overflow_total{metric="cloudflare_access_last_authentication_timestamp_seconds"}
+                  unless cloudflare_collector_series_overflow_total{metric="cloudflare_access_last_authentication_timestamp_seconds"} offset 5m
+                )
+                or increase(cloudflare_collector_series_overflow_total{metric="cloudflare_access_last_authentication_timestamp_seconds"}[5m])
+              ) > 0
+            '';
+            summary = "Cloudflare Access identity detail exceeded the collector limit";
+            description = "The collector exceeded its bounded identity-series capacity during the last five minutes. Newest login identities are retained, but some older detail was compacted; investigate the Access logs and possible authentication flood.";
           })
 
           (mkPrometheusRule {
