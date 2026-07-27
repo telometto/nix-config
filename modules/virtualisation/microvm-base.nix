@@ -33,97 +33,26 @@ let
     };
   };
 
-  # VM exposure submodule (for cfTunnel and portForward per-VM)
-  vmExposeModule = lib.types.submodule {
+  publicationModule = {
     options = {
-      ip = lib.mkOption {
+      enable = lib.mkEnableOption "public HTTP publication";
+
+      hostname = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Hostname label under the canonical public domain.";
+      };
+
+      policy = lib.mkOption {
         type = lib.types.str;
-        description = "IP address of the VM on the microvm bridge (e.g., 10.100.0.10).";
-      };
-
-      portForward = {
-        enable = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = "Enable port forwarding from host to this VM.";
-        };
-        ports = lib.mkOption {
-          type = lib.types.listOf portForwardModule;
-          default = [ ];
-          description = "List of ports to forward from host to VM.";
-          example = [
-            {
-              proto = "both";
-              sourcePort = 53;
-            }
-            {
-              proto = "tcp";
-              sourcePort = 3000;
-            }
-          ];
-        };
-      };
-
-      cfTunnel = {
-        enable = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = ''
-            
-                        Enable Cloudflare Tunnel ingress for this VM's services.
-                        Requires sys.services.cloudflared to be configured on the host.
-          '';
-        };
-        ingress = lib.mkOption {
-          type = lib.types.attrsOf lib.types.str;
-          default = { };
-          description = "Cloudflare Tunnel ingress rules for this VM.";
-          example = {
-            "adguard.example.com" = "http://10.100.0.10:80";
-            "dns.example.com" = "tcp://10.100.0.10:53";
-          };
-        };
+        default = "strict";
+        description = ''
+          Registered publication compatibility policy whose middleware
+          references must exist.
+        '';
       };
     };
   };
-
-  reverseProxyModule =
-    { config, ... }:
-    {
-      options = {
-        enable = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = "Enable Traefik reverse proxy configuration for this VM.";
-        };
-
-        subdomain = lib.mkOption {
-          type = lib.types.nullOr lib.types.str;
-          default = null;
-          description = "Subdomain used for standard hostname-based routing.";
-        };
-
-        url = lib.mkOption {
-          type = lib.types.nullOr lib.types.str;
-          default = null;
-          description = "Backend URL for the reverse proxy target.";
-        };
-
-        middlewares = lib.mkOption {
-          type = lib.types.nullOr (lib.types.listOf lib.types.str);
-          default = null;
-          description = "Traefik middlewares applied to the generated router.";
-        };
-
-        entryPoints = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ "web" ];
-          description = "Traefik entry points applied to the generated router.";
-        };
-      };
-
-      config.enable = lib.mkDefault (config.subdomain != null && config.url != null);
-    };
 
   instanceModule =
     { name, config, ... }:
@@ -169,35 +98,132 @@ let
           };
         };
 
-        cfTunnel = {
-          enable = lib.mkOption {
-            type = lib.types.bool;
-            default = false;
-            description = "Enable Cloudflare Tunnel ingress for this VM.";
-          };
+        publication = lib.mkOption {
+          type = lib.types.submodule publicationModule;
+          default = { };
+          description = "Public HTTP publication for this VM.";
+        };
 
-          ingress = lib.mkOption {
-            type = lib.types.attrsOf lib.types.str;
-            default = { };
-            description = "Cloudflare Tunnel ingress rules for this VM.";
-          };
+        cfTunnel = lib.mkOption {
+          type = lib.types.nullOr lib.types.attrs;
+          default = null;
+          visible = false;
+          description = "Removed legacy Cloudflare Tunnel configuration.";
         };
 
         reverseProxy = lib.mkOption {
-          type = lib.types.submodule reverseProxyModule;
-          default = { };
-          description = "Traefik reverse proxy configuration for this VM.";
+          type = lib.types.nullOr lib.types.attrs;
+          default = null;
+          visible = false;
+          description = "Removed legacy Traefik reverse proxy configuration.";
         };
       };
 
       config = {
         autostart = lib.mkDefault config.enable;
         portForward.enable = lib.mkDefault (config.enable && config.portForward.ports != [ ]);
-        cfTunnel.enable = lib.mkDefault (config.enable && config.cfTunnel.ingress != { });
       };
     };
 
   enabledInstances = lib.filterAttrs (_: instance: instance.enable) cfg.instances;
+  publicationPolicies = config.services.traefik.publicationPolicyMiddlewares // {
+    strict = [ "security-headers" ];
+  };
+  strictPolicyOverridden = builtins.hasAttr "strict" config.services.traefik.publicationPolicyMiddlewares;
+  requestedPublications = lib.filterAttrs (_: instance: instance.publication.enable) cfg.instances;
+  requestedPublicationNames = builtins.attrNames requestedPublications;
+  canonicalDomainLabels =
+    if cfg.publication.canonicalDomain == null then
+      [ ]
+    else
+      lib.splitString "." cfg.publication.canonicalDomain;
+  canonicalDomainValid =
+    cfg.publication.canonicalDomain == null
+    || (
+      builtins.stringLength cfg.publication.canonicalDomain <= 253
+      && builtins.length canonicalDomainLabels >= 2
+      && lib.all (
+        label: builtins.match "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" label != null
+      ) canonicalDomainLabels
+    );
+  publicationMissingHostnames = builtins.attrNames (
+    lib.filterAttrs (_: instance: instance.publication.hostname == null) requestedPublications
+  );
+  publicationInvalidHostnames = builtins.attrNames (
+    lib.filterAttrs (
+      _: instance:
+      instance.publication.hostname != null
+      && builtins.match "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" instance.publication.hostname == null
+    ) requestedPublications
+  );
+  publicationUnknownPolicies = builtins.attrNames (
+    lib.filterAttrs (
+      _: instance: !(builtins.hasAttr instance.publication.policy publicationPolicies)
+    ) requestedPublications
+  );
+  requestedPublicationMiddlewares = lib.unique (
+    lib.concatMap (
+      instance:
+      lib.optionals (builtins.hasAttr instance.publication.policy publicationPolicies) (
+        publicationPolicies.${instance.publication.policy}
+      )
+    ) (builtins.attrValues requestedPublications)
+    ++ lib.optional (requestedPublicationNames != [ ]) "crowdsec"
+  );
+  availableTraefikMiddlewares = lib.unique (
+    lib.flatten (
+      lib.mapAttrsToList (
+        _: file: builtins.attrNames (file.settings.http.middlewares or { })
+      ) config.services.traefik.dynamic.files
+    )
+  );
+  publicationMissingMiddlewares = lib.filter (
+    middleware: !(lib.elem middleware availableTraefikMiddlewares)
+  ) requestedPublicationMiddlewares;
+  publicationUnknownTargets = lib.filter (
+    name: !(builtins.hasAttr name registry)
+  ) requestedPublicationNames;
+  enabledPublications = lib.filterAttrs (
+    name: instance:
+    instance.enable
+    && instance.publication.hostname != null
+    && builtins.hasAttr instance.publication.policy publicationPolicies
+    && builtins.hasAttr name registry
+    && cfg.publication.canonicalDomain != null
+  ) requestedPublications;
+  publicationHostnames = lib.mapAttrsToList (
+    _: instance: "${instance.publication.hostname}.${cfg.publication.canonicalDomain}"
+  ) enabledPublications;
+  duplicatePublicationHostnames = duplicateValues publicationHostnames;
+  publicationDisabledTargets = builtins.attrNames (
+    lib.filterAttrs (_: instance: instance.publication.enable && !instance.enable) cfg.instances
+  );
+  instancesUsingRemovedCfTunnel = builtins.attrNames (
+    lib.filterAttrs (_: instance: instance.cfTunnel != null) cfg.instances
+  );
+  instancesUsingRemovedReverseProxy = builtins.attrNames (
+    lib.filterAttrs (_: instance: instance.reverseProxy != null) cfg.instances
+  );
+
+  publicationIngress = builtins.listToAttrs (
+    lib.mapAttrsToList (_: instance: {
+      name = "${instance.publication.hostname}.${cfg.publication.canonicalDomain}";
+      value = "http://localhost:80";
+    }) enabledPublications
+  );
+
+  publicationRouters = lib.mapAttrs (name: instance: {
+    rule = "Host(`${instance.publication.hostname}.${cfg.publication.canonicalDomain}`)";
+    service = name;
+    entryPoints = [ "web" ];
+    middlewares = publicationPolicies.${instance.publication.policy} ++ [ "crowdsec" ];
+  }) enabledPublications;
+
+  publicationServices = lib.mapAttrs (name: _: {
+    loadBalancer.servers = [
+      { url = "http://${registry.${name}.ip}:${toString registry.${name}.port}"; }
+    ];
+  }) enabledPublications;
 
   # Registry entries can opt into a dedicated host bridge. Only materialise
   # that topology when the matching VM instance is enabled on this host.
@@ -303,24 +329,9 @@ let
     lib.filterAttrs (_: instance: instance.autostart) enabledInstances
   );
 
-  derivedExpose = builtins.listToAttrs (
-    lib.mapAttrsToList (name: instance: {
-      name = mkVmName name;
-      value = {
-        inherit (instance) ip portForward cfTunnel;
-      };
-    }) enabledInstances
-  );
-
-  allVms = derivedVms // cfg.vms;
-
-  allAutostart = lib.unique (derivedAutostart ++ cfg.autostart);
-
-  allExpose = derivedExpose // cfg.expose;
-
-  # Generate NAT forwardPorts from VM expose configs
+  # Generate NAT forwardPorts from enabled VM instances.
   mkForwardPorts =
-    vmName: vmCfg:
+    _: vmCfg:
     lib.optionals vmCfg.portForward.enable (
       lib.flatten (
         map (
@@ -344,22 +355,7 @@ let
       )
     );
 
-  # Collect all forward ports from all VMs
-  allForwardPorts = lib.flatten (lib.mapAttrsToList mkForwardPorts allExpose);
-
-  # Collect all cfTunnel ingress rules
-  allCfTunnelIngress = lib.mkMerge (
-    lib.mapAttrsToList (
-      _: vmCfg:
-      lib.optionalAttrs (vmCfg.cfTunnel.enable && vmCfg.cfTunnel.ingress != { }) vmCfg.cfTunnel.ingress
-    ) allExpose
-  );
-
-  exposedVmNames = builtins.attrNames allExpose;
-
-  unknownExposeVms = lib.filter (name: !(lib.hasAttr name allVms)) exposedVmNames;
-
-  unknownAutostartVms = lib.filter (name: !(lib.hasAttr name allVms)) allAutostart;
+  allForwardPorts = lib.flatten (lib.mapAttrsToList mkForwardPorts enabledInstances);
 
   enabledInstanceNames = builtins.attrNames enabledInstances;
 
@@ -375,34 +371,16 @@ let
     instance.portForward.enable && instance.ip == null
   ) enabledInstanceNames;
 
-  reverseProxyMissingFields = lib.filter (
-    name:
-    let
-      instance = enabledInstances.${name};
-    in
-    instance.reverseProxy.enable
-    && (instance.reverseProxy.subdomain == null || instance.reverseProxy.url == null)
-  ) enabledInstanceNames;
-
   portForwardEnabledWithoutPorts = lib.filter (
     name:
     let
-      vmCfg = allExpose.${name};
+      vmCfg = enabledInstances.${name};
     in
     vmCfg.portForward.enable && vmCfg.portForward.ports == [ ]
-  ) exposedVmNames;
-
-  cfTunnelEnabledWithoutIngress = lib.filter (
-    name:
-    let
-      vmCfg = allExpose.${name};
-    in
-    vmCfg.cfTunnel.enable && vmCfg.cfTunnel.ingress == { }
-  ) exposedVmNames;
+  ) enabledInstanceNames;
 
   cloudflaredEnabled = config.sys.services.cloudflared.enable or false;
-
-  enabledCfTunnelVms = lib.filter (name: allExpose.${name}.cfTunnel.enable) exposedVmNames;
+  traefikEnabled = config.services.traefik.enable or false;
 
   duplicateForwardPortKeys =
     let
@@ -410,18 +388,6 @@ let
     in
     lib.unique (
       lib.filter (key: builtins.length (lib.filter (candidate: candidate == key) keys) > 1) keys
-    );
-
-  duplicateIngressHosts =
-    let
-      hosts = lib.flatten (
-        lib.mapAttrsToList (
-          _: vmCfg: lib.optionals vmCfg.cfTunnel.enable (builtins.attrNames vmCfg.cfTunnel.ingress)
-        ) allExpose
-      );
-    in
-    lib.unique (
-      lib.filter (host: builtins.length (lib.filter (candidate: candidate == host) hosts) > 1) hosts
     );
 
   duplicateValues =
@@ -433,49 +399,43 @@ let
   formatList = list: lib.concatStringsSep ", " list;
 in
 {
+  imports = [
+    (lib.mkRemovedOptionModule [ "sys" "virtualisation" "microvm" "hypervisor" ] ''
+      The host-wide hypervisor option was not applied to generated instances.
+      Configure the hypervisor in each guest configuration when required.
+    '')
+    (lib.mkRemovedOptionModule [ "sys" "virtualisation" "microvm" "autostart" ] ''
+      Use sys.virtualisation.microvm.instances.<name>.autostart instead.
+    '')
+    (lib.mkRemovedOptionModule [ "sys" "virtualisation" "microvm" "vms" ] ''
+      Use sys.virtualisation.microvm.instances.<name>.flake and vmConfig instead.
+    '')
+    (lib.mkRemovedOptionModule [ "sys" "virtualisation" "microvm" "expose" ] ''
+      Use sys.virtualisation.microvm.instances.<name>.portForward and
+      sys.virtualisation.microvm.instances.<name>.publication instead.
+    '')
+  ];
+
   options.sys.virtualisation.microvm = {
     enable = lib.mkEnableOption "microvm.nix host for running lightweight VMs";
-
-    hypervisor = lib.mkOption {
-      type = lib.types.enum [
-        "qemu"
-        "cloud-hypervisor"
-        "firecracker"
-        "crosvm"
-        "kvmtool"
-      ];
-      default = "cloud-hypervisor";
-      description = ''
-        
-                Default hypervisor for MicroVMs.
-                - cloud-hypervisor: Good security/features balance (Rust-based)
-                - firecracker: Minimal attack surface, used by AWS Lambda
-                - qemu: Most features but larger attack surface
-      '';
-    };
-
-    autostart = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      description = "List of MicroVM names to automatically start on boot.";
-    };
-
-    vms = lib.mkOption {
-      type = lib.types.attrsOf lib.types.anything;
-      default = { };
-      description = "MicroVM definitions to be merged into microvm.vms.";
-    };
 
     instances = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule instanceModule);
       default = { };
       description = ''
-        
-                Logical per-VM host configuration.
-                Use this namespace to opt a VM into a host and control related
-                exposure toggles such as port forwarding, Cloudflare Tunnel, and
-                reverse proxy generation.
+        Logical per-VM host configuration. Use this namespace to opt a VM into
+        a host and control instance-local port forwarding and public HTTP
+        publication.
       '';
+    };
+
+    publication = {
+      canonicalDomain = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Lowercase DNS domain used by public HTTP publications.";
+      };
+
     };
 
     stateDir = lib.mkOption {
@@ -499,39 +459,6 @@ in
       '';
     };
 
-    expose = lib.mkOption {
-      type = lib.types.attrsOf vmExposeModule;
-      default = { };
-      description = ''
-        
-                Per-VM exposure configuration for port forwarding and Cloudflare Tunnel.
-                Keys are VM names (for documentation), values configure how to expose the VM.
-      '';
-      example = {
-        adguard-vm = {
-          ip = "10.100.0.10";
-          portForward = {
-            enable = true;
-            ports = [
-              {
-                proto = "both";
-                sourcePort = 53;
-              }
-              {
-                proto = "tcp";
-                sourcePort = 3000;
-              }
-            ];
-          };
-          cfTunnel = {
-            enable = true;
-            ingress = {
-              "adguard.example.com" = "http://10.100.0.10:80";
-            };
-          };
-        };
-      };
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -545,42 +472,74 @@ in
         message = "sys.virtualisation.microvm.instances enables port forwarding without an IP for: ${formatList missingIpPortForwardInstances}";
       }
       {
-        assertion = reverseProxyMissingFields == [ ];
-        message = "sys.virtualisation.microvm.instances enables reverseProxy without both subdomain and url for: ${formatList reverseProxyMissingFields}";
-      }
-      {
-        assertion = unknownExposeVms == [ ];
-        message = "sys.virtualisation.microvm.expose contains unknown VMs: ${formatList unknownExposeVms}";
-      }
-      {
-        assertion = unknownAutostartVms == [ ];
-        message = "sys.virtualisation.microvm.autostart contains unknown VMs: ${formatList unknownAutostartVms}";
-      }
-      {
         assertion = portForwardEnabledWithoutPorts == [ ];
-        message = "sys.virtualisation.microvm (expose/instances) enables port forwarding without ports for: ${formatList portForwardEnabledWithoutPorts}";
-      }
-      {
-        assertion = cfTunnelEnabledWithoutIngress == [ ];
-        message = "sys.virtualisation.microvm (expose/instances) enables Cloudflare Tunnel without ingress rules for: ${formatList cfTunnelEnabledWithoutIngress}";
+        message = "sys.virtualisation.microvm.instances enables port forwarding without ports for: ${formatList portForwardEnabledWithoutPorts}";
       }
       {
         assertion = duplicateForwardPortKeys == [ ];
-        message = "sys.virtualisation.microvm (expose/instances) defines duplicate forwarded source ports: ${formatList duplicateForwardPortKeys}";
+        message = "sys.virtualisation.microvm.instances defines duplicate forwarded source ports: ${formatList duplicateForwardPortKeys}";
       }
       {
-        assertion = duplicateIngressHosts == [ ];
-        message = "sys.virtualisation.microvm (expose/instances) defines duplicate Cloudflare ingress hosts: ${formatList duplicateIngressHosts}";
+        assertion = publicationDisabledTargets == [ ];
+        message = "sys.virtualisation.microvm.instances enables publication for disabled VMs: ${formatList publicationDisabledTargets}";
       }
       {
-        assertion = cloudflaredEnabled || enabledCfTunnelVms == [ ];
-        message = "sys.virtualisation.microvm (expose/instances) enables Cloudflare Tunnel for ${formatList enabledCfTunnelVms}, but sys.services.cloudflared.enable is false";
+        assertion = requestedPublicationNames == [ ] || cfg.publication.canonicalDomain != null;
+        message = "sys.virtualisation.microvm.publication.canonicalDomain must be set when publications are enabled";
+      }
+      {
+        assertion = canonicalDomainValid;
+        message = "sys.virtualisation.microvm.publication.canonicalDomain must be a lowercase DNS domain with at least two valid labels";
+      }
+      {
+        assertion = publicationMissingHostnames == [ ];
+        message = "sys.virtualisation.microvm.instances enables publication without a hostname for: ${formatList publicationMissingHostnames}";
+      }
+      {
+        assertion = publicationInvalidHostnames == [ ];
+        message = "sys.virtualisation.microvm.instances uses invalid publication hostname labels for: ${formatList publicationInvalidHostnames}";
+      }
+      {
+        assertion = publicationUnknownPolicies == [ ];
+        message = "sys.virtualisation.microvm.instances selects unknown publication policies for: ${formatList publicationUnknownPolicies}";
+      }
+      {
+        assertion = publicationMissingMiddlewares == [ ];
+        message = "sys.virtualisation.microvm.instances selects publication middleware that is not defined in services.traefik.dynamic.files: ${formatList publicationMissingMiddlewares}";
+      }
+      {
+        assertion = !strictPolicyOverridden;
+        message = "services.traefik.publicationPolicyMiddlewares cannot redefine the built-in strict policy";
+      }
+      {
+        assertion = publicationUnknownTargets == [ ];
+        message = "sys.virtualisation.microvm.instances enables publication without a registry target for: ${formatList publicationUnknownTargets}";
+      }
+      {
+        assertion = cloudflaredEnabled || requestedPublicationNames == [ ];
+        message = "sys.virtualisation.microvm.instances enables publication for ${formatList requestedPublicationNames}, but sys.services.cloudflared.enable is false";
+      }
+      {
+        assertion = traefikEnabled || requestedPublicationNames == [ ];
+        message = "sys.virtualisation.microvm.instances enables publication for ${formatList requestedPublicationNames}, but services.traefik.enable is false";
+      }
+      {
+        assertion = duplicatePublicationHostnames == [ ];
+        message = "sys.virtualisation.microvm.instances defines duplicate publication hostnames: ${formatList duplicatePublicationHostnames}";
+      }
+      {
+        assertion = instancesUsingRemovedCfTunnel == [ ];
+        message = "sys.virtualisation.microvm.instances uses the removed cfTunnel option for: ${formatList instancesUsingRemovedCfTunnel}. Use publication or a bespoke host-level Cloudflare Tunnel ingress instead";
+      }
+      {
+        assertion = instancesUsingRemovedReverseProxy == [ ];
+        message = "sys.virtualisation.microvm.instances uses the removed reverseProxy option for: ${formatList instancesUsingRemovedReverseProxy}. Use publication or a bespoke host-level Traefik route instead";
       }
     ];
 
     microvm = {
-      autostart = allAutostart;
-      vms = allVms;
+      autostart = derivedAutostart;
+      vms = derivedVms;
       inherit (cfg) stateDir;
     };
 
@@ -644,8 +603,12 @@ in
       };
     };
 
-    # Add VM services to Cloudflare Tunnel ingress
     sys.services.cloudflared.ingress = lib.mkIf (config.sys.services.cloudflared.enable or false
-    ) allCfTunnelIngress;
+    ) publicationIngress;
+
+    services.traefik.dynamic.files.microvm-publications.settings.http = {
+      routers = publicationRouters;
+      services = publicationServices;
+    };
   };
 }
