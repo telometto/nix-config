@@ -35,5 +35,27 @@ in
     };
   };
 
-  sys.services.grafanaPushover.enable = true;
+  sys.services.grafanaPushover = {
+    enable = true;
+    # Cloudflare alert summaries intentionally include the normalized login
+    # email so unexpected users can be identified from the notification.
+    messageTemplate = ''
+      {{- if eq (index .CommonLabels "service") "cloudflare" -}}
+      {{- if gt (len .Alerts.Firing) 0 }}
+      FIRING ({{ len .Alerts.Firing }})
+      {{- range .Alerts.Firing }}
+      - {{ .Annotations.summary }}
+      {{- end }}
+      {{- end }}
+      {{- if gt (len .Alerts.Resolved) 0 }}
+      RESOLVED ({{ len .Alerts.Resolved }})
+      {{- range .Alerts.Resolved }}
+      - {{ .Annotations.summary }}
+      {{- end }}
+      {{- end }}
+      {{- else -}}
+      {{ template "default.message" . }}
+      {{- end -}}
+    '';
+  };
 }
