@@ -146,6 +146,10 @@ disabled (for example `adguard`, `actual`, `lidarr`, and `brave`).
 sys.virtualisation.microvm.instances.<name> = {
   enable = true;
 
+  # Defaults to enable; override when the VM should be defined but not
+  # started automatically.
+  autostart = false;
+
   # Optional transport-layer reachability:
   portForward.ports = [ ... ];
 
@@ -158,9 +162,11 @@ sys.virtualisation.microvm.instances.<name> = {
 };
 ```
 
-Enabling an instance never publishes it automatically. A standard publication
-is an independent opt-in that maps one hostname under the canonical public
-domain to the VM's IP and primary port from
+Enabling an instance starts it automatically by default; set `autostart = false`
+to keep the VM defined without starting it on boot. Instance enablement never
+publishes the VM automatically. A standard publication is an independent
+opt-in that maps one hostname under the canonical public domain to the VM's IP
+and primary port from
 [vm-registry.nix](vm-registry.nix). The host module renders both Cloudflare
 Tunnel ingress and the matching Traefik router and service, applies CrowdSec,
 and uses strict security headers unless a registered compatibility policy is
@@ -176,7 +182,7 @@ flowchart LR
     TR["Traefik router + service\npolicy middleware + CrowdSec"]
     VM["Enabled MicroVM\nhttp://registry IP:port"]
     CLIENT["Public HTTP client"]
-    BESPOKE["Host and bespoke routes\nfor example Matrix"]
+    BESPOKE["Supplemental host/path routes\nfor example Matrix discovery"]
 
     DECL --> PUB
     REG --> PUB
@@ -184,14 +190,28 @@ flowchart LR
     PUB --> CF
     PUB --> TR
     CLIENT --> CF --> TR --> VM
-    BESPOKE -.->|configured explicitly| CF
-    BESPOKE -.->|configured explicitly| TR
+    PUB -.->|publication gates supplemental route| BESPOKE
+    BESPOKE -.-> TR
 ```
 
 Compatibility-policy middleware mappings live in
-`hosts/blizzard/security/traefik.nix`. Host-level routes and exceptional
-multi-host or path routing, such as Matrix discovery, remain explicit in the
-Cloudflare and Traefik host configurations.
+`hosts/blizzard/security/traefik.nix`. Matrix's `matrix.<domain>` workload route
+uses the standard publication path. Its root-domain `/.well-known/matrix/`
+discovery route remains explicit in the host Traefik configuration, but is
+enabled only while the Matrix publication is enabled.
+
+Legacy host-wide MicroVM options were removed in favor of instance-local
+intent. Using one of them now fails evaluation with a targeted migration
+message:
+
+| Removed option | Replacement |
+|---|---|
+| `microvm.hypervisor` | Configure the hypervisor in the guest when required |
+| `microvm.autostart` | `instances.<name>.autostart` |
+| `microvm.vms` | `instances.<name>.flake` and `instances.<name>.vmConfig` |
+| `microvm.expose` | `instances.<name>.portForward` and `instances.<name>.publication` |
+| `instances.<name>.cfTunnel` | `instances.<name>.publication` or a bespoke host ingress |
+| `instances.<name>.reverseProxy` | `instances.<name>.publication` or a bespoke host route |
 
 `immich` is published at `https://photos.zzxyz.no` through Cloudflare Tunnel
 and Traefik. Its raw host port is not forwarded; `10.100.0.70:11070` remains
