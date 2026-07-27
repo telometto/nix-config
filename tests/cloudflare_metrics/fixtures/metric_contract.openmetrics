@@ -26,9 +26,9 @@ cloudflare_http_visits_total{overflow="true"} 106
 # TYPE cloudflare_access_authentications_total counter
 cloudflare_access_authentications_total{app="example-app",decision="allowed",owner="false",principal_type="user"} 7
 cloudflare_access_authentications_total{overflow="true"} 107
-# HELP cloudflare_access_last_authentication_timestamp_seconds Unix timestamp of the latest Cloudflare Access authentication event.
+# HELP cloudflare_access_last_authentication_timestamp_seconds Unix timestamp of the latest Cloudflare Access authentication event by identity.
 # TYPE cloudflare_access_last_authentication_timestamp_seconds gauge
-cloudflare_access_last_authentication_timestamp_seconds{app="example-app",decision="allowed",owner="false",principal_type="user"} 8
+cloudflare_access_last_authentication_timestamp_seconds{app="example-app",decision="allowed",identity="user@example.com",owner="false",principal_type="user"} 8
 cloudflare_access_last_authentication_timestamp_seconds{overflow="true"} 108
 # HELP cloudflare_collector_last_success_timestamp_seconds Unix timestamp of the collector's latest successful poll.
 # TYPE cloudflare_collector_last_success_timestamp_seconds gauge
