@@ -7,9 +7,7 @@
   ...
 }:
 let
-  reg = import ../../../vms/vm-registry.nix;
   traefikLib = import ../../../lib/traefik.nix { inherit lib; };
-  vmUrl = name: "http://${reg.${name}.ip}:${toString reg.${name}.port}";
   vmInstances = config.sys.virtualisation.microvm.instances;
   hostRoutes = {
     lingarr = {
@@ -26,7 +24,9 @@ let
     };
   };
   generated = traefikLib.mkRoutes { domain = VARS.domains.public; } hostRoutes;
-  matrixSynapseEnabled = vmInstances."matrix-synapse".enable or false;
+  matrixSynapsePublished =
+    (vmInstances."matrix-synapse".enable or false)
+    && (vmInstances."matrix-synapse".publication.enable or false);
 
   trustedIPs = [
     "127.0.0.1/32"
@@ -55,6 +55,7 @@ in
     firefly-proxy = [ "firefly-headers" ];
     immich-web = [ "immich-headers" ];
     legacy-app-shell = [ "app-compat-headers" ];
+    matrix-compatible = [ "matrix-headers" ];
     oidc-provider = [ "pocket-id-headers" ];
     plex-compatible = [ "plex-headers" ];
     sabnzbd-ui = [ "sabnzbd-headers" ];
@@ -237,27 +238,19 @@ in
               middlewares = [ "security-headers" ];
             };
           }
-          // lib.optionalAttrs matrixSynapseEnabled {
-            matrix-synapse = {
-              rule = "Host(`matrix.${VARS.domains.public}`)";
-              service = "matrix-synapse";
-              entryPoints = [ "web" ];
-              middlewares = [ "matrix-headers" ];
-            };
-
+          // lib.optionalAttrs matrixSynapsePublished {
             matrix-well-known = {
               rule = "Host(`${VARS.domains.public}`) && PathPrefix(`/.well-known/matrix/`)";
               service = "matrix-synapse";
               entryPoints = [ "web" ];
-              middlewares = [ "matrix-headers" ];
+              middlewares = [
+                "matrix-headers"
+                "crowdsec"
+              ];
             };
           };
 
-        services =
-          generated.services
-          // lib.optionalAttrs matrixSynapseEnabled {
-            matrix-synapse.loadBalancer.servers = [ { url = vmUrl "matrix-synapse"; } ];
-          };
+        services = generated.services;
       };
     };
   };
