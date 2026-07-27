@@ -149,5 +149,6 @@ head -c 4 /dev/urandom | od -A none -t x4 | tr -d ' '
 
 - [Tutorial: Provision a Host](../docs/tutorial-provision-host.md)
 - [How to Add Hosts and Users](../docs/how-to-add-host-and-users.md)
+- [Immich Backup Operations](../docs/immich-backup.md)
 - [Role Desktop](../modules/role-desktop.nix) — Desktop role defaults
 - [Role Server](../modules/role-server.nix) — Server role defaults
