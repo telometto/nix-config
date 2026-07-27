@@ -21,6 +21,12 @@ in
       default = config.sys.secrets.pushoverUserKeyFile or null;
       description = "Path to file containing the Pushover user/group key";
     };
+
+    messageTemplate = lib.mkOption {
+      type = lib.types.lines;
+      default = ''{{ template "default.message" . }}'';
+      description = "Grafana notification template used for Pushover messages";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -42,24 +48,7 @@ in
                   okPriority = "-1";
                   retry = "60";
                   expire = "3600";
-                  message = ''
-                    {{- if eq (index .CommonLabels "service") "cloudflare" -}}
-                    {{- if gt (len .Alerts.Firing) 0 }}
-                    FIRING ({{ len .Alerts.Firing }})
-                    {{- range .Alerts.Firing }}
-                    - {{ .Annotations.summary }}
-                    {{- end }}
-                    {{- end }}
-                    {{- if gt (len .Alerts.Resolved) 0 }}
-                    RESOLVED ({{ len .Alerts.Resolved }})
-                    {{- range .Alerts.Resolved }}
-                    - {{ .Annotations.summary }}
-                    {{- end }}
-                    {{- end }}
-                    {{- else -}}
-                    {{ template "default.message" . }}
-                    {{- end -}}
-                  '';
+                  message = cfg.messageTemplate;
                 };
               }
             ];
