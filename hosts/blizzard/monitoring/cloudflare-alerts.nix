@@ -77,8 +77,8 @@ in
             expr = ''
               cloudflare_access_last_authentication_timestamp_seconds{decision="allowed", owner="false", principal_type=~"user|unknown"} > time() - 300
             '';
-            summary = "Unexpected Cloudflare Access {{ $labels.principal_type }} login to {{ $labels.app }}";
-            description = "Cloudflare Access allowed a non-owner {{ $labels.principal_type }} identity into {{ $labels.app }} at {{ humanizeTimestamp $values.A.Value }}. Verify that this login was expected.";
+            summary = "Unexpected Cloudflare Access login by {{ $labels.identity }} to {{ $labels.app }}";
+            description = "Cloudflare Access allowed the non-owner {{ $labels.principal_type }} identity {{ $labels.identity }} into {{ $labels.app }} at {{ humanizeTimestamp $values.A.Value }}. Verify that this login was expected.";
           })
 
           (mkPrometheusRule {
