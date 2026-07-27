@@ -138,23 +138,80 @@ ______________________________________________________________________
 
 ### Host-side enablement
 
-On `blizzard`, VMs are managed via `sys.virtualisation.microvm.instances.<name>` toggles.
-Some instances are currently disabled (e.g. `adguard`, `actual`, `lidarr`, `brave`).
-Enabled instances are exposed via:
+On `blizzard`, VMs are managed via
+`sys.virtualisation.microvm.instances.<name>`. Some instances are currently
+disabled (for example `adguard`, `actual`, `lidarr`, and `brave`).
 
 ```nix
 sys.virtualisation.microvm.instances.<name> = {
   enable = true;
-  # Optional overrides:
-  autostart = true;
-  portForward.enable = true;
-  cfTunnel.enable = true;
-  reverseProxy.enable = true;
+
+  # Defaults to enable; override when the VM should be defined but not
+  # started automatically.
+  autostart = false;
+
+  # Optional transport-layer reachability:
+  portForward.ports = [ ... ];
+
+  # Optional standard public HTTP publication:
+  publication = {
+    enable = true;
+    hostname = "service";
+    policy = "strict";
+  };
 };
 ```
 
-Each instance toggle is independent, so a VM can remain active while
-selectively disabling its Cloudflare Tunnel or Traefik routing.
+Enabling an instance starts it automatically by default; set `autostart = false`
+to keep the VM defined without starting it on boot. Instance enablement never
+publishes the VM automatically. A standard publication is an independent
+opt-in that maps one hostname under the canonical public domain to the VM's IP
+and primary port from
+[vm-registry.nix](vm-registry.nix). The host module renders both Cloudflare
+Tunnel ingress and the matching Traefik router and service, applies CrowdSec,
+and uses strict security headers unless a registered compatibility policy is
+selected.
+
+```mermaid
+flowchart LR
+    DECL["instances.<name>.publication\nhostname label + policy"]
+    REG["vm-registry.nix\nVM IP + primary port"]
+    POL["publicationPolicyMiddlewares\nnamed compatibility policies"]
+    PUB["microvm-base.nix\nvalidate + derive publication"]
+    CF["Cloudflare Tunnel ingress\nhostname → localhost:80"]
+    TR["Traefik router + service\npolicy middleware + CrowdSec"]
+    VM["Enabled MicroVM\nhttp://registry IP:port"]
+    CLIENT["Public HTTP client"]
+    BESPOKE["Supplemental host/path routes\nfor example Matrix discovery"]
+
+    DECL --> PUB
+    REG --> PUB
+    POL --> PUB
+    PUB --> CF
+    PUB --> TR
+    CLIENT --> CF --> TR --> VM
+    PUB -.->|publication gates supplemental route| BESPOKE
+    BESPOKE -.-> TR
+```
+
+Compatibility-policy middleware mappings live in
+`hosts/blizzard/security/traefik.nix`. Matrix's `matrix.<domain>` workload route
+uses the standard publication path. Its root-domain `/.well-known/matrix/`
+discovery route remains explicit in the host Traefik configuration, but is
+enabled only while the Matrix publication is enabled.
+
+Legacy host-wide MicroVM options were removed in favor of instance-local
+intent. Using one of them now fails evaluation with a targeted migration
+message:
+
+| Removed option | Replacement |
+|---|---|
+| `microvm.hypervisor` | Configure the hypervisor in the guest when required |
+| `microvm.autostart` | `instances.<name>.autostart` |
+| `microvm.vms` | `instances.<name>.flake` and `instances.<name>.vmConfig` |
+| `microvm.expose` | `instances.<name>.portForward` and `instances.<name>.publication` |
+| `instances.<name>.cfTunnel` | `instances.<name>.publication` or a bespoke host ingress |
+| `instances.<name>.reverseProxy` | `instances.<name>.publication` or a bespoke host route |
 
 `immich` is published at `https://photos.zzxyz.no` through Cloudflare Tunnel
 and Traefik. Its raw host port is not forwarded; `10.100.0.70:11070` remains
@@ -180,6 +237,9 @@ ______________________________________________________________________
    service-specific NixOS config.
 1. Wire it up in [flake-microvms.nix](flake-microvms.nix) using `mkMicrovm`.
 1. Enable on the host: `sys.virtualisation.microvm.instances.<name>.enable = true`.
+1. If it needs the standard public HTTP path, explicitly enable
+   `instances.<name>.publication` with one hostname and a registered
+   compatibility policy.
 
 ______________________________________________________________________
 
@@ -204,3 +264,5 @@ ______________________________________________________________________
 - [modules/services/README.md](../modules/services/README.md) — Service module catalog
 - [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
 - [vm-registry.nix](vm-registry.nix) — Single source of truth for all VM parameters
+- [Infrastructure context](../CONTEXT.md) — Canonical publication terminology
+- [ADR 0001](../docs/adr/0001-model-public-http-publication-as-instance-intent.md) — Publication interface decision

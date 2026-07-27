@@ -38,6 +38,12 @@ in
         default = { };
       };
     };
+
+    publicationPolicyMiddlewares = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+      default = { };
+      description = "Traefik middleware implementations for public HTTP compatibility policies.";
+    };
   };
 
   options.sys.services.traefik = {
