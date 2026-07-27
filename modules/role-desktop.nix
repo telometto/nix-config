@@ -69,12 +69,18 @@ in
           # nixpkgs-beta = [ ];
           # nixpkgs-unstable = [ "vscode" ];
           # nixpkgs-stable-small = [ "openblas" ];
-          nixpkgs-unstable-small = [ "atuin" ];
+          nixpkgs-unstable-small = [
+            "atuin"
+            "brave-origin"
+          ];
         };
 
         ## Add custom overlays
         custom = [
           (final: prev: {
+            # Replace regular Brave for all desktop-role consumers with Brave Origin.
+            brave = final.brave-origin;
+
             # openldap = prev.openldap.overrideAttrs {
             #   doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
             # };
