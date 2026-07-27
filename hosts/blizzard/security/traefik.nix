@@ -250,7 +250,7 @@ in
             };
           };
 
-        services = generated.services;
+        inherit (generated) services;
       };
     };
   };
