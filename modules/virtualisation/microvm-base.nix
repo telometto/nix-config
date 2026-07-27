@@ -57,19 +57,6 @@ let
   instanceModule =
     { name, config, ... }:
     {
-      imports = [
-        (lib.mkRemovedOptionModule [ "cfTunnel" ] ''
-          Use publication for managed public HTTP routes, or define a bespoke
-          host-level Cloudflare Tunnel ingress when the standard publication
-          contract is not sufficient.
-        '')
-        (lib.mkRemovedOptionModule [ "reverseProxy" ] ''
-          Use publication for managed public HTTP routes, or define a bespoke
-          host-level Traefik route when the standard publication contract is
-          not sufficient.
-        '')
-      ];
-
       options = {
         enable = lib.mkEnableOption "MicroVM instance ${name}";
 
@@ -115,6 +102,20 @@ let
           type = lib.types.submodule publicationModule;
           default = { };
           description = "Public HTTP publication for this VM.";
+        };
+
+        cfTunnel = lib.mkOption {
+          type = lib.types.nullOr lib.types.attrs;
+          default = null;
+          visible = false;
+          description = "Removed legacy Cloudflare Tunnel configuration.";
+        };
+
+        reverseProxy = lib.mkOption {
+          type = lib.types.nullOr lib.types.attrs;
+          default = null;
+          visible = false;
+          description = "Removed legacy Traefik reverse proxy configuration.";
         };
       };
 
@@ -192,6 +193,12 @@ let
   duplicatePublicationHostnames = duplicateValues publicationHostnames;
   publicationDisabledTargets = builtins.attrNames (
     lib.filterAttrs (_: instance: instance.publication.enable && !instance.enable) cfg.instances
+  );
+  instancesUsingRemovedCfTunnel = builtins.attrNames (
+    lib.filterAttrs (_: instance: instance.cfTunnel != null) cfg.instances
+  );
+  instancesUsingRemovedReverseProxy = builtins.attrNames (
+    lib.filterAttrs (_: instance: instance.reverseProxy != null) cfg.instances
   );
 
   publicationIngress = builtins.listToAttrs (
@@ -515,6 +522,14 @@ in
       {
         assertion = duplicatePublicationHostnames == [ ];
         message = "sys.virtualisation.microvm.instances defines duplicate publication hostnames: ${formatList duplicatePublicationHostnames}";
+      }
+      {
+        assertion = instancesUsingRemovedCfTunnel == [ ];
+        message = "sys.virtualisation.microvm.instances uses the removed cfTunnel option for: ${formatList instancesUsingRemovedCfTunnel}. Use publication or a bespoke host-level Cloudflare Tunnel ingress instead";
+      }
+      {
+        assertion = instancesUsingRemovedReverseProxy == [ ];
+        message = "sys.virtualisation.microvm.instances uses the removed reverseProxy option for: ${formatList instancesUsingRemovedReverseProxy}. Use publication or a bespoke host-level Traefik route instead";
       }
     ];
 
