@@ -4,7 +4,7 @@
   self,
 }:
 let
-  lib = pkgs.lib;
+  inherit (pkgs) lib;
 
   productionCfg = blizzard.config;
   productionTunnel =
