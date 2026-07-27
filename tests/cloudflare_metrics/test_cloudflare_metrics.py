@@ -341,8 +341,7 @@ class CardinalityBoundTests(unittest.TestCase):
         labels = [
             cloudflare_metrics._series_labels(key)
             for key in state["series"][metric]
-            if key
-            != cloudflare_metrics._series_key(cloudflare_metrics.OVERFLOW_LABELS)
+            if key != cloudflare_metrics._series_key(cloudflare_metrics.OVERFLOW_LABELS)
         ]
         self.assertEqual(
             {item["identity"] for item in labels},
