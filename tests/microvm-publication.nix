@@ -308,15 +308,13 @@ let
       (
         { lib, ... }:
         {
-          sys.virtualisation.microvm.publication.canonicalDomain =
-            lib.mkForce "https://not-a-domain.example";
+          sys.virtualisation.microvm.publication.canonicalDomain = lib.mkForce "https://not-a-domain.example";
         }
       )
     ];
   };
 
-  invalidCanonicalDomainEvaluation =
-    builtins.tryEval invalidCanonicalDomain.config.system.build.toplevel.drvPath;
+  invalidCanonicalDomainEvaluation = builtins.tryEval invalidCanonicalDomain.config.system.build.toplevel.drvPath;
 
   undefinedMiddleware = blizzard.extendModules {
     modules = [
@@ -333,8 +331,7 @@ let
     ];
   };
 
-  undefinedMiddlewareEvaluation =
-    builtins.tryEval undefinedMiddleware.config.system.build.toplevel.drvPath;
+  undefinedMiddlewareEvaluation = builtins.tryEval undefinedMiddleware.config.system.build.toplevel.drvPath;
 
   removedHostOption = blizzard.extendModules {
     modules = [
@@ -344,8 +341,7 @@ let
     ];
   };
 
-  removedHostOptionEvaluation =
-    builtins.tryEval removedHostOption.config.system.build.toplevel.drvPath;
+  removedHostOptionEvaluation = builtins.tryEval removedHostOption.config.system.build.toplevel.drvPath;
 
   removedInstanceOption = blizzard.extendModules {
     modules = [
@@ -355,16 +351,14 @@ let
     ];
   };
 
-  removedInstanceOptionEvaluation =
-    builtins.tryEval removedInstanceOption.config.system.build.toplevel.drvPath;
+  removedInstanceOptionEvaluation = builtins.tryEval removedInstanceOption.config.system.build.toplevel.drvPath;
 
   matrixPublicationDisabled = blizzard.extendModules {
     modules = [
       (
         { lib, ... }:
         {
-          sys.virtualisation.microvm.instances.matrix-synapse.publication.enable =
-            lib.mkForce false;
+          sys.virtualisation.microvm.instances.matrix-synapse.publication.enable = lib.mkForce false;
         }
       )
     ];
