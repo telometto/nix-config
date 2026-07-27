@@ -42,6 +42,24 @@ in
                   okPriority = "-1";
                   retry = "60";
                   expire = "3600";
+                  message = ''
+                    {{- if eq (index .CommonLabels "service") "cloudflare" -}}
+                    {{- if gt (len .Alerts.Firing) 0 }}
+                    FIRING ({{ len .Alerts.Firing }})
+                    {{- range .Alerts.Firing }}
+                    - {{ .Annotations.summary }}
+                    {{- end }}
+                    {{- end }}
+                    {{- if gt (len .Alerts.Resolved) 0 }}
+                    RESOLVED ({{ len .Alerts.Resolved }})
+                    {{- range .Alerts.Resolved }}
+                    - {{ .Annotations.summary }}
+                    {{- end }}
+                    {{- end }}
+                    {{- else -}}
+                    {{ template "default.message" . }}
+                    {{- end -}}
+                  '';
                 };
               }
             ];
