@@ -44,6 +44,7 @@ ______________________________________________________________________
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
+| `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
@@ -118,7 +119,7 @@ modules/
 ├── hardware/       NVIDIA
 ├── networking/     base, networkd, networkmanager
 ├── programs/       gaming+Steam, GnuPG, ssh, java, nix-ld
-├── security/       secrets option declarations (sys.secrets.*), SSH hardening
+├── security/       secrets, SSH hardening, policy-gated Sandfly target account
 ├── services/       ~60 service modules (grafana, tailscale, traefik, etc.)
 ├── storage/        filesystem modules (e.g., filesystems.nix)
 ├── virtualisation/ microvm host integration
@@ -552,6 +553,17 @@ ______________________________________________________________________
 - Consumer modules read `config.sys.secrets.*` path strings; they never reference `sops.secrets`
   directly.
 
+### Sandfly targets
+
+- `modules/security/sandfly-target.nix` defines the policy-gated
+  `sys.security.sandflyTarget.*` interface for agentless scans over Tailscale
+  SSH.
+- The `sandfly` account is root-equivalent through unrestricted passwordless
+  sudo, so hosts remain disabled until a tag-scoped tailnet SSH policy is
+  verified.
+- [The Sandfly operations runbook](sandfly.md) owns policy setup, enablement,
+  verification, and rollback.
+
 ### MicroVM hardening
 
 - **Kernel**: `pkgs.linuxPackages` — standard (NOT hardened). Hardening is applied via sysctl, not
@@ -588,15 +600,16 @@ ______________________________________________________________________
 | Evaluate all flake outputs without building | `nix flake check --no-build` |
 | Run only the Cloudflare metrics tests | `nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs` |
 | Run only the MicroVM publication tests | `nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs` |
+| Run only the Sandfly target tests | `nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs` |
 | Build without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
 | Apply to current host | `sudo nixos-rebuild switch --flake .#<hostname>` |
 | Test without switching | `sudo nixos-rebuild test --flake .#<hostname>` |
 | Dry run (show what changes) | `nixos-rebuild dry-run --flake .#<hostname>` |
 
 The `flake-check.yml` CI workflow uses `nix flake check --no-build` for
-evaluation, then explicitly builds the Cloudflare metrics and MicroVM
-publication checks so their tests execute. Host evaluations run separately in
-`validate-config.yml`.
+evaluation, then explicitly builds the Cloudflare metrics, MicroVM publication,
+and Sandfly target checks so their tests execute. Host evaluations run
+separately in `validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 
