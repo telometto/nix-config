@@ -37,7 +37,7 @@ ______________________________________________________________________
 | [hardware/](hardware/) | NVIDIA driver config (`sys.hardware.nvidia.*`) | `sys.hardware.nvidia.enable` |
 | [networking/](networking/) | `base.nix`, `networkd.nix`, `networkmanager.nix` | `sys.networking.networkd.enable`, `sys.networking.networkmanager.enable` |
 | [programs/](programs/) | System-wide programs: ssh, gaming, java, gnupg, jellyfin-gpu, nix-ld, python-venv, mtr | `sys.programs.gaming.enable` |
-| [security/](security/) | `secrets.nix` declares `options.sys.secrets.*`; `ssh-hardening.nix` applies OpenSSH hardening | `sys.secrets.*` |
+| [security/](security/) | Secret-path declarations, OpenSSH hardening, and the policy-gated Sandfly target account | `sys.secrets.*`, `sys.security.sandflyTarget.*` |
 | [services/](services/) | ~60 service modules — see [services/README.md](services/README.md) for the full catalog | `sys.services.grafana.enable`, `sys.services.traefik.enable` |
 | [storage/](storage/) | `filesystems.nix` **only** (`sys.storage.filesystems.*`) — ZFS, NFS, and sanoid live in `services/` | `sys.storage.filesystems.*` |
 | [virtualisation/](virtualisation/) | `virtualisation.nix`, `microvm-base.nix` (`sys.virtualisation.*`), `libvirtd.nix`, `k3s.nix` | `sys.virtualisation.enable` |
