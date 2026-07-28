@@ -35,7 +35,6 @@ in
       # Sandfly account before its required sudo path exists.
       system.activationScripts = {
         sandflySudoCompat = {
-          deps = [ "wrappers" ];
           text =
             if cfg.enable then
               ''
