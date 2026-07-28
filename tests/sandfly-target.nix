@@ -27,8 +27,7 @@ let
     ];
   };
 
-  missingPolicyConfirmationEvaluation =
-    builtins.tryEval missingPolicyConfirmation.config.system.build.toplevel.drvPath;
+  missingPolicyConfirmationEvaluation = builtins.tryEval missingPolicyConfirmation.config.system.build.toplevel.drvPath;
 
   disabledEffectiveTailscale = snowfall.extendModules {
     modules = [
@@ -45,8 +44,7 @@ let
     ];
   };
 
-  disabledEffectiveTailscaleEvaluation =
-    builtins.tryEval disabledEffectiveTailscale.config.system.build.toplevel.drvPath;
+  disabledEffectiveTailscaleEvaluation = builtins.tryEval disabledEffectiveTailscale.config.system.build.toplevel.drvPath;
 
   sandflySudoRule = {
     users = [ "sandfly" ];
