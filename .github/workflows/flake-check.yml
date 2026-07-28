@@ -69,3 +69,6 @@ jobs:
 
             - name: Run MicroVM publication tests
               run: nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
+
+            - name: Run Sandfly target tests
+              run: nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs
