@@ -168,6 +168,11 @@
           inherit (self.nixosConfigurations) blizzard;
           pkgs = nixpkgs.legacyPackages.${system};
         };
+
+        sandfly-target = import ./tests/sandfly-target.nix {
+          inherit (self.nixosConfigurations) snowfall;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
       };
 
       devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {

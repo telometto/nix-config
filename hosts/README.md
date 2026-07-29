@@ -11,6 +11,10 @@ Per-machine NixOS configurations defining hardware, roles, users, and services.
 | [avalanche/](avalanche/) | Desktop | GNOME | ThinkPad P51, nixos-hardware module, iwlwifi+BT coexistence workaround, VictoriaMetrics remote-write to blizzard |
 | [kaizer/](kaizer/) | Desktop | KDE | Two users (gianluca+luke; frankie disabled), Lanzaboote disabled, NVIDIA GPU (legacy open=false), Java Temurin 8/17/21 for Minecraft, per-user localization |
 
+The Sandfly target module is available to physical hosts but remains disabled
+until the external Tailscale SSH policy satisfies
+[the Sandfly operations prerequisite](../docs/sandfly.md#policy-prerequisite).
+
 ### Host Structure
 
 Each host directory contains:

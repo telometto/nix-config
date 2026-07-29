@@ -78,6 +78,8 @@ flowchart LR
 - [immich-backup.md](immich-backup.md) — Provision, operate, and restore the Immich offsite backup
 - [pocket-id.md](pocket-id.md) — Deploy, bootstrap, operate, and recover the Pocket ID provider
 - [immich.md](immich.md) — Provision, migrate, rotate, and recover Immich OAuth
+- [sandfly.md](sandfly.md) — Restrict Tailscale SSH, enable Sandfly targets,
+  verify, and roll back
 - [troubleshooting-trigger-vm.md](troubleshooting-trigger-vm.md) — Troubleshooting the trigger MicroVM
 
 ### Quick Links
@@ -94,6 +96,7 @@ flowchart LR
 | Back up or restore Immich | [Immich Backup Operations](immich-backup.md) |
 | Operate Pocket ID | [Pocket ID Operations](pocket-id.md) |
 | Operate Immich OAuth | [Immich OAuth Operations](immich.md) |
+| Operate Sandfly targets | [Sandfly Target Operations](sandfly.md) |
 | Review security findings | [Security Audit](security-audit-2026-06-27.md) |
 | Learn why things work this way | [Explanation: Design](explanation-design.md) |
 
