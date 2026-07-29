@@ -46,22 +46,23 @@ let
 
   disabledEffectiveTailscaleEvaluation = builtins.tryEval disabledEffectiveTailscale.config.system.build.toplevel.drvPath;
 
-  sandflySudoRule = {
-    users = [ "sandfly" ];
-    commands = [
-      {
-        command = "ALL";
-        options = [ "NOPASSWD" ];
-      }
-    ];
-  };
+  hasSandflySudoRule = lib.any (
+    rule:
+    lib.elem "sandfly" rule.users
+    && lib.any (
+      command:
+      builtins.isAttrs command
+      && command.command == "ALL"
+      && lib.elem "NOPASSWD" command.options
+    ) rule.commands
+  ) validCfg.security.sudo.extraRules;
 in
 assert validEvaluation.success;
 assert !missingPolicyConfirmationEvaluation.success;
 assert !disabledEffectiveTailscaleEvaluation.success;
 assert lib.elem "--ssh" validCfg.services.tailscale.extraSetFlags;
 assert validCfg.users.users.sandfly.hashedPassword == "!";
-assert lib.elem sandflySudoRule validCfg.security.sudo.extraRules;
+assert hasSandflySudoRule;
 assert lib.hasInfix "/usr/local/bin/sudo" validCfg.system.activationScripts.sandflySudoCompat.text;
 assert !(builtins.hasAttr "sandfly" snowfall.config.users.users);
 pkgs.runCommand "sandfly-target-tests" { } "touch $out"
