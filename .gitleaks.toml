@@ -7,6 +7,14 @@ useDefault = true
 # Each allowlist is narrowly scoped to a specific pattern or commit.
 
 [[allowlists]]
+description = "Pocket ID OAuth client IDs are public UUID identifiers, not secrets"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^vms/immich\.nix$''']
+regexTarget = "line"
+regexes = ['''(?i)^\s*oauthClientId\s*=\s*"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";\s*$''']
+
+[[allowlists]]
 description = "GPG signing key IDs (format: 0x<16 hex chars>) are public identifiers, not secrets"
 regexes = ['''(?i)^(?:0x)?[0-9a-f]{16}$''']
 regexTarget = "secret"
