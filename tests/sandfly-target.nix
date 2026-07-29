@@ -50,10 +50,7 @@ let
     rule:
     lib.elem "sandfly" rule.users
     && lib.any (
-      command:
-      builtins.isAttrs command
-      && command.command == "ALL"
-      && lib.elem "NOPASSWD" command.options
+      command: builtins.isAttrs command && command.command == "ALL" && lib.elem "NOPASSWD" command.options
     ) rule.commands
   ) validCfg.security.sudo.extraRules;
 in
