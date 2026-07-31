@@ -7,6 +7,8 @@ on:
             - "flake.lock"
             - "treefmt.nix"
             - ".github/workflows/flake-check.yml"
+            - ".github/scripts/evaluate-flake-outputs.sh"
+            - ".github/scripts/redact-secrets.sh"
             - "modules/services/scripts/cloudflare_metrics.py"
             - "tests/cloudflare_metrics/**"
             - "dashboards/host/blizzard/cloudflare-overview.json"
@@ -17,7 +19,10 @@ on:
         paths:
             - "**.nix"
             - "flake.lock"
+            - "treefmt.nix"
             - ".github/workflows/flake-check.yml"
+            - ".github/scripts/evaluate-flake-outputs.sh"
+            - ".github/scripts/redact-secrets.sh"
             - "modules/services/scripts/cloudflare_metrics.py"
             - "tests/cloudflare_metrics/**"
             - "dashboards/host/blizzard/cloudflare-overview.json"
@@ -51,22 +56,8 @@ jobs:
               with:
                 use-flakehub: false
 
-            - name: Run flake check
-              run: |
-                  output_file=$(mktemp)
-                  trap 'rm -f "$output_file"' EXIT
-                  {
-                    echo "## 🔍 Flake Check Results"
-                    if nix flake check --no-build >"$output_file" 2>&1; then
-                      echo "✅ All flake outputs evaluate successfully"
-                    else
-                      echo "❌ Flake check failed"
-                      echo '```'
-                      bash .github/scripts/redact-secrets.sh < "$output_file"
-                      echo '```'
-                      exit 1
-                    fi
-                  } >> "$GITHUB_STEP_SUMMARY"
+            - name: Evaluate flake outputs sequentially
+              run: bash .github/scripts/evaluate-flake-outputs.sh
 
             - name: Run Cloudflare metrics tests
               run: nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs
