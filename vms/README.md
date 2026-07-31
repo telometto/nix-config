@@ -1,7 +1,7 @@
 ## MicroVM Configurations
 
 Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
-for lightweight virtualization. The flake currently defines 26 MicroVM
+for lightweight virtualization. The flake currently defines 27 MicroVM
 configurations for the `blizzard` host. Most use the shared `10.100.0.0/24`
 tap bridge; Pocket ID uses a dedicated `10.100.1.0/30` host-to-VM bridge.
 
@@ -48,6 +48,7 @@ flowchart TB
         w2["sabnzbd 10.100.0.31"]
         w3["firefox 10.100.0.52"]
         w4["brave 10.100.0.54"]
+        w5["metube 10.100.0.72"]
     end
 
     bridge --> adguard
@@ -57,6 +58,7 @@ flowchart TB
     wg --> w2
     wg --> w3
     wg --> w4
+    wg --> w5
 
     pocket["pocket-id-vm\n10.100.1.2/30"]
     idbridge --> pocket
@@ -80,6 +82,7 @@ ______________________________________________________________________
 | lidarr | 10.100.0.26 | 11028 | 1 GB | 1 | Direct | Music PVR |
 | matrix-synapse | 10.100.0.60 | 11060 | 4 GB | 4 | Direct | Matrix homeserver |
 | mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Direct | Recipe manager and meal planner |
+| metube | 10.100.0.72 | 11072 | 768 MB | 1 | Via WG | LAN-only video downloader |
 | ombi | 10.100.0.41 | 11041 | 1 GB | 1 | Direct | Media request portal (legacy) |
 | overseerr | 10.100.0.40 | 11040 | 1 GB | 1 | Direct | Media request portal |
 | paperless | 10.100.0.61 | 11061 | 8 GB | 4 | Direct | Document management |
@@ -93,7 +96,7 @@ ______________________________________________________________________
 | sonarr | 10.100.0.21 | 11021 | 1 GB | 1 | Direct | TV PVR |
 | tautulli | 10.100.0.42 | 11042 | 1 GB | 1 | Direct | Plex statistics |
 | trigger | 10.100.0.80 | 11080 | 12 GB | 6 | Direct | Trigger.dev v4 background job platform |
-| wireguard | 10.100.0.11 | 56943 | 512 MB | 1 | Direct | VPN gateway (routes qb/sabnzbd/firefox/brave) |
+| wireguard | 10.100.0.11 | 56943 | 512 MB | 1 | Direct | VPN gateway (routes qb/sabnzbd/firefox/brave/metube) |
 
 ______________________________________________________________________
 
@@ -222,10 +225,16 @@ ______________________________________________________________________
 
 ### WG-routed VMs
 
-`qbittorrent`, `sabnzbd`, `firefox`, and `brave` route all outbound traffic
+`qbittorrent`, `sabnzbd`, `firefox`, `brave`, and `metube` route all outbound traffic
 through `wireguard-vm` (10.100.0.11). This ensures downloads and browser
 sessions exit via the VPN rather than the host's public IP. Their default
 gateway is set to 10.100.0.11 in the registry.
+
+MeTube is intentionally LAN-only. Blizzard forwards TCP `11072` to
+`metube-vm:11072`; it has no standard HTTP publication and therefore generates
+no Cloudflare Tunnel or Traefik route. The guest uses a 768 MB memory ceiling
+and permits two concurrent downloads so ffmpeg and yt-dlp remain reliable
+within that small footprint.
 
 ______________________________________________________________________
 
