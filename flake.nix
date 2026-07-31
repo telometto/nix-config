@@ -169,6 +169,12 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        microvm-network-policy = import ./tests/microvm-network-policy.nix {
+          inherit (nixpkgs) lib;
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         sandfly-target = import ./tests/sandfly-target.nix {
           inherit (self.nixosConfigurations) snowfall;
           pkgs = nixpkgs.legacyPackages.${system};
