@@ -157,6 +157,11 @@ let
       };
     };
 
+    metube = {
+      enable = true;
+      portForwards = [ (mkPortForward "tcp" 11072 null) ];
+    };
+
     wireguard = {
       enable = true;
       portForwards = [ (mkPortForward "udp" 51820 56943) ];
