@@ -130,6 +130,11 @@ in
     ./sabnzbd.nix
   ];
 
+  metube-vm = mkMicrovm [
+    microvmModule
+    ./metube.nix
+  ];
+
   firefox-vm = mkMicrovm [
     microvmModule
     ./firefox.nix
