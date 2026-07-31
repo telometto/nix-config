@@ -40,7 +40,8 @@ flowchart LR
 The VM has no host port forward and is the only guest on the dedicated
 `pocket-id-br0` Layer-2 segment (`10.100.1.0/30`). Blizzard uses `10.100.1.1`
 and Pocket ID uses `10.100.1.2`; all peer MicroVMs remain on `microvm-br0`.
-Symmetric host forwarding rules block routed traffic between the two bridges.
+The host-owned native nftables `inet` policy blocks routed traffic between the
+two bridges, while its `bridge` policy authenticates every enabled tap.
 Pocket ID's nftables firewall additionally accepts TCP ports `22` and `11081`
 only from Blizzard's `10.100.1.1` address. Peer MicroVMs therefore cannot join
 the proxy-side Layer-2 path, route around it through Blizzard, or bypass
