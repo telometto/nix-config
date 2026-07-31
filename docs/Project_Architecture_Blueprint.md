@@ -1,6 +1,6 @@
 # Project Architecture Blueprint
 
-> **Last verified: 2026-06-17**
+> **Last verified: 2026-07-30**
 >
 > **Project Type:** NixOS Flake Configuration
 >
@@ -10,7 +10,7 @@ ______________________________________________________________________
 
 ## 1. Executive Summary
 
-This repository implements a modular NixOS flake configuration for 4 physical hosts and 26 MicroVMs.
+This repository implements a modular NixOS flake configuration for 4 physical hosts and 27 MicroVMs.
 The design centres on three auto-loading mechanisms that eliminate manual `imports` lists, a
 two-namespace option system (`sys.*` / `hm.*`), role files that bundle machine-class defaults,
 and layered Home Manager composition that allows fine-grained per-user overrides without
@@ -27,7 +27,7 @@ flowchart TD
     SL -->|"imports every .nix"| MOD["modules/**"]
     HL -->|"imports every .nix"| HOST["hosts/<hostname>/**"]
     HML -->|"imports every .nix\nexcluding overrides/"| HOME["home/**"]
-    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(26 MicroVMs)"]
+    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(27 MicroVMs)"]
     F --> HOSTS["nixosConfigurations\nsnowfall · blizzard · avalanche · kaizer"]
 ```
 
@@ -39,7 +39,7 @@ ______________________________________________________________________
 
 | Output | Value |
 |--------|-------|
-| `nixosConfigurations` | 4 named hosts + 26 `-vm` entries (merged from `vms/flake-microvms.nix`) |
+| `nixosConfigurations` | 4 named hosts + 27 `-vm` entries (merged from `vms/flake-microvms.nix`) |
 | `formatter.x86_64-linux` | treefmt wrapper (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
@@ -433,6 +433,7 @@ and [ADR 0001](adr/0001-model-public-http-publication-as-instance-intent.md).
 | firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Firefly data import |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Photo library |
 | mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Meal planning |
+| metube | 10.100.0.72 | 11072 | 768 MB | 1 | LAN-only video downloader — WG-routed |
 | trigger | 10.100.0.80 | 11080 | 12 GB | 6 | Workflow automation |
 | pocket-id | 10.100.1.2 | 11081 | 1 GB | 1 | Passkey-based OIDC provider |
 
@@ -441,7 +442,7 @@ ______________________________________________________________________
 ## 10. Network Topology
 
 All MicroVMs except Pocket ID live on the shared `10.100.0.0/24` subnet bridged
-to the `blizzard` host. Four VMs route all egress traffic through the WireGuard
+to the `blizzard` host. Five VMs route all egress traffic through the WireGuard
 VM rather than using the default gateway. Pocket ID is the sole guest on
 `pocket-id-br0`, a dedicated `10.100.1.0/30` host-to-VM segment. Symmetric host
 forwarding rules block routed traffic between `microvm-br0` and
@@ -468,21 +469,25 @@ flowchart TD
     SAB["sabnzbd-vm\n10.100.0.31"]
     FF["firefox-vm\n10.100.0.52"]
     BR["brave-vm\n10.100.0.54"]
+    MT["metube-vm\n10.100.0.72"]
 
     WG -->|"default route for\nWG-routed VMs"| QB
     WG --> SAB
     WG --> FF
     WG --> BR
+    WG --> MT
 
-    ADG -->|"DNS for WG-routed VMs\ndns = 10.100.0.11"| QB
-    ADG --> SAB
+    WG -.->|"DNS\n10.100.0.11"| QB
+    WG -.-> SAB
+    WG -.-> MT
 
     TS["Tailscale subnet router\nblizzard advertises\n192.168.2.0/24 + 10.100.0.0/24"]
     HOST --> TS
 ```
 
-WG-routed VMs (qbittorrent, sabnzbd, firefox, brave) set `gateway = 10.100.0.11` in the
-vm-registry. qbittorrent and sabnzbd also use `dns = 10.100.0.11` (wireguard-vm).
+WG-routed VMs (qbittorrent, sabnzbd, firefox, brave, metube) set
+`gateway = 10.100.0.11` in the vm-registry. qBittorrent, SABnzbd, and MeTube
+also use `dns = 10.100.0.11` (wireguard-vm).
 The dedicated `10.100.1.0/30` identity segment is not advertised through
 Tailscale. Host forwarding filters keep the shared VM segment from reaching
 it, and Pocket ID accepts administrative SSH and Traefik backend traffic only
