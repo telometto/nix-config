@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-flake_ref="${1:-path:.}"
+flake_ref="${1:-.}"
 flake_system="x86_64-linux"
 evaluation_timeout="${FLAKE_EVAL_TIMEOUT:-15m}"
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
