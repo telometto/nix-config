@@ -10,6 +10,8 @@ on:
             - "modules/services/scripts/cloudflare_metrics.py"
             - "tests/cloudflare_metrics/**"
             - "dashboards/host/blizzard/cloudflare-overview.json"
+            - "vms/README.md"
+            - "docs/adr/**"
     push:
         branches: [main]
         paths:
@@ -19,6 +21,8 @@ on:
             - "modules/services/scripts/cloudflare_metrics.py"
             - "tests/cloudflare_metrics/**"
             - "dashboards/host/blizzard/cloudflare-overview.json"
+            - "vms/README.md"
+            - "docs/adr/**"
 
 concurrency:
     group: flake-check-${{ github.ref }}
@@ -69,6 +73,9 @@ jobs:
 
             - name: Run MicroVM publication tests
               run: nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
+
+            - name: Run MicroVM network policy tests
+              run: nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs
 
             - name: Run Sandfly target tests
               run: nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs
