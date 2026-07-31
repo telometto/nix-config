@@ -17,7 +17,7 @@ runs `nix fmt` (formatting only, no evaluation), and `update-dashboards.yml` use
 
 **SSH_DEPLOY_KEY requirement:** Workflows that evaluate the flake —
 `flake-check`, `validate-config`, `update-nix-lock`, `health-check`, and
-`update-nix-lock-recreate` — use `webfactory/ssh-agent@v0.9.1` with
+`update-nix-lock-recreate` — use `webfactory/ssh-agent@v0.10.0` with
 `secrets.SSH_DEPLOY_KEY`. To set this up:
 
 1. Generate a dedicated SSH key pair: `ssh-keygen -t ed25519 -C "github-actions"`
