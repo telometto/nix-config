@@ -19,6 +19,11 @@ let
       inherit destPort;
     };
 
+  mkPrimaryPeer = reason: {
+    primaryService = true;
+    inherit reason;
+  };
+
   mkInstance =
     name: spec:
     {
@@ -30,6 +35,7 @@ let
       vmConfig = spec.vmConfig or { };
       portForward.ports = spec.portForwards or [ ];
       publication = spec.publication or { };
+      networkPolicy = spec.networkPolicy or { };
     };
 
   vmSpecs = {
@@ -59,6 +65,10 @@ let
 
     overseerr = {
       enable = true;
+      networkPolicy.allowedPeers = {
+        sonarr = mkPrimaryPeer "Submit approved series requests";
+        radarr = mkPrimaryPeer "Submit approved movie requests";
+      };
       publication = {
         enable = true;
         hostname = "requests";
@@ -91,6 +101,10 @@ let
 
     sonarr = {
       enable = true;
+      networkPolicy.allowedPeers = {
+        qbittorrent = mkPrimaryPeer "Send series downloads to qBittorrent";
+        sabnzbd = mkPrimaryPeer "Send series downloads to SABnzbd";
+      };
       publication = {
         enable = true;
         hostname = "series";
@@ -100,6 +114,10 @@ let
 
     radarr = {
       enable = true;
+      networkPolicy.allowedPeers = {
+        qbittorrent = mkPrimaryPeer "Send movie downloads to qBittorrent";
+        sabnzbd = mkPrimaryPeer "Send movie downloads to SABnzbd";
+      };
       publication = {
         enable = true;
         hostname = "movies";
@@ -109,6 +127,11 @@ let
 
     prowlarr = {
       enable = true;
+      networkPolicy.allowedPeers = {
+        sonarr = mkPrimaryPeer "Synchronize indexers with Sonarr";
+        radarr = mkPrimaryPeer "Synchronize indexers with Radarr";
+        readarr = mkPrimaryPeer "Synchronize indexers with Readarr";
+      };
       publication = {
         enable = true;
         hostname = "indexer";
@@ -118,6 +141,10 @@ let
 
     bazarr = {
       enable = true;
+      networkPolicy.allowedPeers = {
+        sonarr = mkPrimaryPeer "Read series metadata and update subtitles";
+        radarr = mkPrimaryPeer "Read movie metadata and update subtitles";
+      };
       publication = {
         enable = true;
         hostname = "subs";
@@ -127,6 +154,10 @@ let
 
     readarr = {
       enable = true;
+      networkPolicy.allowedPeers = {
+        qbittorrent = mkPrimaryPeer "Send book downloads to qBittorrent";
+        sabnzbd = mkPrimaryPeer "Send book downloads to SABnzbd";
+      };
       publication = {
         enable = true;
         hostname = "books";
@@ -295,6 +326,7 @@ in
       externalInterface = "enp8s0";
       stateDir = "/flash/enc/vms";
       publication.canonicalDomain = VARS.domains.public;
+      networkPolicy.mode = "audit";
 
       instances = builtins.mapAttrs mkInstance vmSpecs;
     };
