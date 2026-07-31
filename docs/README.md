@@ -69,6 +69,7 @@ flowchart LR
 
 - [explanation-design.md](explanation-design.md) — Design decisions and rationale
 - [adr/0001-model-public-http-publication-as-instance-intent.md](adr/0001-model-public-http-publication-as-instance-intent.md) — Why standard public HTTP publication is modeled as instance intent
+- [adr/0002-enforce-host-owned-microvm-network-policy.md](adr/0002-enforce-host-owned-microvm-network-policy.md) — Why MicroVM identity and lateral access are enforced by the host
 - [architecture-risks-and-improvements.md](architecture-risks-and-improvements.md) — Known risks and improvement backlog
 - [security-audit-2026-06-01.md](security-audit-2026-06-01.md) — Security audit report (2026-06-01)
 
@@ -92,6 +93,7 @@ flowchart LR
 | Find option namespaces | [Reference: Architecture](reference-architecture.md) |
 | Use the canonical infrastructure language | [Infrastructure Context](../CONTEXT.md) |
 | Review architecture decisions | [Public HTTP Publication ADR](adr/0001-model-public-http-publication-as-instance-intent.md) |
+| Review MicroVM network isolation | [Host-Owned MicroVM Network Policy ADR](adr/0002-enforce-host-owned-microvm-network-policy.md) |
 | Review credential lifecycle | [Credential Lifecycle](credential-lifecycle.md) |
 | Back up or restore Immich | [Immich Backup Operations](immich-backup.md) |
 | Operate Pocket ID | [Pocket ID Operations](pocket-id.md) |
