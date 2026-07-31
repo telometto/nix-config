@@ -40,7 +40,7 @@ jobs:
         host: ${{ fromJson(needs.discover-hosts.outputs.hosts) }}
     steps:
       - name: Access private repository
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
@@ -84,10 +84,10 @@ jobs:
           df -h >> $GITHUB_STEP_SUMMARY
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v21
+        uses: DeterminateSystems/nix-installer-action@v22
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@v13
+        uses: DeterminateSystems/magic-nix-cache-action@v14
         with:
           use-flakehub: false
 
