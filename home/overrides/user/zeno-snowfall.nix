@@ -42,7 +42,7 @@
       development = {
         extraPackages = [
           pkgs.vscode
-          pkgs.jetbrains.idea-oss
+          # pkgs.jetbrains.idea-oss # disabled due to vulnerable package
         ];
 
         git.lfs = true;
