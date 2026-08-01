@@ -226,9 +226,9 @@ let
 
     immich = {
       enable = true;
-      # Keep the VM port off the host while publishing it through the managed
-      # Cloudflare Tunnel and Traefik route.
-      portForwards = [ ];
+      # Keep the managed Cloudflare publication while also allowing direct
+      # home-LAN access through Blizzard at TCP 11070.
+      portForwards = [ (mkPortForward "tcp" 11070 null) ];
       publication = {
         enable = true;
         hostname = "photos";
