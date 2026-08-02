@@ -24,6 +24,11 @@
   sys = {
     role.server.enable = true;
 
+    security.sandflyTarget = {
+      enable = true;
+      tailscalePolicyReady = true;
+    };
+
     users.zeno.enable = true;
 
     nix.distributedBuilds = {

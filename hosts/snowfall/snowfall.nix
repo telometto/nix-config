@@ -29,6 +29,11 @@ in
   sys = {
     role.desktop.enable = true;
 
+    security.sandflyTarget = {
+      enable = true;
+      tailscalePolicyReady = true;
+    };
+
     desktop.flavor = "kde";
 
     users = {
