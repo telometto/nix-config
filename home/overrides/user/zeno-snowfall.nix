@@ -30,6 +30,7 @@
     pkgs.filen-desktop
     pkgs.filen-cli
     pkgs.codex
+    pkgs.nodejs
   ]
   ++ (with pkgs.sweethome3d; [
     application
