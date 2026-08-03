@@ -17,7 +17,7 @@
     pkgs.hugo # static website engine
     pkgs.signal-desktop
     # pkgs.logseq # Issues with Electron
-    pkgs.kdePackages.krdc
+    # pkgs.kdePackages.krdc
     pkgs.teams-for-linux
     pkgs.meld
     # pkgs.rustdesk-flutter
