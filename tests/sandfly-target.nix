@@ -19,15 +19,22 @@ let
   validCfg = validTarget.config;
   validEvaluation = builtins.tryEval validCfg.system.build.toplevel.drvPath;
 
+  hasFailedAssertion = message: cfg:
+    lib.any (assertion: !assertion.assertion && assertion.message == message) cfg.assertions;
+
   missingPolicyConfirmation = snowfall.extendModules {
     modules = [
-      {
-        sys.security.sandflyTarget.enable = true;
-      }
+      (
+        { lib, ... }:
+        {
+          sys.security.sandflyTarget = {
+            enable = true;
+            tailscalePolicyReady = lib.mkForce false;
+          };
+        }
+      )
     ];
   };
-
-  missingPolicyConfirmationEvaluation = builtins.tryEval missingPolicyConfirmation.config.system.build.toplevel.drvPath;
 
   disabledEffectiveTailscale = snowfall.extendModules {
     modules = [
@@ -44,7 +51,16 @@ let
     ];
   };
 
-  disabledEffectiveTailscaleEvaluation = builtins.tryEval disabledEffectiveTailscale.config.system.build.toplevel.drvPath;
+  disabledTarget = snowfall.extendModules {
+    modules = [
+      (
+        { lib, ... }:
+        {
+          sys.security.sandflyTarget.enable = lib.mkForce false;
+        }
+      )
+    ];
+  };
 
   hasSandflySudoRule = lib.any (
     rule:
@@ -55,11 +71,15 @@ let
   ) validCfg.security.sudo.extraRules;
 in
 assert validEvaluation.success;
-assert !missingPolicyConfirmationEvaluation.success;
-assert !disabledEffectiveTailscaleEvaluation.success;
+assert hasFailedAssertion
+  "Review docs/sandfly.md and set sys.security.sandflyTarget.tailscalePolicyReady only after restricting the tailnet SSH policy."
+  missingPolicyConfirmation.config;
+assert hasFailedAssertion
+  "sys.security.sandflyTarget requires the effective services.tailscale.enable option."
+  disabledEffectiveTailscale.config;
 assert lib.elem "--ssh" validCfg.services.tailscale.extraSetFlags;
 assert validCfg.users.users.sandfly.hashedPassword == "!";
 assert hasSandflySudoRule;
 assert lib.hasInfix "/usr/local/bin/sudo" validCfg.system.activationScripts.sandflySudoCompat.text;
-assert !(builtins.hasAttr "sandfly" snowfall.config.users.users);
+assert !(builtins.hasAttr "sandfly" disabledTarget.config.users.users);
 pkgs.runCommand "sandfly-target-tests" { } "touch $out"
