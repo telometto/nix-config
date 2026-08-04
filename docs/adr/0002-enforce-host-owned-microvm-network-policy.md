@@ -31,7 +31,9 @@ the MicroVM host is enabled. The external interface is intentionally small:
   registry primary TCP service and/or explicit TCP/UDP ports and requires a
   non-empty operational reason.
 - Registered VM gateways are derived from registry IP/gateway relationships;
-  callers do not duplicate WireGuard MAC, IP, tap, or port details.
+  callers do not duplicate WireGuard MAC, IP, tap, or port details. The same
+  relationship makes each enabled client unit require and start after its
+  gateway, which reverses to client-before-gateway ordering during shutdown.
 
 The implementation compiles that intent into two narrow native nftables tables
 loaded atomically by `microvm-network-policy.service`:
@@ -76,14 +78,22 @@ than being forced through public hostnames or reverse proxies.
 The policy does not add backend TLS/mTLS or general QoS. Those remain separate
 defense-in-depth decisions.
 
+The WireGuard guest provides a second fail-closed layer for its privileged
+gateway role. It uses a stable fwmark for a firewall-owned OUTPUT kill switch,
+rejects forwarded client traffic not leaving through the tunnel, keeps the
+firewall active until after `wg-quick` stops, and sizes conntrack explicitly for
+the observed qBittorrent workload.
+
 ## Rollout and rollback
 
-Blizzard first runs with `networkPolicy.mode = "audit"` for seven days. Review
-`lateral_audit` and the rate-limited `microvm-policy audit:` journal entries,
-add only verified missing edges, and run the integration test. A separate,
-explicitly approved maintenance window may then change Blizzard to `enforce`,
-probe the declared media and WireGuard paths, and keep the previous NixOS
-generation ready for rollback.
+Blizzard normally first runs with `networkPolicy.mode = "audit"` for seven
+days. Review `lateral_audit` and the rate-limited `microvm-policy audit:`
+journal entries, add only verified missing edges, and run the integration test.
+The first 2026-08 audit iteration was explicitly accepted after about three
+days as a one-time exception; its findings and undeployed remediations are
+recorded in the dated audit report. A separate, explicitly approved maintenance
+window may then change Blizzard to `enforce`, probe the declared media and
+WireGuard paths, and keep the previous NixOS generation ready for rollback.
 
 The supported escape hatch is declarative: return to `audit` or boot/switch to
 the previous generation. There is no mutable bypass command and stopping the
