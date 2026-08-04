@@ -501,6 +501,12 @@ flowchart TD
 
 WG-routed VMs (qbittorrent, sabnzbd, firefox, brave) set `gateway = 10.100.0.11` in the
 vm-registry. qbittorrent and sabnzbd also use `dns = 10.100.0.11` (wireguard-vm).
+For each enabled registry relationship, the host makes the client MicroVM unit
+require and start after the gateway unit. Systemd reverses that ordering during
+shutdown, so enabled clients stop before the gateway. Inside `wireguard-vm`,
+the firewall remains active until after `wg-quick-wg0` stops and owns both the
+local OUTPUT and forwarded-traffic kill switches. The gateway uses fwmark
+`51820` and an explicit conntrack ceiling of 32,768 entries.
 The dedicated `10.100.1.0/30` identity segment is not advertised through
 Tailscale. Host forwarding filters keep the shared VM segment from reaching
 it, and Pocket ID accepts administrative SSH and Traefik backend traffic only
@@ -594,6 +600,9 @@ ______________________________________________________________________
 - **Host network boundary**: registry-derived FDB/neighbors and native nftables
   bridge/inet policy reject identity spoofing, unknown taps, undeclared lateral
   traffic, and host-routed bridge bypasses.
+- **VPN gateway boundary**: registry-derived service ordering, a stable fwmark,
+  persistent local/forwarding kill switches, and a measured conntrack ceiling
+  keep WireGuard clients fail-closed across tunnel and host shutdowns.
 
 ### Auto-upgrade
 
