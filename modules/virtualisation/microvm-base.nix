@@ -543,13 +543,21 @@ let
     name: "microvm-tap-interfaces@${mkVmName name}.service"
   ) enabledInstanceNames;
   policyUnitOverrides = builtins.listToAttrs (
-    map (unitName: {
-      name = lib.removeSuffix ".service" unitName;
-      value = {
-        requires = [ policyServiceName ];
-        after = [ policyServiceName ];
-      };
-    }) policyVmUnitNames
+    map (
+      instanceName:
+      let
+        gatewayPair = lib.findFirst (pair: pair.client.name == instanceName) null gatewayPairs;
+        gatewayUnitName =
+          if gatewayPair == null then null else "microvm@${mkVmName gatewayPair.gateway.name}.service";
+      in
+      {
+        name = "microvm@${mkVmName instanceName}";
+        value = {
+          requires = [ policyServiceName ] ++ lib.optional (gatewayUnitName != null) gatewayUnitName;
+          after = [ policyServiceName ] ++ lib.optional (gatewayUnitName != null) gatewayUnitName;
+        };
+      }
+    ) enabledInstanceNames
     ++ map (identity: {
       name = "microvm-tap-interfaces@${mkVmName identity.name}";
       value = {
