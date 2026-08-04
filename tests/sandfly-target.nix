@@ -19,7 +19,8 @@ let
   validCfg = validTarget.config;
   validEvaluation = builtins.tryEval validCfg.system.build.toplevel.drvPath;
 
-  hasFailedAssertion = message: cfg:
+  hasFailedAssertion =
+    message: cfg:
     lib.any (assertion: !assertion.assertion && assertion.message == message) cfg.assertions;
 
   missingPolicyConfirmation = snowfall.extendModules {
