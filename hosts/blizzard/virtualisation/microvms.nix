@@ -102,6 +102,7 @@ let
     sonarr = {
       enable = true;
       networkPolicy.allowedPeers = {
+        prowlarr = mkPrimaryPeer "Query Prowlarr for series indexer results";
         qbittorrent = mkPrimaryPeer "Send series downloads to qBittorrent";
         sabnzbd = mkPrimaryPeer "Send series downloads to SABnzbd";
       };
@@ -115,6 +116,7 @@ let
     radarr = {
       enable = true;
       networkPolicy.allowedPeers = {
+        prowlarr = mkPrimaryPeer "Query Prowlarr for movie indexer results";
         qbittorrent = mkPrimaryPeer "Send movie downloads to qBittorrent";
         sabnzbd = mkPrimaryPeer "Send movie downloads to SABnzbd";
       };
@@ -155,6 +157,7 @@ let
     readarr = {
       enable = true;
       networkPolicy.allowedPeers = {
+        prowlarr = mkPrimaryPeer "Query Prowlarr for book indexer results";
         qbittorrent = mkPrimaryPeer "Send book downloads to qBittorrent";
         sabnzbd = mkPrimaryPeer "Send book downloads to SABnzbd";
       };
