@@ -2,9 +2,19 @@
   lib,
   pkgs,
   blizzard,
+  wireguardVm,
 }:
 let
   registry = import ../vms/vm-registry.nix;
+  wireguardCfg = wireguardVm.config;
+  wireguardFirewallCommands = wireguardCfg.networking.firewall.extraCommands;
+  wireguardInterface = wireguardCfg.networking.wg-quick.interfaces.wg0;
+  wireguardUnit = wireguardCfg.systemd.services.wg-quick-wg0;
+  vpnClientNames = [
+    "qbittorrent"
+    "sabnzbd"
+    "firefox"
+  ];
 
   enforced = blizzard.extendModules {
     modules = [
@@ -32,6 +42,8 @@ let
   testIdentityNames = [
     "prowlarr"
     "sonarr"
+    "radarr"
+    "readarr"
     "gitea"
     "qbittorrent"
     "wireguard"
@@ -157,6 +169,17 @@ assert lib.hasInfix ''iifname "microvm-br0" oifname "microvm-br0" jump deny_rout
   policyText;
 assert lib.hasInfix ''iifname "vm-prowlarr" oifname "vm-sonarr"'' policyText;
 assert lib.hasInfix "tcp dport { ${toString registry.sonarr.port} }" policyText;
+assert lib.all
+  (
+    sourceName:
+    lib.hasInfix ''iifname "vm-${sourceName}" oifname "vm-prowlarr" ether daddr ${registry.prowlarr.mac} ip daddr ${registry.prowlarr.ip} tcp dport { ${toString registry.prowlarr.port} }'' policyText
+  )
+  [
+    "sonarr"
+    "radarr"
+    "readarr"
+  ];
+assert !lib.hasInfix "tcp dport { 5355 }" policyText;
 assert lib.hasInfix ''iifname "vm-qbittorrent" oifname "vm-wireguard"'' policyText;
 assert lib.hasInfix ''iifname "vm-*" jump deny_unknown_tap'' policyText;
 assert lib.hasInfix "vm-prowlarr microvm-br0 ${registry.prowlarr.mac}"
@@ -169,6 +192,22 @@ assert lib.elem {
 } enforcedCfg.systemd.network.networks."10-microvm-br0".neighbors;
 assert lib.elem "microvm-network-policy.service"
   enforcedCfg.systemd.services."microvm@prowlarr-vm".requires;
+assert wireguardCfg.boot.kernel.sysctl."net.netfilter.nf_conntrack_max" or null == 32768;
+assert wireguardInterface.extraOptions.FwMark or null == 51820;
+assert !lib.hasInfix "%i" wireguardInterface.postUp;
+assert lib.hasInfix
+  "-A OUTPUT ! -o wg0 -m mark ! --mark 51820 -m addrtype ! --dst-type LOCAL -j REJECT"
+  wireguardFirewallCommands;
+assert lib.elem "firewall.service" wireguardUnit.requires;
+assert lib.elem "firewall.service" wireguardUnit.after;
+assert lib.all (
+  clientName:
+  let
+    clientUnit = enforcedCfg.systemd.services."microvm@${clientName}-vm";
+  in
+  lib.elem "microvm@wireguard-vm.service" clientUnit.requires
+  && lib.elem "microvm@wireguard-vm.service" clientUnit.after
+) vpnClientNames;
 assert evaluationFails invalidUnknownTarget;
 assert evaluationFails invalidDisabledTarget;
 assert evaluationFails invalidDisabledSource;
@@ -230,6 +269,8 @@ pkgs.testers.runNixOSTest {
 
     machine.succeed("${setupNamespace} ns-prowlarr vm-prowlarr ${registry.prowlarr.mac} ${registry.prowlarr.ip}/24 10.100.0.1")
     machine.succeed("${setupNamespace} ns-sonarr vm-sonarr ${registry.sonarr.mac} ${registry.sonarr.ip}/24 10.100.0.1")
+    machine.succeed("${setupNamespace} ns-radarr vm-radarr ${registry.radarr.mac} ${registry.radarr.ip}/24 10.100.0.1")
+    machine.succeed("${setupNamespace} ns-readarr vm-readarr ${registry.readarr.mac} ${registry.readarr.ip}/24 10.100.0.1")
     machine.succeed("${setupNamespace} ns-gitea vm-gitea ${registry.gitea.mac} ${registry.gitea.ip}/24 10.100.0.1")
     machine.succeed("${setupNamespace} ns-qbittorrent vm-qbittorrent ${registry.qbittorrent.mac} ${registry.qbittorrent.ip}/24 ${registry.qbittorrent.gateway}")
     machine.succeed("${setupNamespace} ns-wireguard vm-wireguard ${registry.wireguard.mac} ${registry.wireguard.ip}/24 10.100.0.1")
@@ -246,7 +287,7 @@ pkgs.testers.runNixOSTest {
     machine.succeed("ip -n ns-internet link set eth0 up")
     machine.succeed("ip -n ns-internet route add 10.100.0.0/24 via 192.0.2.1")
 
-    for tap_name in ["vm-prowlarr", "vm-sonarr", "vm-gitea", "vm-qbittorrent", "vm-wireguard", "vm-pocket-id", "vm-rogue"]:
+    for tap_name in ["vm-prowlarr", "vm-sonarr", "vm-radarr", "vm-readarr", "vm-gitea", "vm-qbittorrent", "vm-wireguard", "vm-pocket-id", "vm-rogue"]:
         machine.wait_until_succeeds(f"bridge link show dev {tap_name} | grep -q 'master .*br0'")
     machine.wait_until_succeeds("ip -4 address show dev microvm-br0 | grep -q '10.100.0.1/24'")
     machine.wait_until_succeeds("ip -4 address show dev pocket-id-br0 | grep -q '10.100.1.1/30'")
@@ -265,14 +306,23 @@ pkgs.testers.runNixOSTest {
         machine.succeed("ip netns exec ns-prowlarr ping -c 1 -W 2 192.0.2.2")
 
     machine.succeed("systemd-run --unit policy-sonarr-listener --property=NetworkNamespacePath=/run/netns/ns-sonarr ${pkgs.socat}/bin/socat TCP-LISTEN:${toString registry.sonarr.port},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
+    machine.succeed("systemd-run --unit policy-prowlarr-listener --property=NetworkNamespacePath=/run/netns/ns-prowlarr ${pkgs.socat}/bin/socat TCP-LISTEN:${toString registry.prowlarr.port},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
+    machine.succeed("systemd-run --unit policy-prowlarr-llmnr-listener --property=NetworkNamespacePath=/run/netns/ns-prowlarr ${pkgs.socat}/bin/socat TCP-LISTEN:5355,reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
     machine.succeed("systemd-run --unit policy-gitea-listener --property=NetworkNamespacePath=/run/netns/ns-gitea ${pkgs.socat}/bin/socat TCP-LISTEN:${toString registry.gitea.port},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
     machine.wait_for_unit("policy-sonarr-listener.service")
+    machine.wait_for_unit("policy-prowlarr-listener.service")
+    machine.wait_for_unit("policy-prowlarr-llmnr-listener.service")
     machine.wait_for_unit("policy-gitea-listener.service")
 
     with subtest("declared service is directional and port scoped"):
         machine.succeed("echo allowed | ip netns exec ns-prowlarr ${pkgs.socat}/bin/socat - TCP:${registry.sonarr.ip}:${toString registry.sonarr.port},connect-timeout=2 | grep -q allowed")
         machine.fail("ip netns exec ns-prowlarr ping -c 1 -W 1 ${registry.sonarr.ip}")
         machine.fail("echo denied | ip netns exec ns-prowlarr ${pkgs.socat}/bin/socat - TCP:${registry.gitea.ip}:${toString registry.gitea.port},connect-timeout=1")
+
+    with subtest("audited Arr clients can query Prowlarr without permitting LLMNR"):
+        for source_namespace in ["ns-sonarr", "ns-radarr", "ns-readarr"]:
+            machine.succeed(f"echo allowed | ip netns exec {source_namespace} ${pkgs.socat}/bin/socat - TCP:${registry.prowlarr.ip}:${toString registry.prowlarr.port},connect-timeout=2 | grep -q allowed")
+            machine.fail(f"echo denied | ip netns exec {source_namespace} ${pkgs.socat}/bin/socat - TCP:${registry.prowlarr.ip}:5355,connect-timeout=1")
 
     with subtest("registered WireGuard pair remains bidirectional"):
         machine.succeed("ip netns exec ns-qbittorrent ping -c 1 -W 2 ${registry.wireguard.ip}")
