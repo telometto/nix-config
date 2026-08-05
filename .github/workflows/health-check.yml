@@ -145,19 +145,56 @@ jobs:
               creator: 'github-actions[bot]',
             });
 
-            const existing = issues.find(i => i.title === title);
+            const existing = issues.filter(i => i.title === title);
             const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
             const body = `Automated health check detected build failures.\n\n**Workflow run:** ${runUrl}\n\nPlease review the workflow run for details.`;
 
-            if (existing) {
-              await github.rest.issues.createComment({
-                owner, repo,
-                issue_number: existing.number,
-                body: `Build failure detected again.\n\n**Workflow run:** ${runUrl}`,
-              });
+            if (existing.length > 0) {
+              for (const issue of existing) {
+                await github.rest.issues.createComment({
+                  owner, repo,
+                  issue_number: issue.number,
+                  body: `Build failure detected again.\n\n**Workflow run:** ${runUrl}`,
+                });
+              }
             } else {
               await github.rest.issues.create({
                 owner, repo, title, body,
                 labels: ['infrastructure', 'urgent'],
               });
+            }
+
+      - name: Close issue after recovery
+        if: needs.build-hosts.result == 'success'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const title = '🚨 Infrastructure Health Check Failed';
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner, repo,
+              state: 'open',
+              labels: 'infrastructure',
+              creator: 'github-actions[bot]',
+            });
+
+            const existing = issues.filter(i => i.title === title);
+
+            if (existing.length > 0) {
+              const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+              for (const issue of existing) {
+                await github.rest.issues.createComment({
+                  owner, repo,
+                  issue_number: issue.number,
+                  body: `Health check recovered successfully.\n\n**Workflow run:** ${runUrl}`,
+                });
+
+                await github.rest.issues.update({
+                  owner, repo,
+                  issue_number: issue.number,
+                  state: 'closed',
+                });
+              }
             }
