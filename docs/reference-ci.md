@@ -80,7 +80,7 @@ ______________________________________________________________________
 | `compliance-check.yml` | PR / push / cron Mon 09:00 | Runs `deadnix` and other Nix linters, comments results | No |
 | `doc-drift.yml` | PR | Warns if code changes ship without any `docs/*.md` or `*.md` updates | No |
 | `flake-freshness.yml` | cron Mon 08:00 / manual | Walks `flake.lock`, flags inputs older than 90 days via a GitHub Issue | No (opens Issue) |
-| `health-check.yml` | cron daily 06:00 / manual | Discovers hosts, builds `config.system.build.toplevel` for each | No |
+| `health-check.yml` | cron daily 06:00 / manual | Discovers hosts, builds `config.system.build.toplevel` for each, opens or updates a bot-created infrastructure Issue on failure, and closes matching Issues after an authoritative recovery | No (opens, comments on, and closes Issues) |
 | `security-audit.yml` | cron Mon 02:00 / manual | Runs `gitleaks`; greps for `openFirewall.*true` | No |
 | `cloudflare-ip-check.yml` | cron 1st of month 04:00 / manual | Diffs hardcoded CF IPs in `hosts/blizzard/security/traefik.nix` against cloudflare.com/ips-v4 | No (opens Issue/PR) |
 | `update-nix-lock.yml` | cron every 3h / manual | Runs `update-flake-lock`, opens PR, waits for `flake-check` + full validate matrix, then auto-merges | Yes — lock file |
@@ -97,7 +97,10 @@ These run on a cron schedule without a PR trigger:
 **Daily**
 
 - **`health-check.yml`** (06:00) — Full host build to catch regressions that
-  slipped through PR checks. Fails loudly if any host fails to build.
+  slipped through PR checks. On failure, opens an `infrastructure` / `urgent`
+  GitHub Issue or comments on every matching open bot-created Issue. A successful
+  run closes those Issues only when it tested the current default-branch head,
+  after adding a recovery comment with the workflow-run link.
 
 **Weekly (Monday)**
 
