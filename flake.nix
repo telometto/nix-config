@@ -14,6 +14,8 @@
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
+    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
+
     flake-compat = {
       url = "github:NixOS/flake-compat";
       flake = false;
