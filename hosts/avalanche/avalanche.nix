@@ -89,6 +89,8 @@ in
     };
 
     services = {
+      vscode-server.enable = true;
+
       resolved = {
         enableDNS = false;
         enableFallbackDNS = true;
