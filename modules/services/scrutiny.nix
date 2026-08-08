@@ -49,9 +49,15 @@ in
 
       settings.web.listen.port = cfg.port;
 
-      collector = lib.mkIf (cfg.collectorSettings != { }) {
-        settings = cfg.collectorSettings;
-      };
+      # The upstream default derives the collector destination from the web
+      # listen address.  A wildcard bind address is valid for listening but
+      # is not a usable destination for a local client on Linux.
+      collector.settings = lib.mkMerge [
+        (lib.mkIf (cfg.collectorSettings != { }) cfg.collectorSettings)
+        {
+          api.endpoint = lib.mkDefault "http://127.0.0.1:${toString cfg.port}";
+        }
+      ];
     };
 
     services.traefik.dynamic.files.scrutiny = traefikLib.mkTraefikDynamicConfig {
