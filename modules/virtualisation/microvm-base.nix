@@ -54,6 +54,34 @@ let
     };
   };
 
+  allowedPeerModule = {
+    options = {
+      primaryService = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Allow the source VM to initiate TCP connections to the target VM's registry service port.";
+      };
+
+      tcpPorts = lib.mkOption {
+        type = lib.types.listOf lib.types.port;
+        default = [ ];
+        description = "Additional target TCP ports the source VM may initiate connections to.";
+      };
+
+      udpPorts = lib.mkOption {
+        type = lib.types.listOf lib.types.port;
+        default = [ ];
+        description = "Target UDP ports the source VM may initiate flows to.";
+      };
+
+      reason = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = "Non-empty operational reason for this lateral network permission.";
+      };
+    };
+  };
+
   instanceModule =
     { name, config, ... }:
     {
@@ -102,6 +130,16 @@ let
           type = lib.types.submodule publicationModule;
           default = { };
           description = "Public HTTP publication for this VM.";
+        };
+
+        networkPolicy.allowedPeers = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.submodule allowedPeerModule);
+          default = { };
+          description = ''
+            Host-local, directional service permissions keyed by logical target
+            VM name. Replies are statefully allowed; new reverse connections
+            require their own declaration.
+          '';
         };
 
         cfTunnel = lib.mkOption {
@@ -225,6 +263,37 @@ let
     ];
   }) enabledPublications;
 
+  enabledInstanceNames = builtins.attrNames enabledInstances;
+  registeredEnabledInstanceNames = lib.filter (
+    name: builtins.hasAttr name registry
+  ) enabledInstanceNames;
+  unregisteredEnabledInstances = lib.filter (
+    name: !(builtins.hasAttr name registry)
+  ) enabledInstanceNames;
+  registryIpMismatches = lib.filter (
+    name: enabledInstances.${name}.ip != registry.${name}.ip
+  ) registeredEnabledInstanceNames;
+  registryNames = builtins.attrNames registry;
+
+  identityFor =
+    name:
+    let
+      entry = registry.${name};
+    in
+    {
+      inherit name;
+      inherit (entry) ip mac;
+      tap = entry.tapId or "vm-${entry.name}";
+      bridge = entry.hostBridge or "microvm-br0";
+    };
+
+  policyIdentities = map identityFor registeredEnabledInstanceNames;
+  invalidPolicyTapNames = map (identity: identity.name) (
+    lib.filter (
+      identity: builtins.match "^vm-.+" identity.tap == null || builtins.stringLength identity.tap > 15
+    ) policyIdentities
+  );
+
   # Registry entries can opt into a dedicated host bridge. Only materialise
   # that topology when the matching VM instance is enabled on this host.
   isolatedRegistryEntries = lib.filterAttrs (
@@ -253,59 +322,251 @@ let
         ];
         LinkLocalAddressing = "no";
       };
+      neighbors = [
+        {
+          Address = entry.ip;
+          LinkLayerAddress = entry.mac;
+        }
+      ];
     }
   ) isolatedRegistryEntries;
 
-  # Specific tap units sort before 12-microvm-tap, keeping isolated taps off
-  # the shared bridge while retaining the shared vm-* default for other VMs.
-  isolatedTapNetworks = lib.mapAttrs' (
-    name: entry:
-    lib.nameValuePair "11-${name}-tap" {
-      matchConfig.Name = entry.tapId or "vm-${entry.name}";
-      networkConfig.Bridge = entry.hostBridge;
-    }
-  ) isolatedRegistryEntries;
+  # Every enabled tap has unknown unicast/multicast flooding disabled. The
+  # fallback vm-* unit remains fail-closed for an unexpected tap while still
+  # attaching it to the bridge so the bridge-family policy can reject and
+  # account for its frames.
+  registeredTapNetworks = builtins.listToAttrs (
+    map (
+      identity:
+      lib.nameValuePair "11-${identity.name}-tap" {
+        matchConfig.Name = identity.tap;
+        networkConfig.Bridge = identity.bridge;
+        bridgeConfig = {
+          Learning = true;
+          Locked = false;
+          MulticastFlood = false;
+          UnicastFlood = false;
+        };
+      }
+    ) policyIdentities
+  );
 
   isolatedBridgeNames = lib.unique (
     lib.mapAttrsToList (_: entry: entry.hostBridge) isolatedRegistryEntries
   );
 
-  # The NixOS iptables firewall manages host INPUT, while NAT permits forwarding
-  # from its internal interfaces. Keep dedicated VM networks routable to the
-  # external interface without allowing any internal bridge to route to another.
   internalBridgeNames = [ "microvm-br0" ] ++ isolatedBridgeNames;
-  mkBridgePairs =
-    bridges:
-    if bridges == [ ] then
-      [ ]
-    else
-      let
-        source = builtins.head bridges;
-        remaining = builtins.tail bridges;
-      in
-      map (destination: { inherit source destination; }) remaining ++ mkBridgePairs remaining;
-  isolationBridgePairs = mkBridgePairs internalBridgeNames;
-  isolationChain = "nixos-microvm-isolation";
-  isolationForwardRules = lib.concatMapStringsSep "\n" (pair: ''
-    ${pkgs.iptables}/bin/iptables -w -A ${isolationChain} -i ${lib.escapeShellArg pair.source} -o ${lib.escapeShellArg pair.destination} -j DROP
-    ${pkgs.iptables}/bin/iptables -w -A ${isolationChain} -i ${lib.escapeShellArg pair.destination} -o ${lib.escapeShellArg pair.source} -j DROP
-  '') isolationBridgePairs;
-  isolationFirewallCleanupCommands = ''
-    while ${pkgs.iptables}/bin/iptables -w -C FORWARD -j ${isolationChain} 2>/dev/null; do
-      ${pkgs.iptables}/bin/iptables -w -D FORWARD -j ${isolationChain}
+
+  sharedBridgeNeighbors = map (identity: {
+    Address = identity.ip;
+    LinkLayerAddress = identity.mac;
+  }) (lib.filter (identity: identity.bridge == "microvm-br0") policyIdentities);
+
+  declaredEdges = lib.concatMap (
+    sourceName:
+    lib.mapAttrsToList (targetName: edge: {
+      inherit
+        sourceName
+        targetName
+        edge
+        ;
+    }) cfg.instances.${sourceName}.networkPolicy.allowedPeers
+  ) (builtins.attrNames cfg.instances);
+
+  edgeLabel = declaration: "${declaration.sourceName}->${declaration.targetName}";
+  edgeSourceRegistered = declaration: builtins.hasAttr declaration.sourceName registry;
+  edgeTargetRegistered = declaration: builtins.hasAttr declaration.targetName registry;
+  edgeSourceEnabled = declaration: cfg.instances.${declaration.sourceName}.enable;
+  edgeTargetEnabled =
+    declaration:
+    builtins.hasAttr declaration.targetName cfg.instances
+    && cfg.instances.${declaration.targetName}.enable;
+  edgeTouchesDedicatedBridge =
+    declaration:
+    edgeSourceRegistered declaration
+    && edgeTargetRegistered declaration
+    && (
+      registry.${declaration.sourceName} ? hostBridge || registry.${declaration.targetName} ? hostBridge
+    );
+  hasDuplicates = values: builtins.length values != builtins.length (lib.unique values);
+
+  policyUnknownSources = map edgeLabel (
+    lib.filter (declaration: !(edgeSourceRegistered declaration)) declaredEdges
+  );
+  policyUnknownTargets = map edgeLabel (
+    lib.filter (declaration: !(edgeTargetRegistered declaration)) declaredEdges
+  );
+  policyMissingTargetInstances = map edgeLabel (
+    lib.filter (declaration: !(builtins.hasAttr declaration.targetName cfg.instances)) declaredEdges
+  );
+  policyDisabledSources = map edgeLabel (
+    lib.filter (declaration: !(edgeSourceEnabled declaration)) declaredEdges
+  );
+  policyDisabledTargets = map edgeLabel (
+    lib.filter (
+      declaration:
+      builtins.hasAttr declaration.targetName cfg.instances && !(edgeTargetEnabled declaration)
+    ) declaredEdges
+  );
+  policySelfEdges = map edgeLabel (
+    lib.filter (declaration: declaration.sourceName == declaration.targetName) declaredEdges
+  );
+  policyDedicatedEdges = map edgeLabel (lib.filter edgeTouchesDedicatedBridge declaredEdges);
+  policyMissingReasons = map edgeLabel (
+    lib.filter (declaration: lib.trim declaration.edge.reason == "") declaredEdges
+  );
+  policyEmptyServices = map edgeLabel (
+    lib.filter (
+      declaration:
+      !declaration.edge.primaryService
+      && declaration.edge.tcpPorts == [ ]
+      && declaration.edge.udpPorts == [ ]
+    ) declaredEdges
+  );
+  policyDuplicatePorts = map edgeLabel (
+    lib.filter (
+      declaration:
+      hasDuplicates declaration.edge.tcpPorts
+      || hasDuplicates declaration.edge.udpPorts
+      || (
+        declaration.edge.primaryService
+        && edgeTargetRegistered declaration
+        && lib.elem registry.${declaration.targetName}.port declaration.edge.tcpPorts
+      )
+    ) declaredEdges
+  );
+
+  validDeclaredEdges = lib.filter (
+    declaration:
+    edgeSourceRegistered declaration
+    && edgeTargetRegistered declaration
+    && edgeSourceEnabled declaration
+    && edgeTargetEnabled declaration
+    && declaration.sourceName != declaration.targetName
+    && !(edgeTouchesDedicatedBridge declaration)
+    && lib.trim declaration.edge.reason != ""
+    && (
+      declaration.edge.primaryService
+      || declaration.edge.tcpPorts != [ ]
+      || declaration.edge.udpPorts != [ ]
+    )
+  ) declaredEdges;
+
+  serviceEdges = map (declaration: {
+    source = identityFor declaration.sourceName;
+    destination = identityFor declaration.targetName;
+    tcpPorts = lib.unique (
+      lib.optional declaration.edge.primaryService registry.${declaration.targetName}.port
+      ++ declaration.edge.tcpPorts
+    );
+    udpPorts = lib.unique declaration.edge.udpPorts;
+    inherit (declaration.edge) reason;
+  }) validDeclaredEdges;
+
+  registeredGatewayReferences = lib.concatMap (
+    clientName:
+    let
+      gatewayAddress = registry.${clientName}.gateway or "10.100.0.1";
+      gatewayName = lib.findFirst (
+        candidateName: registry.${candidateName}.ip == gatewayAddress
+      ) null registryNames;
+    in
+    lib.optional (gatewayName != null && gatewayName != clientName) {
+      inherit clientName gatewayName;
+    }
+  ) registeredEnabledInstanceNames;
+
+  disabledRegisteredGateways = map (reference: "${reference.clientName}->${reference.gatewayName}") (
+    lib.filter (
+      reference: !(builtins.hasAttr reference.gatewayName enabledInstances)
+    ) registeredGatewayReferences
+  );
+
+  dedicatedRegisteredGateways = map (reference: "${reference.clientName}->${reference.gatewayName}") (
+    lib.filter (
+      reference:
+      registry.${reference.clientName} ? hostBridge || registry.${reference.gatewayName} ? hostBridge
+    ) registeredGatewayReferences
+  );
+
+  gatewayPairs =
+    map
+      (reference: {
+        client = identityFor reference.clientName;
+        gateway = identityFor reference.gatewayName;
+      })
+      (
+        lib.filter (
+          reference: builtins.hasAttr reference.gatewayName enabledInstances
+        ) registeredGatewayReferences
+      );
+
+  policyCompiler = import ../../lib/microvm-network-policy.nix {
+    inherit
+      lib
+      serviceEdges
+      gatewayPairs
+      internalBridgeNames
+      ;
+    identities = policyIdentities;
+    inherit (cfg.networkPolicy) mode;
+  };
+  uncheckedPolicyRuleset = pkgs.writeText "microvm-network-policy-unchecked.nft" policyCompiler.ruleset;
+  policyRuleset =
+    pkgs.runCommand "microvm-network-policy.nft" { nativeBuildInputs = [ pkgs.nftables ]; }
+      ''
+        LD_PRELOAD="${pkgs.buildPackages.lklWithFirewall.lib}/lib/liblkl-hijack.so" \
+          nft --check --file ${uncheckedPolicyRuleset}
+        cp ${uncheckedPolicyRuleset} "$out"
+      '';
+
+  policyServiceName = "microvm-network-policy.service";
+  installStaticFdb = pkgs.writeShellScript "install-microvm-static-fdb" ''
+    set -eu
+
+    tap_name="$1"
+    bridge_name="$2"
+    guest_mac="$3"
+
+    for _ in {1..100}; do
+      if ${pkgs.iproute2}/bin/bridge link show dev "$tap_name" | ${pkgs.gnugrep}/bin/grep -Fq "master $bridge_name"; then
+        exec ${pkgs.iproute2}/bin/bridge fdb replace "$guest_mac" dev "$tap_name" master static
+      fi
+      ${pkgs.coreutils}/bin/sleep 0.05
     done
-    ${pkgs.iptables}/bin/iptables -w -F ${isolationChain} 2>/dev/null || true
-    ${pkgs.iptables}/bin/iptables -w -X ${isolationChain} 2>/dev/null || true
+
+    echo "Timed out waiting for $tap_name to join $bridge_name" >&2
+    exit 1
   '';
-  isolationFirewallCommands =
-    isolationFirewallCleanupCommands
-    + lib.optionalString (isolationBridgePairs != [ ]) ''
-      ${pkgs.iptables}/bin/iptables -w -N ${isolationChain} 2>/dev/null || true
-      ${pkgs.iptables}/bin/iptables -w -F ${isolationChain}
-      ${isolationForwardRules}
-      ${pkgs.iptables}/bin/iptables -w -C FORWARD -j ${isolationChain} 2>/dev/null || \
-        ${pkgs.iptables}/bin/iptables -w -I FORWARD 1 -j ${isolationChain}
-    '';
+  policyVmUnitNames = map (name: "microvm@${mkVmName name}.service") enabledInstanceNames;
+  policyTapUnitNames = map (
+    name: "microvm-tap-interfaces@${mkVmName name}.service"
+  ) enabledInstanceNames;
+  policyUnitOverrides = builtins.listToAttrs (
+    map (
+      instanceName:
+      let
+        gatewayPair = lib.findFirst (pair: pair.client.name == instanceName) null gatewayPairs;
+        gatewayUnitName =
+          if gatewayPair == null then null else "microvm@${mkVmName gatewayPair.gateway.name}.service";
+      in
+      {
+        name = "microvm@${mkVmName instanceName}";
+        value = {
+          requires = [ policyServiceName ] ++ lib.optional (gatewayUnitName != null) gatewayUnitName;
+          after = [ policyServiceName ] ++ lib.optional (gatewayUnitName != null) gatewayUnitName;
+        };
+      }
+    ) enabledInstanceNames
+    ++ map (identity: {
+      name = "microvm-tap-interfaces@${mkVmName identity.name}";
+      value = {
+        requires = [ policyServiceName ];
+        after = [ policyServiceName ];
+        postStart = "${installStaticFdb} ${identity.tap} ${identity.bridge} ${identity.mac}";
+      };
+    }) policyIdentities
+  );
 
   isolatedFirewallInterfaces = builtins.listToAttrs (
     map (bridge: {
@@ -356,8 +617,6 @@ let
     );
 
   allForwardPorts = lib.flatten (lib.mapAttrsToList mkForwardPorts enabledInstances);
-
-  enabledInstanceNames = builtins.attrNames enabledInstances;
 
   missingFlakeInstances = lib.filter (
     name: enabledInstances.${name}.flake == null
@@ -425,7 +684,8 @@ in
       description = ''
         Logical per-VM host configuration. Use this namespace to opt a VM into
         a host and control instance-local port forwarding and public HTTP
-        publication.
+        publication. Lateral permissions are declared under each instance's
+        networkPolicy.allowedPeers attribute set.
       '';
     };
 
@@ -436,6 +696,27 @@ in
         description = "Lowercase DNS domain used by public HTTP publications.";
       };
 
+    };
+
+    networkPolicy.mode = lib.mkOption {
+      type = lib.types.enum [
+        "audit"
+        "enforce"
+      ];
+      default = "enforce";
+      description = ''
+        Whether undeclared traffic between enabled registered VM taps is logged
+        and accepted temporarily, or logged and rejected. Identity validation,
+        unknown taps, unsupported EtherTypes, multicast, and routed bypasses
+        always remain enforced.
+      '';
+    };
+
+    networkPolicy.renderedRuleset = lib.mkOption {
+      type = lib.types.lines;
+      readOnly = true;
+      internal = true;
+      description = "Rendered host-owned MicroVM nftables policy used by evaluation tests and the checked runtime artifact.";
     };
 
     stateDir = lib.mkOption {
@@ -462,7 +743,21 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    sys.virtualisation.microvm.networkPolicy.renderedRuleset = policyCompiler.ruleset;
+
     assertions = [
+      {
+        assertion = unregisteredEnabledInstances == [ ];
+        message = "sys.virtualisation.microvm network policy requires registry entries for enabled VMs: ${formatList unregisteredEnabledInstances}";
+      }
+      {
+        assertion = registryIpMismatches == [ ];
+        message = "sys.virtualisation.microvm enabled instance IPs must match vm-registry.nix for: ${formatList registryIpMismatches}";
+      }
+      {
+        assertion = invalidPolicyTapNames == [ ];
+        message = "sys.virtualisation.microvm registry tap IDs must start with vm- and fit Linux's 15-character interface limit for: ${formatList invalidPolicyTapNames}";
+      }
       {
         assertion = missingFlakeInstances == [ ];
         message = "sys.virtualisation.microvm.instances is missing flake for enabled VMs: ${formatList missingFlakeInstances}";
@@ -535,6 +830,54 @@ in
         assertion = instancesUsingRemovedReverseProxy == [ ];
         message = "sys.virtualisation.microvm.instances uses the removed reverseProxy option for: ${formatList instancesUsingRemovedReverseProxy}. Use publication or a bespoke host-level Traefik route instead";
       }
+      {
+        assertion = policyUnknownSources == [ ];
+        message = "sys.virtualisation.microvm network policy has unregistered sources: ${formatList policyUnknownSources}";
+      }
+      {
+        assertion = policyUnknownTargets == [ ];
+        message = "sys.virtualisation.microvm network policy has unregistered targets: ${formatList policyUnknownTargets}";
+      }
+      {
+        assertion = policyMissingTargetInstances == [ ];
+        message = "sys.virtualisation.microvm network policy targets VMs not declared on this host: ${formatList policyMissingTargetInstances}";
+      }
+      {
+        assertion = policyDisabledSources == [ ];
+        message = "sys.virtualisation.microvm network policy declarations cannot have disabled sources: ${formatList policyDisabledSources}";
+      }
+      {
+        assertion = policyDisabledTargets == [ ];
+        message = "sys.virtualisation.microvm network policy declarations cannot target disabled VMs: ${formatList policyDisabledTargets}";
+      }
+      {
+        assertion = policySelfEdges == [ ];
+        message = "sys.virtualisation.microvm network policy cannot declare self-edges: ${formatList policySelfEdges}";
+      }
+      {
+        assertion = policyDedicatedEdges == [ ];
+        message = "sys.virtualisation.microvm dedicated-bridge VMs cannot have direct VM peer permissions: ${formatList policyDedicatedEdges}";
+      }
+      {
+        assertion = policyMissingReasons == [ ];
+        message = "sys.virtualisation.microvm network policy permissions require a non-empty reason: ${formatList policyMissingReasons}";
+      }
+      {
+        assertion = policyEmptyServices == [ ];
+        message = "sys.virtualisation.microvm network policy permissions must select the primary service or explicit ports: ${formatList policyEmptyServices}";
+      }
+      {
+        assertion = policyDuplicatePorts == [ ];
+        message = "sys.virtualisation.microvm network policy permissions contain duplicate ports: ${formatList policyDuplicatePorts}";
+      }
+      {
+        assertion = disabledRegisteredGateways == [ ];
+        message = "sys.virtualisation.microvm enabled VMs reference disabled registered gateway VMs: ${formatList disabledRegisteredGateways}";
+      }
+      {
+        assertion = dedicatedRegisteredGateways == [ ];
+        message = "sys.virtualisation.microvm registered VM gateway relationships must stay on the shared bridge: ${formatList dedicatedRegisteredGateways}";
+      }
     ];
 
     microvm = {
@@ -543,32 +886,72 @@ in
       inherit (cfg) stateDir;
     };
 
-    # Bridges for MicroVM traffic (systemd-networkd style)
-    systemd.network = {
-      netdevs = {
-        "10-microvm-br0".netdevConfig = {
-          Kind = "bridge";
-          Name = "microvm-br0";
+    boot.kernelModules = [ "nf_conntrack_bridge" ];
+
+    environment = {
+      etc."microvm-network-policy/ruleset.nft".source = policyRuleset;
+      systemPackages = [ pkgs.nftables ];
+    };
+
+    systemd = {
+      # Bridges for MicroVM traffic (systemd-networkd style).
+      network = {
+        netdevs = {
+          "10-microvm-br0".netdevConfig = {
+            Kind = "bridge";
+            Name = "microvm-br0";
+          };
+        }
+        // isolatedBridgeNetdevs;
+
+        networks = {
+          "10-microvm-br0" = {
+            matchConfig.Name = "microvm-br0";
+            networkConfig = {
+              Address = [ "10.100.0.1/24" ];
+              LinkLocalAddressing = "no";
+            };
+            neighbors = sharedBridgeNeighbors;
+          };
+
+          # Unknown vm-* taps still attach to the shared bridge, but cannot
+          # transmit through nftables or receive flooded unicast/multicast.
+          "12-microvm-tap" = {
+            matchConfig.Name = "vm-*";
+            networkConfig.Bridge = "microvm-br0";
+            bridgeConfig = {
+              Learning = true;
+              Locked = false;
+              MulticastFlood = false;
+              UnicastFlood = false;
+            };
+          };
+        }
+        // isolatedBridgeNetworks
+        // registeredTapNetworks;
+      };
+
+      services = {
+        microvm-network-policy = {
+          description = "Atomic MicroVM bridge identity and lateral-access policy";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "systemd-modules-load.service" ];
+          before = [ "microvms.target" ] ++ policyVmUnitNames ++ policyTapUnitNames;
+          restartTriggers = [ policyRuleset ];
+
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            ExecStart = "${pkgs.nftables}/bin/nft --file ${policyRuleset}";
+            CapabilityBoundingSet = [ "CAP_NET_ADMIN" ];
+            NoNewPrivileges = true;
+            PrivateTmp = true;
+            ProtectHome = true;
+            ProtectSystem = "strict";
+          };
         };
       }
-      // isolatedBridgeNetdevs;
-
-      networks = {
-        "10-microvm-br0" = {
-          matchConfig.Name = "microvm-br0";
-          networkConfig.Address = [ "10.100.0.1/24" ];
-          # Disable link-local to avoid extra addresses
-          networkConfig.LinkLocalAddressing = "no";
-        };
-
-        # Attach every non-isolated VM tap interface (vm-*) to the shared bridge.
-        "12-microvm-tap" = {
-          matchConfig.Name = "vm-*";
-          networkConfig.Bridge = "microvm-br0";
-        };
-      }
-      // isolatedBridgeNetworks
-      // isolatedTapNetworks;
+      // policyUnitOverrides;
     };
 
     networking = {
@@ -583,24 +966,18 @@ in
         forwardPorts = allForwardPorts;
       };
 
-      # VMs reach the internet via NAT (FORWARD chain) and use external DNS,
-      # so neither bridge needs INPUT-chain trust on the host.
+      # The normal NixOS firewall continues to own host INPUT. The dedicated
+      # native nftables policy only authenticates VM frames and filters traffic
+      # forwarded between VM ports/bridges.
       # Add interfaces."microvm-br0".allowedTCPPorts here if a VM must reach
       # a specific host service directly.
-      firewall = {
-        interfaces = {
-          "microvm-br0" = {
-            allowedTCPPorts = [ ];
-            allowedUDPPorts = [ ];
-          };
-        }
-        // isolatedFirewallInterfaces;
-
-        # Rebuild a private chain on every firewall start/reload so topology
-        # changes cannot leave stale cross-bridge rules behind.
-        extraCommands = isolationFirewallCommands;
-        extraStopCommands = isolationFirewallCleanupCommands;
-      };
+      firewall.interfaces = {
+        "microvm-br0" = {
+          allowedTCPPorts = [ ];
+          allowedUDPPorts = [ ];
+        };
+      }
+      // isolatedFirewallInterfaces;
     };
 
     sys.services.cloudflared.ingress = lib.mkIf (config.sys.services.cloudflared.enable or false

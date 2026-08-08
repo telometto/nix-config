@@ -1,6 +1,6 @@
 # Architecture Risks and Improvements
 
-> **Last reviewed: 2026-07-25**
+> **Last reviewed: 2026-07-31**
 
 This report captures documentation drift, operational risks, and future
 improvement opportunities discovered during a source-guided architecture
@@ -37,11 +37,14 @@ ______________________________________________________________________
 - System options live under `sys.*`; Home Manager options live under `hm.*`.
 - `modules/core/sops.nix` only declares service-specific secrets when their
   consumers are enabled, which avoids dangling SOPS requirements.
-- `modules/virtualisation/microvm-base.nix` keeps VM lifecycle, transport-layer
-  forwarding, and public HTTP publication distinct. It rejects duplicate
-  forwarded ports and invalid or partial publications, including disabled or
-  unregistered targets, duplicate hostnames, unknown policies, and missing
-  Cloudflare or Traefik adapters.
+- `modules/virtualisation/microvm-base.nix` keeps VM lifecycle, host-owned
+  network identity/lateral policy, transport-layer forwarding, and public HTTP
+  publication distinct. Its policy compiler derives tap identities and gateway
+  pairs from the registry, rejects invalid peer declarations, and has an
+  executable spoofing, reachability, and bypass test. Publication still rejects
+  duplicate forwarded ports and invalid or partial declarations, including
+  disabled or unregistered targets, duplicate hostnames, unknown policies, and
+  missing Cloudflare or Traefik adapters.
 - Standard MicroVM publications render Cloudflare Tunnel and Traefik
   configuration from one instance-local intent, with mandatory CrowdSec and a
   closed set of route-scoped compatibility policies.
@@ -127,6 +130,7 @@ ______________________________________________________________________
 |------|------|--------------------|--------------------|
 | Secret files | `.gitignore` excludes `nix-secrets/`, `vars/`, and `result`, but not `.env` variants | `security-audit.yml` runs secret scanning | Add `.env`, `.env.local`, `.env.*.local`, `*.key`, `*.pem`, and `*.crt` to `.gitignore` in a config cleanup pass |
 | Publication compatibility policies | Some applications cannot use the strict security-header baseline unchanged | Compatibility exceptions are named, route-scoped, centrally mapped, and still include CrowdSec | Keep exceptions narrow and remove policies when workloads become compatible with `strict` |
+| MicroVM lateral access | A compromised guest can originate arbitrary Ethernet frames on its tap | Registry-derived static FDB/neighbors and host-owned bridge/inet nftables policy enforce identity and declared paths; Blizzard begins in audit for otherwise-valid undeclared unicast | Review the seven-day audit window, add only verified edges, and require explicit approval before switching Blizzard to enforce |
 | SOPS access | Missing host recipients cause activation/runtime failures for secret consumers | Private `nix-secrets` and CI deploy key keep secrets out of this repo | Keep `docs/sops-setup-guide.md` as the single source of truth for recipient setup |
 | Log redaction | `.github/scripts/redact-secrets.sh` handles common token/key patterns | CI failure output is filtered before summaries | Periodically expand patterns for new token formats and environment names |
 
