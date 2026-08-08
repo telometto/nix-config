@@ -121,6 +121,7 @@ ______________________________________________________________________
 | [printing.nix](printing.nix) | `sys.services.printing` | Desktops | CUPS printing |
 | [cockpit.nix](cockpit.nix) | `sys.services.cockpit` | Host (blizzard) | Web-based admin console |
 | [teamviewer.nix](teamviewer.nix) | `sys.services.teamviewer` | Desktops | Remote desktop access |
+| [vscode-server.nix](vscode-server.nix) | `sys.services.vscode-server` | Desktops | NixOS-compatible VS Code Server patching |
 
 #### Containerized Browsers and Search
 
