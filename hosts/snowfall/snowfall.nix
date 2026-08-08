@@ -4,6 +4,7 @@
   VARS,
   pkgs,
   consts,
+  inputs,
   ...
 }:
 let
@@ -25,6 +26,8 @@ in
       allowedUDPPortRanges = allowedTCPPortRanges;
     };
   };
+
+  boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
 
   sys = {
     role.desktop.enable = true;
@@ -95,13 +98,7 @@ in
       };
 
       ## Add custom overlays
-      # custom = [
-      #   (final: prev: {
-      #     openldap = prev.openldap.overrideAttrs {
-      #       doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
-      #     };
-      #   })
-      # ];
+      custom = [ inputs.nix-cachyos-kernel.overlays.pinned ];
     };
 
     services = {
