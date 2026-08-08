@@ -64,6 +64,8 @@ flowchart LR
   Local-first security audit and hardening pass
 - [Project_Architecture_Blueprint.md](Project_Architecture_Blueprint.md) —
   Comprehensive architecture documentation
+- [metube-wireguard-feasibility.md](metube-wireguard-feasibility.md) —
+  MeTube deployment and WireGuard-routing design
 
 #### Explanation
 

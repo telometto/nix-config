@@ -34,6 +34,7 @@ ______________________________________________________________________
 | [lidarr.nix](lidarr.nix) | `sys.services.lidarr` | MicroVM | Music PVR |
 | [qbittorrent.nix](qbittorrent.nix) | `sys.services.qbittorrent` | MicroVM (WG-routed) | Torrent client |
 | [sabnzbd.nix](sabnzbd.nix) | `sys.services.sabnzbd` | MicroVM (WG-routed) | Usenet client |
+| [metube.nix](metube.nix) | `sys.services.metube` | MicroVM (WG-routed) | LAN-only video downloader |
 | [ombi.nix](ombi.nix) | `sys.services.ombi` | MicroVM | Media request portal (legacy) |
 | [overseerr.nix](overseerr.nix) | `sys.services.overseerr` | MicroVM | Media request portal |
 | [tautulli.nix](tautulli.nix) | `sys.services.tautulli` | MicroVM | Plex statistics |
