@@ -62,6 +62,8 @@ flowchart LR
   Static security audit findings and remediation roadmap
 - [security-audit-2026-06-27.md](security-audit-2026-06-27.md) —
   Local-first security audit and hardening pass
+- [deployment-audit-2026-08-08-microvm-networking.md](deployment-audit-2026-08-08-microvm-networking.md) —
+  Live Blizzard MicroVM audit, enforcement gate, and follow-up findings
 - [Project_Architecture_Blueprint.md](Project_Architecture_Blueprint.md) —
   Comprehensive architecture documentation
 
