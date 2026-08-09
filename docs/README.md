@@ -75,6 +75,7 @@ flowchart LR
 #### Operations
 
 - [sops-setup-guide.md](sops-setup-guide.md) — How to set up SOPS secrets and age keys
+- [scrutiny.md](scrutiny.md) — Provision, verify, and rotate the Scrutiny InfluxDB token
 - [immich-backup.md](immich-backup.md) — Provision, operate, and restore the Immich offsite backup
 - [pocket-id.md](pocket-id.md) — Deploy, bootstrap, operate, and recover the Pocket ID provider
 - [immich.md](immich.md) — Provision, migrate, rotate, and recover Immich OAuth
@@ -94,6 +95,7 @@ flowchart LR
 | Review architecture decisions | [Public HTTP Publication ADR](adr/0001-model-public-http-publication-as-instance-intent.md) |
 | Review credential lifecycle | [Credential Lifecycle](credential-lifecycle.md) |
 | Back up or restore Immich | [Immich Backup Operations](immich-backup.md) |
+| Operate Scrutiny | [Scrutiny Operations](scrutiny.md) |
 | Operate Pocket ID | [Pocket ID Operations](pocket-id.md) |
 | Operate Immich OAuth | [Immich OAuth Operations](immich.md) |
 | Operate Sandfly targets | [Sandfly Target Operations](sandfly.md) |
