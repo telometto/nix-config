@@ -72,3 +72,6 @@ jobs:
 
             - name: Run Sandfly target tests
               run: nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs
+
+            - name: Run Scrutiny tests
+              run: nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs

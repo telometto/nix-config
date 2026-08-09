@@ -1,4 +1,8 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  ...
+}:
 let
   cfg = config.sys.services.scrutiny or { };
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
@@ -47,7 +51,10 @@ in
 
       inherit (cfg) openFirewall;
 
-      settings.web.listen.port = cfg.port;
+      settings.web = {
+        listen.port = cfg.port;
+        influxdb.host = "127.0.0.1";
+      };
 
       # The upstream default derives the collector destination from the web
       # listen address.  A wildcard bind address is valid for listening but
@@ -60,6 +67,14 @@ in
       ];
     };
 
+    systemd.services.scrutiny = {
+      after = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
+      serviceConfig = lib.mkIf (config.sys.secrets.scrutinyTokenEnvironmentFile != null) {
+        EnvironmentFile = [ config.sys.secrets.scrutinyTokenEnvironmentFile ];
+      };
+    };
+
     services.traefik.dynamic.files.scrutiny = traefikLib.mkTraefikDynamicConfig {
       name = "scrutiny";
       inherit cfg config;
@@ -67,6 +82,10 @@ in
     };
 
     assertions = [
+      {
+        assertion = config.sys.secrets.scrutinyTokenEnvironmentFile != null;
+        message = "sys.services.scrutiny requires sys.secrets.scrutinyTokenEnvironmentFile.";
+      }
       (traefikLib.mkCfTunnelAssertion {
         name = "scrutiny";
         inherit cfg;

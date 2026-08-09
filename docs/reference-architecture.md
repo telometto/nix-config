@@ -17,6 +17,7 @@ Information reference for this repo's moving parts, options, and commands.
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
+| `checks.x86_64-linux.scrutiny` | Scrutiny service, secret, and systemd contract tests |
 | `devShells.x86_64-linux.default` | Dev shell with nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 ### `mkHost` — what it always injects
@@ -171,9 +172,9 @@ Operational tools used across the repo.
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
 Locally, `nix flake check` evaluates and builds the formatting, Cloudflare
-metrics, MicroVM publication, and Sandfly target checks. The `flake-check.yml`
+metrics, MicroVM publication, Sandfly target, and Scrutiny service checks. The `flake-check.yml`
 CI workflow first runs `nix flake check --no-build` to evaluate all flake
-outputs, then explicitly builds all three executable test checks. Full host
+outputs, then explicitly builds all four executable test checks. Full host
 evaluation is handled separately by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
@@ -290,6 +291,9 @@ nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
 
 # Build and run only the Sandfly target contract check
 nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs
+
+# Build and run only the Scrutiny service contract check
+nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs
 
 # Dev shell (includes nil, nixfmt, deadnix, statix, sops, ssh-to-age)
 nix develop
