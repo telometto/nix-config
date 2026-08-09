@@ -176,6 +176,7 @@ in
           owner = "root";
           group = "root";
           mode = "0400";
+          restartUnits = [ "scrutiny.service" ];
         };
       };
 
@@ -188,6 +189,16 @@ in
           config.sops.placeholder."tokens/gitlab-fa"
         }"
       '';
+    }
+    // whenEnabled hasScrutiny {
+      "scrutiny-environment" = {
+        content = ''
+          SCRUTINY_WEB_INFLUXDB_TOKEN=${config.sops.placeholder."scrutiny/token"}
+        '';
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
     }
     // whenEnabled hasGrafanaCloud {
       "grafana-cloud-config".content = ''
@@ -288,6 +299,7 @@ in
     }
     // whenEnabled hasScrutiny {
       scrutinyTokenFile = toString config.sops.secrets."scrutiny/token".path;
+      scrutinyTokenEnvironmentFile = toString config.sops.templates."scrutiny-environment".path;
     };
 
   environment.systemPackages = [
