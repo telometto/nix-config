@@ -236,6 +236,12 @@
       description = "Path to a file containing the WireGuard private key. Mapped from SOPS in core/sops.nix.";
     };
 
+    scrutinyTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to the InfluxDB API token used by Scrutiny. Mapped from SOPS in core/sops.nix.";
+    };
+
     paperlessSecretKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
