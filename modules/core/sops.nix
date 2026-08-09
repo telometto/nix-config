@@ -28,6 +28,7 @@ let
   hasFirefox = config.sys.services.firefox.enable or false;
   hasBrave = config.sys.services.brave.enable or false;
   hasPushover = config.sys.services.grafanaPushover.enable or false;
+  hasScrutiny = config.sys.services.scrutiny.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -169,6 +170,13 @@ in
           group = "grafana";
           mode = "0440";
         };
+      }
+      // whenEnabled hasScrutiny {
+        "scrutiny/token" = {
+          owner = "root";
+          group = "root";
+          mode = "0400";
+        };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -277,6 +285,9 @@ in
     // whenEnabled hasPushover {
       pushoverApiTokenFile = toString config.sops.secrets."pushover/api_token".path;
       pushoverUserKeyFile = toString config.sops.secrets."pushover/user_key".path;
+    }
+    // whenEnabled hasScrutiny {
+      scrutinyTokenFile = toString config.sops.secrets."scrutiny/token".path;
     };
 
   environment.systemPackages = [
