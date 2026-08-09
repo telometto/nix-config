@@ -26,6 +26,14 @@ let
   enforcedCfg = enforced.config;
   policyRuleset = enforcedCfg.environment.etc."microvm-network-policy/ruleset.nft".source;
 
+  audited = blizzard.extendModules {
+    modules = [
+      {
+        sys.virtualisation.microvm.networkPolicy.mode = lib.mkForce "audit";
+      }
+    ];
+  };
+
   policyNetdevs = lib.filterAttrs (
     name: _: name == "10-microvm-br0" || name == "10-pocket-id-bridge"
   ) enforcedCfg.systemd.network.netdevs;
@@ -38,7 +46,7 @@ let
   ) enforcedCfg.systemd.network.networks;
 
   policyText = enforcedCfg.sys.virtualisation.microvm.networkPolicy.renderedRuleset;
-  auditPolicyText = blizzard.config.sys.virtualisation.microvm.networkPolicy.renderedRuleset;
+  auditPolicyText = audited.config.sys.virtualisation.microvm.networkPolicy.renderedRuleset;
   testIdentityNames = [
     "prowlarr"
     "sonarr"
@@ -159,7 +167,7 @@ let
   '';
 in
 assert blizzard.options.sys.virtualisation.microvm.networkPolicy.mode.default == "enforce";
-assert blizzard.config.sys.virtualisation.microvm.networkPolicy.mode == "audit";
+assert blizzard.config.sys.virtualisation.microvm.networkPolicy.mode == "enforce";
 assert enforcedCfg.sys.virtualisation.microvm.networkPolicy.mode == "enforce";
 assert !blizzard.config.networking.nftables.enable;
 assert lib.hasInfix "counter name lateral_audit" auditPolicyText;
