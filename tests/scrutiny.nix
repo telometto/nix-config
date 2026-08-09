@@ -41,9 +41,8 @@ assert !(disabled.config.sops.templates ? "scrutiny-environment");
 assert lib.hasInfix "SCRUTINY_WEB_INFLUXDB_TOKEN=" tokenEnvironmentContent;
 assert lib.any (
   assertion:
-  assertion.message != null
+  !assertion.assertion
   && assertion.message == "sys.services.scrutiny requires sys.secrets.scrutinyTokenEnvironmentFile."
-  && !assertion.assertion
 ) missingToken.config.assertions;
 pkgs.runCommand "scrutiny-tests" { nativeBuildInputs = [ pkgs.gnugrep ]; } ''
   printf '%s\n' ${lib.escapeShellArg tokenEnvironmentContent} | grep -Fq 'SCRUTINY_WEB_INFLUXDB_TOKEN='
