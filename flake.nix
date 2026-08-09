@@ -177,6 +177,11 @@
           inherit (self.nixosConfigurations) snowfall;
           pkgs = nixpkgs.legacyPackages.${system};
         };
+
+        scrutiny = import ./tests/scrutiny.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
       };
 
       devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {
