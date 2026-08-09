@@ -1,19 +1,11 @@
 {
   lib,
   config,
-  pkgs,
   ...
 }:
 let
   cfg = config.sys.services.scrutiny or { };
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
-  tokenCredential = "scrutiny-token";
-  scrutinyWithToken = pkgs.writeShellScript "scrutiny-with-token" ''
-    set -euo pipefail
-
-    export SCRUTINY_WEB_INFLUXDB_TOKEN="$(<"$CREDENTIALS_DIRECTORY/${tokenCredential}")"
-    exec ${lib.getExe config.services.scrutiny.package} start --config /run/scrutiny/config.yaml
-  '';
 in
 {
   options.sys.services.scrutiny = {
@@ -78,9 +70,8 @@ in
     systemd.services.scrutiny = {
       after = [ "sops-install-secrets.service" ];
       requires = [ "sops-install-secrets.service" ];
-      serviceConfig = {
-        ExecStart = lib.mkForce scrutinyWithToken;
-        LoadCredential = "${tokenCredential}:${config.sys.secrets.scrutinyTokenFile}";
+      serviceConfig = lib.mkIf (config.sys.secrets.scrutinyTokenEnvironmentFile != null) {
+        EnvironmentFile = [ config.sys.secrets.scrutinyTokenEnvironmentFile ];
       };
     };
 
@@ -92,8 +83,8 @@ in
 
     assertions = [
       {
-        assertion = config.sys.secrets.scrutinyTokenFile != null;
-        message = "sys.services.scrutiny requires sys.secrets.scrutinyTokenFile.";
+        assertion = config.sys.secrets.scrutinyTokenEnvironmentFile != null;
+        message = "sys.services.scrutiny requires sys.secrets.scrutinyTokenEnvironmentFile.";
       }
       (traefikLib.mkCfTunnelAssertion {
         name = "scrutiny";
