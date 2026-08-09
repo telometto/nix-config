@@ -242,6 +242,12 @@
       description = "Path to the InfluxDB API token used by Scrutiny. Mapped from SOPS in core/sops.nix.";
     };
 
+    scrutinyTokenEnvironmentFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to the SOPS-rendered EnvironmentFile containing the Scrutiny InfluxDB token. Mapped from core/sops.nix.";
+    };
+
     paperlessSecretKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
