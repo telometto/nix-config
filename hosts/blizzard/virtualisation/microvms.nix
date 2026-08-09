@@ -329,7 +329,7 @@ in
       externalInterface = "enp8s0";
       stateDir = "/flash/enc/vms";
       publication.canonicalDomain = VARS.domains.public;
-      networkPolicy.mode = "audit";
+      networkPolicy.mode = "enforce";
 
       instances = builtins.mapAttrs mkInstance vmSpecs;
     };
