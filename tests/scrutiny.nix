@@ -29,7 +29,8 @@ assert cfg.sops.templates."scrutiny-environment".mode == "0400";
 assert cfg.sops.templates."scrutiny-environment".owner == "root";
 assert lib.elem "scrutiny.service" cfg.sops.secrets."scrutiny/token".restartUnits;
 assert cfg.services.scrutiny.settings.web.influxdb.host == "127.0.0.1";
-assert cfg.services.scrutiny.collector.settings.api.endpoint
+assert
+  cfg.services.scrutiny.collector.settings.api.endpoint
   == "http://127.0.0.1:${toString cfg.sys.services.scrutiny.port}";
 assert scrutinyService.serviceConfig.EnvironmentFile == [ tokenEnvironmentPath ];
 assert lib.elem "sops-install-secrets.service" scrutinyService.requires;
@@ -40,8 +41,8 @@ assert !(disabled.config.sops.templates ? "scrutiny-environment");
 assert lib.hasInfix "SCRUTINY_WEB_INFLUXDB_TOKEN=" tokenEnvironmentContent;
 assert lib.any (
   assertion:
-    assertion.message == "sys.services.scrutiny requires sys.secrets.scrutinyTokenEnvironmentFile."
-    && !assertion.assertion
+  assertion.message == "sys.services.scrutiny requires sys.secrets.scrutinyTokenEnvironmentFile."
+  && !assertion.assertion
 ) missingToken.config.assertions;
 pkgs.runCommand "scrutiny-tests" { nativeBuildInputs = [ pkgs.gnugrep ]; } ''
   printf '%s\n' ${lib.escapeShellArg tokenEnvironmentContent} | grep -Fq 'SCRUTINY_WEB_INFLUXDB_TOKEN='
