@@ -1,7 +1,19 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.sys.services.scrutiny or { };
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
+  tokenCredential = "scrutiny-token";
+  scrutinyWithToken = pkgs.writeShellScript "scrutiny-with-token" ''
+    set -euo pipefail
+
+    export SCRUTINY_WEB_INFLUXDB_TOKEN="$(<"$CREDENTIALS_DIRECTORY/${tokenCredential}")"
+    exec ${lib.getExe config.services.scrutiny.package} start --config /run/scrutiny/config.yaml
+  '';
 in
 {
   options.sys.services.scrutiny = {
@@ -47,7 +59,10 @@ in
 
       inherit (cfg) openFirewall;
 
-      settings.web.listen.port = cfg.port;
+      settings.web = {
+        listen.port = cfg.port;
+        influxdb.host = "127.0.0.1";
+      };
 
       # The upstream default derives the collector destination from the web
       # listen address.  A wildcard bind address is valid for listening but
@@ -60,6 +75,15 @@ in
       ];
     };
 
+    systemd.services.scrutiny = {
+      after = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
+      serviceConfig = {
+        ExecStart = lib.mkForce scrutinyWithToken;
+        LoadCredential = "${tokenCredential}:${config.sys.secrets.scrutinyTokenFile}";
+      };
+    };
+
     services.traefik.dynamic.files.scrutiny = traefikLib.mkTraefikDynamicConfig {
       name = "scrutiny";
       inherit cfg config;
@@ -67,6 +91,10 @@ in
     };
 
     assertions = [
+      {
+        assertion = config.sys.secrets.scrutinyTokenFile != null;
+        message = "sys.services.scrutiny requires sys.secrets.scrutinyTokenFile.";
+      }
       (traefikLib.mkCfTunnelAssertion {
         name = "scrutiny";
         inherit cfg;
