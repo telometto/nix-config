@@ -56,7 +56,7 @@
     hardware.nvidia = {
       enable = true;
 
-      open = false;
+      open = true;
 
       # Enable if suspend/resume issues occur (experimental)
       # powerManagement.enable = true;
