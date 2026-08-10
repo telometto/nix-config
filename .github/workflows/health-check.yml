@@ -40,7 +40,7 @@ jobs:
         host: ${{ fromJson(needs.discover-hosts.outputs.hosts) }}
     steps:
       - name: Access private repository
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
@@ -84,10 +84,10 @@ jobs:
           df -h >> $GITHUB_STEP_SUMMARY
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v21
+        uses: DeterminateSystems/nix-installer-action@v22
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@v13
+        uses: DeterminateSystems/magic-nix-cache-action@v14
         with:
           use-flakehub: false
 
@@ -130,34 +130,93 @@ jobs:
     needs: build-hosts
     if: always()
     steps:
-      - name: Create issue if failures
-        if: needs.build-hosts.result == 'failure'
-        uses: actions/github-script@v8
+      - name: Synchronize health-check issue
+        # Skipped or cancelled builds are neither failures nor recoveries.
+        if: >-
+          needs.build-hosts.result == 'failure' ||
+          needs.build-hosts.result == 'success'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          BUILD_RESULT: ${{ needs.build-hosts.result }}
         with:
           script: |
             const { owner, repo } = context.repo;
+            const result = process.env.BUILD_RESULT;
             const title = '🚨 Infrastructure Health Check Failed';
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
 
-            const { data: issues } = await github.rest.issues.listForRepo({
+            if (result !== 'failure' && result !== 'success') {
+              throw new Error(`Unexpected build result: ${result}`);
+            }
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
               owner, repo,
               state: 'open',
               labels: 'infrastructure',
               creator: 'github-actions[bot]',
+              per_page: 100,
             });
 
-            const existing = issues.find(i => i.title === title);
-            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
-            const body = `Automated health check detected build failures.\n\n**Workflow run:** ${runUrl}\n\nPlease review the workflow run for details.`;
+            const existing = issues.filter(
+              issue => !issue.pull_request && issue.title === title,
+            );
 
-            if (existing) {
+            if (result === 'failure') {
+              if (existing.length > 0) {
+                for (const issue of existing) {
+                  await github.rest.issues.createComment({
+                    owner, repo,
+                    issue_number: issue.number,
+                    body: `Build failure detected again.\n\n**Workflow run:** ${runUrl}`,
+                  });
+                }
+              } else {
+                const body = `Automated health check detected build failures.\n\n**Workflow run:** ${runUrl}\n\nPlease review the workflow run for details.`;
+                await github.rest.issues.create({
+                  owner, repo, title, body,
+                  labels: ['infrastructure', 'urgent'],
+                });
+              }
+
+              return;
+            }
+
+            if (existing.length === 0) {
+              return;
+            }
+
+            const { data: repository } = await github.rest.repos.get({ owner, repo });
+            const defaultBranch = repository.default_branch;
+            const defaultRef = `refs/heads/${defaultBranch}`;
+
+            if (context.ref !== defaultRef) {
+              core.notice(`Skipping recovery: ${context.ref} is not ${defaultRef}.`);
+              return;
+            }
+
+            const { data: head } = await github.rest.git.getRef({
+              owner, repo,
+              ref: `heads/${defaultBranch}`,
+            });
+
+            if (context.sha !== head.object.sha) {
+              core.notice(
+                `Skipping recovery: ${context.sha} is not the current ` +
+                `${defaultBranch} head (${head.object.sha}).`,
+              );
+              return;
+            }
+
+            for (const issue of existing) {
               await github.rest.issues.createComment({
                 owner, repo,
-                issue_number: existing.number,
-                body: `Build failure detected again.\n\n**Workflow run:** ${runUrl}`,
+                issue_number: issue.number,
+                body: `Health check recovered successfully.\n\n**Workflow run:** ${runUrl}`,
               });
-            } else {
-              await github.rest.issues.create({
-                owner, repo, title, body,
-                labels: ['infrastructure', 'urgent'],
+
+              await github.rest.issues.update({
+                owner, repo,
+                issue_number: issue.number,
+                state: 'closed',
               });
             }

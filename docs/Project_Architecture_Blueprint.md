@@ -46,6 +46,7 @@ ______________________________________________________________________
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
+| `checks.x86_64-linux.scrutiny` | Scrutiny service, secret, and systemd contract tests |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
@@ -635,6 +636,7 @@ ______________________________________________________________________
 | Run only the MicroVM publication tests | `nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs` |
 | Run only the MicroVM network-policy test | `nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs` |
 | Run only the Sandfly target tests | `nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs` |
+| Run only the Scrutiny service tests | `nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs` |
 | Build without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
 | Apply to current host | `sudo nixos-rebuild switch --flake .#<hostname>` |
 | Test without switching | `sudo nixos-rebuild test --flake .#<hostname>` |
@@ -644,8 +646,8 @@ The `flake-check.yml` CI workflow uses
 `.github/scripts/evaluate-flake-outputs.sh` to evaluate configurations,
 formatters, checks, and development shells in separate Nix processes, then
 explicitly builds the Cloudflare metrics, MicroVM publication, MicroVM
-network-policy, and Sandfly target checks so their tests execute. Host
-evaluations run separately in `validate-config.yml`.
+network-policy, Sandfly target, and Scrutiny service checks so their tests
+execute. Host evaluations run separately in `validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 

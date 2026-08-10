@@ -5,7 +5,7 @@
   home.packages = [
     pkgs.rustdesk-flutter
     pkgs.polychromatic # Razer configuration tool
-    pkgs.kdePackages.krdc
+    # pkgs.kdePackages.krdc
     pkgs.meld
     pkgs.rendercv
   ];

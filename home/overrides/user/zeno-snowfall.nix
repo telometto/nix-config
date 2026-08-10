@@ -17,7 +17,7 @@
     pkgs.hugo # static website engine
     pkgs.signal-desktop
     # pkgs.logseq # Issues with Electron
-    pkgs.kdePackages.krdc
+    # pkgs.kdePackages.krdc
     pkgs.teams-for-linux
     pkgs.meld
     # pkgs.rustdesk-flutter
@@ -30,6 +30,7 @@
     pkgs.filen-desktop
     pkgs.filen-cli
     pkgs.codex
+    pkgs.nodejs
   ]
   ++ (with pkgs.sweethome3d; [
     application
@@ -42,7 +43,7 @@
       development = {
         extraPackages = [
           pkgs.vscode
-          pkgs.jetbrains.idea-oss
+          # pkgs.jetbrains.idea-oss # disabled due to vulnerable package
         ];
 
         git.lfs = true;
