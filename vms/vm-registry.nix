@@ -279,6 +279,18 @@ validate {
     vcpu = 1;
   };
 
+  metube = {
+    name = "metube";
+    cid = 128;
+    mac = "02:00:00:00:00:1D";
+    ip = "10.100.0.72";
+    port = 11072;
+    mem = 768;
+    vcpu = 1;
+    gateway = "10.100.0.11";
+    dns = "10.100.0.11";
+  };
+
   trigger = {
     name = "trigger";
     cid = 126;

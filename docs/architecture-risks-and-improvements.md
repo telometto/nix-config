@@ -1,6 +1,6 @@
 # Architecture Risks and Improvements
 
-> **Last reviewed: 2026-07-25**
+> **Last reviewed: 2026-07-30**
 
 This report captures documentation drift, operational risks, and future
 improvement opportunities discovered during a source-guided architecture
@@ -77,8 +77,8 @@ ______________________________________________________________________
 
 Current source state:
 
-- `vms/flake-microvms.nix` wires 26 `*-vm` outputs.
-- `vms/vm-registry.nix` contains 27 registry entries.
+- `vms/flake-microvms.nix` wires 27 `*-vm` outputs.
+- `vms/vm-registry.nix` contains 28 registry entries.
 - `vms/flaresolverr.nix` exists as a standalone VM definition.
 - `hosts/blizzard/virtualisation/microvms.nix` does not enable a standalone
   `flaresolverr` instance.
@@ -87,8 +87,8 @@ Current source state:
 
 ```mermaid
 flowchart LR
-    R["vm-registry.nix\n27 entries"] --> F["vms/*.nix files\nstandalone flaresolverr exists"]
-    F --> O["flake-microvms.nix\n26 wired VM outputs"]
+    R["vm-registry.nix\n28 entries"] --> F["vms/*.nix files\nstandalone flaresolverr exists"]
+    F --> O["flake-microvms.nix\n27 wired VM outputs"]
     O --> H["blizzard microvm instances\nno standalone flaresolverr"]
     R --> P["prowlarr-vm\nuses registry.flaresolverr.port"]
     P --> S["services.flaresolverr\nruns inside prowlarr-vm"]
@@ -97,7 +97,7 @@ flowchart LR
 
 Recommended action: decide whether `flaresolverr` should be a standalone VM,
 an intentionally embedded service inside `prowlarr-vm`, or removed as leftover
-scaffolding. Until then, documentation should describe **26 wired MicroVM
+scaffolding. Until then, documentation should describe **27 wired MicroVM
 outputs** and call out this exception.
 
 ### Stale architecture blueprint facts
