@@ -1,6 +1,6 @@
 # Project Architecture Blueprint
 
-> **Last verified: 2026-06-17**
+> **Last verified: 2026-07-31**
 >
 > **Project Type:** NixOS Flake Configuration
 >
@@ -44,6 +44,7 @@ ______________________________________________________________________
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
+| `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
 | `checks.x86_64-linux.scrutiny` | Scrutiny service, secret, and systemd contract tests |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
@@ -385,7 +386,7 @@ flowchart TD
 Note: MicroVMs use `cloud-hypervisor` as the hypervisor. They do **not** use `system-loader.nix`
 and therefore do not inherit host-only modules.
 
-### Host-side lifecycle and public HTTP publication
+### Host-side lifecycle, network policy, and public HTTP publication
 
 The physical host manages instances through
 `sys.virtualisation.microvm.instances.<name>`. Enabling an instance starts the
@@ -405,6 +406,17 @@ bespoke multi-host or path routes, including Matrix discovery, remain explicit
 in the host Cloudflare and Traefik configuration. See the canonical
 [publication diagram and configuration example](../vms/README.md#host-side-enablement)
 and [ADR 0001](adr/0001-model-public-http-publication-as-instance-intent.md).
+
+The same module derives every enabled instance's tap, bridge, MAC, IP, static
+FDB entry, and static neighbor from the VM registry. A host-owned native
+nftables `bridge` table validates that identity and permits only declared,
+directional service edges plus registry-derived WireGuard client paths. A
+separate `inet` table blocks same-bridge and cross-MicroVM-bridge host routing.
+This policy is independent of the standard NixOS firewall and NAT backend.
+Blizzard is configured explicitly for `enforce`; the preceding audit window
+and approval are recorded in the dated deployment report. `audit` remains the
+declarative rollback mode. See the [network policy reference](../vms/README.md#host-side-network-policy)
+and [ADR 0002](adr/0002-enforce-host-owned-microvm-network-policy.md).
 
 ### VM inventory
 
@@ -441,14 +453,23 @@ ______________________________________________________________________
 
 ## 10. Network Topology
 
-All MicroVMs except Pocket ID live on the shared `10.100.0.0/24` subnet bridged
-to the `blizzard` host. Four VMs route all egress traffic through the WireGuard
-VM rather than using the default gateway. Pocket ID is the sole guest on
-`pocket-id-br0`, a dedicated `10.100.1.0/30` host-to-VM segment. Symmetric host
-forwarding rules block routed traffic between `microvm-br0` and
-`pocket-id-br0`; Pocket ID's TCP ports `22` and `11081` additionally accept only
-Blizzard's `10.100.1.1/32` source. Peer MicroVMs therefore cannot route around
-the dedicated Layer-2 boundary or bypass Traefik and CrowdSec.
+All MicroVMs except Pocket ID are configured on the shared `10.100.0.0/24`
+subnet bridged to the `blizzard` host. qBittorrent, SABnzbd, Firefox, and Brave
+use the WireGuard VM as their configured gateway; Brave is currently disabled.
+Pocket ID is the sole guest on `pocket-id-br0`, a dedicated
+`10.100.1.0/30` host-to-VM segment.
+
+The host-owned network policy installs non-aging static registry FDB entries
+and permanent neighbors, disables unknown-unicast and multicast flooding,
+authenticates Ethernet/ARP identities and ordinary-VM IPv4 sources, and filters
+lateral traffic through explicit service and WireGuard edges. The WireGuard
+gateway intentionally may originate traffic for its derived VPN clients. Its
+native nftables `inet` table blocks host-routed
+traffic both within `microvm-br0` and between `microvm-br0` and
+`pocket-id-br0`; Pocket ID's firewall additionally accepts TCP ports `22` and
+`11081` only from Blizzard's `10.100.1.1/32` source. Peer MicroVMs therefore
+cannot route around the dedicated Layer-2 boundary or bypass Traefik and
+CrowdSec.
 
 ```mermaid
 flowchart TD
@@ -484,6 +505,12 @@ flowchart TD
 
 WG-routed VMs (qbittorrent, sabnzbd, firefox, brave) set `gateway = 10.100.0.11` in the
 vm-registry. qbittorrent and sabnzbd also use `dns = 10.100.0.11` (wireguard-vm).
+For each enabled registry relationship, the host makes the client MicroVM unit
+require and start after the gateway unit. Systemd reverses that ordering during
+shutdown, so enabled clients stop before the gateway. Inside `wireguard-vm`,
+the firewall remains active until after `wg-quick-wg0` stops and owns both the
+local OUTPUT and forwarded-traffic kill switches. The gateway uses fwmark
+`51820` and an explicit conntrack ceiling of 32,768 entries.
 The dedicated `10.100.1.0/30` identity segment is not advertised through
 Tailscale. Host forwarding filters keep the shared VM segment from reaching
 it, and Pocket ID accepts administrative SSH and Traefik backend traffic only
@@ -574,6 +601,12 @@ ______________________________________________________________________
 - **Kernel modules**: bluetooth, uvcvideo (and others) blacklisted.
 - **SSH**: hardened openssh config, `PermitRootLogin = no`, keys only.
 - **Users**: immutable, single `admin` user per VM.
+- **Host network boundary**: registry-derived FDB/neighbors and native nftables
+  bridge/inet policy reject identity spoofing, unknown taps, undeclared lateral
+  traffic, and host-routed bridge bypasses.
+- **VPN gateway boundary**: registry-derived service ordering, a stable fwmark,
+  persistent local/forwarding kill switches, and a measured conntrack ceiling
+  keep WireGuard clients fail-closed across tunnel and host shutdowns.
 
 ### Auto-upgrade
 
@@ -601,6 +634,7 @@ ______________________________________________________________________
 | Evaluate all flake outputs without building | `nix flake check --no-build` |
 | Run only the Cloudflare metrics tests | `nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs` |
 | Run only the MicroVM publication tests | `nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs` |
+| Run only the MicroVM network-policy test | `nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs` |
 | Run only the Sandfly target tests | `nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs` |
 | Run only the Scrutiny service tests | `nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs` |
 | Build without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
@@ -608,10 +642,12 @@ ______________________________________________________________________
 | Test without switching | `sudo nixos-rebuild test --flake .#<hostname>` |
 | Dry run (show what changes) | `nixos-rebuild dry-run --flake .#<hostname>` |
 
-The `flake-check.yml` CI workflow uses `nix flake check --no-build` for
-evaluation, then explicitly builds the Cloudflare metrics, MicroVM publication,
-Sandfly target, and Scrutiny service checks so their tests execute. Host
-evaluations run separately in `validate-config.yml`.
+The `flake-check.yml` CI workflow uses
+`.github/scripts/evaluate-flake-outputs.sh` to evaluate configurations,
+formatters, checks, and development shells in separate Nix processes, then
+explicitly builds the Cloudflare metrics, MicroVM publication, MicroVM
+network-policy, Sandfly target, and Scrutiny service checks so their tests
+execute. Host evaluations run separately in `validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 

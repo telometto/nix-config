@@ -18,6 +18,8 @@ let
 
   validCfg = validTarget.config;
   validEvaluation = builtins.tryEval validCfg.system.build.toplevel.drvPath;
+  missingPolicyEvaluation = builtins.tryEval missingPolicyConfirmation.config.system.build.toplevel.drvPath;
+  disabledEffectiveTailscaleEvaluation = builtins.tryEval disabledEffectiveTailscale.config.system.build.toplevel.drvPath;
 
   hasFailedAssertion =
     message: cfg:
@@ -72,9 +74,11 @@ let
   ) validCfg.security.sudo.extraRules;
 in
 assert validEvaluation.success;
+assert !missingPolicyEvaluation.success;
 assert hasFailedAssertion
   "Review docs/sandfly.md and set sys.security.sandflyTarget.tailscalePolicyReady only after restricting the tailnet SSH policy."
   missingPolicyConfirmation.config;
+assert !disabledEffectiveTailscaleEvaluation.success;
 assert hasFailedAssertion
   "sys.security.sandflyTarget requires the effective services.tailscale.enable option."
   disabledEffectiveTailscale.config;

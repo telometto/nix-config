@@ -15,6 +15,7 @@ Information reference for this repo's moving parts, options, and commands.
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
+| `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
 | `checks.x86_64-linux.scrutiny` | Scrutiny service, secret, and systemd contract tests |
@@ -172,10 +173,12 @@ Operational tools used across the repo.
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
 Locally, `nix flake check` evaluates and builds the formatting, Cloudflare
-metrics, MicroVM publication, Sandfly target, and Scrutiny service checks. The `flake-check.yml`
-CI workflow first runs `nix flake check --no-build` to evaluate all flake
-outputs, then explicitly builds all four executable test checks. Full host
-evaluation is handled separately by the `validate-config.yml` CI workflow.
+metrics, MicroVM publication, MicroVM network-policy, Sandfly target, and
+Scrutiny service checks. The `flake-check.yml` CI workflow first runs
+`.github/scripts/evaluate-flake-outputs.sh`, which evaluates configurations,
+formatters, checks, and development shells in separate Nix processes, then
+explicitly builds all five executable test checks. Full host evaluation is
+handled separately by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
 
@@ -204,17 +207,19 @@ See [`vms/README.md`](../vms/README.md) for the full VM list and per-VM details.
 ### Host-side instance lifecycle and publication
 
 [`modules/virtualisation/microvm-base.nix`](../modules/virtualisation/microvm-base.nix)
-owns host-side MicroVM lifecycle, raw port forwarding, and the standard public
-HTTP publication path.
+owns host-side MicroVM lifecycle, network identity and lateral access, raw port
+forwarding, and the standard public HTTP publication path.
 
 | Option | Purpose |
 |--------|---------|
 | `sys.virtualisation.microvm.instances.<name>.enable` | Start and manage the registered VM instance |
+| `sys.virtualisation.microvm.instances.<source>.networkPolicy.allowedPeers.<target>` | Directional private service access; selects primary/explicit ports and requires a reason |
 | `sys.virtualisation.microvm.instances.<name>.portForward.ports` | Optional transport-layer forwarding, independent of publication |
 | `sys.virtualisation.microvm.instances.<name>.publication.enable` | Explicitly enable standard public HTTP publication |
 | `sys.virtualisation.microvm.instances.<name>.publication.hostname` | One DNS label under the canonical public domain |
 | `sys.virtualisation.microvm.instances.<name>.publication.policy` | Named compatibility policy; defaults to the built-in `strict` policy |
 | `sys.virtualisation.microvm.publication.canonicalDomain` | Domain suffix for standard publications |
+| `sys.virtualisation.microvm.networkPolicy.mode` | `enforce` by default; temporary `audit` logs and accepts only otherwise-valid undeclared registered unicast |
 | `services.traefik.publicationPolicyMiddlewares` | Host-owned mapping from compatibility-policy names to Traefik middleware implementations |
 
 For each enabled publication, the module derives the backend from the VM
@@ -229,6 +234,18 @@ raw port forwarding, and bespoke multi-host or path routes such as Matrix stay
 outside this interface. See the
 [publication diagram](../vms/README.md#host-side-enablement) and
 [ADR 0001](adr/0001-model-public-http-publication-as-instance-intent.md).
+
+The network-policy implementation derives tap/MAC/IP/FDB/neighbor identity and
+WireGuard gateway pairs from the registry. Native nftables `bridge` and `inet`
+tables authenticate VM frames, filter declared stateful service edges, reject
+unknown taps and unsupported EtherTypes, and block both same-bridge host
+routing and cross-MicroVM-bridge routing. It does not enable the NixOS nftables
+firewall backend; the standard NixOS firewall and NAT continue to own host
+`INPUT` and external forwarding. Blizzard is configured explicitly for
+`enforce`; the preceding audit window is recorded in the dated deployment
+report, and `audit` remains the declarative rollback mode. See the
+[network-policy reference](../vms/README.md#host-side-network-policy) and
+[ADR 0002](adr/0002-enforce-host-owned-microvm-network-policy.md).
 
 ______________________________________________________________________
 
@@ -280,7 +297,7 @@ nix fmt
 # Evaluate and build all checks
 nix flake check
 
-# Evaluate all flake outputs without building them (as CI does first)
+# Evaluate all flake outputs without building them locally
 nix flake check --no-build
 
 # Build and run only the Cloudflare metrics unit-test check
@@ -288,6 +305,9 @@ nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs
 
 # Build and run only the MicroVM publication contract check
 nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
+
+# Build and run the MicroVM network-policy integration test
+nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs
 
 # Build and run only the Sandfly target contract check
 nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs
