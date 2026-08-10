@@ -174,9 +174,10 @@ Operational tools used across the repo.
 Locally, `nix flake check` evaluates and builds the formatting, Cloudflare
 metrics, MicroVM publication, MicroVM network-policy, and Sandfly target
 checks. The `flake-check.yml` CI workflow first runs
-`nix flake check --no-build` to evaluate all flake outputs, then explicitly
-builds all four executable test checks. Full host evaluation is handled
-separately by the `validate-config.yml` CI workflow.
+`.github/scripts/evaluate-flake-outputs.sh`, which evaluates configurations,
+formatters, checks, and development shells in separate Nix processes, then
+explicitly builds all four executable test checks. Full host evaluation is
+handled separately by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
 
@@ -239,8 +240,9 @@ tables authenticate VM frames, filter declared stateful service edges, reject
 unknown taps and unsupported EtherTypes, and block both same-bridge host
 routing and cross-MicroVM-bridge routing. It does not enable the NixOS nftables
 firewall backend; the standard NixOS firewall and NAT continue to own host
-`INPUT` and external forwarding. Blizzard is staged in `audit`; the module
-default remains `enforce`. See the
+`INPUT` and external forwarding. Blizzard is configured explicitly for
+`enforce`; the preceding audit window is recorded in the dated deployment
+report, and `audit` remains the declarative rollback mode. See the
 [network-policy reference](../vms/README.md#host-side-network-policy) and
 [ADR 0002](adr/0002-enforce-host-owned-microvm-network-policy.md).
 
@@ -294,7 +296,7 @@ nix fmt
 # Evaluate and build all checks
 nix flake check
 
-# Evaluate all flake outputs without building them (as CI does first)
+# Evaluate all flake outputs without building them locally
 nix flake check --no-build
 
 # Build and run only the Cloudflare metrics unit-test check
