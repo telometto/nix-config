@@ -6,15 +6,12 @@
 }:
 let
   registry = import ../vms/vm-registry.nix;
+  networkDefaults = import ../vms/microvm-network-defaults.nix;
   wireguardCfg = wireguardVm.config;
   wireguardFirewallCommands = wireguardCfg.networking.firewall.extraCommands;
+  wireguardFirewallStopCommands = wireguardCfg.networking.firewall.extraStopCommands;
   wireguardInterface = wireguardCfg.networking.wg-quick.interfaces.wg0;
   wireguardUnit = wireguardCfg.systemd.services.wg-quick-wg0;
-  vpnClientNames = [
-    "qbittorrent"
-    "sabnzbd"
-    "firefox"
-  ];
 
   enforced = blizzard.extendModules {
     modules = [
@@ -24,6 +21,32 @@ let
     ];
   };
   enforcedCfg = enforced.config;
+  policyService = enforcedCfg.systemd.services."microvm-network-policy";
+  enabledIdentityNames = builtins.attrNames (
+    lib.filterAttrs
+      (_: instance: instance.enable)
+      enforcedCfg.sys.virtualisation.microvm.instances
+  );
+  policyIdentityNames = lib.filter (name: builtins.hasAttr name registry) enabledIdentityNames;
+  policyTapNames = map (
+    name:
+    let
+      entry = registry.${name};
+    in
+    entry.tapId or "vm-${entry.name}"
+  ) policyIdentityNames;
+  dedicatedIdentityNames = lib.filter (name: registry.${name} ? hostBridge) policyIdentityNames;
+  policyNetdevNames = [ "10-${networkDefaults.sharedBridge.name}" ]
+    ++ map (name: "10-${name}-bridge") dedicatedIdentityNames;
+  policyNetworkNames = [
+    "10-${networkDefaults.sharedBridge.name}"
+    "12-microvm-tap"
+  ]
+  ++ map (name: "10-${name}-bridge") dedicatedIdentityNames
+  ++ map (name: "11-${name}-tap") policyIdentityNames;
+  vpnClientNames = lib.filter (
+    name: (registry.${name}.gateway or networkDefaults.defaultGateway) == registry.wireguard.ip
+  ) policyIdentityNames;
   policyRuleset = enforcedCfg.environment.etc."microvm-network-policy/ruleset.nft".source;
 
   audited = blizzard.extendModules {
@@ -34,32 +57,14 @@ let
     ];
   };
 
-  policyNetdevs = lib.filterAttrs (
-    name: _: name == "10-microvm-br0" || name == "10-pocket-id-bridge"
-  ) enforcedCfg.systemd.network.netdevs;
-  policyNetworks = lib.filterAttrs (
-    name: _:
-    name == "10-microvm-br0"
-    || name == "10-pocket-id-bridge"
-    || name == "12-microvm-tap"
-    || lib.hasPrefix "11-" name
-  ) enforcedCfg.systemd.network.networks;
+  policyNetdevs = lib.filterAttrs (name: _: lib.elem name policyNetdevNames) enforcedCfg.systemd.network.netdevs;
+  policyNetworks = lib.filterAttrs (name: _: lib.elem name policyNetworkNames) enforcedCfg.systemd.network.networks;
 
   policyText = enforcedCfg.sys.virtualisation.microvm.networkPolicy.renderedRuleset;
   auditPolicyText = audited.config.sys.virtualisation.microvm.networkPolicy.renderedRuleset;
-  testIdentityNames = [
-    "prowlarr"
-    "sonarr"
-    "radarr"
-    "readarr"
-    "gitea"
-    "qbittorrent"
-    "wireguard"
-    "pocket-id"
-  ];
   fdbInstallers = map (
     name: enforcedCfg.systemd.services."microvm-tap-interfaces@${name}-vm".postStart
-  ) testIdentityNames;
+  ) policyIdentityNames;
 
   invalidUnknownTarget = blizzard.extendModules {
     modules = [
@@ -131,8 +136,16 @@ let
     ];
   };
 
+  hasFailedAssertion =
+    message: cfg:
+    lib.any (assertion: !assertion.assertion && assertion.message == message) cfg.assertions;
+
   evaluationFails =
-    configuration: !(builtins.tryEval configuration.config.system.build.toplevel.drvPath).success;
+    message: configuration:
+    let
+      evaluation = builtins.tryEval configuration.config.system.build.toplevel.drvPath;
+    in
+    !evaluation.success && hasFailedAssertion message configuration.config;
 
   setupNamespace = pkgs.writeShellScript "setup-microvm-policy-namespace" ''
     set -eu
@@ -165,15 +178,31 @@ let
     ip netns exec "$namespace_name" nft 'add chain ip policy_test_nat postrouting { type nat hook postrouting priority srcnat; policy accept; }'
     ip netns exec "$namespace_name" nft add rule ip policy_test_nat postrouting ip saddr "$client_address" masquerade
   '';
+
+  policyNamespaceSetup = lib.concatMapStringsSep "\n" (
+    name:
+    let
+      entry = registry.${name};
+      tapName = entry.tapId or "vm-${entry.name}";
+      prefixLength = entry.prefixLength or networkDefaults.defaultPrefixLength;
+      gateway = entry.gateway or networkDefaults.defaultGateway;
+    in
+    ''    machine.succeed("${setupNamespace} ns-${name} ${tapName} ${entry.mac} ${entry.ip}/${toString prefixLength} ${gateway}")''
+  ) policyIdentityNames;
 in
 assert blizzard.options.sys.virtualisation.microvm.networkPolicy.mode.default == "enforce";
 assert blizzard.config.sys.virtualisation.microvm.networkPolicy.mode == "enforce";
 assert enforcedCfg.sys.virtualisation.microvm.networkPolicy.mode == "enforce";
 assert !blizzard.config.networking.nftables.enable;
+assert policyService.reloadTriggers != [ ];
+assert policyService.restartTriggers == [ ];
+assert policyService.serviceConfig.ExecStart == "${pkgs.nftables}/bin/nft --file /etc/microvm-network-policy/ruleset.nft";
+assert policyService.serviceConfig.StateDirectory == "microvm-network-policy";
+assert lib.hasInfix "counter-snapshots.nft" policyService.reload;
 assert lib.hasInfix "counter name lateral_audit" auditPolicyText;
 assert lib.hasInfix ''log prefix "microvm-policy audit: "'' auditPolicyText;
 assert lib.hasInfix "counter name lateral_drops" policyText;
-assert lib.hasInfix ''iifname "microvm-br0" oifname "microvm-br0" jump deny_routed_lateral''
+assert lib.hasInfix ''iifname "${networkDefaults.sharedBridge.name}" oifname "${networkDefaults.sharedBridge.name}" jump deny_routed_lateral''
   policyText;
 assert lib.hasInfix ''iifname "vm-prowlarr" oifname "vm-sonarr"'' policyText;
 assert lib.hasInfix "tcp dport { ${toString registry.sonarr.port} }" policyText;
@@ -192,20 +221,27 @@ assert lib.hasInfix ''iifname "vm-qbittorrent" oifname "vm-wireguard"'' policyTe
 assert lib.hasInfix ''iifname "vm-*" jump deny_unknown_tap'' policyText;
 assert lib.hasInfix "vm-prowlarr microvm-br0 ${registry.prowlarr.mac}"
   enforcedCfg.systemd.services."microvm-tap-interfaces@prowlarr-vm".postStart;
+assert lib.hasInfix ''comment "prowlarr->sonarr: Synchronize indexers with Sonarr"'' policyText;
 assert !enforcedCfg.systemd.network.networks."11-prowlarr-tap".bridgeConfig.UnicastFlood;
 assert !enforcedCfg.systemd.network.networks."11-prowlarr-tap".bridgeConfig.MulticastFlood;
 assert lib.elem {
   Address = registry.prowlarr.ip;
   LinkLayerAddress = registry.prowlarr.mac;
-} enforcedCfg.systemd.network.networks."10-microvm-br0".neighbors;
-assert lib.elem "microvm-network-policy.service"
-  enforcedCfg.systemd.services."microvm@prowlarr-vm".requires;
+} enforcedCfg.systemd.network.networks."10-${networkDefaults.sharedBridge.name}".neighbors;
+assert lib.all (
+  name: lib.elem "microvm-network-policy.service" enforcedCfg.systemd.services."microvm@${name}-vm".requires
+) policyIdentityNames;
 assert wireguardCfg.boot.kernel.sysctl."net.netfilter.nf_conntrack_max" or null == 32768;
+assert wireguardCfg.networking.enableIPv6 == false;
+assert wireguardCfg.boot.kernel.sysctl."net.ipv6.conf.all.disable_ipv6" or null == 1;
+assert wireguardCfg.boot.kernel.sysctl."net.ipv6.conf.default.disable_ipv6" or null == 1;
 assert wireguardInterface.extraOptions.FwMark or null == 51820;
 assert !lib.hasInfix "%i" wireguardInterface.postUp;
 assert lib.hasInfix
-  "-A OUTPUT ! -o wg0 -m mark ! --mark 51820 -m addrtype ! --dst-type LOCAL -j REJECT"
+  "-A WG_OUTPUT ! -o wg0 -m mark ! --mark 51820 -m addrtype ! --dst-type LOCAL -j REJECT"
   wireguardFirewallCommands;
+assert lib.hasInfix "iptables-restore --noflush" wireguardFirewallCommands;
+assert wireguardFirewallStopCommands == "";
 assert lib.elem "firewall.service" wireguardUnit.requires;
 assert lib.elem "firewall.service" wireguardUnit.after;
 assert lib.all (
@@ -215,14 +251,30 @@ assert lib.all (
   in
   lib.elem "microvm@wireguard-vm.service" clientUnit.requires
   && lib.elem "microvm@wireguard-vm.service" clientUnit.after
+  && lib.elem "microvm@wireguard-vm.service" clientUnit.wantedBy
+  && lib.elem "microvm@wireguard-vm.service" clientUnit.partOf
 ) vpnClientNames;
-assert evaluationFails invalidUnknownTarget;
-assert evaluationFails invalidDisabledTarget;
-assert evaluationFails invalidDisabledSource;
-assert evaluationFails invalidDedicatedTarget;
-assert evaluationFails invalidMissingReason;
-assert evaluationFails invalidSelfEdge;
-assert evaluationFails invalidDuplicatePort;
+assert evaluationFails
+  "sys.virtualisation.microvm network policy has unregistered targets: prowlarr->unknown"
+  invalidUnknownTarget;
+assert evaluationFails
+  "sys.virtualisation.microvm network policy declarations cannot target disabled VMs: prowlarr->actual"
+  invalidDisabledTarget;
+assert evaluationFails
+  "sys.virtualisation.microvm network policy declarations cannot have disabled sources: actual->gitea"
+  invalidDisabledSource;
+assert evaluationFails
+  "sys.virtualisation.microvm dedicated-bridge VMs cannot have direct VM peer permissions: prowlarr->pocket-id"
+  invalidDedicatedTarget;
+assert evaluationFails
+  "sys.virtualisation.microvm network policy permissions require a non-empty reason: prowlarr->gitea"
+  invalidMissingReason;
+assert evaluationFails
+  "sys.virtualisation.microvm network policy cannot declare self-edges: prowlarr->prowlarr"
+  invalidSelfEdge;
+assert evaluationFails
+  "sys.virtualisation.microvm network policy permissions contain duplicate ports: prowlarr->gitea"
+  invalidDuplicatePort;
 pkgs.testers.runNixOSTest {
   name = "microvm-network-policy";
 
@@ -262,6 +314,7 @@ pkgs.testers.runNixOSTest {
           Type = "oneshot";
           RemainAfterExit = true;
           ExecStart = "${pkgs.nftables}/bin/nft --file ${policyRuleset}";
+          ExecReload = "${pkgs.nftables}/bin/nft --file ${policyRuleset}";
         };
       };
     };
@@ -275,14 +328,7 @@ pkgs.testers.runNixOSTest {
         machine.succeed("nft list table bridge microvm_policy | grep -q 'chain deny_spoof'")
         machine.succeed("nft list table inet microvm_policy | grep -q 'routed_lateral_drops'")
 
-    machine.succeed("${setupNamespace} ns-prowlarr vm-prowlarr ${registry.prowlarr.mac} ${registry.prowlarr.ip}/24 10.100.0.1")
-    machine.succeed("${setupNamespace} ns-sonarr vm-sonarr ${registry.sonarr.mac} ${registry.sonarr.ip}/24 10.100.0.1")
-    machine.succeed("${setupNamespace} ns-radarr vm-radarr ${registry.radarr.mac} ${registry.radarr.ip}/24 10.100.0.1")
-    machine.succeed("${setupNamespace} ns-readarr vm-readarr ${registry.readarr.mac} ${registry.readarr.ip}/24 10.100.0.1")
-    machine.succeed("${setupNamespace} ns-gitea vm-gitea ${registry.gitea.mac} ${registry.gitea.ip}/24 10.100.0.1")
-    machine.succeed("${setupNamespace} ns-qbittorrent vm-qbittorrent ${registry.qbittorrent.mac} ${registry.qbittorrent.ip}/24 ${registry.qbittorrent.gateway}")
-    machine.succeed("${setupNamespace} ns-wireguard vm-wireguard ${registry.wireguard.mac} ${registry.wireguard.ip}/24 10.100.0.1")
-    machine.succeed("${setupNamespace} ns-pocket-id vm-pocket-id ${registry.pocket-id.mac} ${registry.pocket-id.ip}/30 ${registry.pocket-id.gateway}")
+${policyNamespaceSetup}
     machine.succeed("${setupNamespace} ns-rogue vm-rogue 02:00:00:00:00:EE 10.100.0.90/24 10.100.0.1")
     machine.succeed("${setupGatewayNat} ns-wireguard ${registry.qbittorrent.ip}")
 
@@ -295,12 +341,18 @@ pkgs.testers.runNixOSTest {
     machine.succeed("ip -n ns-internet link set eth0 up")
     machine.succeed("ip -n ns-internet route add 10.100.0.0/24 via 192.0.2.1")
 
-    for tap_name in ["vm-prowlarr", "vm-sonarr", "vm-radarr", "vm-readarr", "vm-gitea", "vm-qbittorrent", "vm-wireguard", "vm-pocket-id", "vm-rogue"]:
+    for tap_name in ${builtins.toJSON policyTapNames} + ["vm-rogue"]:
         machine.wait_until_succeeds(f"bridge link show dev {tap_name} | grep -q 'master .*br0'")
     machine.wait_until_succeeds("ip -4 address show dev microvm-br0 | grep -q '10.100.0.1/24'")
     machine.wait_until_succeeds("ip -4 address show dev pocket-id-br0 | grep -q '10.100.1.1/30'")
     for fdb_installer in ${builtins.toJSON fdbInstallers}:
         machine.succeed(fdb_installer)
+
+    with subtest("policy reload keeps dependent taps alive"):
+        machine.succeed("systemctl reload microvm-network-policy.service")
+        machine.wait_for_unit("microvm-network-policy.service")
+        for tap_name in ${builtins.toJSON policyTapNames}:
+            machine.succeed(f"bridge link show dev {tap_name} | grep -q 'master .*br0'")
 
     with subtest("host lifecycle installs static identity and anti-flood state"):
         machine.succeed("ip neigh show ${registry.prowlarr.ip} dev microvm-br0 | grep -qi '${registry.prowlarr.mac}.*PERMANENT'")
