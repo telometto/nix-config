@@ -12,15 +12,18 @@
 # The /persist volume and /nix/store share are appended automatically. A caller
 # may override persistVolume when storage metadata is shared with another
 # consumer, such as a backup job.
+let
+  networkDefaults = import ./microvm-network-defaults.nix;
+in
 {
   name,
   cid,
   mac,
   ip,
-  prefixLength ? 24,
+  prefixLength ? networkDefaults.defaultPrefixLength,
   mem,
   vcpu ? 1,
-  gateway ? "10.100.0.1",
+  gateway ? networkDefaults.defaultGateway,
   dns ? "1.1.1.1",
   tapId ? "vm-${name}",
   hostBridge ? null,
@@ -43,14 +46,16 @@ let
   ipIsUsable = prefixIsValid && ipv4.usableHostAddress ip prefixLength;
   gatewayIsUsable = prefixIsValid && ipv4.usableHostAddress gateway prefixLength;
   addressesShareSubnet = ipv4.sameSubnet ip gateway prefixLength;
-  sharedNetwork = ipv4.networkInterval "10.100.0.0" 24;
+  sharedNetwork = ipv4.networkInterval networkDefaults.sharedBridge.address networkDefaults.sharedBridge.prefixLength;
   configuredNetwork = ipv4.networkInterval ip prefixLength;
   sharedNetworkMatches =
     !prefixIsValid
     || parsedIp == null
     || hostBridge != null
     || (
-      configuredNetwork != null && prefixLength == 24 && configuredNetwork.first == sharedNetwork.first
+      configuredNetwork != null
+      && prefixLength == networkDefaults.sharedBridge.prefixLength
+      && configuredNetwork.first == sharedNetwork.first
     );
 in
 {
@@ -85,7 +90,7 @@ in
     }
     {
       assertion = sharedNetworkMatches;
-      message = "mkMicrovmConfig (${name}): non-dedicated VMs must use the shared 10.100.0.0/24 network";
+      message = "mkMicrovmConfig (${name}): non-dedicated VMs must use the shared ${networkDefaults.sharedBridge.network} network";
     }
   ];
 
