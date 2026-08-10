@@ -7,6 +7,9 @@
 let
   cfg = config.sys.virtualisation.microvm;
   registry = import ../../vms/vm-registry.nix;
+  networkDefaults = import ../../vms/microvm-network-defaults.nix;
+  sharedBridgeName = networkDefaults.sharedBridge.name;
+  sharedBridgeNetworkUnit = "10-${sharedBridgeName}";
   mkVmName = name: "${name}-vm";
 
   # Port forward submodule
@@ -284,7 +287,7 @@ let
       inherit name;
       inherit (entry) ip mac;
       tap = entry.tapId or "vm-${entry.name}";
-      bridge = entry.hostBridge or "microvm-br0";
+      bridge = entry.hostBridge or sharedBridgeName;
     };
 
   policyIdentities = map identityFor registeredEnabledInstanceNames;
@@ -355,12 +358,12 @@ let
     lib.mapAttrsToList (_: entry: entry.hostBridge) isolatedRegistryEntries
   );
 
-  internalBridgeNames = [ "microvm-br0" ] ++ isolatedBridgeNames;
+  internalBridgeNames = [ sharedBridgeName ] ++ isolatedBridgeNames;
 
   sharedBridgeNeighbors = map (identity: {
     Address = identity.ip;
     LinkLayerAddress = identity.mac;
-  }) (lib.filter (identity: identity.bridge == "microvm-br0") policyIdentities);
+  }) (lib.filter (identity: identity.bridge == sharedBridgeName) policyIdentities);
 
   declaredEdges = lib.concatMap (
     sourceName:
@@ -466,7 +469,7 @@ let
   registeredGatewayReferences = lib.concatMap (
     clientName:
     let
-      gatewayAddress = registry.${clientName}.gateway or "10.100.0.1";
+      gatewayAddress = registry.${clientName}.gateway or networkDefaults.defaultGateway;
       gatewayName = lib.findFirst (
         candidateName: registry.${candidateName}.ip == gatewayAddress
       ) null registryNames;
@@ -521,6 +524,18 @@ let
       '';
 
   policyServiceName = "microvm-network-policy.service";
+  policyRulesetPath = "/etc/microvm-network-policy/ruleset.nft";
+  policyCounterSnapshot = pkgs.writeShellScript "snapshot-microvm-policy-counters" ''
+    set -eu
+
+    snapshot_file=/var/lib/microvm-network-policy/counter-snapshots.nft
+    {
+      printf 'snapshot %s\n' "$(${pkgs.coreutils}/bin/date --iso-8601=seconds)"
+      ${pkgs.nftables}/bin/nft list table bridge microvm_policy 2>/dev/null || true
+      ${pkgs.nftables}/bin/nft list table inet microvm_policy 2>/dev/null || true
+      printf '\n'
+    } >> "$snapshot_file"
+  '';
   installStaticFdb = pkgs.writeShellScript "install-microvm-static-fdb" ''
     set -eu
 
@@ -528,11 +543,13 @@ let
     bridge_name="$2"
     guest_mac="$3"
 
-    for _ in {1..100}; do
+    # networkd and microvm-nix can take longer than a cold five-second boot
+    # window to create and attach a tap, especially after a host switch.
+    for _ in {1..600}; do
       if ${pkgs.iproute2}/bin/bridge link show dev "$tap_name" | ${pkgs.gnugrep}/bin/grep -Fq "master $bridge_name"; then
         exec ${pkgs.iproute2}/bin/bridge fdb replace "$guest_mac" dev "$tap_name" master static
       fi
-      ${pkgs.coreutils}/bin/sleep 0.05
+      ${pkgs.coreutils}/bin/sleep 0.1
     done
 
     echo "Timed out waiting for $tap_name to join $bridge_name" >&2
@@ -555,6 +572,8 @@ let
         value = {
           requires = [ policyServiceName ] ++ lib.optional (gatewayUnitName != null) gatewayUnitName;
           after = [ policyServiceName ] ++ lib.optional (gatewayUnitName != null) gatewayUnitName;
+          wantedBy = lib.optional (gatewayUnitName != null) gatewayUnitName;
+          partOf = lib.optional (gatewayUnitName != null) gatewayUnitName;
         };
       }
     ) enabledInstanceNames
@@ -897,18 +916,18 @@ in
       # Bridges for MicroVM traffic (systemd-networkd style).
       network = {
         netdevs = {
-          "10-microvm-br0".netdevConfig = {
+          "${sharedBridgeNetworkUnit}".netdevConfig = {
             Kind = "bridge";
-            Name = "microvm-br0";
+            Name = sharedBridgeName;
           };
         }
         // isolatedBridgeNetdevs;
 
         networks = {
-          "10-microvm-br0" = {
-            matchConfig.Name = "microvm-br0";
+          "${sharedBridgeNetworkUnit}" = {
+            matchConfig.Name = sharedBridgeName;
             networkConfig = {
-              Address = [ "10.100.0.1/24" ];
+              Address = [ "${networkDefaults.sharedBridge.address}/${toString networkDefaults.sharedBridge.prefixLength}" ];
               LinkLocalAddressing = "no";
             };
             neighbors = sharedBridgeNeighbors;
@@ -918,7 +937,7 @@ in
           # transmit through nftables or receive flooded unicast/multicast.
           "12-microvm-tap" = {
             matchConfig.Name = "vm-*";
-            networkConfig.Bridge = "microvm-br0";
+            networkConfig.Bridge = sharedBridgeName;
             bridgeConfig = {
               Learning = true;
               Locked = false;
@@ -937,12 +956,17 @@ in
           wantedBy = [ "multi-user.target" ];
           after = [ "systemd-modules-load.service" ];
           before = [ "microvms.target" ] ++ policyVmUnitNames ++ policyTapUnitNames;
-          restartTriggers = [ policyRuleset ];
+          reloadTriggers = [ policyRuleset ];
+          reload = ''
+            ${policyCounterSnapshot}
+            ${pkgs.nftables}/bin/nft --file ${policyRulesetPath}
+          '';
 
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
-            ExecStart = "${pkgs.nftables}/bin/nft --file ${policyRuleset}";
+            ExecStart = "${pkgs.nftables}/bin/nft --file ${policyRulesetPath}";
+            StateDirectory = "microvm-network-policy";
             CapabilityBoundingSet = [ "CAP_NET_ADMIN" ];
             NoNewPrivileges = true;
             PrivateTmp = true;
@@ -961,7 +985,7 @@ in
       nat = {
         enable = true;
         enableIPv6 = false;
-        internalInterfaces = [ "microvm-br0" ] ++ isolatedBridgeNames;
+        internalInterfaces = [ sharedBridgeName ] ++ isolatedBridgeNames;
         inherit (cfg) externalInterface;
         forwardPorts = allForwardPorts;
       };
@@ -969,10 +993,10 @@ in
       # The normal NixOS firewall continues to own host INPUT. The dedicated
       # native nftables policy only authenticates VM frames and filters traffic
       # forwarded between VM ports/bridges.
-      # Add interfaces."microvm-br0".allowedTCPPorts here if a VM must reach
+      # Add interfaces."${sharedBridgeName}".allowedTCPPorts here if a VM must reach
       # a specific host service directly.
       firewall.interfaces = {
-        "microvm-br0" = {
+        "${sharedBridgeName}" = {
           allowedTCPPorts = [ ];
           allowedUDPPorts = [ ];
         };
