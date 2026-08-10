@@ -17,7 +17,7 @@ runs `nix fmt` (formatting only, no evaluation), and `update-dashboards.yml` use
 
 **SSH_DEPLOY_KEY requirement:** Workflows that evaluate the flake —
 `flake-check`, `validate-config`, `update-nix-lock`, `health-check`, and
-`update-nix-lock-recreate` — use `webfactory/ssh-agent@v0.9.1` with
+`update-nix-lock-recreate` — use `webfactory/ssh-agent@v0.10.0` with
 `secrets.SSH_DEPLOY_KEY`. To set this up:
 
 1. Generate a dedicated SSH key pair: `ssh-keygen -t ed25519 -C "github-actions"`
@@ -74,13 +74,13 @@ ______________________________________________________________________
 | Workflow | Trigger | Purpose | Auto-commits? |
 |----------|---------|---------|--------------|
 | `auto-format.yml` | PR / push to main / manual | Runs `nix fmt`, commits formatted changes back to the branch, comments on PR, enables auto-merge | Yes — formats in-place |
-| `flake-check.yml` | PR / push to main / manual (filtered to its workflow file, Nix/flake inputs, Cloudflare collector/tests/dashboard, the VM README, and ADRs) | Runs `.github/scripts/evaluate-flake-outputs.sh` to evaluate each flake output sequentially, redacts secrets in failure output, and builds the Cloudflare metrics, MicroVM publication, MicroVM network-policy, and Sandfly target checks | No |
+| `flake-check.yml` | PR / push to main / manual (filtered to its workflow file, Nix/flake inputs, Cloudflare collector/tests/dashboard, the VM README, and ADRs) | Runs `.github/scripts/evaluate-flake-outputs.sh` to evaluate each flake output sequentially, redacts secrets in failure output, and builds the Cloudflare metrics, MicroVM publication, MicroVM network-policy, Sandfly target, and Scrutiny service checks | No |
 | `validate-config.yml` | PR / push to main / manual | Discovers hosts via `mkHost` grep, evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix, and evaluates the Home Manager users attrset | No |
 | `change-impact-analysis.yml` | PR | Diffs changed files under `hosts/`, `modules/`, `home/`, `vms/`, `lib/`, `flake.*`, posts impact report as a PR comment | No |
 | `compliance-check.yml` | PR / push / cron Mon 09:00 | Runs `deadnix` and other Nix linters, comments results | No |
 | `doc-drift.yml` | PR | Warns if code changes ship without any `docs/*.md` or `*.md` updates | No |
 | `flake-freshness.yml` | cron Mon 08:00 / manual | Walks `flake.lock`, flags inputs older than 90 days via a GitHub Issue | No (opens Issue) |
-| `health-check.yml` | cron daily 06:00 / manual | Discovers hosts, builds `config.system.build.toplevel` for each | No |
+| `health-check.yml` | cron daily 06:00 / manual | Discovers hosts, builds `config.system.build.toplevel` for each, opens or updates a bot-created infrastructure Issue on failure, and closes matching Issues after an authoritative recovery | No (opens, comments on, and closes Issues) |
 | `security-audit.yml` | cron Mon 02:00 / manual | Runs `gitleaks`; greps for `openFirewall.*true` | No |
 | `cloudflare-ip-check.yml` | cron 1st of month 04:00 / manual | Diffs hardcoded CF IPs in `hosts/blizzard/security/traefik.nix` against cloudflare.com/ips-v4 | No (opens Issue/PR) |
 | `update-nix-lock.yml` | cron every 3h / manual | Runs `update-flake-lock`, opens PR, waits for `flake-check` + full validate matrix, then auto-merges | Yes — lock file |
@@ -97,7 +97,10 @@ These run on a cron schedule without a PR trigger:
 **Daily**
 
 - **`health-check.yml`** (06:00) — Full host build to catch regressions that
-  slipped through PR checks. Fails loudly if any host fails to build.
+  slipped through PR checks. On failure, opens an `infrastructure` / `urgent`
+  GitHub Issue or comments on every matching open bot-created Issue. A successful
+  run closes those Issues only when it tested the current default-branch head,
+  after adding a recovery comment with the workflow-run link.
 
 **Weekly (Monday)**
 
@@ -132,7 +135,7 @@ These run on every pull request:
 | Workflow | What it checks |
 |----------|---------------|
 | `auto-format.yml` | Formats all files and commits back; if this commits, the PR diff is automatically clean |
-| `flake-check.yml` | Evaluates the flake for Nix errors and runs the Cloudflare metrics, MicroVM publication, MicroVM network-policy, and Sandfly target checks when Nix/flake inputs or their scoped test, dashboard, VM README, or ADR contracts change |
+| `flake-check.yml` | Evaluates the flake for Nix errors and runs the Cloudflare metrics, MicroVM publication, MicroVM network-policy, Sandfly target, and Scrutiny service checks when Nix/flake inputs or their scoped test, dashboard, VM README, or ADR contracts change |
 | `validate-config.yml` | Evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix (does not perform a full build) |
 | `change-impact-analysis.yml` | Posts a comment summarising which layer (hosts, modules, home, vms, lib, flake) is affected |
 | `compliance-check.yml` | Dead-code linting and other Nix hygiene checks |

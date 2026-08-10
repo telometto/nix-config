@@ -49,7 +49,7 @@ in
         enable = true;
         extest.enable = lib.mkDefault true;
         protontricks.enable = lib.mkDefault true;
-        gamescopeSession.enable = lib.mkForce false; # Issues on master with bubblewrap
+        gamescopeSession.enable = lib.mkForce true;
         extraPackages = with pkgs; [
           gamemode
           mangohud

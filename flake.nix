@@ -14,6 +14,8 @@
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
+    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
+
     flake-compat = {
       url = "github:NixOS/flake-compat";
       flake = false;
@@ -83,6 +85,8 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    vscode-server.url = "github:nix-community/nixos-vscode-server";
   };
 
   outputs =
@@ -178,6 +182,11 @@
 
         sandfly-target = import ./tests/sandfly-target.nix {
           inherit (self.nixosConfigurations) snowfall;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        scrutiny = import ./tests/scrutiny.nix {
+          inherit (self.nixosConfigurations) blizzard;
           pkgs = nixpkgs.legacyPackages.${system};
         };
       };

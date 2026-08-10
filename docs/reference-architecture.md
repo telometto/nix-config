@@ -18,6 +18,7 @@ Information reference for this repo's moving parts, options, and commands.
 | `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
+| `checks.x86_64-linux.scrutiny` | Scrutiny service, secret, and systemd contract tests |
 | `devShells.x86_64-linux.default` | Dev shell with nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 ### `mkHost` — what it always injects
@@ -172,11 +173,11 @@ Operational tools used across the repo.
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
 Locally, `nix flake check` evaluates and builds the formatting, Cloudflare
-metrics, MicroVM publication, MicroVM network-policy, and Sandfly target
-checks. The `flake-check.yml` CI workflow first runs
+metrics, MicroVM publication, MicroVM network-policy, Sandfly target, and
+Scrutiny service checks. The `flake-check.yml` CI workflow first runs
 `.github/scripts/evaluate-flake-outputs.sh`, which evaluates configurations,
 formatters, checks, and development shells in separate Nix processes, then
-explicitly builds all four executable test checks. Full host evaluation is
+explicitly builds all five executable test checks. Full host evaluation is
 handled separately by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
@@ -310,6 +311,9 @@ nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-l
 
 # Build and run only the Sandfly target contract check
 nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs
+
+# Build and run only the Scrutiny service contract check
+nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs
 
 # Dev shell (includes nil, nixfmt, deadnix, statix, sops, ssh-to-age)
 nix develop
