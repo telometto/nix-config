@@ -157,6 +157,7 @@ in
       pkgs.kdePackages.kdeconnect-kde
       pkgs.kdePackages.kcalc
       pkgs.kdePackages.kolourpaint
+      pkgs.kdePackages.kgamma
       pkgs.nomacs
     ]
     ++ cfg.extraPackages;
