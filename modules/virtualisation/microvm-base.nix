@@ -927,7 +927,9 @@ in
           "${sharedBridgeNetworkUnit}" = {
             matchConfig.Name = sharedBridgeName;
             networkConfig = {
-              Address = [ "${networkDefaults.sharedBridge.address}/${toString networkDefaults.sharedBridge.prefixLength}" ];
+              Address = [
+                "${networkDefaults.sharedBridge.address}/${toString networkDefaults.sharedBridge.prefixLength}"
+              ];
               LinkLocalAddressing = "no";
             };
             neighbors = sharedBridgeNeighbors;

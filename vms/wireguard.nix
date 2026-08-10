@@ -15,9 +15,7 @@ let
   homeNetworkFirewallRules = lib.concatMapStringsSep "\n" (
     network: "-A WG_OUTPUT -d ${network} -j ACCEPT"
   ) homeNetworks;
-  legacyFirewallCleanup = lib.concatMapStringsSep "\n" (
-    rule: "${iptablesPath} ${rule} || true"
-  ) (
+  legacyFirewallCleanup = lib.concatMapStringsSep "\n" (rule: "${iptablesPath} ${rule} || true") (
     [
       "-D FORWARD -i ens3 -o ${wireguardInterface} -j ACCEPT"
       "-D FORWARD -i ${wireguardInterface} -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT"
