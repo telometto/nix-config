@@ -3,7 +3,8 @@
 Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
 for lightweight virtualization. The flake currently defines 26 MicroVM
 configurations for the `blizzard` host. Most use the shared `10.100.0.0/24`
-tap bridge; Pocket ID uses a dedicated `10.100.1.0/30` host-to-VM bridge.
+tap bridge behind a host-owned identity and lateral-access policy; Pocket ID
+uses a dedicated `10.100.1.0/30` host-to-VM bridge.
 
 ______________________________________________________________________
 
@@ -32,7 +33,7 @@ ______________________________________________________________________
 ```mermaid
 flowchart TB
     subgraph host["blizzard"]
-        bridge["microvm-br0\n10.100.0.1/24 shared bridge"]
+        bridge["microvm-br0\n10.100.0.1/24 shared bridge\nregistered identities + declared edges"]
         idbridge["pocket-id-br0\n10.100.1.1/30 dedicated bridge"]
     end
 
@@ -159,6 +160,13 @@ sys.virtualisation.microvm.instances.<name> = {
     hostname = "service";
     policy = "strict";
   };
+
+  # Optional directional private service access. The target IP, MAC, tap, and
+  # primary TCP port are derived from vm-registry.nix.
+  networkPolicy.allowedPeers.target-vm = {
+    primaryService = true;
+    reason = "Describe the operational dependency";
+  };
 };
 ```
 
@@ -214,18 +222,67 @@ message:
 | `instances.<name>.reverseProxy` | `instances.<name>.publication` or a bespoke host route |
 
 `immich` is published at `https://photos.zzxyz.no` through Cloudflare Tunnel
-and Traefik. Its raw host port is not forwarded; `10.100.0.70:11070` remains
-the direct address on the MicroVM network and through the advertised Tailscale
-subnet route.
+and Traefik. Blizzard also forwards TCP `11070` to the same registry service
+for direct home-LAN access; `10.100.0.70:11070` remains reachable on the
+MicroVM network and through the advertised Tailscale subnet route.
+
+______________________________________________________________________
+
+### Host-side network policy
+
+`modules/virtualisation/microvm-base.nix` owns the MicroVM network policy while
+leaving NixOS's standard firewall and NAT backend unchanged. It derives every
+enabled VM's bridge, tap, MAC, IP, gateway, and primary service from
+`vm-registry.nix` and renders:
+
+- non-aging static FDB entries, permanent networkd neighbor entries, and
+  unknown-unicast and multicast flooding disabled on all `vm-*` ports
+- a native nftables `bridge` table for Ethernet, ARP, IPv4 identity, declared
+  service edges, derived WireGuard clients, unknown taps, and broadcast or
+  multicast filtering
+- a native nftables `inet` table that blocks routing from `microvm-br0` back to
+  itself and between MicroVM bridges
+
+The default mode is `enforce`, and Blizzard is configured explicitly for
+`enforce` in `hosts/blizzard/virtualisation/microvms.nix`. The dated
+[deployment audit](../docs/deployment-audit-2026-08-08-microvm-networking.md)
+records the preceding audit window and the explicit decision to enable
+enforcement; it is historical evidence rather than the current runtime mode.
+
+An allowed peer is directional. `primaryService = true` permits new TCP
+connections only to the target registry port; `tcpPorts` and `udpPorts` add
+explicit ports. Stateful replies are allowed, but a new reverse connection
+needs its own declaration. Peer ICMP is not implied. Dedicated-bridge VMs
+cannot receive exceptions, and a newly enabled VM receives no lateral access
+by default. Gateway pairs such as `qbittorrent -> wireguard` are derived from
+the registry rather than declared manually.
+
+Operational inspection on Blizzard:
+
+```bash
+systemctl status microvm-network-policy.service
+sudo nft list table bridge microvm_policy
+sudo nft list table inet microvm_policy
+journalctl -u microvm-network-policy.service
+journalctl -k -g 'microvm-policy'
+```
+
+In `enforce`, inspect the named `lateral_drops` counter and
+`microvm-policy lateral-drop:` messages. Historical audit counters and ruleset
+snapshots are retained under `/var/lib/microvm-network-policy/` when the policy
+is reloaded. The supported rollback is declarative: return to `audit` or
+switch/boot the previous NixOS generation. Stopping the policy service does not
+delete its tables.
 
 ______________________________________________________________________
 
 ### WG-routed VMs
 
-`qbittorrent`, `sabnzbd`, `firefox`, and `brave` route all outbound traffic
-through `wireguard-vm` (10.100.0.11). This ensures downloads and browser
-sessions exit via the VPN rather than the host's public IP. Their default
-gateway is set to 10.100.0.11 in the registry.
+`qbittorrent`, `sabnzbd`, `firefox`, and `brave` are configured to route all
+outbound traffic through `wireguard-vm` (10.100.0.11); Brave is currently
+disabled on Blizzard. This ensures enabled download and browser sessions exit
+via the VPN rather than the host's public IP. Their default gateway is set to
+10.100.0.11 in the registry.
 
 ______________________________________________________________________
 
@@ -237,6 +294,9 @@ ______________________________________________________________________
    service-specific NixOS config.
 1. Wire it up in [flake-microvms.nix](flake-microvms.nix) using `mkMicrovm`.
 1. Enable on the host: `sys.virtualisation.microvm.instances.<name>.enable = true`.
+1. Declare each required private peer service under
+   `instances.<source>.networkPolicy.allowedPeers.<target>`; the default is no
+   lateral access.
 1. If it needs the standard public HTTP path, explicitly enable
    `instances.<name>.publication` with one hostname and a registered
    compatibility policy.
@@ -249,11 +309,17 @@ ______________________________________________________________________
 - Secrets are injected per-VM via sops-nix. Services that read
   `/run/secrets/*` at startup should declare `after` and `requires` on
   `sops-install-secrets.service` to avoid boot-order races.
-- VMs on the shared `microvm-br0` bridge can reach one another at Layer 2 unless
-  a guest firewall denies the traffic. Pocket ID is the exception: it uses a
-  dedicated bridge with host-level Layer-3 forwarding filters, and its guest
-  firewall accepts TCP ports `22` and `11081` only from Blizzard's dedicated
-  bridge address.
+- VMs may share `microvm-br0`, but the host validates their registry MAC and
+  ARP identity, and validates IPv4 sources for ordinary VMs. The WireGuard
+  gateway is intentionally exempt from the ordinary source-IP check so it can
+  originate traffic for its derived VPN clients; its host input path remains
+  constrained. Static FDB/neighbor bindings prevent unknown-unicast observation
+  and host ARP-cache poisoning. The guest firewall remains an independent
+  defense.
+- Pocket ID additionally uses a dedicated bridge. Host-level nftables routing
+  filters prevent shared-bridge peers from reaching it, and its guest firewall
+  accepts TCP ports `22` and `11081` only from Blizzard's dedicated bridge
+  address.
 
 ______________________________________________________________________
 
@@ -266,3 +332,4 @@ ______________________________________________________________________
 - [vm-registry.nix](vm-registry.nix) — Single source of truth for all VM parameters
 - [Infrastructure context](../CONTEXT.md) — Canonical publication terminology
 - [ADR 0001](../docs/adr/0001-model-public-http-publication-as-instance-intent.md) — Publication interface decision
+- [ADR 0002](../docs/adr/0002-enforce-host-owned-microvm-network-policy.md) — Host-owned identity and lateral-access policy

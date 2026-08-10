@@ -11,6 +11,7 @@ let
     address = cfg.addresses;
     inherit (cfg) listenPort privateKeyFile peers;
   }
+  // lib.optionalAttrs (cfg.fwmark != null) { extraOptions.FwMark = cfg.fwmark; }
   // lib.optionalAttrs (cfg.mtu != null) { inherit (cfg) mtu; }
   // lib.optionalAttrs (cfg.preUp != "") { inherit (cfg) preUp; }
   // lib.optionalAttrs (cfg.postUp != "") { inherit (cfg) postUp; }
@@ -41,6 +42,12 @@ in
     mtu = lib.mkOption {
       type = lib.types.nullOr lib.types.int;
       default = null;
+    };
+
+    fwmark = lib.mkOption {
+      type = lib.types.nullOr lib.types.int;
+      default = null;
+      description = "Stable packet mark used by wg-quick policy routing and firewall rules.";
     };
 
     privateKeyFile = lib.mkOption {
@@ -109,6 +116,10 @@ in
       {
         assertion = cfg.privateKeyFile != null;
         message = "sys.services.wireguard.privateKeyFile must be set when WireGuard is enabled";
+      }
+      {
+        assertion = cfg.fwmark == null || (cfg.fwmark > 0 && cfg.fwmark <= 4294967295);
+        message = "sys.services.wireguard.fwmark must be a non-zero 32-bit unsigned integer";
       }
     ];
 
