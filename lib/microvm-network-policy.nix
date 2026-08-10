@@ -7,7 +7,13 @@
   mode,
 }:
 let
-  quote = value: ''"${value}"'';
+  escapeNftString =
+    value:
+    lib.replaceStrings
+      [ "\\" "\"" "\n" "\r" ]
+      [ "\\\\" "\\\"" " " " " ]
+      value;
+  quote = value: ''"${escapeNftString value}"'';
   quoteList = values: lib.concatStringsSep ", " (map quote values);
   addressList = values: lib.concatStringsSep ", " values;
   portList = values: lib.concatStringsSep ", " (map toString values);
@@ -60,16 +66,17 @@ let
   serviceRules = lib.concatMapStringsSep "\n" (
     edge:
     let
+      edgeComment = quote "${edge.source.name}->${edge.destination.name}: ${edge.reason}";
       forwardTcp = lib.optionalString (edge.tcpPorts != [ ]) ''
-        iifname ${quote edge.source.tap} oifname ${quote edge.destination.tap} ether daddr ${edge.destination.mac} ip daddr ${edge.destination.ip} tcp dport { ${portList edge.tcpPorts} } ct state { new, established } accept
+        iifname ${quote edge.source.tap} oifname ${quote edge.destination.tap} ether daddr ${edge.destination.mac} ip daddr ${edge.destination.ip} tcp dport { ${portList edge.tcpPorts} } ct state { new, established } accept comment ${edgeComment}
       '';
       forwardUdp = lib.optionalString (edge.udpPorts != [ ]) ''
-        iifname ${quote edge.source.tap} oifname ${quote edge.destination.tap} ether daddr ${edge.destination.mac} ip daddr ${edge.destination.ip} udp dport { ${portList edge.udpPorts} } ct state { new, established } accept
+        iifname ${quote edge.source.tap} oifname ${quote edge.destination.tap} ether daddr ${edge.destination.mac} ip daddr ${edge.destination.ip} udp dport { ${portList edge.udpPorts} } ct state { new, established } accept comment ${edgeComment}
       '';
     in
     ''
       ${forwardTcp}${forwardUdp}
-      iifname ${quote edge.destination.tap} oifname ${quote edge.source.tap} ether daddr ${edge.source.mac} ip daddr ${edge.source.ip} ct state { established, related } accept
+      iifname ${quote edge.destination.tap} oifname ${quote edge.source.tap} ether daddr ${edge.source.mac} ip daddr ${edge.source.ip} ct state { established, related } accept comment ${edgeComment}
     ''
   ) serviceEdges;
 
