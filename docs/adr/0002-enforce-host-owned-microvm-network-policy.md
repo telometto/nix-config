@@ -2,9 +2,10 @@
 
 ## Status
 
-Accepted. Blizzard is intentionally staged in `audit`; switching it to
-`enforce` requires a separate review and explicit approval after the audit
-window.
+Accepted. Blizzard is configured for `enforce` in the current host
+configuration. The preceding audit window and its explicit approval are
+recorded in the dated deployment report; `audit` remains the declarative
+rollback mode.
 
 ## Context
 
@@ -32,18 +33,21 @@ the MicroVM host is enabled. The external interface is intentionally small:
   non-empty operational reason.
 - Registered VM gateways are derived from registry IP/gateway relationships;
   callers do not duplicate WireGuard MAC, IP, tap, or port details. The same
-  relationship makes each enabled client unit require and start after its
-  gateway, which reverses to client-before-gateway ordering during shutdown.
+  relationship makes each enabled client unit require, start after, and be
+  reactivated with its gateway.
 
 The implementation compiles that intent into two narrow native nftables tables
 loaded atomically by `microvm-network-policy.service`:
 
-- The `bridge` table validates each enabled tap's registered Ethernet, ARP, and
-  IPv4 identity; rejects unknown `vm-*` taps, IPv6, and other EtherTypes; permits
-  ARP only where a declared peer path requires it; allows stateful,
-  direction-specific service flows; derives WireGuard client pairs; and blocks
-  undeclared broadcast/multicast. In `audit`, only otherwise-valid undeclared
-  unicast between registered taps is logged, counted, and accepted.
+- The `bridge` table validates each enabled tap's registered Ethernet and ARP
+  identity, and validates IPv4 source identity for ordinary VMs. The derived
+  WireGuard gateway intentionally skips that ordinary source-IP check so it
+  can originate traffic for its VPN clients; its host-input path remains
+  constrained. The table rejects unknown `vm-*` taps, IPv6, and other
+  EtherTypes; permits ARP only where a declared peer path requires it; allows
+  stateful, direction-specific service flows; derives WireGuard client pairs;
+  and blocks undeclared broadcast/multicast. In `audit`, only otherwise-valid
+  undeclared unicast between registered taps is logged, counted, and accepted.
 - The `inet` table unconditionally drops host-routed traffic from
   `microvm-br0` back to itself and traffic routed between MicroVM bridges. The
   normal NixOS firewall continues to own host `INPUT`, and existing iptables
@@ -86,14 +90,13 @@ the observed qBittorrent workload.
 
 ## Rollout and rollback
 
-Blizzard normally first runs with `networkPolicy.mode = "audit"` for seven
-days. Review `lateral_audit` and the rate-limited `microvm-policy audit:`
-journal entries, add only verified missing edges, and run the integration test.
-The first 2026-08 audit iteration was explicitly accepted after about three
-days as a one-time exception; its findings and undeployed remediations are
-recorded in the dated audit report. A separate, explicitly approved maintenance
-window may then change Blizzard to `enforce`, probe the declared media and
-WireGuard paths, and keep the previous NixOS generation ready for rollback.
+Blizzard first ran with `networkPolicy.mode = "audit"` while the seven-day
+window was reviewed. The first 2026-08 audit iteration was explicitly accepted
+after about three days as a one-time exception; its findings and remediations
+are recorded in the dated audit report. The current configuration is now
+`enforce`. During future changes, inspect the relevant `lateral_drops` or
+historical `lateral_audit` counters, probe the declared media and WireGuard
+paths, and keep the previous NixOS generation ready for rollback.
 
 The supported escape hatch is declarative: return to `audit` or boot/switch to
 the previous generation. There is no mutable bypass command and stopping the
