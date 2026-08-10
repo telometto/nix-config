@@ -23,9 +23,7 @@ let
   enforcedCfg = enforced.config;
   policyService = enforcedCfg.systemd.services."microvm-network-policy";
   enabledIdentityNames = builtins.attrNames (
-    lib.filterAttrs
-      (_: instance: instance.enable)
-      enforcedCfg.sys.virtualisation.microvm.instances
+    lib.filterAttrs (_: instance: instance.enable) enforcedCfg.sys.virtualisation.microvm.instances
   );
   policyIdentityNames = lib.filter (name: builtins.hasAttr name registry) enabledIdentityNames;
   policyTapNames = map (
@@ -36,8 +34,10 @@ let
     entry.tapId or "vm-${entry.name}"
   ) policyIdentityNames;
   dedicatedIdentityNames = lib.filter (name: registry.${name} ? hostBridge) policyIdentityNames;
-  policyNetdevNames = [ "10-${networkDefaults.sharedBridge.name}" ]
-    ++ map (name: "10-${name}-bridge") dedicatedIdentityNames;
+  policyNetdevNames = [
+    "10-${networkDefaults.sharedBridge.name}"
+  ]
+  ++ map (name: "10-${name}-bridge") dedicatedIdentityNames;
   policyNetworkNames = [
     "10-${networkDefaults.sharedBridge.name}"
     "12-microvm-tap"
@@ -57,8 +57,12 @@ let
     ];
   };
 
-  policyNetdevs = lib.filterAttrs (name: _: lib.elem name policyNetdevNames) enforcedCfg.systemd.network.netdevs;
-  policyNetworks = lib.filterAttrs (name: _: lib.elem name policyNetworkNames) enforcedCfg.systemd.network.networks;
+  policyNetdevs = lib.filterAttrs (
+    name: _: lib.elem name policyNetdevNames
+  ) enforcedCfg.systemd.network.netdevs;
+  policyNetworks = lib.filterAttrs (
+    name: _: lib.elem name policyNetworkNames
+  ) enforcedCfg.systemd.network.networks;
 
   policyText = enforcedCfg.sys.virtualisation.microvm.networkPolicy.renderedRuleset;
   auditPolicyText = audited.config.sys.virtualisation.microvm.networkPolicy.renderedRuleset;
@@ -187,7 +191,7 @@ let
       prefixLength = entry.prefixLength or networkDefaults.defaultPrefixLength;
       gateway = entry.gateway or networkDefaults.defaultGateway;
     in
-    ''    machine.succeed("${setupNamespace} ns-${name} ${tapName} ${entry.mac} ${entry.ip}/${toString prefixLength} ${gateway}")''
+    ''machine.succeed("${setupNamespace} ns-${name} ${tapName} ${entry.mac} ${entry.ip}/${toString prefixLength} ${gateway}")''
   ) policyIdentityNames;
 in
 assert blizzard.options.sys.virtualisation.microvm.networkPolicy.mode.default == "enforce";
@@ -196,13 +200,16 @@ assert enforcedCfg.sys.virtualisation.microvm.networkPolicy.mode == "enforce";
 assert !blizzard.config.networking.nftables.enable;
 assert policyService.reloadTriggers != [ ];
 assert policyService.restartTriggers == [ ];
-assert policyService.serviceConfig.ExecStart == "${pkgs.nftables}/bin/nft --file /etc/microvm-network-policy/ruleset.nft";
+assert
+  policyService.serviceConfig.ExecStart
+  == "${pkgs.nftables}/bin/nft --file /etc/microvm-network-policy/ruleset.nft";
 assert policyService.serviceConfig.StateDirectory == "microvm-network-policy";
 assert lib.hasInfix "counter-snapshots.nft" policyService.reload;
 assert lib.hasInfix "counter name lateral_audit" auditPolicyText;
 assert lib.hasInfix ''log prefix "microvm-policy audit: "'' auditPolicyText;
 assert lib.hasInfix "counter name lateral_drops" policyText;
-assert lib.hasInfix ''iifname "${networkDefaults.sharedBridge.name}" oifname "${networkDefaults.sharedBridge.name}" jump deny_routed_lateral''
+assert lib.hasInfix
+  ''iifname "${networkDefaults.sharedBridge.name}" oifname "${networkDefaults.sharedBridge.name}" jump deny_routed_lateral''
   policyText;
 assert lib.hasInfix ''iifname "vm-prowlarr" oifname "vm-sonarr"'' policyText;
 assert lib.hasInfix "tcp dport { ${toString registry.sonarr.port} }" policyText;
@@ -229,7 +236,8 @@ assert lib.elem {
   LinkLayerAddress = registry.prowlarr.mac;
 } enforcedCfg.systemd.network.networks."10-${networkDefaults.sharedBridge.name}".neighbors;
 assert lib.all (
-  name: lib.elem "microvm-network-policy.service" enforcedCfg.systemd.services."microvm@${name}-vm".requires
+  name:
+  lib.elem "microvm-network-policy.service" enforcedCfg.systemd.services."microvm@${name}-vm".requires
 ) policyIdentityNames;
 assert wireguardCfg.boot.kernel.sysctl."net.netfilter.nf_conntrack_max" or null == 32768;
 assert wireguardCfg.networking.enableIPv6 == false;
@@ -320,117 +328,117 @@ pkgs.testers.runNixOSTest {
     };
 
   testScript = ''
-    machine.start()
-    machine.wait_for_unit("systemd-networkd.service")
-    machine.wait_for_unit("microvm-network-policy.service")
-
-    with subtest("policy owns atomic bridge and inet tables"):
-        machine.succeed("nft list table bridge microvm_policy | grep -q 'chain deny_spoof'")
-        machine.succeed("nft list table inet microvm_policy | grep -q 'routed_lateral_drops'")
-
-${policyNamespaceSetup}
-    machine.succeed("${setupNamespace} ns-rogue vm-rogue 02:00:00:00:00:EE 10.100.0.90/24 10.100.0.1")
-    machine.succeed("${setupGatewayNat} ns-wireguard ${registry.qbittorrent.ip}")
-
-    machine.succeed("ip netns add ns-internet")
-    machine.succeed("ip link add uplink-test type veth peer name eth0 netns ns-internet")
-    machine.succeed("ip address add 192.0.2.1/24 dev uplink-test")
-    machine.succeed("ip link set uplink-test up")
-    machine.succeed("ip -n ns-internet link set lo up")
-    machine.succeed("ip -n ns-internet address add 192.0.2.2/24 dev eth0")
-    machine.succeed("ip -n ns-internet link set eth0 up")
-    machine.succeed("ip -n ns-internet route add 10.100.0.0/24 via 192.0.2.1")
-
-    for tap_name in ${builtins.toJSON policyTapNames} + ["vm-rogue"]:
-        machine.wait_until_succeeds(f"bridge link show dev {tap_name} | grep -q 'master .*br0'")
-    machine.wait_until_succeeds("ip -4 address show dev microvm-br0 | grep -q '10.100.0.1/24'")
-    machine.wait_until_succeeds("ip -4 address show dev pocket-id-br0 | grep -q '10.100.1.1/30'")
-    for fdb_installer in ${builtins.toJSON fdbInstallers}:
-        machine.succeed(fdb_installer)
-
-    with subtest("policy reload keeps dependent taps alive"):
-        machine.succeed("systemctl reload microvm-network-policy.service")
+        machine.start()
+        machine.wait_for_unit("systemd-networkd.service")
         machine.wait_for_unit("microvm-network-policy.service")
-        for tap_name in ${builtins.toJSON policyTapNames}:
-            machine.succeed(f"bridge link show dev {tap_name} | grep -q 'master .*br0'")
 
-    with subtest("host lifecycle installs static identity and anti-flood state"):
-        machine.succeed("ip neigh show ${registry.prowlarr.ip} dev microvm-br0 | grep -qi '${registry.prowlarr.mac}.*PERMANENT'")
-        machine.succeed("bridge fdb show dev vm-prowlarr | grep -qi '${registry.prowlarr.mac}.*master.*static'")
-        machine.succeed("bridge -details link show dev vm-prowlarr | grep -Eq 'learning on.*flood off'")
-        machine.succeed("bridge -details link show dev vm-rogue | grep -q 'flood off'")
+        with subtest("policy owns atomic bridge and inet tables"):
+            machine.succeed("nft list table bridge microvm_policy | grep -q 'chain deny_spoof'")
+            machine.succeed("nft list table inet microvm_policy | grep -q 'routed_lateral_drops'")
 
-    with subtest("registered guest and host traffic remains functional"):
-        machine.succeed("ip netns exec ns-prowlarr ping -c 1 -W 2 10.100.0.1")
-        machine.succeed("ping -c 1 -W 2 ${registry.prowlarr.ip}")
-        machine.succeed("ip netns exec ns-prowlarr ping -c 1 -W 2 192.0.2.2")
+    ${policyNamespaceSetup}
+        machine.succeed("${setupNamespace} ns-rogue vm-rogue 02:00:00:00:00:EE 10.100.0.90/24 10.100.0.1")
+        machine.succeed("${setupGatewayNat} ns-wireguard ${registry.qbittorrent.ip}")
 
-    machine.succeed("systemd-run --unit policy-sonarr-listener --property=NetworkNamespacePath=/run/netns/ns-sonarr ${pkgs.socat}/bin/socat TCP-LISTEN:${toString registry.sonarr.port},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
-    machine.succeed("systemd-run --unit policy-prowlarr-listener --property=NetworkNamespacePath=/run/netns/ns-prowlarr ${pkgs.socat}/bin/socat TCP-LISTEN:${toString registry.prowlarr.port},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
-    machine.succeed("systemd-run --unit policy-prowlarr-llmnr-listener --property=NetworkNamespacePath=/run/netns/ns-prowlarr ${pkgs.socat}/bin/socat TCP-LISTEN:5355,reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
-    machine.succeed("systemd-run --unit policy-gitea-listener --property=NetworkNamespacePath=/run/netns/ns-gitea ${pkgs.socat}/bin/socat TCP-LISTEN:${toString registry.gitea.port},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
-    machine.wait_for_unit("policy-sonarr-listener.service")
-    machine.wait_for_unit("policy-prowlarr-listener.service")
-    machine.wait_for_unit("policy-prowlarr-llmnr-listener.service")
-    machine.wait_for_unit("policy-gitea-listener.service")
+        machine.succeed("ip netns add ns-internet")
+        machine.succeed("ip link add uplink-test type veth peer name eth0 netns ns-internet")
+        machine.succeed("ip address add 192.0.2.1/24 dev uplink-test")
+        machine.succeed("ip link set uplink-test up")
+        machine.succeed("ip -n ns-internet link set lo up")
+        machine.succeed("ip -n ns-internet address add 192.0.2.2/24 dev eth0")
+        machine.succeed("ip -n ns-internet link set eth0 up")
+        machine.succeed("ip -n ns-internet route add 10.100.0.0/24 via 192.0.2.1")
 
-    with subtest("declared service is directional and port scoped"):
-        machine.succeed("echo allowed | ip netns exec ns-prowlarr ${pkgs.socat}/bin/socat - TCP:${registry.sonarr.ip}:${toString registry.sonarr.port},connect-timeout=2 | grep -q allowed")
-        machine.fail("ip netns exec ns-prowlarr ping -c 1 -W 1 ${registry.sonarr.ip}")
-        machine.fail("echo denied | ip netns exec ns-prowlarr ${pkgs.socat}/bin/socat - TCP:${registry.gitea.ip}:${toString registry.gitea.port},connect-timeout=1")
+        for tap_name in ${builtins.toJSON policyTapNames} + ["vm-rogue"]:
+            machine.wait_until_succeeds(f"bridge link show dev {tap_name} | grep -q 'master .*br0'")
+        machine.wait_until_succeeds("ip -4 address show dev microvm-br0 | grep -q '10.100.0.1/24'")
+        machine.wait_until_succeeds("ip -4 address show dev pocket-id-br0 | grep -q '10.100.1.1/30'")
+        for fdb_installer in ${builtins.toJSON fdbInstallers}:
+            machine.succeed(fdb_installer)
 
-    with subtest("audited Arr clients can query Prowlarr without permitting LLMNR"):
-        for source_namespace in ["ns-sonarr", "ns-radarr", "ns-readarr"]:
-            machine.succeed(f"echo allowed | ip netns exec {source_namespace} ${pkgs.socat}/bin/socat - TCP:${registry.prowlarr.ip}:${toString registry.prowlarr.port},connect-timeout=2 | grep -q allowed")
-            machine.fail(f"echo denied | ip netns exec {source_namespace} ${pkgs.socat}/bin/socat - TCP:${registry.prowlarr.ip}:5355,connect-timeout=1")
+        with subtest("policy reload keeps dependent taps alive"):
+            machine.succeed("systemctl reload microvm-network-policy.service")
+            machine.wait_for_unit("microvm-network-policy.service")
+            for tap_name in ${builtins.toJSON policyTapNames}:
+                machine.succeed(f"bridge link show dev {tap_name} | grep -q 'master .*br0'")
 
-    with subtest("registered WireGuard pair remains bidirectional"):
-        machine.succeed("ip netns exec ns-qbittorrent ping -c 1 -W 2 ${registry.wireguard.ip}")
-        machine.succeed("ip netns exec ns-wireguard ping -c 1 -W 2 ${registry.qbittorrent.ip}")
-        machine.succeed("ip netns exec ns-qbittorrent ping -c 1 -W 2 192.0.2.2")
+        with subtest("host lifecycle installs static identity and anti-flood state"):
+            machine.succeed("ip neigh show ${registry.prowlarr.ip} dev microvm-br0 | grep -qi '${registry.prowlarr.mac}.*PERMANENT'")
+            machine.succeed("bridge fdb show dev vm-prowlarr | grep -qi '${registry.prowlarr.mac}.*master.*static'")
+            machine.succeed("bridge -details link show dev vm-prowlarr | grep -Eq 'learning on.*flood off'")
+            machine.succeed("bridge -details link show dev vm-rogue | grep -q 'flood off'")
 
-    with subtest("VPN client cannot use its gateway to bypass lateral policy"):
-        machine.succeed("ip -n ns-qbittorrent route replace ${registry.gitea.ip}/32 via ${registry.wireguard.ip}")
-        machine.fail("ip netns exec ns-qbittorrent ping -c 1 -W 1 ${registry.gitea.ip}")
-        machine.succeed("nft list counter bridge microvm_policy gateway_bypass_drops | grep -Eq 'packets [1-9]'")
+        with subtest("registered guest and host traffic remains functional"):
+            machine.succeed("ip netns exec ns-prowlarr ping -c 1 -W 2 10.100.0.1")
+            machine.succeed("ping -c 1 -W 2 ${registry.prowlarr.ip}")
+            machine.succeed("ip netns exec ns-prowlarr ping -c 1 -W 2 192.0.2.2")
 
-    with subtest("same-bridge host routing and dedicated bridge routing are denied"):
-        machine.succeed("ip -n ns-prowlarr route replace ${registry.gitea.ip}/32 via 10.100.0.1")
-        machine.fail("ip netns exec ns-prowlarr ping -c 1 -W 1 ${registry.gitea.ip}")
-        machine.succeed("ip netns exec ns-pocket-id ping -c 1 -W 2 ${registry.pocket-id.gateway}")
-        machine.fail("ip netns exec ns-pocket-id ping -c 1 -W 1 ${registry.prowlarr.ip}")
-        machine.fail("ip netns exec ns-prowlarr ping -c 1 -W 1 ${registry.pocket-id.ip}")
-        machine.succeed("nft list counter inet microvm_policy routed_lateral_drops | grep -Eq 'packets [1-9]'")
+        machine.succeed("systemd-run --unit policy-sonarr-listener --property=NetworkNamespacePath=/run/netns/ns-sonarr ${pkgs.socat}/bin/socat TCP-LISTEN:${toString registry.sonarr.port},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
+        machine.succeed("systemd-run --unit policy-prowlarr-listener --property=NetworkNamespacePath=/run/netns/ns-prowlarr ${pkgs.socat}/bin/socat TCP-LISTEN:${toString registry.prowlarr.port},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
+        machine.succeed("systemd-run --unit policy-prowlarr-llmnr-listener --property=NetworkNamespacePath=/run/netns/ns-prowlarr ${pkgs.socat}/bin/socat TCP-LISTEN:5355,reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
+        machine.succeed("systemd-run --unit policy-gitea-listener --property=NetworkNamespacePath=/run/netns/ns-gitea ${pkgs.socat}/bin/socat TCP-LISTEN:${toString registry.gitea.port},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
+        machine.wait_for_unit("policy-sonarr-listener.service")
+        machine.wait_for_unit("policy-prowlarr-listener.service")
+        machine.wait_for_unit("policy-prowlarr-llmnr-listener.service")
+        machine.wait_for_unit("policy-gitea-listener.service")
 
-    with subtest("forged MAC IP and ARP identities are rejected"):
-        machine.succeed("ip netns exec ns-gitea ping -c 1 -W 2 10.100.0.1")
-        machine.succeed("ip -n ns-prowlarr link set eth0 down")
-        machine.succeed("ip -n ns-prowlarr link set eth0 address ${registry.gitea.mac}")
-        machine.succeed("ip -n ns-prowlarr link set eth0 up")
-        machine.fail("ip netns exec ns-prowlarr ping -c 1 -W 1 10.100.0.1")
-        machine.succeed("ip -n ns-prowlarr link set eth0 down")
-        machine.succeed("ip -n ns-prowlarr link set eth0 address ${registry.prowlarr.mac}")
-        machine.succeed("ip -n ns-prowlarr link set eth0 up")
-        machine.succeed("ip -n ns-prowlarr address add 10.100.0.99/32 dev eth0")
-        machine.fail("ip netns exec ns-prowlarr ping -I 10.100.0.99 -c 1 -W 1 10.100.0.1")
-        machine.succeed("ip -n ns-prowlarr address add 10.100.0.1/32 dev eth0")
-        machine.fail("ip netns exec ns-prowlarr arping -c 1 -w 1 -I eth0 -s 10.100.0.1 ${registry.gitea.ip}")
-        machine.succeed("nft list counter bridge microvm_policy spoof_drops | grep -Eq 'packets [1-9]'")
-        machine.succeed("bridge fdb show dev vm-gitea | grep -qi '${registry.gitea.mac}.*master.*static'")
-        machine.fail("bridge fdb show dev vm-prowlarr | grep -qi '${registry.gitea.mac}.*master'")
-        machine.succeed("ip neigh show ${registry.prowlarr.ip} dev microvm-br0 | grep -qi '${registry.prowlarr.mac}.*PERMANENT'")
-        machine.succeed("host_mac=$(cat /sys/class/net/microvm-br0/address); ip netns exec ns-gitea ip neigh show 10.100.0.1 | grep -qi \"$host_mac\"")
+        with subtest("declared service is directional and port scoped"):
+            machine.succeed("echo allowed | ip netns exec ns-prowlarr ${pkgs.socat}/bin/socat - TCP:${registry.sonarr.ip}:${toString registry.sonarr.port},connect-timeout=2 | grep -q allowed")
+            machine.fail("ip netns exec ns-prowlarr ping -c 1 -W 1 ${registry.sonarr.ip}")
+            machine.fail("echo denied | ip netns exec ns-prowlarr ${pkgs.socat}/bin/socat - TCP:${registry.gitea.ip}:${toString registry.gitea.port},connect-timeout=1")
 
-    with subtest("IPv6 and unsupported EtherTypes are rejected"):
-        machine.succeed("ip -6 address add 2001:db8:100::1/64 dev microvm-br0")
-        machine.succeed("ip netns exec ns-gitea sysctl -w net.ipv6.conf.all.disable_ipv6=0")
-        machine.succeed("ip -n ns-gitea -6 address add 2001:db8:100::50/64 dev eth0 nodad")
-        machine.fail("ip netns exec ns-gitea ping -6 -c 1 -W 1 2001:db8:100::1")
-        machine.succeed("nft list counter bridge microvm_policy invalid_drops | grep -Eq 'packets [1-9]'")
+        with subtest("audited Arr clients can query Prowlarr without permitting LLMNR"):
+            for source_namespace in ["ns-sonarr", "ns-radarr", "ns-readarr"]:
+                machine.succeed(f"echo allowed | ip netns exec {source_namespace} ${pkgs.socat}/bin/socat - TCP:${registry.prowlarr.ip}:${toString registry.prowlarr.port},connect-timeout=2 | grep -q allowed")
+                machine.fail(f"echo denied | ip netns exec {source_namespace} ${pkgs.socat}/bin/socat - TCP:${registry.prowlarr.ip}:5355,connect-timeout=1")
 
-    with subtest("unknown tap fails closed in both directions"):
-        machine.fail("ip netns exec ns-rogue ping -c 1 -W 1 10.100.0.1")
-        machine.fail("ping -c 1 -W 1 10.100.0.90")
-        machine.succeed("nft list counter bridge microvm_policy unknown_tap_drops | grep -Eq 'packets [1-9]'")
+        with subtest("registered WireGuard pair remains bidirectional"):
+            machine.succeed("ip netns exec ns-qbittorrent ping -c 1 -W 2 ${registry.wireguard.ip}")
+            machine.succeed("ip netns exec ns-wireguard ping -c 1 -W 2 ${registry.qbittorrent.ip}")
+            machine.succeed("ip netns exec ns-qbittorrent ping -c 1 -W 2 192.0.2.2")
+
+        with subtest("VPN client cannot use its gateway to bypass lateral policy"):
+            machine.succeed("ip -n ns-qbittorrent route replace ${registry.gitea.ip}/32 via ${registry.wireguard.ip}")
+            machine.fail("ip netns exec ns-qbittorrent ping -c 1 -W 1 ${registry.gitea.ip}")
+            machine.succeed("nft list counter bridge microvm_policy gateway_bypass_drops | grep -Eq 'packets [1-9]'")
+
+        with subtest("same-bridge host routing and dedicated bridge routing are denied"):
+            machine.succeed("ip -n ns-prowlarr route replace ${registry.gitea.ip}/32 via 10.100.0.1")
+            machine.fail("ip netns exec ns-prowlarr ping -c 1 -W 1 ${registry.gitea.ip}")
+            machine.succeed("ip netns exec ns-pocket-id ping -c 1 -W 2 ${registry.pocket-id.gateway}")
+            machine.fail("ip netns exec ns-pocket-id ping -c 1 -W 1 ${registry.prowlarr.ip}")
+            machine.fail("ip netns exec ns-prowlarr ping -c 1 -W 1 ${registry.pocket-id.ip}")
+            machine.succeed("nft list counter inet microvm_policy routed_lateral_drops | grep -Eq 'packets [1-9]'")
+
+        with subtest("forged MAC IP and ARP identities are rejected"):
+            machine.succeed("ip netns exec ns-gitea ping -c 1 -W 2 10.100.0.1")
+            machine.succeed("ip -n ns-prowlarr link set eth0 down")
+            machine.succeed("ip -n ns-prowlarr link set eth0 address ${registry.gitea.mac}")
+            machine.succeed("ip -n ns-prowlarr link set eth0 up")
+            machine.fail("ip netns exec ns-prowlarr ping -c 1 -W 1 10.100.0.1")
+            machine.succeed("ip -n ns-prowlarr link set eth0 down")
+            machine.succeed("ip -n ns-prowlarr link set eth0 address ${registry.prowlarr.mac}")
+            machine.succeed("ip -n ns-prowlarr link set eth0 up")
+            machine.succeed("ip -n ns-prowlarr address add 10.100.0.99/32 dev eth0")
+            machine.fail("ip netns exec ns-prowlarr ping -I 10.100.0.99 -c 1 -W 1 10.100.0.1")
+            machine.succeed("ip -n ns-prowlarr address add 10.100.0.1/32 dev eth0")
+            machine.fail("ip netns exec ns-prowlarr arping -c 1 -w 1 -I eth0 -s 10.100.0.1 ${registry.gitea.ip}")
+            machine.succeed("nft list counter bridge microvm_policy spoof_drops | grep -Eq 'packets [1-9]'")
+            machine.succeed("bridge fdb show dev vm-gitea | grep -qi '${registry.gitea.mac}.*master.*static'")
+            machine.fail("bridge fdb show dev vm-prowlarr | grep -qi '${registry.gitea.mac}.*master'")
+            machine.succeed("ip neigh show ${registry.prowlarr.ip} dev microvm-br0 | grep -qi '${registry.prowlarr.mac}.*PERMANENT'")
+            machine.succeed("host_mac=$(cat /sys/class/net/microvm-br0/address); ip netns exec ns-gitea ip neigh show 10.100.0.1 | grep -qi \"$host_mac\"")
+
+        with subtest("IPv6 and unsupported EtherTypes are rejected"):
+            machine.succeed("ip -6 address add 2001:db8:100::1/64 dev microvm-br0")
+            machine.succeed("ip netns exec ns-gitea sysctl -w net.ipv6.conf.all.disable_ipv6=0")
+            machine.succeed("ip -n ns-gitea -6 address add 2001:db8:100::50/64 dev eth0 nodad")
+            machine.fail("ip netns exec ns-gitea ping -6 -c 1 -W 1 2001:db8:100::1")
+            machine.succeed("nft list counter bridge microvm_policy invalid_drops | grep -Eq 'packets [1-9]'")
+
+        with subtest("unknown tap fails closed in both directions"):
+            machine.fail("ip netns exec ns-rogue ping -c 1 -W 1 10.100.0.1")
+            machine.fail("ping -c 1 -W 1 10.100.0.90")
+            machine.succeed("nft list counter bridge microvm_policy unknown_tap_drops | grep -Eq 'packets [1-9]'")
   '';
 }

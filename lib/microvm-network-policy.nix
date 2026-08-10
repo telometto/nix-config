@@ -7,12 +7,7 @@
   mode,
 }:
 let
-  escapeNftString =
-    value:
-    lib.replaceStrings
-      [ "\\" "\"" "\n" "\r" ]
-      [ "\\\\" "\\\"" " " " " ]
-      value;
+  escapeNftString = value: lib.replaceStrings [ "\\" "\"" "\n" "\r" ] [ "\\\\" "\\\"" " " " " ] value;
   quote = value: ''"${escapeNftString value}"'';
   quoteList = values: lib.concatStringsSep ", " (map quote values);
   addressList = values: lib.concatStringsSep ", " values;
