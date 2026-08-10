@@ -209,7 +209,7 @@ Relevant workflows in `.github/workflows/`:
 
 | Workflow | Trigger | Purpose |
 | -------- | ------- | ------- |
-| `flake-check.yml` | PR/push on `**.nix`, `flake.lock`, `treefmt.nix` | Runs `nix flake check --no-build` |
+| `flake-check.yml` | PR/push on `**.nix`, `flake.lock`, `treefmt.nix` | Runs `.github/scripts/evaluate-flake-outputs.sh` for isolated output evaluation, then builds the executable checks |
 | `validate-config.yml` | Same paths | Evaluates each host in `nixosConfigurations` in a matrix (hosts discovered by grepping `mkHost` in `flake.nix`) |
 | `auto-format.yml` | PR / push to `main`/`testing` | Runs `nix fmt` and pushes a formatting commit |
 | `compliance-check.yml`, `security-audit.yml`, `health-check.yml`, `change-impact-analysis.yml`, `doc-drift.yml`, `flake-freshness.yml` | Various | Repository hygiene checks |
