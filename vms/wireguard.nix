@@ -5,17 +5,76 @@ let
   qbtIp = registry.qbittorrent.ip;
   wireguardInterface = "wg0";
   wireguardFwmark = 51820;
+  iptablesPath = "${pkgs.iptables}/bin/iptables";
+  iptablesRestorePath = "${pkgs.iptables}/bin/iptables-restore";
   homeNetworks = [
     "192.168.0.0/16"
     "10.0.0.0/8"
     "172.16.0.0/12"
   ];
-  addHomeNetworkFirewallRules = lib.concatMapStringsSep "\n" (
-    network: "${pkgs.iptables}/bin/iptables -A OUTPUT -d ${network} -j ACCEPT"
+  homeNetworkFirewallRules = lib.concatMapStringsSep "\n" (
+    network: "-A WG_OUTPUT -d ${network} -j ACCEPT"
   ) homeNetworks;
-  removeHomeNetworkFirewallRules = lib.concatMapStringsSep "\n" (
-    network: "${pkgs.iptables}/bin/iptables -D OUTPUT -d ${network} -j ACCEPT || true"
-  ) homeNetworks;
+  legacyFirewallCleanup = lib.concatMapStringsSep "\n" (
+    rule: "${iptablesPath} ${rule} || true"
+  ) (
+    [
+      "-D FORWARD -i ens3 -o ${wireguardInterface} -j ACCEPT"
+      "-D FORWARD -i ${wireguardInterface} -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT"
+      "-D FORWARD -i ens3 ! -o ${wireguardInterface} -j REJECT"
+      "-D OUTPUT ! -o ${wireguardInterface} -m mark ! --mark ${toString wireguardFwmark} -m addrtype ! --dst-type LOCAL -j REJECT"
+      "-t nat -D PREROUTING -i ${wireguardInterface} -p tcp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820"
+      "-t nat -D PREROUTING -i ${wireguardInterface} -p udp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820"
+      "-D FORWARD -i ${wireguardInterface} -o ens3 -p tcp --dport 50820 -j ACCEPT"
+      "-D FORWARD -i ${wireguardInterface} -o ens3 -p udp --dport 50820 -j ACCEPT"
+    ]
+    ++ map (network: "-D OUTPUT -d ${network} -j ACCEPT") homeNetworks
+  );
+  wireguardFirewallSetup = ''
+    # Keep the tunnel kill switch in private chains that survive a NixOS
+    # firewall reload. The chain bodies are replaced as one iptables-restore
+    # transaction, so a reload never exposes an empty fail-open policy.
+    ${iptablesPath} -N WG_FORWARD 2>/dev/null || true
+    ${iptablesPath} -N WG_OUTPUT 2>/dev/null || true
+    ${iptablesPath} -t nat -N WG_PREROUTING 2>/dev/null || true
+
+    ${iptablesRestorePath} --noflush <<'EOF'
+    *filter
+    :WG_FORWARD - [0:0]
+    :WG_OUTPUT - [0:0]
+    -F WG_FORWARD
+    -F WG_OUTPUT
+    -A WG_FORWARD -i ens3 -o ${wireguardInterface} -j ACCEPT
+    -A WG_FORWARD -i ${wireguardInterface} -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT
+    -A WG_FORWARD -i ens3 ! -o ${wireguardInterface} -j REJECT
+    -A WG_FORWARD -i ${wireguardInterface} -o ens3 -p tcp --dport 50820 -j ACCEPT
+    -A WG_FORWARD -i ${wireguardInterface} -o ens3 -p udp --dport 50820 -j ACCEPT
+    -A WG_FORWARD -j RETURN
+    ${homeNetworkFirewallRules}
+    -A WG_OUTPUT ! -o ${wireguardInterface} -m mark ! --mark ${toString wireguardFwmark} -m addrtype ! --dst-type LOCAL -j REJECT
+    -A WG_OUTPUT -j RETURN
+    COMMIT
+    EOF
+
+    ${iptablesRestorePath} --noflush <<'EOF'
+    *nat
+    :WG_PREROUTING - [0:0]
+    -F WG_PREROUTING
+    -A WG_PREROUTING -i ${wireguardInterface} -p tcp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820
+    -A WG_PREROUTING -i ${wireguardInterface} -p udp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820
+    -A WG_PREROUTING -j RETURN
+    COMMIT
+    EOF
+
+    ${iptablesPath} -C FORWARD -j WG_FORWARD 2>/dev/null || ${iptablesPath} -I FORWARD 1 -j WG_FORWARD
+    ${iptablesPath} -C OUTPUT -j WG_OUTPUT 2>/dev/null || ${iptablesPath} -I OUTPUT 1 -j WG_OUTPUT
+    ${iptablesPath} -t nat -C PREROUTING -j WG_PREROUTING 2>/dev/null || ${iptablesPath} -t nat -I PREROUTING 1 -j WG_PREROUTING
+
+    # Remove direct rules written by older generations after the replacement
+    # chains are active. They are deliberately not removed during firewall
+    # stop/reload, which keeps the current kill switch in place.
+    ${legacyFirewallCleanup}
+  '';
   addHomeNetworkRoutes = lib.concatMapStringsSep "\n" (
     network: "${pkgs.iproute2}/bin/ip route add ${network} via \"$DROUTE\" || true"
   ) homeNetworks;
@@ -35,10 +94,15 @@ in
 
   boot = {
     kernelModules = [ "nf_conntrack" ];
-    kernel.sysctl."net.netfilter.nf_conntrack_max" = 32768;
+    kernel.sysctl = {
+      "net.netfilter.nf_conntrack_max" = 32768;
+      "net.ipv6.conf.all.disable_ipv6" = 1;
+      "net.ipv6.conf.default.disable_ipv6" = 1;
+    };
   };
 
   networking = {
+    enableIPv6 = false;
     nat = {
       enable = true;
       externalInterface = wireguardInterface;
@@ -49,35 +113,8 @@ in
       allowPing = true;
       trustedInterfaces = [ "ens3" ];
       allowedUDPPorts = [ reg.port ];
-      extraCommands = ''
-        ${pkgs.iptables}/bin/iptables -A FORWARD -i ens3 -o ${wireguardInterface} -j ACCEPT
-        ${pkgs.iptables}/bin/iptables -A FORWARD -i ${wireguardInterface} -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT
-        ${pkgs.iptables}/bin/iptables -A FORWARD -i ens3 ! -o ${wireguardInterface} -j REJECT
-
-        # Keep local gateway traffic fail-closed across tunnel restarts and
-        # firewall reloads. RFC1918 routes intentionally remain reachable.
-        ${addHomeNetworkFirewallRules}
-        ${pkgs.iptables}/bin/iptables -A OUTPUT ! -o ${wireguardInterface} -m mark ! --mark ${toString wireguardFwmark} -m addrtype ! --dst-type LOCAL -j REJECT
-
-        # Port forward incoming VPN traffic to qBittorrent VM
-        ${pkgs.iptables}/bin/iptables -t nat -A PREROUTING -i ${wireguardInterface} -p tcp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820
-        ${pkgs.iptables}/bin/iptables -t nat -A PREROUTING -i ${wireguardInterface} -p udp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820
-        ${pkgs.iptables}/bin/iptables -A FORWARD -i ${wireguardInterface} -o ens3 -p tcp --dport 50820 -j ACCEPT
-        ${pkgs.iptables}/bin/iptables -A FORWARD -i ${wireguardInterface} -o ens3 -p udp --dport 50820 -j ACCEPT
-      '';
-      extraStopCommands = ''
-        ${pkgs.iptables}/bin/iptables -D FORWARD -i ens3 -o ${wireguardInterface} -j ACCEPT || true
-        ${pkgs.iptables}/bin/iptables -D FORWARD -i ${wireguardInterface} -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT || true
-        ${pkgs.iptables}/bin/iptables -D FORWARD -i ens3 ! -o ${wireguardInterface} -j REJECT || true
-
-        ${removeHomeNetworkFirewallRules}
-        ${pkgs.iptables}/bin/iptables -D OUTPUT ! -o ${wireguardInterface} -m mark ! --mark ${toString wireguardFwmark} -m addrtype ! --dst-type LOCAL -j REJECT || true
-
-        ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i ${wireguardInterface} -p tcp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820 || true
-        ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i ${wireguardInterface} -p udp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820 || true
-        ${pkgs.iptables}/bin/iptables -D FORWARD -i ${wireguardInterface} -o ens3 -p tcp --dport 50820 -j ACCEPT || true
-        ${pkgs.iptables}/bin/iptables -D FORWARD -i ${wireguardInterface} -o ens3 -p udp --dport 50820 -j ACCEPT || true
-      '';
+      extraCommands = wireguardFirewallSetup;
+      extraStopCommands = "";
     };
   };
 
