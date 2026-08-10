@@ -7,8 +7,9 @@ policy healthy after 4 days and 20 hours. The live policy `ExecStart` exactly
 matches this checkout's evaluated nftables command and ruleset store path. All
 relevant MicroVM units are active.
 
-The kernel journal now contains 3,616 audit messages, still exclusively the
-understood Prowlarr-to-Arr TCP `5355` pattern:
+At the 2026-08-09 10:21 CEST revalidation snapshot, the kernel journal
+contained 3,616 audit messages, still exclusively the understood
+Prowlarr-to-Arr TCP `5355` pattern:
 
 | Flow | Messages |
 | --- | ---: |
@@ -28,7 +29,8 @@ WireGuard remains healthy at 4,912 of 32,768 conntrack entries, with no
 `wg0` table/fwmark `51820`.
 
 The root-only counter snapshot supplied later on August 9 completed the final
-evidence gate:
+evidence gate. These counter values are a later snapshot than the journal
+counts above:
 
 | Counter | Packets | Assessment |
 | --- | ---: | --- |
@@ -43,8 +45,9 @@ evidence gate:
 The operator explicitly accepted ending the second audit window early rather
 than waiting until 2026-08-11 at approximately 14:21 CEST. With every observed
 undeclared lateral flow classified, no suspicious identity or bypass events,
-and the positive service and VPN probes passing, the evidence supports moving
-Blizzard to `enforce`. Scrutiny and the acknowledged Readarr/Exportarr
+and the positive service and VPN probes passing, the evidence supported
+changing Blizzard to `enforce`; the current host configuration now contains
+that change. Scrutiny and the acknowledged Readarr/Exportarr
 compatibility error are separate service-health issues and do not block this
 decision.
 
@@ -65,14 +68,16 @@ InfluxDB authorization database, Scrutiny will continue to report
 
 ## Conclusion
 
-The deployed MicroVM audit policy is functioning and the WireGuard hardening
-is live. The later root-only counters are satisfactory, and the operator
-explicitly accepted the shortened window. The branch can therefore set
-`networkPolicy.mode = "enforce"`; deployment and post-deployment verification
-remain separate operator actions.
+The deployed MicroVM audit policy was functioning and the WireGuard hardening
+was live at the dated snapshots. The later root-only counters were satisfactory,
+and the operator explicitly accepted the shortened window. The current
+configuration sets `networkPolicy.mode = "enforce"`; this report remains
+historical evidence, so deployment and post-deployment verification are still
+separate operator actions.
 
-The 3,175 `microvm-policy audit:` messages are one understood pattern rather
-than missing service edges: Prowlarr's VM resolver is attempting TCP 5355
+At the original 2026-08-08 19:36:34 CEST snapshot, the 3,175
+`microvm-policy audit:` messages were one understood pattern rather than
+missing service edges: Prowlarr's VM resolver was attempting TCP 5355
 (LLMNR) toward the Arr VMs. All four VMs have systemd-resolved listening on
 5355 and report `+LLMNR`; the application services listen on their normal
 ports. No new policy edge should be added for this traffic.
@@ -105,8 +110,8 @@ seconds; that remains an upstream compatibility issue.
 | --- | --- | --- |
 | Policy loading | `microvm-network-policy.service` is active/exited with result `success`; all 16 MicroVM units and TAP setup units are running/active | Pass |
 | Bridge identity | 15 shared-bridge taps are up; static registry FDB entries are present for each shared identity | Pass |
-| Audit events | 3,175 total; 1,290 Prowlarr→Sonarr, 620 Prowlarr→Radarr, 1,265 Prowlarr→Readarr, all TCP destination port 5355 | Investigated; no edge to add |
-| Hard-deny events | 1,813 IPv6 invalid drops, 13,850 TCP invalid-state drops, and 170 ARP multicast drops | Expected enforced controls; no spoof/unknown-tap/bypass events |
+| Audit events (2026-08-08 19:36:34 CEST snapshot) | 3,175 total; 1,290 Prowlarr→Sonarr, 620 Prowlarr→Radarr, 1,265 Prowlarr→Readarr, all TCP destination port 5355 | Investigated; no edge to add |
+| Hard-deny events (same snapshot) | 1,813 IPv6 invalid drops, 13,850 TCP invalid-state drops, and 170 ARP multicast drops | Expected enforced controls; no spoof/unknown-tap/bypass events |
 | WireGuard conntrack | `nf_conntrack_count=5313`, `nf_conntrack_max=32768`; no `table full` messages | Pass |
 | WireGuard ordering | Firewall active before `wg-quick-wg0`; both succeeded since boot | Pass |
 | Routed service path | qBittorrent→WireGuard ICMP succeeded; WireGuard→qBittorrent TCP 11030 returned HTTP 200 and TCP 50820 connected | Pass; reverse ICMP is guest-firewall denied |
