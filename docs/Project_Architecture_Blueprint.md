@@ -412,9 +412,10 @@ nftables `bridge` table validates that identity and permits only declared,
 directional service edges plus registry-derived WireGuard client paths. A
 separate `inet` table blocks same-bridge and cross-MicroVM-bridge host routing.
 This policy is independent of the standard NixOS firewall and NAT backend.
-Blizzard is staged in `audit`, while the module default is `enforce`. See the
-[network policy reference](../vms/README.md#host-side-network-policy) and
-[ADR 0002](adr/0002-enforce-host-owned-microvm-network-policy.md).
+Blizzard is configured explicitly for `enforce`; the preceding audit window
+and approval are recorded in the dated deployment report. `audit` remains the
+declarative rollback mode. See the [network policy reference](../vms/README.md#host-side-network-policy)
+and [ADR 0002](adr/0002-enforce-host-owned-microvm-network-policy.md).
 
 ### VM inventory
 
@@ -458,9 +459,11 @@ Pocket ID is the sole guest on `pocket-id-br0`, a dedicated
 `10.100.1.0/30` host-to-VM segment.
 
 The host-owned network policy installs non-aging static registry FDB entries
-and permanent neighbors, disables unknown-unicast and multicast flooding, authenticates
-Ethernet/ARP/IPv4 identities, and filters lateral traffic through explicit
-service and WireGuard edges. Its native nftables `inet` table blocks host-routed
+and permanent neighbors, disables unknown-unicast and multicast flooding,
+authenticates Ethernet/ARP identities and ordinary-VM IPv4 sources, and filters
+lateral traffic through explicit service and WireGuard edges. The WireGuard
+gateway intentionally may originate traffic for its derived VPN clients. Its
+native nftables `inet` table blocks host-routed
 traffic both within `microvm-br0` and between `microvm-br0` and
 `pocket-id-br0`; Pocket ID's firewall additionally accepts TCP ports `22` and
 `11081` only from Blizzard's `10.100.1.1/32` source. Peer MicroVMs therefore
@@ -637,9 +640,11 @@ ______________________________________________________________________
 | Test without switching | `sudo nixos-rebuild test --flake .#<hostname>` |
 | Dry run (show what changes) | `nixos-rebuild dry-run --flake .#<hostname>` |
 
-The `flake-check.yml` CI workflow uses `nix flake check --no-build` for
-evaluation, then explicitly builds the Cloudflare metrics, MicroVM publication,
-MicroVM network-policy, and Sandfly target checks so their tests execute. Host
+The `flake-check.yml` CI workflow uses
+`.github/scripts/evaluate-flake-outputs.sh` to evaluate configurations,
+formatters, checks, and development shells in separate Nix processes, then
+explicitly builds the Cloudflare metrics, MicroVM publication, MicroVM
+network-policy, and Sandfly target checks so their tests execute. Host
 evaluations run separately in `validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
