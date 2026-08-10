@@ -22,6 +22,11 @@ let
   };
   enforcedCfg = enforced.config;
   policyService = enforcedCfg.systemd.services."microvm-network-policy";
+  policyReloadCommands = lib.filter (command: command != "") (
+    lib.splitString "\n" policyService.reload
+  );
+  policyCounterSnapshotCommand = lib.head policyReloadCommands;
+  policyCounterSnapshotScript = builtins.readFile policyCounterSnapshotCommand;
   enabledIdentityNames = builtins.attrNames (
     lib.filterAttrs (_: instance: instance.enable) enforcedCfg.sys.virtualisation.microvm.instances
   );
@@ -204,7 +209,8 @@ assert
   policyService.serviceConfig.ExecStart
   == "${pkgs.nftables}/bin/nft --file /etc/microvm-network-policy/ruleset.nft";
 assert policyService.serviceConfig.StateDirectory == "microvm-network-policy";
-assert lib.hasInfix "counter-snapshots.nft" policyService.reload;
+assert lib.hasInfix "snapshot-microvm-policy-counters" policyCounterSnapshotCommand;
+assert lib.hasInfix "counter-snapshots.nft" policyCounterSnapshotScript;
 assert lib.hasInfix "counter name lateral_audit" auditPolicyText;
 assert lib.hasInfix ''log prefix "microvm-policy audit: "'' auditPolicyText;
 assert lib.hasInfix "counter name lateral_drops" policyText;
@@ -249,7 +255,15 @@ assert lib.hasInfix
   "-A WG_OUTPUT ! -o wg0 -m mark ! --mark 51820 -m addrtype ! --dst-type LOCAL -j REJECT"
   wireguardFirewallCommands;
 assert lib.hasInfix "iptables-restore --noflush" wireguardFirewallCommands;
-assert wireguardFirewallStopCommands == "";
+# NixOS NAT contributes its own teardown; the custom kill-switch chains must
+# remain installed when the firewall is stopped or reloaded.
+assert lib.all
+  (chain: !lib.hasInfix chain wireguardFirewallStopCommands)
+  [
+    "WG_FORWARD"
+    "WG_OUTPUT"
+    "WG_PREROUTING"
+  ];
 assert lib.elem "firewall.service" wireguardUnit.requires;
 assert lib.elem "firewall.service" wireguardUnit.after;
 assert lib.all (
@@ -336,7 +350,7 @@ pkgs.testers.runNixOSTest {
             machine.succeed("nft list table bridge microvm_policy | grep -q 'chain deny_spoof'")
             machine.succeed("nft list table inet microvm_policy | grep -q 'routed_lateral_drops'")
 
-    ${policyNamespaceSetup}
+        ${policyNamespaceSetup}
         machine.succeed("${setupNamespace} ns-rogue vm-rogue 02:00:00:00:00:EE 10.100.0.90/24 10.100.0.1")
         machine.succeed("${setupGatewayNat} ns-wireguard ${registry.qbittorrent.ip}")
 
