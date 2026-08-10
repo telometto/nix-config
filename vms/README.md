@@ -243,12 +243,11 @@ enabled VM's bridge, tap, MAC, IP, gateway, and primary service from
 - a native nftables `inet` table that blocks routing from `microvm-br0` back to
   itself and between MicroVM bridges
 
-The default mode is `enforce`. Blizzard is explicitly staged in `audit`, where
-identity, protocol, unknown-tap, multicast, gateway-bypass, and routed-bypass
-denials remain active, but otherwise valid undeclared unicast between
-registered taps is counted, rate-limit logged, and accepted. Moving Blizzard
-to `enforce` requires a separate approval after reviewing a seven-day audit
-window.
+The default mode is `enforce`, and Blizzard is configured explicitly for
+`enforce` in `hosts/blizzard/virtualisation/microvms.nix`. The dated
+[deployment audit](../docs/deployment-audit-2026-08-08-microvm-networking.md)
+records the preceding audit window and the explicit decision to enable
+enforcement; it is historical evidence rather than the current runtime mode.
 
 An allowed peer is directional. `primaryService = true` permits new TCP
 connections only to the target registry port; `tcpPorts` and `udpPorts` add
@@ -268,12 +267,12 @@ journalctl -u microvm-network-policy.service
 journalctl -k -g 'microvm-policy'
 ```
 
-During audit, inspect the named `lateral_audit` counter and
-`microvm-policy audit:` messages. Add only verified missing edges, rebuild the
-integration check, and obtain explicit approval before changing the host to
-`networkPolicy.mode = "enforce"`. The supported rollback is declarative:
-return to `audit` or switch/boot the previous NixOS generation. Stopping the
-policy service does not delete its tables.
+In `enforce`, inspect the named `lateral_drops` counter and
+`microvm-policy lateral-drop:` messages. Historical audit counters and ruleset
+snapshots are retained under `/var/lib/microvm-network-policy/` when the policy
+is reloaded. The supported rollback is declarative: return to `audit` or
+switch/boot the previous NixOS generation. Stopping the policy service does not
+delete its tables.
 
 ______________________________________________________________________
 
@@ -310,10 +309,13 @@ ______________________________________________________________________
 - Secrets are injected per-VM via sops-nix. Services that read
   `/run/secrets/*` at startup should declare `after` and `requires` on
   `sops-install-secrets.service` to avoid boot-order races.
-- VMs may share `microvm-br0`, but the host validates their registry MAC, ARP,
-  and IPv4 identity and permits only declared service or gateway paths. Static
-  FDB/neighbor bindings prevent unknown-unicast observation and host ARP-cache
-  poisoning. The guest firewall remains an independent defense.
+- VMs may share `microvm-br0`, but the host validates their registry MAC and
+  ARP identity, and validates IPv4 sources for ordinary VMs. The WireGuard
+  gateway is intentionally exempt from the ordinary source-IP check so it can
+  originate traffic for its derived VPN clients; its host input path remains
+  constrained. Static FDB/neighbor bindings prevent unknown-unicast observation
+  and host ARP-cache poisoning. The guest firewall remains an independent
+  defense.
 - Pocket ID additionally uses a dedicated bridge. Host-level nftables routing
   filters prevent shared-bridge peers from reaching it, and its guest firewall
   accepts TCP ports `22` and `11081` only from Blizzard's dedicated bridge
