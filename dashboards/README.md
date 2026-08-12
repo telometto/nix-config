@@ -53,6 +53,7 @@ in
     inherit (grafanaDashboards.custom)
       zfs-overview
       cloudflare-overview
+      service-availability
       power-consumption
       ups-monitoring;
   };
