@@ -179,6 +179,11 @@
           blizzard = self.nixosConfigurations.blizzard;
         };
 
+        blackbox-observability = import ./tests/blackbox-observability.nix {
+          blizzard = self.nixosConfigurations.blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         microvm-network-policy = import ./tests/microvm-network-policy.nix {
           inherit (nixpkgs) lib;
           inherit (self.nixosConfigurations) blizzard;
