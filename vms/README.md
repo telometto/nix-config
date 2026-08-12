@@ -79,7 +79,7 @@ ______________________________________________________________________
 | gitea | 10.100.0.50 | 11050 | 2 GB | 2 | Direct | Self-hosted git forge |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Direct | Photo library |
 | lidarr | 10.100.0.26 | 11028 | 1 GB | 1 | Direct | Music PVR |
-| matrix-synapse | 10.100.0.60 | 11060 | 4 GB | 4 | Direct | Matrix homeserver |
+| matrix-synapse | 10.100.0.60 | 11060 | 4 GB | 4 | Gateway only | Matrix homeserver |
 | mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Direct | Recipe manager and meal planner |
 | ombi | 10.100.0.41 | 11041 | 1 GB | 1 | Direct | Media request portal (legacy) |
 | overseerr | 10.100.0.40 | 11040 | 1 GB | 1 | Direct | Media request portal |
@@ -95,6 +95,24 @@ ______________________________________________________________________
 | tautulli | 10.100.0.42 | 11042 | 1 GB | 1 | Direct | Plex statistics |
 | trigger | 10.100.0.80 | 11080 | 12 GB | 6 | Direct | Trigger.dev v4 background job platform |
 | wireguard | 10.100.0.11 | 56943 | 512 MB | 1 | Direct | VPN gateway (routes qb/sabnzbd/firefox/brave) |
+
+______________________________________________________________________
+
+### Matrix network and authentication boundary
+
+The Matrix VM's TCP `11060` port is a guest service port, not a host
+port-forward. Nginx listens on `0.0.0.0:11060` inside the VM, while the guest
+firewall accepts that port only from Blizzard's MicroVM gateway
+`10.100.0.1` on the primary `ens3` interface. The public path is the managed
+`matrix` publication through Cloudflare Tunnel and Traefik; no raw host
+forward bypasses those controls.
+
+Synapse and MAS web/health listeners are loopback-only. Nginx is the only
+trusted MAS proxy, and the public `/_synapse/admin` path returns `403`. MAS
+owns password login and email recovery: anonymous password registration is
+disabled, while existing password login, recovery, password changes, and
+account-profile changes remain enabled during the OIDC migration. OAuth client
+registration is a separate dynamic MAS policy used by OIDC-native clients.
 
 ______________________________________________________________________
 
