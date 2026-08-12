@@ -15,6 +15,7 @@ Information reference for this repo's moving parts, options, and commands.
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
+| `checks.x86_64-linux.matrix-baseline` | Matrix publication, listener, firewall, routing, authentication, and systemd-ordering contract tests |
 | `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
@@ -173,11 +174,11 @@ Operational tools used across the repo.
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
 Locally, `nix flake check` evaluates and builds the formatting, Cloudflare
-metrics, MicroVM publication, MicroVM network-policy, Sandfly target, and
-Scrutiny service checks. The `flake-check.yml` CI workflow first runs
+metrics, Matrix baseline, MicroVM publication, MicroVM network-policy, Sandfly
+target, and Scrutiny service checks. The `flake-check.yml` CI workflow first runs
 `.github/scripts/evaluate-flake-outputs.sh`, which evaluates configurations,
 formatters, checks, and development shells in separate Nix processes, then
-explicitly builds all five executable test checks. Full host evaluation is
+explicitly builds all six executable test checks. Full host evaluation is
 handled separately by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
@@ -305,6 +306,9 @@ nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs
 
 # Build and run only the MicroVM publication contract check
 nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
+
+# Build and run the Matrix baseline contract check
+nix build .#checks.x86_64-linux.matrix-baseline --no-link --print-build-logs
 
 # Build and run the MicroVM network-policy integration test
 nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs

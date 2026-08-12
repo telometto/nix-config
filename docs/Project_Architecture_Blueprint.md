@@ -43,6 +43,7 @@ ______________________________________________________________________
 | `formatter.x86_64-linux` | treefmt wrapper (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
+| `checks.x86_64-linux.matrix-baseline` | Matrix publication, listener, firewall, routing, authentication, and systemd-ordering contract tests |
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
@@ -633,6 +634,7 @@ ______________________________________________________________________
 | Check with trace on failure | `nix flake check --show-trace` |
 | Evaluate all flake outputs without building | `nix flake check --no-build` |
 | Run only the Cloudflare metrics tests | `nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs` |
+| Run only the Matrix baseline tests | `nix build .#checks.x86_64-linux.matrix-baseline --no-link --print-build-logs` |
 | Run only the MicroVM publication tests | `nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs` |
 | Run only the MicroVM network-policy test | `nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs` |
 | Run only the Sandfly target tests | `nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs` |
@@ -645,7 +647,7 @@ ______________________________________________________________________
 The `flake-check.yml` CI workflow uses
 `.github/scripts/evaluate-flake-outputs.sh` to evaluate configurations,
 formatters, checks, and development shells in separate Nix processes, then
-explicitly builds the Cloudflare metrics, MicroVM publication, MicroVM
+explicitly builds the Cloudflare metrics, MicroVM publication, Matrix baseline,
 network-policy, Sandfly target, and Scrutiny service checks so their tests
 execute. Host evaluations run separately in `validate-config.yml`.
 

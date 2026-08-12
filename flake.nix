@@ -173,6 +173,12 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        matrix-baseline = import ./tests/matrix-baseline.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          matrix = self.nixosConfigurations.matrix-synapse-vm;
+          blizzard = self.nixosConfigurations.blizzard;
+        };
+
         microvm-network-policy = import ./tests/microvm-network-policy.nix {
           inherit (nixpkgs) lib;
           inherit (self.nixosConfigurations) blizzard;

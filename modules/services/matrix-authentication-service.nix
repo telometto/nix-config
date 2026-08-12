@@ -7,6 +7,13 @@
 let
   cfg = config.sys.services.matrix-authentication-service;
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
+  webBindAddress =
+    if cfg.bindAddress != null then
+      cfg.bindAddress
+    else if cfg.openFirewall then
+      "0.0.0.0"
+    else
+      "127.0.0.1";
 
   # Base config without secrets - an external oneshot (e.g. the VM's
   # mas-secret service) must merge decrypted secrets and point
@@ -26,7 +33,7 @@ let
           ];
           binds = [
             {
-              address = "${if cfg.openFirewall then "0.0.0.0" else "127.0.0.1"}:${toString cfg.port}";
+              address = "${webBindAddress}:${toString cfg.port}";
             }
           ];
           proxy_protocol = false;
@@ -36,19 +43,14 @@ let
           resources = [ { name = "health"; } ];
           binds = [
             {
-              host = "localhost";
+              host = "127.0.0.1";
               port = cfg.healthPort;
             }
           ];
           proxy_protocol = false;
         }
       ];
-      trusted_proxies = [
-        "127.0.0.1/8"
-        "10.0.0.0/8"
-        "172.16.0.0/12"
-        "192.168.0.0/16"
-      ];
+      trusted_proxies = cfg.trustedProxies;
       public_base = cfg.publicBaseUrl;
       inherit (cfg) issuer;
     };
@@ -104,6 +106,17 @@ in
       type = lib.types.port;
       default = 8081;
       description = "Port for the MAS web listener (OIDC, compat, UI).";
+    };
+
+    bindAddress = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Address on which the MAS web listener binds. When null, the listener
+        binds to 127.0.0.1 unless openFirewall is enabled, in which case it
+        binds to 0.0.0.0.
+      '';
+      example = "127.0.0.1";
     };
 
     healthPort = lib.mkOption {
@@ -206,13 +219,13 @@ in
     matrix = {
       homeserver = lib.mkOption {
         type = lib.types.str;
-        default = "localhost:8008";
+        default = "127.0.0.1:8008";
         description = "Synapse server_name:port for MAS to contact.";
       };
 
       endpoint = lib.mkOption {
         type = lib.types.str;
-        default = "http://localhost:8008/";
+        default = "http://127.0.0.1:8008/";
         description = "Synapse admin API endpoint URL.";
       };
     };
@@ -232,6 +245,13 @@ in
     openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
+    };
+
+    trustedProxies = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "127.0.0.1/32" ];
+      description = "CIDR ranges whose forwarded headers MAS is allowed to trust.";
+      example = [ "127.0.0.1/32" ];
     };
 
     reverseProxy = traefikLib.mkReverseProxyOptions {
