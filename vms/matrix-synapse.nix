@@ -172,9 +172,9 @@ in
           ReadOnlyPaths = [
             config.sops.secrets."matrix-synapse/registration_shared_secret".path
           ]
-          ++ lib.optional config.sys.services.matrix-synapse.authDelegation.enable (
-            config.sops.secrets."matrix-authentication-service/synapse_secret".path
-          );
+          ++
+            lib.optional config.sys.services.matrix-synapse.authDelegation.enable
+              config.sops.secrets."matrix-authentication-service/synapse_secret".path;
           ReadWritePaths = [ "/run/matrix-synapse-secret" ];
         };
 
