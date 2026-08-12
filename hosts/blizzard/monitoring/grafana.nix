@@ -25,6 +25,7 @@ in
       "power-consumption-historical" = grafanaDashboards.custom.power-consumption-historical;
       "ups-monitoring" = grafanaDashboards.custom.ups-monitoring;
       "electricity-prices" = grafanaDashboards.custom.electricity-prices;
+      "service-availability" = grafanaDashboards.custom.service-availability;
     };
 
     reverseProxy = {
