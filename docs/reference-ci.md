@@ -74,7 +74,7 @@ ______________________________________________________________________
 | Workflow | Trigger | Purpose | Auto-commits? |
 |----------|---------|---------|--------------|
 | `auto-format.yml` | PR / push to main / manual | Runs `nix fmt`, commits formatted changes back to the branch, comments on PR, enables auto-merge | Yes — formats in-place |
-| `flake-check.yml` | PR / push to main / manual (filtered to its workflow file, Nix/flake inputs, Cloudflare collector/tests/dashboard, the VM README, and ADRs) | Runs `.github/scripts/evaluate-flake-outputs.sh` to evaluate each flake output sequentially, redacts secrets in failure output, and builds the Cloudflare metrics, MicroVM publication, Matrix baseline, MicroVM network-policy, Sandfly target, and Scrutiny service checks | No |
+| `flake-check.yml` | PR / push to main / manual (filtered to its workflow file, Nix/flake inputs, Cloudflare collector/tests/dashboard, the VM README, and ADRs) | Runs `.github/scripts/evaluate-flake-outputs.sh` to evaluate each flake output sequentially, redacts secrets in failure output, and builds the Cloudflare metrics, MicroVM publication, Matrix baseline, blackbox observability, MicroVM network-policy, Sandfly target, and Scrutiny service checks | No |
 | `validate-config.yml` | PR / push to main / manual | Discovers hosts via `mkHost` grep, evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix, and evaluates the Home Manager users attrset | No |
 | `change-impact-analysis.yml` | PR | Diffs changed files under `hosts/`, `modules/`, `home/`, `vms/`, `lib/`, `flake.*`, posts impact report as a PR comment | No |
 | `compliance-check.yml` | PR / push / cron Mon 09:00 | Runs `deadnix` and other Nix linters, comments results | No |

@@ -15,6 +15,7 @@ Information reference for this repo's moving parts, options, and commands.
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
+| `checks.x86_64-linux.blackbox-observability` | Rendered public HTTP/TLS probe, alert, exporter-hardening, and dashboard contract tests |
 | `checks.x86_64-linux.matrix-baseline` | Matrix publication, listener, firewall, routing, authentication, and systemd-ordering contract tests |
 | `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
