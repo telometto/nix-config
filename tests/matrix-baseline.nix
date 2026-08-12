@@ -7,6 +7,9 @@ let
   inherit (pkgs) lib;
   vmCfg = matrix.config;
   hostCfg = blizzard.config;
+  networkDefaults = import ../vms/microvm-network-defaults.nix;
+  matrixRegistry = (import ../vms/vm-registry.nix)."matrix-synapse";
+  matrixGateway = matrixRegistry.gateway or networkDefaults.defaultGateway;
   matrixInstance = hostCfg.sys.virtualisation.microvm.instances.matrix-synapse;
   nginxLocations = vmCfg.services.nginx.virtualHosts.matrix.locations;
   synapseListeners = vmCfg.services.matrix-synapse.settings.listeners or [ ];
@@ -17,22 +20,29 @@ let
   masInternalListener = lib.findFirst (
     listener: listener.name == "internal"
   ) null masBaseConfig.http.listeners;
-  loginPattern = "^/_matrix/client/(r0|v1|v3)/login(/.*)?$";
-  logoutPattern = "^/_matrix/client/(r0|v1|v3)/logout(/all)?$";
-  refreshPattern = "^/_matrix/client/(r0|v1|v3)/refresh$";
-  adminPath = path: path == "/_synapse/admin" || lib.hasPrefix "/_synapse/admin/" path;
+  firewallCommands = lib.filter (line: line != "") (
+    map lib.trim (lib.splitString "\n" vmCfg.networking.firewall.extraCommands)
+  );
+  expectedFirewallRule = "${pkgs.iptables}/bin/iptables -A nixos-fw -i ${networkDefaults.guestInterface} -p tcp --dport ${toString matrixRegistry.port} -s ${matrixGateway} -j nixos-fw-accept";
+  nginxConfig = vmCfg.environment.etc."nginx/nginx.conf".source;
+  synapseService = vmCfg.systemd.services."matrix-synapse";
+  synapseSecretService = vmCfg.systemd.services."matrix-synapse-secret";
+  masService = vmCfg.systemd.services."matrix-authentication-service";
+  masSecretService = vmCfg.systemd.services."mas-secret";
 in
 assert matrixInstance.portForward.ports == [ ];
 assert matrixInstance.portForward.enable == false;
 assert !(lib.elem 11060 vmCfg.networking.firewall.allowedTCPPorts);
-assert lib.hasInfix "--dport 11060 -s 10.100.0.1 -j nixos-fw-accept"
-  vmCfg.networking.firewall.extraCommands;
+assert lib.elem expectedFirewallRule firewallCommands;
 assert synapseListeners != [ ];
 assert lib.all (listener: listener.bind_addresses == [ "127.0.0.1" ]) synapseListeners;
 assert masBaseConfig.http.trusted_proxies == [ "127.0.0.1/32" ];
 assert masWebListener != null;
 assert masInternalListener != null;
 assert vmCfg.sys.services.matrix-authentication-service.openFirewall == false;
+assert vmCfg.sys.services.matrix-authentication-service.bindAddress == "127.0.0.1";
+assert vmCfg.sys.services.matrix-authentication-service.trustedProxies == [ "127.0.0.1/32" ];
+assert vmCfg.sys.services.matrix-synapse.bindAddress == "127.0.0.1";
 assert masWebListener.binds == [ { address = "127.0.0.1:8081"; } ];
 assert
   masInternalListener.binds == [
@@ -46,6 +56,7 @@ assert
   == false;
 assert
   vmCfg.sys.services.matrix-authentication-service.settings.account.password_recovery_enabled == true;
+assert vmCfg.services.matrix-synapse.settings.enable_registration == false;
 assert nginxLocations."~ ^/_synapse/admin(?:/|$)".return == "403";
 assert
   nginxLocations."~ ^/_matrix/client/(r0|v1|v3)/login(/|$)".proxyPass == "http://127.0.0.1:8081";
@@ -68,18 +79,33 @@ assert lib.hasInfix "add_header Access-Control-Allow-Origin *"
   nginxLocations."= /.well-known/matrix/client".extraConfig;
 assert lib.hasInfix "add_header Access-Control-Allow-Origin *"
   nginxLocations."= /.well-known/matrix/support".extraConfig;
-assert !(adminPath "/_synapse/client/rendezvous");
-assert adminPath "/_synapse/admin";
-assert adminPath "/_synapse/admin/v1/users";
-assert !(adminPath "/_synapse/administrator");
-assert builtins.match loginPattern "/_matrix/client/v3/login" != null;
-assert builtins.match loginPattern "/_matrix/client/v3/login/sso/redirect" != null;
-assert builtins.match loginPattern "/_matrix/client/v3/loginXYZ" == null;
-assert builtins.match logoutPattern "/_matrix/client/v3/logout" != null;
-assert builtins.match logoutPattern "/_matrix/client/v3/logout/all" != null;
-assert builtins.match logoutPattern "/_matrix/client/v3/logout/all/extra" == null;
-assert builtins.match refreshPattern "/_matrix/client/v3/refresh" != null;
-assert builtins.match refreshPattern "/_matrix/client/v3/refresh/extra" == null;
 assert
   !(builtins.hasAttr "Access-Control-Allow-Origin" hostCfg.services.traefik.dynamic.files.core.settings.http.middlewares.matrix-headers.headers.customResponseHeaders);
-pkgs.runCommand "matrix-baseline-tests" { } "touch $out"
+assert lib.elem "sops-install-secrets.service" synapseService.after;
+assert lib.elem "sops-install-secrets.service" synapseService.requires;
+assert lib.elem "matrix-synapse.service" synapseSecretService.before;
+assert lib.elem "matrix-synapse.service" synapseSecretService.requiredBy;
+assert lib.elem "sops-install-secrets.service" synapseSecretService.after;
+assert lib.elem "sops-install-secrets.service" synapseSecretService.requires;
+assert lib.elem "sops-install-secrets.service" masService.after;
+assert lib.elem "sops-install-secrets.service" masService.requires;
+assert lib.elem "matrix-authentication-service.service" masSecretService.before;
+assert lib.elem "matrix-authentication-service.service" masSecretService.requiredBy;
+assert lib.elem "sops-install-secrets.service" masSecretService.after;
+assert lib.elem "sops-install-secrets.service" masSecretService.requires;
+pkgs.runCommand "matrix-baseline-tests"
+  {
+    inherit nginxConfig;
+    nativeBuildInputs = [ pkgs.gnugrep ];
+  }
+  ''
+    grep -F -- 'location ~ ^/_synapse/admin(?:/|$)' "$nginxConfig"
+    grep -F -- 'return 403;' "$nginxConfig"
+    grep -F -- 'location ~ ^/_matrix/client/(r0|v1|v3)/login(/|$)' "$nginxConfig"
+    grep -F -- 'location ~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$' "$nginxConfig"
+    grep -F -- 'location ~ ^/_matrix/client/(r0|v1|v3)/refresh$' "$nginxConfig"
+    grep -F -- 'proxy_pass http://127.0.0.1:8081;' "$nginxConfig"
+    grep -F -- 'proxy_pass http://127.0.0.1:8008;' "$nginxConfig"
+    grep -F -- 'location / {' "$nginxConfig"
+    touch "$out"
+  ''
