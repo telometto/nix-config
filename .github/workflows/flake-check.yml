@@ -68,6 +68,9 @@ jobs:
             - name: Run Matrix baseline tests
               run: nix build .#checks.x86_64-linux.matrix-baseline --no-link --print-build-logs
 
+            - name: Run Blackbox observability tests
+              run: nix build .#checks.x86_64-linux.blackbox-observability --no-link --print-build-logs
+
             - name: Run MicroVM network policy tests
               run: nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs
 

@@ -10,6 +10,28 @@ let
   reg = (import ./vm-registry.nix)."matrix-synapse";
   networkDefaults = import ./microvm-network-defaults.nix;
   matrixGateway = reg.gateway or networkDefaults.defaultGateway;
+  secretGeneratorHardening = {
+    AmbientCapabilities = "";
+    CapabilityBoundingSet = "";
+    LockPersonality = true;
+    NoNewPrivileges = true;
+    PrivateDevices = true;
+    PrivateTmp = true;
+    ProtectClock = true;
+    ProtectControlGroups = true;
+    ProtectHome = true;
+    ProtectHostname = true;
+    ProtectKernelLogs = true;
+    ProtectKernelModules = true;
+    ProtectKernelTunables = true;
+    ProtectSystem = "strict";
+    RemoveIPC = true;
+    RestrictAddressFamilies = [ "AF_UNIX" ];
+    RestrictNamespaces = true;
+    RestrictRealtime = true;
+    RestrictSUIDSGID = true;
+    SystemCallArchitectures = "native";
+  };
 in
 {
   imports = [
@@ -58,12 +80,6 @@ in
         owner = "matrix-synapse";
         group = "matrix-synapse";
       };
-      "protonmail/smtp_token" = {
-        mode = "0440";
-        owner = "root";
-        group = "matrix-shared";
-      };
-
       # --- MAS secrets ---
       # Generate once with: mas-cli config generate
       # Then extract and add to nix-secrets YAML.
@@ -88,6 +104,12 @@ in
         group = "mas";
       };
       "matrix-authentication-service/signing_key_ec_secp256k1" = {
+        mode = "0440";
+        owner = "mas";
+        group = "mas";
+      };
+      # Dedicated Proton SMTP token for MAS account recovery mail.
+      "matrix-authentication-service/smtp_token" = {
         mode = "0440";
         owner = "mas";
         group = "mas";
@@ -130,15 +152,16 @@ in
         requires = [ "sops-install-secrets.service" ];
       };
 
-      # Assembles Synapse's runtime config with secrets + MSC3861 auth
-      # delegation block. Shallow-merged by Synapse on top of the main config.
+      # Assembles Synapse's runtime config with its shared secret and MSC3861
+      # auth delegation block. Shallow-merged by Synapse on top of the main
+      # config. MAS owns all Matrix SMTP configuration.
       matrix-synapse-secret = {
         description = "Generate Matrix Synapse secret + auth delegation config";
         before = [ "matrix-synapse.service" ];
         requiredBy = [ "matrix-synapse.service" ];
         after = [ "sops-install-secrets.service" ];
         requires = [ "sops-install-secrets.service" ];
-        serviceConfig = {
+        serviceConfig = secretGeneratorHardening // {
           Type = "oneshot";
           RemainAfterExit = true;
           User = "matrix-synapse";
@@ -146,6 +169,13 @@ in
           UMask = "0337";
           RuntimeDirectory = "matrix-synapse-secret";
           RuntimeDirectoryMode = "0750";
+          ReadOnlyPaths = [
+            config.sops.secrets."matrix-synapse/registration_shared_secret".path
+          ]
+          ++
+            lib.optional config.sys.services.matrix-synapse.authDelegation.enable
+              config.sops.secrets."matrix-authentication-service/synapse_secret".path;
+          ReadWritePaths = [ "/run/matrix-synapse-secret" ];
         };
 
         script =
@@ -175,22 +205,9 @@ in
             set -euo pipefail
             ${pkgs.jq}/bin/jq -n \
               --rawfile secret ${config.sops.secrets."matrix-synapse/registration_shared_secret".path} \
-              --rawfile smtp ${config.sops.secrets."protonmail/smtp_token".path} \
-              --arg notif_from "Matrix <matrix@${VARS.domains.public}>" \
-              --arg smtp_user "matrix@${VARS.domains.public}" \
               ${masArgs} \
               '{
-                registration_shared_secret: ($secret | rtrimstr("\n")),
-                email: {
-                  smtp_host: "smtp.protonmail.ch",
-                  smtp_port: 587,
-                  smtp_user: $smtp_user,
-                  smtp_pass: ($smtp | rtrimstr("\n")),
-                  require_transport_security: true,
-                  notif_from: $notif_from,
-                  app_name: "Matrix",
-                  enable_notifs: false
-                }
+                registration_shared_secret: ($secret | rtrimstr("\n"))
               }${masJqExpr}' \
               > /run/matrix-synapse-secret/shared-secret.yaml
           '';
@@ -198,14 +215,14 @@ in
 
       # Assembles MAS runtime config by merging the Nix-generated base
       # config with decrypted secrets (encryption key, signing keys,
-      # Synapse shared secret, OIDC client secret, SMTP password).
+      # Synapse shared secret, OIDC client secret, and MAS's SMTP token).
       mas-secret = {
         description = "Generate MAS runtime config with secrets";
         before = [ "matrix-authentication-service.service" ];
         requiredBy = [ "matrix-authentication-service.service" ];
         after = [ "sops-install-secrets.service" ];
         requires = [ "sops-install-secrets.service" ];
-        serviceConfig = {
+        serviceConfig = secretGeneratorHardening // {
           Type = "oneshot";
           RemainAfterExit = true;
           User = "mas";
@@ -213,6 +230,18 @@ in
           UMask = "0337";
           RuntimeDirectory = "mas-secret";
           RuntimeDirectoryMode = "0750";
+          ReadOnlyPaths = [
+            "/etc/matrix-authentication-service/config.json"
+            config.sops.secrets."matrix-authentication-service/encryption_key".path
+            config.sops.secrets."matrix-authentication-service/signing_key_rsa".path
+            config.sops.secrets."matrix-authentication-service/signing_key_ec_p256".path
+            config.sops.secrets."matrix-authentication-service/signing_key_ec_p384".path
+            config.sops.secrets."matrix-authentication-service/signing_key_ec_secp256k1".path
+            config.sops.secrets."matrix-authentication-service/synapse_secret".path
+            config.sops.secrets."matrix-authentication-service/client_secret".path
+            config.sops.secrets."matrix-authentication-service/smtp_token".path
+          ];
+          ReadWritePaths = [ "/run/mas-secret" ];
         };
 
         script = ''
@@ -238,7 +267,7 @@ in
             --rawfile client_secret ${
               config.sops.secrets."matrix-authentication-service/client_secret".path
             } \
-            --rawfile smtp_pass ${config.sops.secrets."protonmail/smtp_token".path} \
+            --rawfile smtp_pass ${config.sops.secrets."matrix-authentication-service/smtp_token".path} \
             --arg client_id "${config.sys.services.matrix-authentication-service.clientId}" \
             --arg client_auth_method "${config.sys.services.matrix-synapse.authDelegation.clientAuthMethod}" \
             '$base[0] * {
@@ -455,9 +484,6 @@ in
           allow_public_rooms_without_auth = false;
           require_auth_for_profile_requests = true;
           limit_profile_requests_to_users_who_share_rooms = true;
-
-          # Email/SMTP config (including smtp_pass) is injected at runtime
-          # via /run/matrix-synapse-secret/shared-secret.yaml.
 
           admin_contact = "mailto:matrix@${VARS.domains.public}";
 

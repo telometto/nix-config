@@ -29,6 +29,35 @@ let
   synapseSecretService = vmCfg.systemd.services."matrix-synapse-secret";
   masService = vmCfg.systemd.services."matrix-authentication-service";
   masSecretService = vmCfg.systemd.services."mas-secret";
+  masDbInitService = vmCfg.systemd.services."mas-db-init";
+  synapseRegistrationSecret = vmCfg.sops.secrets."matrix-synapse/registration_shared_secret";
+  synapseDelegationSecret = vmCfg.sops.secrets."matrix-authentication-service/synapse_secret";
+  smtpSecret = vmCfg.sops.secrets."matrix-authentication-service/smtp_token";
+  hasHelperHardening =
+    service:
+    let
+      unit = service.serviceConfig;
+    in
+    unit.AmbientCapabilities == ""
+    && unit.CapabilityBoundingSet == ""
+    && unit.LockPersonality
+    && unit.NoNewPrivileges
+    && unit.PrivateDevices
+    && unit.PrivateTmp
+    && unit.ProtectClock
+    && unit.ProtectControlGroups
+    && unit.ProtectHome
+    && unit.ProtectHostname
+    && unit.ProtectKernelLogs
+    && unit.ProtectKernelModules
+    && unit.ProtectKernelTunables
+    && unit.ProtectSystem == "strict"
+    && unit.RemoveIPC
+    && unit.RestrictAddressFamilies == [ "AF_UNIX" ]
+    && unit.RestrictNamespaces
+    && unit.RestrictRealtime
+    && unit.RestrictSUIDSGID
+    && unit.SystemCallArchitectures == "native";
 in
 assert matrixInstance.portForward.ports == [ ];
 assert matrixInstance.portForward.enable == false;
@@ -43,6 +72,40 @@ assert vmCfg.sys.services.matrix-authentication-service.openFirewall == false;
 assert vmCfg.sys.services.matrix-authentication-service.bindAddress == "127.0.0.1";
 assert vmCfg.sys.services.matrix-authentication-service.trustedProxies == [ "127.0.0.1/32" ];
 assert vmCfg.sys.services.matrix-synapse.bindAddress == "127.0.0.1";
+assert !(builtins.hasAttr "protonmail/smtp_token" vmCfg.sops.secrets);
+assert smtpSecret.mode == "0440";
+assert smtpSecret.owner == "mas";
+assert smtpSecret.group == "mas";
+assert !(builtins.hasAttr "email" vmCfg.services.matrix-synapse.settings);
+assert !(lib.hasInfix "protonmail/smtp_token" synapseSecretService.script);
+assert !(lib.hasInfix "smtp_pass" synapseSecretService.script);
+assert lib.hasInfix smtpSecret.path masSecretService.script;
+assert hasHelperHardening synapseSecretService;
+assert hasHelperHardening masSecretService;
+assert hasHelperHardening masDbInitService;
+assert lib.elem synapseRegistrationSecret.path synapseSecretService.serviceConfig.ReadOnlyPaths;
+assert lib.elem synapseDelegationSecret.path synapseSecretService.serviceConfig.ReadOnlyPaths;
+assert synapseSecretService.serviceConfig.ReadWritePaths == [ "/run/matrix-synapse-secret" ];
+assert lib.elem "/etc/matrix-authentication-service/config.json"
+  masSecretService.serviceConfig.ReadOnlyPaths;
+assert lib.elem smtpSecret.path masSecretService.serviceConfig.ReadOnlyPaths;
+assert masSecretService.serviceConfig.ReadWritePaths == [ "/run/mas-secret" ];
+assert masService.serviceConfig.AmbientCapabilities == "";
+assert masService.serviceConfig.CapabilityBoundingSet == "";
+assert masService.serviceConfig.NoNewPrivileges;
+assert masService.serviceConfig.PrivateDevices;
+assert masService.serviceConfig.PrivateTmp;
+assert masService.serviceConfig.ProtectSystem == "strict";
+assert masService.serviceConfig.ProtectHome;
+assert masService.serviceConfig.ReadWritePaths == [ "/var/lib/mas" ];
+assert
+  masService.serviceConfig.RestrictAddressFamilies == [
+    "AF_UNIX"
+    "AF_INET"
+    "AF_INET6"
+  ];
+assert masService.serviceConfig.SystemCallArchitectures == "native";
+assert lib.elem "/run/mas-secret" masService.serviceConfig.ReadOnlyPaths;
 assert masWebListener.binds == [ { address = "127.0.0.1:8081"; } ];
 assert
   masInternalListener.binds == [

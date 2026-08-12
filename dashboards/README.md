@@ -9,7 +9,8 @@ dashboards/
 ├── shared/              # Dashboards usable across hosts
 │   ├── arr-services.json
 │   ├── electricity-prices.json
-│   └── power-consumption.json
+│   ├── power-consumption.json
+│   └── service-availability.json
 └── host/
     └── blizzard/        # Host-specific dashboards
         ├── zfs-overview.json
@@ -25,6 +26,7 @@ dashboards/
 | [arr-services.json](shared/arr-services.json) | \*arr stack service metrics (Sonarr/Radarr/Prowlarr/etc.) | arr-exporter |
 | [electricity-prices.json](shared/electricity-prices.json) | Energy pricing visualization | Electricity price exporter |
 | [power-consumption.json](shared/power-consumption.json) | Real-time power usage | Smart plug metrics |
+| [service-availability.json](shared/service-availability.json) | Public HTTP/TLS blackbox probe health | Prometheus blackbox exporter |
 
 ### Host-Specific Dashboards
 
@@ -51,6 +53,7 @@ in
     inherit (grafanaDashboards.custom)
       zfs-overview
       cloudflare-overview
+      service-availability
       power-consumption
       ups-monitoring;
   };
