@@ -6,9 +6,8 @@
 }:
 let
   cfg = config.sys.services.blackbox;
-  blackboxPort = 9115;
-  scrapeInterval = "30s";
-  failureWindow = "5m";
+  blackboxConstants = (import ../../lib/constants.nix).blackbox;
+  blackboxPort = blackboxConstants.port;
 
   targetType = lib.types.submodule {
     options = {
@@ -52,8 +51,9 @@ let
 
   blackboxModule = target: {
     prober = "http";
-    timeout = "10s";
+    timeout = blackboxConstants.probeTimeout;
     http = {
+      follow_redirects = false;
       method = "GET";
       preferred_ip_protocol = "ip4";
       valid_http_versions = [
@@ -77,9 +77,9 @@ let
   };
 
   scrapeConfig = {
-    job_name = "blackbox";
-    scrape_interval = scrapeInterval;
-    scrape_timeout = "15s";
+    job_name = blackboxConstants.jobName;
+    scrape_interval = blackboxConstants.scrapeInterval;
+    scrape_timeout = blackboxConstants.scrapeTimeout;
     metrics_path = "/probe";
     static_configs = map (target: {
       targets = [ target.url ];
@@ -118,54 +118,108 @@ let
     uid = "prometheus";
   };
 
+  ruleData = expr: {
+    refId = "A";
+    relativeTimeRange = {
+      from = blackboxConstants.lookbackSeconds;
+      to = 0;
+    };
+    datasourceUid = prometheusDatasource.uid;
+    model = {
+      datasource = prometheusDatasource;
+      editorMode = "code";
+      inherit expr;
+      instant = true;
+      interval = "";
+      intervalMs = blackboxConstants.scrapeIntervalMs;
+      maxDataPoints = 43200;
+      range = false;
+      refId = "A";
+    };
+  };
+
+  probeFailureExpr = ''min by (service, probe) (probe_success{job="${blackboxConstants.jobName}"}) < 1'';
+  exporterScrapeFailureExpr = ''min(up{job="${blackboxConstants.jobName}"}) < 1 or absent(up{job="${blackboxConstants.jobName}"})'';
+  targetMissingExpr = lib.concatStringsSep " or " (
+    map (
+      target:
+      ''absent(probe_success{job="${blackboxConstants.jobName}",service="${target.service}",probe="${target.name}"})''
+    ) cfg.targets
+  );
+
+  availabilityRule = {
+    uid = "public-service-probe-failed";
+    title = "Public service probe failed";
+    condition = "A";
+    execErrState = "Error";
+    for = blackboxConstants.failureWindow;
+    isPaused = false;
+    noDataState = "Alerting";
+    data = [ (ruleData probeFailureExpr) ];
+    annotations = {
+      summary = "Public {{ $labels.service }} probe failed: {{ $labels.probe }}";
+      description = "The public probe has failed continuously for five minutes. Check the public route, Cloudflare Tunnel, Traefik/CrowdSec, and the target service.";
+    };
+    labels = {
+      alert_group = "public-service-availability";
+      severity = "critical";
+    };
+  };
+
+  targetCoverageRule = {
+    uid = "public-service-probe-missing";
+    title = "Public service probe series missing";
+    condition = "A";
+    execErrState = "Error";
+    for = blackboxConstants.failureWindow;
+    isPaused = false;
+    # An empty result is normal while every configured target series exists.
+    # The exporter scrape rule covers a missing Prometheus/exporter pipeline.
+    noDataState = "OK";
+    data = [ (ruleData targetMissingExpr) ];
+    annotations = {
+      summary = "Public {{ $labels.service }} probe series missing: {{ $labels.probe }}";
+      description = "A configured public probe series has disappeared. Check Prometheus target discovery and the blackbox exporter scrape.";
+    };
+    labels = {
+      alert_group = "public-service-availability";
+      severity = "critical";
+    };
+  };
+
+  exporterScrapeRule = {
+    uid = "blackbox-exporter-scrape-failed";
+    title = "Blackbox exporter scrape failed";
+    condition = "A";
+    execErrState = "Error";
+    for = blackboxConstants.failureWindow;
+    isPaused = false;
+    noDataState = "Alerting";
+    data = [ (ruleData exporterScrapeFailureExpr) ];
+    annotations = {
+      summary = "Blackbox exporter scrape failed";
+      description = "Prometheus cannot scrape the local blackbox exporter. Check prometheus-blackbox-exporter.service and its probe configuration.";
+    };
+    labels = {
+      alert_group = "public-service-availability";
+      severity = "critical";
+    };
+  };
+
   availabilityRuleGroup = {
     orgId = 1;
     name = "public-service-availability";
     folder = "Service Availability";
-    interval = scrapeInterval;
+    interval = blackboxConstants.scrapeInterval;
     rules = [
-      {
-        uid = "public-service-probe-failed";
-        title = "Public service probe failed";
-        condition = "A";
-        execErrState = "Error";
-        for = failureWindow;
-        isPaused = false;
-        noDataState = "OK";
-        data = [
-          {
-            refId = "A";
-            relativeTimeRange = {
-              from = 300;
-              to = 0;
-            };
-            datasourceUid = prometheusDatasource.uid;
-            model = {
-              datasource = prometheusDatasource;
-              editorMode = "code";
-              expr = ''min by (service, probe) (probe_success{job="blackbox"}) < 1'';
-              instant = true;
-              interval = "";
-              intervalMs = 30000;
-              maxDataPoints = 43200;
-              range = false;
-              refId = "A";
-            };
-          }
-        ];
-        annotations = {
-          summary = "Public {{ $labels.service }} probe failed: {{ $labels.probe }}";
-          description = "The public probe has failed continuously for five minutes. Check the public route, Cloudflare Tunnel, Traefik/CrowdSec, and the target service.";
-        };
-        labels = {
-          alert_group = "public-service-availability";
-          severity = "critical";
-        };
-      }
+      availabilityRule
+      exporterScrapeRule
+      targetCoverageRule
     ];
   };
 
   targetKeys = map (target: "${target.service}/${target.name}") cfg.targets;
+  moduleNames = map moduleName cfg.targets;
 in
 {
   options.sys.services.blackbox = {
@@ -199,6 +253,10 @@ in
       {
         assertion = builtins.length targetKeys == builtins.length (lib.unique targetKeys);
         message = "sys.services.blackbox target service/name pairs must be unique";
+      }
+      {
+        assertion = builtins.length moduleNames == builtins.length (lib.unique moduleNames);
+        message = "sys.services.blackbox target service/name pairs must produce unique blackbox exporter module names";
       }
       {
         assertion = config.sys.services.prometheus.enable or false;
