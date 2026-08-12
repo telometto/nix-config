@@ -10,6 +10,28 @@ let
   reg = (import ./vm-registry.nix)."matrix-synapse";
   networkDefaults = import ./microvm-network-defaults.nix;
   matrixGateway = reg.gateway or networkDefaults.defaultGateway;
+  secretGeneratorHardening = {
+    AmbientCapabilities = "";
+    CapabilityBoundingSet = "";
+    LockPersonality = true;
+    NoNewPrivileges = true;
+    PrivateDevices = true;
+    PrivateTmp = true;
+    ProtectClock = true;
+    ProtectControlGroups = true;
+    ProtectHome = true;
+    ProtectHostname = true;
+    ProtectKernelLogs = true;
+    ProtectKernelModules = true;
+    ProtectKernelTunables = true;
+    ProtectSystem = "strict";
+    RemoveIPC = true;
+    RestrictAddressFamilies = [ "AF_UNIX" ];
+    RestrictNamespaces = true;
+    RestrictRealtime = true;
+    RestrictSUIDSGID = true;
+    SystemCallArchitectures = "native";
+  };
 in
 {
   imports = [
@@ -139,7 +161,7 @@ in
         requiredBy = [ "matrix-synapse.service" ];
         after = [ "sops-install-secrets.service" ];
         requires = [ "sops-install-secrets.service" ];
-        serviceConfig = {
+        serviceConfig = secretGeneratorHardening // {
           Type = "oneshot";
           RemainAfterExit = true;
           User = "matrix-synapse";
@@ -147,6 +169,13 @@ in
           UMask = "0337";
           RuntimeDirectory = "matrix-synapse-secret";
           RuntimeDirectoryMode = "0750";
+          ReadOnlyPaths = [
+            config.sops.secrets."matrix-synapse/registration_shared_secret".path
+          ]
+          ++ lib.optional config.sys.services.matrix-synapse.authDelegation.enable (
+            config.sops.secrets."matrix-authentication-service/synapse_secret".path
+          );
+          ReadWritePaths = [ "/run/matrix-synapse-secret" ];
         };
 
         script =
@@ -193,7 +222,7 @@ in
         requiredBy = [ "matrix-authentication-service.service" ];
         after = [ "sops-install-secrets.service" ];
         requires = [ "sops-install-secrets.service" ];
-        serviceConfig = {
+        serviceConfig = secretGeneratorHardening // {
           Type = "oneshot";
           RemainAfterExit = true;
           User = "mas";
@@ -201,6 +230,18 @@ in
           UMask = "0337";
           RuntimeDirectory = "mas-secret";
           RuntimeDirectoryMode = "0750";
+          ReadOnlyPaths = [
+            "/etc/matrix-authentication-service/config.json"
+            config.sops.secrets."matrix-authentication-service/encryption_key".path
+            config.sops.secrets."matrix-authentication-service/signing_key_rsa".path
+            config.sops.secrets."matrix-authentication-service/signing_key_ec_p256".path
+            config.sops.secrets."matrix-authentication-service/signing_key_ec_p384".path
+            config.sops.secrets."matrix-authentication-service/signing_key_ec_secp256k1".path
+            config.sops.secrets."matrix-authentication-service/synapse_secret".path
+            config.sops.secrets."matrix-authentication-service/client_secret".path
+            config.sops.secrets."matrix-authentication-service/smtp_token".path
+          ];
+          ReadWritePaths = [ "/run/mas-secret" ];
         };
 
         script = ''
