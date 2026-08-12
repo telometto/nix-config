@@ -97,6 +97,28 @@ let
   baseConfigFile = pkgs.writeText "mas-config-base.json" (builtins.toJSON baseConfig);
 
   postgresqlPackage = config.services.postgresql.package;
+  helperServiceHardening = {
+    AmbientCapabilities = "";
+    CapabilityBoundingSet = "";
+    LockPersonality = true;
+    NoNewPrivileges = true;
+    PrivateDevices = true;
+    PrivateTmp = true;
+    ProtectClock = true;
+    ProtectControlGroups = true;
+    ProtectHome = true;
+    ProtectHostname = true;
+    ProtectKernelLogs = true;
+    ProtectKernelModules = true;
+    ProtectKernelTunables = true;
+    ProtectSystem = "strict";
+    RemoveIPC = true;
+    RestrictAddressFamilies = [ "AF_UNIX" ];
+    RestrictNamespaces = true;
+    RestrictRealtime = true;
+    RestrictSUIDSGID = true;
+    SystemCallArchitectures = "native";
+  };
 in
 {
   options.sys.services.matrix-authentication-service = {
@@ -292,7 +314,7 @@ in
       requires = [ "postgresql.service" ];
       before = [ "matrix-authentication-service.service" ];
       requiredBy = [ "matrix-authentication-service.service" ];
-      serviceConfig = {
+      serviceConfig = helperServiceHardening // {
         Type = "oneshot";
         RemainAfterExit = true;
         User = config.services.postgresql.superUser;
@@ -339,11 +361,36 @@ in
         RuntimeDirectoryMode = "0750";
 
         # Hardening
+        AmbientCapabilities = "";
+        CapabilityBoundingSet = "";
+        LockPersonality = true;
+        NoNewPrivileges = true;
+        PrivateDevices = true;
         ProtectSystem = "strict";
         ProtectHome = true;
         PrivateTmp = true;
-        NoNewPrivileges = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        ReadOnlyPaths = [
+          "/etc/matrix-authentication-service/config.json"
+          "/run/mas-secret"
+        ];
         ReadWritePaths = [ "/var/lib/mas" ];
+        RemoveIPC = true;
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        SystemCallArchitectures = "native";
+        UMask = "0077";
       };
     };
 
