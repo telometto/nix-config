@@ -64,7 +64,7 @@ ______________________________________________________________________
 | [grafana.nix](grafana.nix) | `sys.services.grafana` | Host (blizzard) | Dashboards and alerting |
 | [grafana-cloud.nix](grafana-cloud.nix) | `sys.services.grafanaCloud` | Host | Grafana Cloud remote-write config |
 | [grafana-pushover.nix](grafana-pushover.nix) | `sys.services.grafanaPushover` | Host | Pushover alert contact point |
-| [blackbox.nix](blackbox.nix) | `sys.services.blackbox` | Host | Public HTTP/TLS availability probes |
+| [blackbox.nix](blackbox.nix) | `sys.services.blackbox` | Host | Public HTTP/TLS availability probes ([runbook](../../docs/blackbox-monitoring.md)) |
 | [cloudflare-metrics.nix](cloudflare-metrics.nix) | `sys.services.cloudflareMetrics` | Host (blizzard) | Cloudflare HTTP analytics and Access authentication Prometheus collector ([runbook](../../docs/cloudflare-metrics.md)) |
 | [prometheus.nix](prometheus.nix) | `sys.services.prometheus` | Host (blizzard) | Metrics collection |
 | [prometheus-exporters.nix](prometheus-exporters.nix) | `sys.services.prometheusExporters` | Host + VMs | System metrics exporters |
