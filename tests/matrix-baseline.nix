@@ -29,6 +29,7 @@ let
   synapseSecretService = vmCfg.systemd.services."matrix-synapse-secret";
   masService = vmCfg.systemd.services."matrix-authentication-service";
   masSecretService = vmCfg.systemd.services."mas-secret";
+  smtpSecret = vmCfg.sops.secrets."matrix-authentication-service/smtp_token";
 in
 assert matrixInstance.portForward.ports == [ ];
 assert matrixInstance.portForward.enable == false;
@@ -43,6 +44,14 @@ assert vmCfg.sys.services.matrix-authentication-service.openFirewall == false;
 assert vmCfg.sys.services.matrix-authentication-service.bindAddress == "127.0.0.1";
 assert vmCfg.sys.services.matrix-authentication-service.trustedProxies == [ "127.0.0.1/32" ];
 assert vmCfg.sys.services.matrix-synapse.bindAddress == "127.0.0.1";
+assert !(builtins.hasAttr "protonmail/smtp_token" vmCfg.sops.secrets);
+assert smtpSecret.mode == "0440";
+assert smtpSecret.owner == "mas";
+assert smtpSecret.group == "mas";
+assert !(builtins.hasAttr "email" vmCfg.services.matrix-synapse.settings);
+assert !(lib.hasInfix "protonmail/smtp_token" synapseSecretService.script);
+assert !(lib.hasInfix "smtp_pass" synapseSecretService.script);
+assert lib.hasInfix smtpSecret.path masSecretService.script;
 assert masWebListener.binds == [ { address = "127.0.0.1:8081"; } ];
 assert
   masInternalListener.binds == [
