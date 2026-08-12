@@ -36,7 +36,7 @@ let
           resources = [ { name = "health"; } ];
           binds = [
             {
-              host = "localhost";
+              host = "127.0.0.1";
               port = cfg.healthPort;
             }
           ];
@@ -44,10 +44,7 @@ let
         }
       ];
       trusted_proxies = [
-        "127.0.0.1/8"
-        "10.0.0.0/8"
-        "172.16.0.0/12"
-        "192.168.0.0/16"
+        "127.0.0.1/32"
       ];
       public_base = cfg.publicBaseUrl;
       inherit (cfg) issuer;
