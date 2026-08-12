@@ -8,6 +8,8 @@
 }:
 let
   reg = (import ./vm-registry.nix)."matrix-synapse";
+  networkDefaults = import ./microvm-network-defaults.nix;
+  matrixGateway = reg.gateway or networkDefaults.defaultGateway;
 in
 {
   imports = [
@@ -111,7 +113,7 @@ in
   networking.firewall = {
     allowedTCPPorts = [ ];
     extraCommands = ''
-      ${pkgs.iptables}/bin/iptables -A nixos-fw -i ens3 -p tcp --dport ${toString reg.port} -s 10.100.0.1 -j nixos-fw-accept
+      ${pkgs.iptables}/bin/iptables -A nixos-fw -i ${networkDefaults.guestInterface} -p tcp --dport ${toString reg.port} -s ${matrixGateway} -j nixos-fw-accept
     '';
   };
 
@@ -283,6 +285,8 @@ in
         port = 8081;
         healthPort = 8082;
         openFirewall = false;
+        bindAddress = "127.0.0.1";
+        trustedProxies = [ "127.0.0.1/32" ];
 
         publicBaseUrl = "https://matrix.${VARS.domains.public}/";
         issuer = "https://matrix.${VARS.domains.public}/";
@@ -317,9 +321,9 @@ in
         # Keep existing password login and recovery while closing anonymous
         # password registration before the later OIDC migration.
         settings = {
-          # Include bcrypt as scheme v1 so migrated Synapse password hashes
-          # (which are bcrypt) keep working after syn2mas import.  New
-          # registrations and re-logins will upgrade hashes to argon2id (v2).
+          # Keep bcrypt as scheme v1 for imported Synapse hashes. Successful
+          # logins upgrade compatible hashes to argon2id (v2); new password
+          # registration is disabled below.
           passwords.schemes = [
             {
               version = 1;
@@ -358,6 +362,7 @@ in
         port = 8008;
         serverName = VARS.domains.public;
         openFirewall = false;
+        bindAddress = "127.0.0.1";
 
         database.createLocally = true;
         urlPreview.enable = true;
@@ -516,6 +521,7 @@ in
   # Routes auth-related paths to MAS, everything else to Synapse.
   services.nginx = {
     enable = true;
+    enableReload = true;
 
     recommendedProxySettings = true;
     recommendedOptimisation = true;
