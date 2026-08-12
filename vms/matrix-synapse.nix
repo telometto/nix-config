@@ -105,8 +105,15 @@ in
     };
   };
 
-  # Nginx takes over the external port; Synapse listens on 8008 (localhost only)
-  networking.firewall.allowedTCPPorts = [ reg.port ];
+  # Nginx is the only guest-network listener. Accept its traffic only from
+  # Blizzard's MicroVM gateway; all other sources fall through to the default
+  # firewall refusal path.
+  networking.firewall = {
+    allowedTCPPorts = [ ];
+    extraCommands = ''
+      ${pkgs.iptables}/bin/iptables -A nixos-fw -i ens3 -p tcp --dport ${toString reg.port} -s 10.100.0.1 -j nixos-fw-accept
+    '';
+  };
 
   systemd = {
     tmpfiles.rules = [
@@ -275,6 +282,7 @@ in
 
         port = 8081;
         healthPort = 8082;
+        openFirewall = false;
 
         publicBaseUrl = "https://matrix.${VARS.domains.public}/";
         issuer = "https://matrix.${VARS.domains.public}/";
@@ -299,16 +307,15 @@ in
 
         matrix = {
           homeserver = "${VARS.domains.public}";
-          endpoint = "http://localhost:8008/";
+          endpoint = "http://127.0.0.1:8008/";
         };
 
         clientId = "0000000000000000000SYNAPSE";
 
         runtimeConfigFile = "/run/mas-secret/config.json";
 
-        # Enable registration and account management in MAS.
-        # Without this, MAS only advertises "login" in prompt_values_supported
-        # and all registration attempts redirect to login.
+        # Keep existing password login and recovery while closing anonymous
+        # password registration before the later OIDC migration.
         settings = {
           # Include bcrypt as scheme v1 so migrated Synapse password hashes
           # (which are bcrypt) keep working after syn2mas import.  New
@@ -327,7 +334,8 @@ in
             }
           ];
           account = {
-            password_registration_enabled = true;
+            password_registration_enabled = false;
+            password_recovery_enabled = true;
             email_change_allowed = true;
             displayname_change_allowed = true;
             password_change_allowed = true;
@@ -378,7 +386,7 @@ in
           issuer = "https://matrix.${VARS.domains.public}/";
           clientId = "0000000000000000000SYNAPSE";
           accountManagementUrl = "https://matrix.${VARS.domains.public}/account/";
-          masEndpoint = "http://localhost:${toString config.sys.services.matrix-authentication-service.port}/";
+          masEndpoint = "http://127.0.0.1:${toString config.sys.services.matrix-authentication-service.port}/";
         };
 
         settings = {
@@ -596,13 +604,21 @@ in
             proxy_set_header X-Forwarded-Proto https;
           '';
         };
-        # MAS GraphQL admin API
+        # MAS frontend GraphQL endpoint; this is not the separately controlled
+        # MAS administrative API.
         "/graphql" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
             proxy_set_header X-Forwarded-Proto https;
           '';
         };
+
+        # Keep Synapse administration on the local SSH/loopback path. The
+        # client rendezvous endpoint remains in the Synapse catch-all below.
+        "~ ^/_synapse/admin(?:/|$)" = {
+          return = "403";
+        };
+
         # MAS human-facing pages (login, logout, consent, recovery, etc.)
         "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)" = {
           proxyPass = "http://127.0.0.1:8081";
