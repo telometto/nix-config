@@ -203,20 +203,14 @@ in
           };
 
           # Matrix needs relaxed headers for federated clients and well-known
-          # discovery. Do not reuse this wildcard CORS/no-CSP profile outside
-          # Matrix routes.
+          # discovery. CORS is kept on the explicit Matrix discovery responses
+          # in the guest Nginx route, not injected across the hostname.
           matrix-headers = traefikLib.mkSecurityHeaders {
             xFrameOptions = "DENY";
             xssProtection = "0";
             referrerPolicy = "strict-origin-when-cross-origin";
             permissionsPolicy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()";
             csp = null;
-            extraResponseHeaders = {
-              Access-Control-Allow-Origin = "*";
-              Access-Control-Allow-Methods = "GET, HEAD, POST, PUT, DELETE, OPTIONS";
-              Access-Control-Allow-Headers = "X-Requested-With, Content-Type, Authorization, Date";
-              Access-Control-Expose-Headers = "Content-Length, Content-Type, Content-Disposition";
-            };
           };
 
           # Plex-adjacent services need Plex OAuth/referrer compatibility; keep

@@ -8,6 +8,8 @@
 }:
 let
   reg = (import ./vm-registry.nix)."matrix-synapse";
+  networkDefaults = import ./microvm-network-defaults.nix;
+  matrixGateway = reg.gateway or networkDefaults.defaultGateway;
 in
 {
   imports = [
@@ -105,8 +107,15 @@ in
     };
   };
 
-  # Nginx takes over the external port; Synapse listens on 8008 (localhost only)
-  networking.firewall.allowedTCPPorts = [ reg.port ];
+  # Nginx is the only guest-network listener. Accept its traffic only from
+  # Blizzard's MicroVM gateway; all other sources fall through to the default
+  # firewall refusal path.
+  networking.firewall = {
+    allowedTCPPorts = [ ];
+    extraCommands = ''
+      ${pkgs.iptables}/bin/iptables -A nixos-fw -i ${networkDefaults.guestInterface} -p tcp --dport ${toString reg.port} -s ${matrixGateway} -j nixos-fw-accept
+    '';
+  };
 
   systemd = {
     tmpfiles.rules = [
@@ -275,6 +284,9 @@ in
 
         port = 8081;
         healthPort = 8082;
+        openFirewall = false;
+        bindAddress = "127.0.0.1";
+        trustedProxies = [ "127.0.0.1/32" ];
 
         publicBaseUrl = "https://matrix.${VARS.domains.public}/";
         issuer = "https://matrix.${VARS.domains.public}/";
@@ -299,20 +311,19 @@ in
 
         matrix = {
           homeserver = "${VARS.domains.public}";
-          endpoint = "http://localhost:8008/";
+          endpoint = "http://127.0.0.1:8008/";
         };
 
         clientId = "0000000000000000000SYNAPSE";
 
         runtimeConfigFile = "/run/mas-secret/config.json";
 
-        # Enable registration and account management in MAS.
-        # Without this, MAS only advertises "login" in prompt_values_supported
-        # and all registration attempts redirect to login.
+        # Keep existing password login and recovery while closing anonymous
+        # password registration before the later OIDC migration.
         settings = {
-          # Include bcrypt as scheme v1 so migrated Synapse password hashes
-          # (which are bcrypt) keep working after syn2mas import.  New
-          # registrations and re-logins will upgrade hashes to argon2id (v2).
+          # Keep bcrypt as scheme v1 for imported Synapse hashes. Successful
+          # logins upgrade compatible hashes to argon2id (v2); new password
+          # registration is disabled below.
           passwords.schemes = [
             {
               version = 1;
@@ -327,7 +338,8 @@ in
             }
           ];
           account = {
-            password_registration_enabled = true;
+            password_registration_enabled = false;
+            password_recovery_enabled = true;
             email_change_allowed = true;
             displayname_change_allowed = true;
             password_change_allowed = true;
@@ -350,6 +362,7 @@ in
         port = 8008;
         serverName = VARS.domains.public;
         openFirewall = false;
+        bindAddress = "127.0.0.1";
 
         database.createLocally = true;
         urlPreview.enable = true;
@@ -378,7 +391,7 @@ in
           issuer = "https://matrix.${VARS.domains.public}/";
           clientId = "0000000000000000000SYNAPSE";
           accountManagementUrl = "https://matrix.${VARS.domains.public}/account/";
-          masEndpoint = "http://localhost:${toString config.sys.services.matrix-authentication-service.port}/";
+          masEndpoint = "http://127.0.0.1:${toString config.sys.services.matrix-authentication-service.port}/";
         };
 
         settings = {
@@ -508,6 +521,7 @@ in
   # Routes auth-related paths to MAS, everything else to Synapse.
   services.nginx = {
     enable = true;
+    enableReload = true;
 
     recommendedProxySettings = true;
     recommendedOptimisation = true;
@@ -596,13 +610,21 @@ in
             proxy_set_header X-Forwarded-Proto https;
           '';
         };
-        # MAS GraphQL admin API
+        # MAS frontend GraphQL endpoint; this is not the separately controlled
+        # MAS administrative API.
         "/graphql" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
             proxy_set_header X-Forwarded-Proto https;
           '';
         };
+
+        # Keep Synapse administration on the local SSH/loopback path. The
+        # client rendezvous endpoint remains in the Synapse catch-all below.
+        "~ ^/_synapse/admin(?:/|$)" = {
+          return = "403";
+        };
+
         # MAS human-facing pages (login, logout, consent, recovery, etc.)
         "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)" = {
           proxyPass = "http://127.0.0.1:8081";

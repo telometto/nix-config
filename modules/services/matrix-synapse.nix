@@ -18,6 +18,16 @@ in
       description = "HTTP listener port for Synapse (client + federation).";
     };
 
+    bindAddress = lib.mkOption {
+      type = lib.types.str;
+      default = "0.0.0.0";
+      description = ''
+        Address on which Synapse listens. Set this to 127.0.0.1 when a local
+        reverse proxy is the only intended network boundary.
+      '';
+      example = "127.0.0.1";
+    };
+
     serverName = lib.mkOption {
       type = lib.types.str;
       description = "The public-facing domain for Matrix user IDs (@user:domain).";
@@ -104,7 +114,7 @@ in
 
       masEndpoint = lib.mkOption {
         type = lib.types.str;
-        default = "http://localhost:8081/";
+        default = "http://127.0.0.1:8081/";
         description = "Internal MAS endpoint URL for Synapse ↔ MAS communication.";
       };
     };
@@ -206,7 +216,7 @@ in
             listeners = [
               {
                 inherit (cfg) port;
-                bind_addresses = [ "0.0.0.0" ];
+                bind_addresses = [ cfg.bindAddress ];
                 type = "http";
                 tls = false;
                 x_forwarded = true;
