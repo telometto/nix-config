@@ -206,7 +206,9 @@ in
             listeners = [
               {
                 inherit (cfg) port;
-                bind_addresses = [ "0.0.0.0" ];
+                # Nginx is the only guest-network boundary. Synapse's client
+                # and federation listener must not be reachable directly.
+                bind_addresses = [ "127.0.0.1" ];
                 type = "http";
                 tls = false;
                 x_forwarded = true;
