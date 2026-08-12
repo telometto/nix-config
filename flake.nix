@@ -182,6 +182,7 @@
         blackbox-observability = import ./tests/blackbox-observability.nix {
           blizzard = self.nixosConfigurations.blizzard;
           pkgs = nixpkgs.legacyPackages.${system};
+          publicDomain = VARS.domains.public;
         };
 
         microvm-network-policy = import ./tests/microvm-network-policy.nix {
