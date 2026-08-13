@@ -33,6 +33,7 @@ git diff --check
 nix fmt
 nix flake check
 nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel
+nix run 'nixpkgs#statix' -- --check .
 ```
 
 Flake evaluation and host builds need SSH access to the private `nix-secrets`
