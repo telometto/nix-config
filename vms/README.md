@@ -103,7 +103,7 @@ ______________________________________________________________________
 The Matrix VM's TCP `11060` port is a guest service port, not a host
 port-forward. Nginx listens on `0.0.0.0:11060` inside the VM, while the guest
 firewall accepts that port only from Blizzard's MicroVM gateway
-`10.100.0.1` on the primary `ens3` interface. The public path is the managed
+`10.100.0.1` on the primary `ens6` interface. The public path is the managed
 `matrix` publication through Cloudflare Tunnel and Traefik; no raw host
 forward bypasses those controls.
 
