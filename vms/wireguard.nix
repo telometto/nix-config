@@ -87,6 +87,8 @@ in
     (import ./mkMicrovmConfig.nix reg)
   ];
 
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
+
   # Note: WireGuard private key is stored in /persist/wireguard/privatekey
   # This avoids sops-nix timing issues with SSH keys on MicroVM volumes
 
