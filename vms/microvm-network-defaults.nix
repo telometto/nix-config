@@ -6,10 +6,11 @@ let
     network = "10.100.0.0/24";
   };
 
-  # Cloud Hypervisor exposes the primary virtio NIC as ens3 in guests. Keep
-  # firewall rules that target the VM's primary network boundary on this
-  # shared contract instead of scattering the device name through workloads.
-  guestInterface = "ens3";
+  # The current Cloud Hypervisor guest layout exposes the primary virtio NIC
+  # at PCI slot 6, which systemd names ens6. Keep firewall rules that target
+  # the VM's primary network boundary on this shared contract instead of
+  # scattering the device name through workloads.
+  guestInterface = "ens6";
 in
 {
   inherit sharedBridge guestInterface;
