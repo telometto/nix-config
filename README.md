@@ -97,6 +97,7 @@ If that key is unavailable, use CI as the source of truth and see
 | [Reference: CI](docs/reference-ci.md) | CI workflows reference |
 | [SOPS Setup Guide](docs/sops-setup-guide.md) | Host recipient setup and secret flow |
 | [Credential Lifecycle](docs/credential-lifecycle.md) | Password, SSH key, and service secret rotation policy |
+| [Project Roadmap](docs/roadmap.md) | Curated implementation initiatives, priorities, dependencies, and planning links |
 | [Architecture Risks and Improvements](docs/architecture-risks-and-improvements.md) | Potential improvements and current risks |
 | [Explanation: Design](docs/explanation-design.md) | Design decisions and rationale |
 | [Architecture Blueprint](docs/Project_Architecture_Blueprint.md) | Full system architecture |
