@@ -96,6 +96,12 @@ let
 
   baseConfigFile = pkgs.writeText "mas-config-base.json" (builtins.toJSON baseConfig);
 
+  runtimeConfigPath =
+    if cfg.runtimeConfigFile != null then cfg.runtimeConfigFile else "${baseConfigFile}";
+  runtimeConfigReadOnlyPaths = lib.optional (cfg.runtimeConfigFile != null) (
+    builtins.dirOf cfg.runtimeConfigFile
+  );
+
   postgresqlPackage = config.services.postgresql.package;
   helperServiceHardening = {
     AmbientCapabilities = "";
@@ -347,11 +353,7 @@ in
         Type = "simple";
         User = "mas";
         Group = "mas";
-        ExecStart =
-          let
-            configPath = if cfg.runtimeConfigFile != null then cfg.runtimeConfigFile else "${baseConfigFile}";
-          in
-          "${pkgs.matrix-authentication-service}/bin/mas-cli server --config ${configPath}";
+        ExecStart = "${pkgs.matrix-authentication-service}/bin/mas-cli server --config ${runtimeConfigPath}";
         Restart = "on-failure";
         RestartSec = "5s";
 
@@ -377,8 +379,8 @@ in
         ProtectKernelTunables = true;
         ReadOnlyPaths = [
           "/etc/matrix-authentication-service/config.json"
-          "/run/mas-secret"
-        ];
+        ]
+        ++ runtimeConfigReadOnlyPaths;
         ReadWritePaths = [ "/var/lib/mas" ];
         RemoveIPC = true;
         RestrictAddressFamilies = [
@@ -425,6 +427,10 @@ in
       {
         assertion = cfg.email.transport != "smtp" || (cfg.email.hostname != "" && cfg.email.username != "");
         message = "sys.services.matrix-authentication-service.email.hostname and email.username must be set when email.transport is 'smtp'";
+      }
+      {
+        assertion = cfg.runtimeConfigFile == null || lib.hasPrefix "/" cfg.runtimeConfigFile;
+        message = "sys.services.matrix-authentication-service.runtimeConfigFile must be an absolute path when set";
       }
       {
         assertion =
