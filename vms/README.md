@@ -114,6 +114,22 @@ disabled, while existing password login, recovery, password changes, and
 account-profile changes remain enabled during the OIDC migration. OAuth client
 registration is a separate dynamic MAS policy used by OIDC-native clients.
 
+Runtime secrets follow a separate, guest-local pipeline. After
+`sops-install-secrets.service`, `matrix-synapse-secret.service` and
+`mas-secret.service` read their declared SOPS files and write only
+`/run/matrix-synapse-secret/shared-secret.yaml` and
+`/run/mas-secret/config.json`, respectively. MAS reads the generated config as
+well as the Nix-generated base config and writes durable state only to
+`/var/lib/mas`; the base config contains no decrypted secret values. The
+generator units, `mas-db-init.service`, and MAS itself use systemd sandboxing
+with explicit read-only and writable paths. See the [Matrix hardening plan](../docs/matrix-hardening-plan.md)
+for the remaining runtime compatibility and rotation gates.
+
+The generators are `Type=oneshot` units with `RemainAfterExit=true`. Treat a
+SOPS rotation as an explicit generator-and-consumer restart operation and verify
+the resulting runtime files; an initial successful boot does not prove that a
+later rotation was consumed.
+
 ______________________________________________________________________
 
 ### Base configuration (vms/base.nix)
