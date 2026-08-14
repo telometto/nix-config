@@ -35,12 +35,12 @@ Before activation or further runtime work:
 1. Treat the repository anchor above as the source-evidence baseline and review
    every intervening Matrix, MAS, Nginx, publication, backup, monitoring,
    mail, secret, and MicroVM network-policy change.
-2. Confirm that the MicroVM network policy completed its explicitly approved
+1. Confirm that the MicroVM network policy completed its explicitly approved
    audit gate, including any documented exception, was approved for `enforce`,
    and was merged.
-3. Refresh all pinned-version claims against the current package sources and
+1. Refresh all pinned-version claims against the current package sources and
    upstream primary documentation.
-4. Stop if current evidence contradicts an invariant or acceptance gate below.
+1. Stop if current evidence contradicts an invariant or acceptance gate below.
 
 ## Roadmap and change boundaries
 
