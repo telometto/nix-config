@@ -1,29 +1,40 @@
 {
-  inputs,
   matrix,
   blizzard,
   pkgs,
-  system,
-  VARS,
+  ...
 }:
 let
   inherit (pkgs) lib;
   vmCfg = matrix.config;
   hostCfg = blizzard.config;
-  alternateRuntimeConfig = inputs.nixpkgs.lib.nixosSystem {
-    inherit system;
+  traefikLib = import ../lib/traefik.nix { inherit lib; };
+  inherit (traefikLib) matrixRoutes;
+  proxyPassByTarget = {
+    mas = "http://127.0.0.1:8081";
+    synapse = "http://127.0.0.1:8008";
+  };
+  alternateRuntimeConfigFile = "/run/mas-alternate/config.json";
+  alternateRuntimeConfig = matrix.extendModules {
     modules = [
-      inputs.microvm.nixosModules.microvm
-      inputs.sops-nix.nixosModules.sops
-      ../vms/matrix-synapse.nix
       {
-        sys.services.matrix-authentication-service.runtimeConfigFile = lib.mkForce "/run/mas-alternate/config.json";
+        sys.services.matrix-authentication-service.runtimeConfigFile = lib.mkForce alternateRuntimeConfigFile;
       }
     ];
-    specialArgs = {
-      inherit inputs system VARS;
-      consts = import ../lib/constants.nix;
-    };
+  };
+  defaultRuntimeConfig = matrix.extendModules {
+    modules = [
+      {
+        sys.services.matrix-authentication-service.runtimeConfigFile = lib.mkForce null;
+      }
+    ];
+  };
+  relativeRuntimeConfig = matrix.extendModules {
+    modules = [
+      {
+        sys.services.matrix-authentication-service.runtimeConfigFile = lib.mkForce "relative/config.json";
+      }
+    ];
   };
   networkDefaults = import ../vms/microvm-network-defaults.nix;
   matrixRegistry = (import ../vms/vm-registry.nix)."matrix-synapse";
@@ -50,53 +61,37 @@ let
   masDbInitService = vmCfg.systemd.services."mas-db-init";
   alternateMasService =
     alternateRuntimeConfig.config.systemd.services."matrix-authentication-service";
+  alternateMasSecretService = alternateRuntimeConfig.config.systemd.services."mas-secret";
+  defaultMasService = defaultRuntimeConfig.config.systemd.services."matrix-authentication-service";
+  defaultBaseConfigFile =
+    defaultRuntimeConfig.config.environment.etc."matrix-authentication-service/config.json".source;
   synapseRegistrationSecret = vmCfg.sops.secrets."matrix-synapse/registration_shared_secret";
   synapseDelegationSecret = vmCfg.sops.secrets."matrix-authentication-service/synapse_secret";
   smtpSecret = vmCfg.sops.secrets."matrix-authentication-service/smtp_token";
-  regexRouteContracts = [
-    {
-      location = "~ ^/_matrix/client/(r0|v1|v3)/login(/|$)";
-      pattern = "^/_matrix/client/(r0|v1|v3)/login(/.*)?$";
-      matches = [
-        "/_matrix/client/v3/login"
-        "/_matrix/client/v3/login/sso/redirect"
-      ];
-      rejects = [ "/_matrix/client/v3/loginXYZ" ];
-    }
-    {
-      location = "~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$";
-      pattern = "^/_matrix/client/(r0|v1|v3)/logout(/all)?$";
-      matches = [
-        "/_matrix/client/v3/logout"
-        "/_matrix/client/v3/logout/all"
-      ];
-      rejects = [ "/_matrix/client/v3/logout/all/extra" ];
-    }
-    {
-      location = "~ ^/_matrix/client/(r0|v1|v3)/refresh$";
-      pattern = "^/_matrix/client/(r0|v1|v3)/refresh$";
-      matches = [ "/_matrix/client/v3/refresh" ];
-      rejects = [ "/_matrix/client/v3/refresh/extra" ];
-    }
-    {
-      location = "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/|$)";
-      pattern = "^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/.*)?$";
-      matches = [
-        "/login"
-        "/login/sso/redirect"
-        "/recover/reset"
-      ];
-      rejects = [ "/loginXYZ" ];
-    }
-  ];
-  regexRouteContractPasses =
+  routeContractPasses =
     route:
     let
       location = nginxLocations.${route.location};
     in
-    location.proxyPass == "http://127.0.0.1:8081"
-    && lib.all (path: builtins.match route.pattern path != null) route.matches
-    && lib.all (path: builtins.match route.pattern path == null) route.rejects;
+    if route.target == "deny" then
+      location.return == "403"
+    else
+      location.proxyPass == proxyPassByTarget.${route.target};
+  wellKnownContractPasses = route: nginxLocations.${route.location}.return != null;
+  hasFailedAssertion =
+    message: cfg:
+    lib.any (assertion: !assertion.assertion && lib.hasInfix message assertion.message) cfg.assertions;
+  routeProbeCommands = lib.concatMapStringsSep "\n" (
+    route:
+    let
+      matches = map (path: "check_route ${lib.escapeShellArg path} ${route.target}") route.matches;
+      rejects = map (path: "check_route ${lib.escapeShellArg path} synapse") route.rejects;
+    in
+    lib.concatStringsSep "\n" (matches ++ rejects)
+  ) matrixRoutes.routeContracts;
+  wellKnownProbeCommands = lib.concatMapStringsSep "\n" (
+    route: "check_well_known ${lib.escapeShellArg route.path} ${lib.escapeShellArg route.marker}"
+  ) matrixRoutes.wellKnownContracts;
   hasHelperHardening =
     service:
     let
@@ -137,9 +132,18 @@ assert vmCfg.sys.services.matrix-authentication-service.openFirewall == false;
 assert vmCfg.sys.services.matrix-authentication-service.bindAddress == "127.0.0.1";
 assert vmCfg.sys.services.matrix-authentication-service.trustedProxies == [ "127.0.0.1/32" ];
 assert vmCfg.sys.services.matrix-synapse.bindAddress == "127.0.0.1";
-assert lib.all regexRouteContractPasses regexRouteContracts;
-assert lib.hasInfix "/run/mas-alternate/config.json" alternateMasService.serviceConfig.ExecStart;
+assert lib.all routeContractPasses matrixRoutes.routeContracts;
+assert lib.all wellKnownContractPasses matrixRoutes.wellKnownContracts;
+assert lib.hasInfix alternateRuntimeConfigFile alternateMasService.serviceConfig.ExecStart;
+assert lib.hasInfix alternateRuntimeConfigFile alternateMasSecretService.script;
+assert alternateMasSecretService.serviceConfig.RuntimeDirectory == "mas-alternate";
+assert alternateMasSecretService.serviceConfig.ReadWritePaths == [ "/run/mas-alternate" ];
 assert lib.elem "/run/mas-alternate" alternateMasService.serviceConfig.ReadOnlyPaths;
+assert
+  defaultMasService.serviceConfig.ExecStart
+  == "${pkgs.matrix-authentication-service}/bin/mas-cli server --config ${defaultBaseConfigFile}";
+assert !(lib.elem "/run/mas-secret" defaultMasService.serviceConfig.ReadOnlyPaths);
+assert hasFailedAssertion "runtimeConfigFile must be an absolute path" relativeRuntimeConfig.config;
 assert !(builtins.hasAttr "protonmail/smtp_token" vmCfg.sops.secrets);
 assert smtpSecret.mode == "0440";
 assert smtpSecret.owner == "mas";
@@ -188,22 +192,7 @@ assert
 assert
   vmCfg.sys.services.matrix-authentication-service.settings.account.password_recovery_enabled == true;
 assert vmCfg.services.matrix-synapse.settings.enable_registration == false;
-assert nginxLocations."~ ^/_synapse/admin(?:/|$)".return == "403";
-assert
-  nginxLocations."~ ^/_matrix/client/(r0|v1|v3)/login(/|$)".proxyPass == "http://127.0.0.1:8081";
-assert
-  nginxLocations."~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$".proxyPass == "http://127.0.0.1:8081";
-assert nginxLocations."~ ^/_matrix/client/(r0|v1|v3)/refresh$".proxyPass == "http://127.0.0.1:8081";
-assert nginxLocations."/.well-known/openid-configuration".proxyPass == "http://127.0.0.1:8081";
-assert nginxLocations."/oauth2/".proxyPass == "http://127.0.0.1:8081";
-assert nginxLocations."/account/".proxyPass == "http://127.0.0.1:8081";
-assert nginxLocations."/.well-known/jwks.json".proxyPass == "http://127.0.0.1:8081";
-assert nginxLocations."/graphql".proxyPass == "http://127.0.0.1:8081";
-assert nginxLocations."/".proxyPass == "http://127.0.0.1:8008";
 assert !(builtins.hasAttr "/_synapse/client/rendezvous" nginxLocations);
-assert nginxLocations."= /.well-known/matrix/server".return != null;
-assert nginxLocations."= /.well-known/matrix/client".return != null;
-assert nginxLocations."= /.well-known/matrix/support".return != null;
 assert lib.hasInfix "add_header Access-Control-Allow-Origin *"
   nginxLocations."= /.well-known/matrix/server".extraConfig;
 assert lib.hasInfix "add_header Access-Control-Allow-Origin *"
@@ -226,10 +215,12 @@ assert lib.elem "sops-install-secrets.service" masSecretService.after;
 assert lib.elem "sops-install-secrets.service" masSecretService.requires;
 pkgs.runCommand "matrix-baseline-tests"
   {
-    inherit nginxConfig;
+    inherit nginxConfig routeProbeCommands wellKnownProbeCommands;
     nativeBuildInputs = [
+      pkgs.curl
       pkgs.gnugrep
       pkgs.nginx
+      pkgs.python3
     ];
   }
   ''
@@ -238,18 +229,64 @@ pkgs.runCommand "matrix-baseline-tests"
     testConfig="$TMPDIR/nginx.conf"
     sed \
       -e "s#pid /run/nginx/nginx.pid;#pid $TMPDIR/nginx.pid;#" \
+      -e "s#listen 0.0.0.0:11060 *;#listen 127.0.0.1:18080;#" \
+      -e "s#listen 11060 *;#listen 127.0.0.1:18080;#" \
+      -e "s#127.0.0.1:8081#127.0.0.1:18081#g" \
+      -e "s#127.0.0.1:8008#127.0.0.1:18008#g" \
       -e 's#http {#http {\n\taccess_log off;#' \
       "$nginxConfig" > "$testConfig"
     ${pkgs.nginx}/bin/nginx -t -e stderr -c "$testConfig"
 
-    grep -F -- 'location ~ ^/_synapse/admin(?:/|$)' "$nginxConfig"
-    grep -F -- 'return 403;' "$nginxConfig"
-    grep -F -- 'location ~ ^/_matrix/client/(r0|v1|v3)/login(/|$)' "$nginxConfig"
-    grep -F -- 'location ~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$' "$nginxConfig"
-    grep -F -- 'location ~ ^/_matrix/client/(r0|v1|v3)/refresh$' "$nginxConfig"
-    grep -F -- 'location ~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/|$)' "$nginxConfig"
-    grep -F -- 'proxy_pass http://127.0.0.1:8081;' "$nginxConfig"
-    grep -F -- 'proxy_pass http://127.0.0.1:8008;' "$nginxConfig"
-    grep -F -- 'location / {' "$nginxConfig"
+    masPid=""
+    synapsePid=""
+    nginxPid=""
+    cleanup() {
+      kill "$nginxPid" "$masPid" "$synapsePid" 2>/dev/null || true
+      wait "$nginxPid" "$masPid" "$synapsePid" 2>/dev/null || true
+    }
+    trap cleanup EXIT
+
+    ${pkgs.python3}/bin/python -c 'import sys; from http.server import BaseHTTPRequestHandler, HTTPServer; Handler = type("Handler", (BaseHTTPRequestHandler,), {"do_GET": lambda self: (self.send_response(200), self.end_headers(), self.wfile.write(sys.argv[2].encode())), "log_message": lambda self, *args: None}); HTTPServer(("127.0.0.1", int(sys.argv[1])), Handler).serve_forever()' 18081 mas &
+    masPid=$!
+    ${pkgs.python3}/bin/python -c 'import sys; from http.server import BaseHTTPRequestHandler, HTTPServer; Handler = type("Handler", (BaseHTTPRequestHandler,), {"do_GET": lambda self: (self.send_response(200), self.end_headers(), self.wfile.write(sys.argv[2].encode())), "log_message": lambda self, *args: None}); HTTPServer(("127.0.0.1", int(sys.argv[1])), Handler).serve_forever()' 18008 synapse &
+    synapsePid=$!
+    ${pkgs.nginx}/bin/nginx -e stderr -c "$testConfig" &
+    nginxPid=$!
+
+    for attempt in $(seq 1 50); do
+      if ${pkgs.curl}/bin/curl --fail --silent --show-error http://127.0.0.1:18080/not-a-mas-route >/dev/null 2>&1; then
+        break
+      fi
+      sleep 0.1
+    done
+
+    check_route() {
+      local path="$1"
+      local expected="$2"
+      case "$expected" in
+        mas|synapse)
+          body="$(${pkgs.curl}/bin/curl --fail --silent --show-error "http://127.0.0.1:18080''${path}")"
+          test "$body" = "$expected"
+          ;;
+        deny)
+          status="$(${pkgs.curl}/bin/curl --silent --show-error --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:18080''${path}")"
+          test "$status" = "403"
+          ;;
+        *)
+          echo "unknown expected route target: $expected" >&2
+          return 1
+          ;;
+      esac
+    }
+
+    check_well_known() {
+      local path="$1"
+      local marker="$2"
+      body="$(${pkgs.curl}/bin/curl --fail --silent --show-error "http://127.0.0.1:18080''${path}")"
+      printf '%s' "$body" | grep -F -- "$marker" >/dev/null
+    }
+
+    ${routeProbeCommands}
+    ${wellKnownProbeCommands}
     touch "$out"
   ''
