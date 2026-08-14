@@ -10,6 +10,17 @@ let
   reg = (import ./vm-registry.nix)."matrix-synapse";
   networkDefaults = import ./microvm-network-defaults.nix;
   matrixGateway = reg.gateway or networkDefaults.defaultGateway;
+  traefikLib = import ../lib/traefik.nix { inherit lib; };
+  inherit (traefikLib) matrixRoutes;
+  configuredMasRuntimeConfigFile =
+    config.sys.services.matrix-authentication-service.runtimeConfigFile;
+  masRuntimeConfigFile =
+    if configuredMasRuntimeConfigFile != null then
+      configuredMasRuntimeConfigFile
+    else
+      "/run/mas-secret/config.json";
+  masRuntimeConfigDirectory = builtins.dirOf masRuntimeConfigFile;
+  masRuntimeDirectory = lib.removePrefix "/run/" masRuntimeConfigDirectory;
   secretGeneratorHardening = {
     AmbientCapabilities = "";
     CapabilityBoundingSet = "";
@@ -129,6 +140,13 @@ in
     };
   };
 
+  assertions = [
+    {
+      assertion = lib.hasPrefix "/run/" masRuntimeConfigDirectory && masRuntimeConfigDirectory != "/run";
+      message = "The Matrix VM MAS runtimeConfigFile must be below /run and include a parent directory";
+    }
+  ];
+
   # Nginx is the only guest-network listener. Accept its traffic only from
   # Blizzard's MicroVM gateway; all other sources fall through to the default
   # firewall refusal path.
@@ -228,7 +246,7 @@ in
           User = "mas";
           Group = "mas";
           UMask = "0337";
-          RuntimeDirectory = "mas-secret";
+          RuntimeDirectory = masRuntimeDirectory;
           RuntimeDirectoryMode = "0750";
           ReadOnlyPaths = [
             "/etc/matrix-authentication-service/config.json"
@@ -241,7 +259,7 @@ in
             config.sops.secrets."matrix-authentication-service/client_secret".path
             config.sops.secrets."matrix-authentication-service/smtp_token".path
           ];
-          ReadWritePaths = [ "/run/mas-secret" ];
+          ReadWritePaths = [ masRuntimeConfigDirectory ];
         };
 
         script = ''
@@ -292,7 +310,7 @@ in
                 password: ($smtp_pass | rtrimstr("\n"))
               })
             }' \
-            > /run/mas-secret/config.json
+            > ${masRuntimeConfigFile}
         '';
       };
 
@@ -566,103 +584,14 @@ in
         }
       ];
 
-      locations = {
+      locations = matrixRoutes.locations // {
         # --- MAS compatibility layer ---
         # Route Synapse login/logout/refresh to MAS so legacy and OIDC
         # clients both work through the same endpoints.
-        # Anchored with (/|$) so sub-paths like /login/sso/redirect reach
-        # MAS for SSO/compat login flows (e.g. mobile Element), without
-        # overmatching paths like /loginXYZ.
-        "~ ^/_matrix/client/(r0|v1|v3)/login(/|$)" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-        "~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-        "~ ^/_matrix/client/(r0|v1|v3)/refresh$" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-
-        # --- MAS OIDC / UI paths ---
-        "/.well-known/openid-configuration" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-        "/oauth2/" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-        "/authorize" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-        "/register" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-        "/account/" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-        "/assets/" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-        # MAS JWKS endpoint for token verification
-        "/.well-known/jwks.json" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-        # MAS frontend GraphQL endpoint; this is not the separately controlled
-        # MAS administrative API.
-        "/graphql" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-
         # Keep Synapse administration on the local SSH/loopback path. The
         # client rendezvous endpoint remains in the Synapse catch-all below.
         "~ ^/_synapse/admin(?:/|$)" = {
           return = "403";
-        };
-
-        # MAS human-facing pages (login, logout, consent, recovery, etc.)
-        "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/|$)" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
-        };
-        "/upstream/" = {
-          proxyPass = "http://127.0.0.1:8081";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-          '';
         };
 
         # --- Synapse (everything else) ---
