@@ -174,6 +174,7 @@
         };
 
         matrix-baseline = import ./tests/matrix-baseline.nix {
+          inherit inputs system VARS;
           pkgs = nixpkgs.legacyPackages.${system};
           matrix = self.nixosConfigurations.matrix-synapse-vm;
           blizzard = self.nixosConfigurations.blizzard;
