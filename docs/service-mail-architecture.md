@@ -389,11 +389,12 @@ changes.
 
 Runtime work follows the roadmap:
 
-1. Finish and audit `security/microvm-networking-hardening`; enforce and merge
-   only after its approved observation gate.
+1. Retain the merged MicroVM network-policy audit, enforcement, and follow-up
+   evidence; any later network change needs its own review.
 1. Prepare this mail architecture and provider inventory independently.
-1. Implement Matrix baseline hardening in its own change set, then observe seven
-   clean days before another Matrix runtime change.
+1. Complete the merged Matrix baseline's remaining mail, recovery, client,
+   secret-rotation, live-acceptance, and seven-day observation gates before
+   another Matrix runtime change.
 1. Implement Pocket ID SMTP and recovery gates before activating additional
    OIDC clients.
 1. Migrate Matrix to Pocket ID last, retaining Matrix passwords until account
