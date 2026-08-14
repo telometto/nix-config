@@ -17,9 +17,18 @@ authority for the later OIDC migration.
 | Repository anchor | `60c86651f483cce78fb3b40714fb9e2655f07850` |
 | Source review | 2026-08-13 |
 | Current roadmap branch | `main` (Matrix baseline implementation merged) |
-| Overall status | Baseline source implementation merged; live acceptance and observation gates remain |
-| Last verified | Repository source and upstream documentation only; no live Matrix probes were run |
-| Next action | Run the live Matrix acceptance matrix, then begin the seven-day clean observation gate before backup or OIDC work |
+| Overall status | Baseline source implementation merged; local route/runtime compatibility follow-up validated; live acceptance and observation gates remain |
+| Last verified | Repository source, upstream documentation, and read-only public-path probes on 2026-08-14 |
+| Next action | Complete the remaining live Matrix acceptance matrix; begin the seven-day clean observation gate only after every capability passes |
+
+On 2026-08-14, a read-only smoke check through the public path returned HTTP
+200 for the Matrix client versions endpoint, MAS/OIDC discovery, root-domain
+federation discovery, and the federation API version endpoint. Their required
+`versions`, `issuer`, `m.server`, and `server` fields matched the configured
+contracts. This is partial availability evidence from one operator vantage
+point, not acceptance evidence for login, recovery, clients, federation
+messaging, raw-port rejection, URL-preview isolation, restart/rotation
+behavior, alert delivery, or the seven-day observation gate.
 
 Before activation or further runtime work:
 
@@ -165,7 +174,7 @@ unchecked until those acceptance gates are completed.
   `/_synapse/client/rendezvous` behavior.
 - [x] Preserve the root-domain `/.well-known/matrix/server`,
   `/.well-known/matrix/client`, and `/.well-known/matrix/support` responses.
-- [ ] Add route-contract tests that identify the selected upstream or expected
+- [x] Add route-contract tests that identify the selected upstream or expected
   denial for every canonical path. Tests must cover path suffixes and near
   misses so a regex cannot silently overmatch.
 
@@ -235,11 +244,12 @@ unchecked until those acceptance gates are completed.
   only the address families each unit needs. The generator units are restricted
   to local Unix sockets; MAS additionally needs IPv4 and IPv6 for SMTP and
   other service traffic.
-- [ ] Verify that a non-default
+- [x] Verify that a non-default
   `sys.services.matrix-authentication-service.runtimeConfigFile` remains
-  compatible with the service sandbox. The deployed Matrix VM uses
-  `/run/mas-secret/config.json`, while the module's read-only path policy still
-  names `/run/mas-secret` explicitly.
+  compatible with the service sandbox. The module derives the runtime file's
+  parent directory; the focused contract check exercises
+  `/run/mas-alternate/config.json`, while the deployed Matrix VM uses
+  `/run/mas-secret/config.json`.
 - [ ] Exercise SOPS rotation end to end: re-materialize the changed secret,
   re-run both generator units as applicable, restart their consumers, and prove
   that no stale runtime configuration remains. Both generators are
