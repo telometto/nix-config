@@ -3,9 +3,207 @@ let
   defaultPermissionsPolicy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
   defaultCsp = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self';";
   compatibilityCsp = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self';";
+  matrixRoutes =
+    let
+      masProxy = "http://127.0.0.1:8081";
+
+      proxyLocation = proxyPass: {
+        inherit proxyPass;
+        extraConfig = ''
+          proxy_set_header X-Forwarded-Proto https;
+        '';
+      };
+    in
+    {
+      # Keep the MAS route keys and their boundary semantics in one place. The
+      # VM consumes these locations and the focused check consumes the contracts
+      # below, so a route cannot silently drift away from its test coverage.
+      locations = {
+        "~ ^/_matrix/client/(r0|v1|v3)/login(/|$)" = proxyLocation masProxy;
+        "~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$" = proxyLocation masProxy;
+        "~ ^/_matrix/client/(r0|v1|v3)/refresh$" = proxyLocation masProxy;
+
+        "= /.well-known/openid-configuration" = proxyLocation masProxy;
+        "~ ^/oauth2(?:/|$)" = proxyLocation masProxy;
+        "~ ^/authorize(?:/|$)" = proxyLocation masProxy;
+        "~ ^/register(?:/|$)" = proxyLocation masProxy;
+        "~ ^/account(?:/|$)" = proxyLocation masProxy;
+        "~ ^/assets(?:/|$)" = proxyLocation masProxy;
+        "= /.well-known/jwks.json" = proxyLocation masProxy;
+        "= /graphql" = proxyLocation masProxy;
+
+        "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/|$)" =
+          proxyLocation masProxy;
+        "~ ^/upstream(?:/|$)" = proxyLocation masProxy;
+      };
+
+      routeContracts = [
+        {
+          location = "~ ^/_matrix/client/(r0|v1|v3)/login(/|$)";
+          target = "mas";
+          matches = [
+            "/_matrix/client/v3/login"
+            "/_matrix/client/v3/login/sso/redirect"
+          ];
+          rejects = [ "/_matrix/client/v3/loginXYZ" ];
+        }
+        {
+          location = "~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$";
+          target = "mas";
+          matches = [
+            "/_matrix/client/v3/logout"
+            "/_matrix/client/v3/logout/all"
+          ];
+          rejects = [
+            "/_matrix/client/v3/logout/all/extra"
+            "/_matrix/client/v3/logoutXYZ"
+          ];
+        }
+        {
+          location = "~ ^/_matrix/client/(r0|v1|v3)/refresh$";
+          target = "mas";
+          matches = [ "/_matrix/client/v3/refresh" ];
+          rejects = [
+            "/_matrix/client/v3/refresh/extra"
+            "/_matrix/client/v3/refreshXYZ"
+          ];
+        }
+        {
+          location = "= /.well-known/openid-configuration";
+          target = "mas";
+          matches = [ "/.well-known/openid-configuration" ];
+          rejects = [ "/.well-known/openid-configuration/extra" ];
+        }
+        {
+          location = "~ ^/oauth2(?:/|$)";
+          target = "mas";
+          matches = [
+            "/oauth2/"
+            "/oauth2/authorize"
+          ];
+          rejects = [ "/oauth2XYZ" ];
+        }
+        {
+          location = "~ ^/authorize(?:/|$)";
+          target = "mas";
+          matches = [
+            "/authorize"
+            "/authorize/consent"
+          ];
+          rejects = [ "/authorizeXYZ" ];
+        }
+        {
+          location = "~ ^/register(?:/|$)";
+          target = "mas";
+          matches = [
+            "/register"
+            "/register/continue"
+          ];
+          rejects = [ "/registerXYZ" ];
+        }
+        {
+          location = "~ ^/account(?:/|$)";
+          target = "mas";
+          matches = [
+            "/account"
+            "/account/settings"
+          ];
+          rejects = [ "/accountXYZ" ];
+        }
+        {
+          location = "~ ^/assets(?:/|$)";
+          target = "mas";
+          matches = [
+            "/assets/"
+            "/assets/app.js"
+          ];
+          rejects = [ "/assetsXYZ" ];
+        }
+        {
+          location = "= /.well-known/jwks.json";
+          target = "mas";
+          matches = [ "/.well-known/jwks.json" ];
+          rejects = [ "/.well-known/jwks.json/extra" ];
+        }
+        {
+          location = "= /graphql";
+          target = "mas";
+          matches = [ "/graphql" ];
+          rejects = [
+            "/graphql/extra"
+            "/graphqlXYZ"
+          ];
+        }
+        {
+          location = "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/|$)";
+          target = "mas";
+          matches = [
+            "/login"
+            "/login/sso/redirect"
+            "/recover/reset"
+          ];
+          rejects = [
+            "/loginXYZ"
+            "/complete-compat-ssoXYZ"
+          ];
+        }
+        {
+          location = "~ ^/upstream(?:/|$)";
+          target = "mas";
+          matches = [
+            "/upstream/"
+            "/upstream/provider/callback"
+          ];
+          rejects = [ "/upstreamXYZ" ];
+        }
+        {
+          location = "~ ^/_synapse/admin(?:/|$)";
+          target = "deny";
+          matches = [
+            "/_synapse/admin"
+            "/_synapse/admin/v1/register"
+          ];
+          rejects = [ "/_synapse/adminXYZ" ];
+        }
+        {
+          location = "/";
+          target = "synapse";
+          matches = [
+            "/_matrix/client/v3/versions"
+            "/_synapse/client/rendezvous"
+            "/federation/v1/version"
+            "/not-a-mas-route"
+          ];
+          rejects = [ ];
+        }
+      ];
+
+      wellKnownContracts = [
+        {
+          location = "= /.well-known/matrix/server";
+          path = "/.well-known/matrix/server";
+          marker = "m.server";
+        }
+        {
+          location = "= /.well-known/matrix/client";
+          path = "/.well-known/matrix/client";
+          marker = "m.homeserver";
+        }
+        {
+          location = "= /.well-known/matrix/support";
+          path = "/.well-known/matrix/support";
+          marker = "contacts";
+        }
+      ];
+    };
 in
 {
-  inherit defaultPermissionsPolicy defaultCsp compatibilityCsp;
+  inherit
+    defaultPermissionsPolicy
+    defaultCsp
+    compatibilityCsp
+    matrixRoutes
+    ;
 
   # Build a Traefik middleware attrset with security response headers.
   # Pass null to any parameter to omit that header entirely.
