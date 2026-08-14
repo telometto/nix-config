@@ -175,8 +175,9 @@ unchecked until those acceptance gates are completed.
 - [x] Preserve the root-domain `/.well-known/matrix/server`,
   `/.well-known/matrix/client`, and `/.well-known/matrix/support` responses.
 - [x] Add route-contract tests that identify the selected upstream or expected
-  denial for every canonical path. Tests must cover path suffixes and near
-  misses so a regex cannot silently overmatch.
+  denial for every canonical path. The focused check renders the generated
+  Nginx configuration and probes it with stub MAS and Synapse upstreams;
+  shared contracts cover exact, prefix, regex, suffix, and near-miss paths.
 
 ### CORS and proxy headers
 
@@ -247,8 +248,9 @@ unchecked until those acceptance gates are completed.
 - [x] Verify that a non-default
   `sys.services.matrix-authentication-service.runtimeConfigFile` remains
   compatible with the service sandbox. The module derives the runtime file's
-  parent directory; the focused contract check exercises
-  `/run/mas-alternate/config.json`, while the deployed Matrix VM uses
+  parent directory, and the VM's secret generator writes through the same
+  option. The focused contract check extends the production Matrix VM and
+  exercises `/run/mas-alternate/config.json`, while the deployed VM uses
   `/run/mas-secret/config.json`.
 - [ ] Exercise SOPS rotation end to end: re-materialize the changed secret,
   re-run both generator units as applicable, restart their consumers, and prove
