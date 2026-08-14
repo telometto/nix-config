@@ -652,7 +652,7 @@ in
         };
 
         # MAS human-facing pages (login, logout, consent, recovery, etc.)
-        "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)" = {
+        "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/|$)" = {
           proxyPass = "http://127.0.0.1:8081";
           extraConfig = ''
             proxy_set_header X-Forwarded-Proto https;
