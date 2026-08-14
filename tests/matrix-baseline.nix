@@ -1,12 +1,30 @@
 {
+  inputs,
   matrix,
   blizzard,
   pkgs,
+  system,
+  VARS,
 }:
 let
   inherit (pkgs) lib;
   vmCfg = matrix.config;
   hostCfg = blizzard.config;
+  alternateRuntimeConfig = inputs.nixpkgs.lib.nixosSystem {
+    inherit system;
+    modules = [
+      inputs.microvm.nixosModules.microvm
+      inputs.sops-nix.nixosModules.sops
+      ../vms/matrix-synapse.nix
+      {
+        sys.services.matrix-authentication-service.runtimeConfigFile = lib.mkForce "/run/mas-alternate/config.json";
+      }
+    ];
+    specialArgs = {
+      inherit inputs system VARS;
+      consts = import ../lib/constants.nix;
+    };
+  };
   networkDefaults = import ../vms/microvm-network-defaults.nix;
   matrixRegistry = (import ../vms/vm-registry.nix)."matrix-synapse";
   matrixGateway = matrixRegistry.gateway or networkDefaults.defaultGateway;
@@ -30,9 +48,55 @@ let
   masService = vmCfg.systemd.services."matrix-authentication-service";
   masSecretService = vmCfg.systemd.services."mas-secret";
   masDbInitService = vmCfg.systemd.services."mas-db-init";
+  alternateMasService =
+    alternateRuntimeConfig.config.systemd.services."matrix-authentication-service";
   synapseRegistrationSecret = vmCfg.sops.secrets."matrix-synapse/registration_shared_secret";
   synapseDelegationSecret = vmCfg.sops.secrets."matrix-authentication-service/synapse_secret";
   smtpSecret = vmCfg.sops.secrets."matrix-authentication-service/smtp_token";
+  regexRouteContracts = [
+    {
+      location = "~ ^/_matrix/client/(r0|v1|v3)/login(/|$)";
+      pattern = "^/_matrix/client/(r0|v1|v3)/login(/.*)?$";
+      matches = [
+        "/_matrix/client/v3/login"
+        "/_matrix/client/v3/login/sso/redirect"
+      ];
+      rejects = [ "/_matrix/client/v3/loginXYZ" ];
+    }
+    {
+      location = "~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$";
+      pattern = "^/_matrix/client/(r0|v1|v3)/logout(/all)?$";
+      matches = [
+        "/_matrix/client/v3/logout"
+        "/_matrix/client/v3/logout/all"
+      ];
+      rejects = [ "/_matrix/client/v3/logout/all/extra" ];
+    }
+    {
+      location = "~ ^/_matrix/client/(r0|v1|v3)/refresh$";
+      pattern = "^/_matrix/client/(r0|v1|v3)/refresh$";
+      matches = [ "/_matrix/client/v3/refresh" ];
+      rejects = [ "/_matrix/client/v3/refresh/extra" ];
+    }
+    {
+      location = "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/|$)";
+      pattern = "^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/.*)?$";
+      matches = [
+        "/login"
+        "/login/sso/redirect"
+        "/recover/reset"
+      ];
+      rejects = [ "/loginXYZ" ];
+    }
+  ];
+  regexRouteContractPasses =
+    route:
+    let
+      location = nginxLocations.${route.location};
+    in
+    location.proxyPass == "http://127.0.0.1:8081"
+    && lib.all (path: builtins.match route.pattern path != null) route.matches
+    && lib.all (path: builtins.match route.pattern path == null) route.rejects;
   hasHelperHardening =
     service:
     let
@@ -73,6 +137,9 @@ assert vmCfg.sys.services.matrix-authentication-service.openFirewall == false;
 assert vmCfg.sys.services.matrix-authentication-service.bindAddress == "127.0.0.1";
 assert vmCfg.sys.services.matrix-authentication-service.trustedProxies == [ "127.0.0.1/32" ];
 assert vmCfg.sys.services.matrix-synapse.bindAddress == "127.0.0.1";
+assert lib.all regexRouteContractPasses regexRouteContracts;
+assert lib.hasInfix "/run/mas-alternate/config.json" alternateMasService.serviceConfig.ExecStart;
+assert lib.elem "/run/mas-alternate" alternateMasService.serviceConfig.ReadOnlyPaths;
 assert !(builtins.hasAttr "protonmail/smtp_token" vmCfg.sops.secrets);
 assert smtpSecret.mode == "0440";
 assert smtpSecret.owner == "mas";
@@ -160,14 +227,27 @@ assert lib.elem "sops-install-secrets.service" masSecretService.requires;
 pkgs.runCommand "matrix-baseline-tests"
   {
     inherit nginxConfig;
-    nativeBuildInputs = [ pkgs.gnugrep ];
+    nativeBuildInputs = [
+      pkgs.gnugrep
+      pkgs.nginx
+    ];
   }
   ''
+    set -euo pipefail
+
+    testConfig="$TMPDIR/nginx.conf"
+    sed \
+      -e "s#pid /run/nginx/nginx.pid;#pid $TMPDIR/nginx.pid;#" \
+      -e 's#http {#http {\n\taccess_log off;#' \
+      "$nginxConfig" > "$testConfig"
+    ${pkgs.nginx}/bin/nginx -t -e stderr -c "$testConfig"
+
     grep -F -- 'location ~ ^/_synapse/admin(?:/|$)' "$nginxConfig"
     grep -F -- 'return 403;' "$nginxConfig"
     grep -F -- 'location ~ ^/_matrix/client/(r0|v1|v3)/login(/|$)' "$nginxConfig"
     grep -F -- 'location ~ ^/_matrix/client/(r0|v1|v3)/logout(/all)?$' "$nginxConfig"
     grep -F -- 'location ~ ^/_matrix/client/(r0|v1|v3)/refresh$' "$nginxConfig"
+    grep -F -- 'location ~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/|$)' "$nginxConfig"
     grep -F -- 'proxy_pass http://127.0.0.1:8081;' "$nginxConfig"
     grep -F -- 'proxy_pass http://127.0.0.1:8008;' "$nginxConfig"
     grep -F -- 'location / {' "$nginxConfig"
