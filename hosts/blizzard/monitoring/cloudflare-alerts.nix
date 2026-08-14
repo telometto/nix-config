@@ -103,6 +103,7 @@ in
           (mkPrometheusRule {
             uid = "cf-repeated-access-denials";
             title = "Cloudflare repeated Access denials";
+            pendingFor = "5m";
             expr = ''
               sum by (app, principal_type, owner) (
                 (
@@ -119,6 +120,7 @@ in
           (mkPrometheusRule {
             uid = "cf-security-action-burst";
             title = "Cloudflare security-action burst";
+            pendingFor = "5m";
             expr = ''
               sum by (zone, host) (
                 (
