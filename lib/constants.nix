@@ -10,7 +10,7 @@
     scrapeInterval = "30s";
     scrapeIntervalMs = 30000;
     scrapeTimeout = "15s";
-    failureWindow = "5m";
+    failureWindow = "10m";
     lookbackSeconds = 300;
     dashboardRefresh = "30s";
   };
