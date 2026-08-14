@@ -267,7 +267,13 @@ in
     runtimeConfigFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Override the MAS config file path at runtime. When null, uses the Nix-generated base config.";
+      description = ''
+        Absolute path to the MAS configuration file used by the service at
+        runtime. When null, use the Nix-generated base config. The parent
+        directory of a custom path is made read-only in the MAS service
+        sandbox; a producer must materialize the file before MAS starts.
+      '';
+      example = "/run/mas-secret/config.json";
     };
 
     openFirewall = lib.mkOption {
