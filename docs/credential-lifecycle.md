@@ -118,6 +118,15 @@ justifies downtime.
 1. Verify health and authentication behavior.
 1. Remove the old credential after the new one is confirmed.
 
+For the Matrix MicroVM, a SOPS update is not complete when the encrypted value
+has merely been re-materialized. The `matrix-synapse-secret.service` and
+`mas-secret.service` one-shot generators assemble runtime files under `/run`,
+and their consumers must be restarted or otherwise explicitly re-run through
+the approved sequence. Because the generators use `RemainAfterExit=true`,
+verify runtime-file freshness and consumer behavior after every Matrix secret
+rotation. Keep the detailed Matrix acceptance and rollback gates in the
+[Matrix hardening plan](matrix-hardening-plan.md).
+
 ## Sources
 
 - [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html)
