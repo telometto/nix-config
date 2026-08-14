@@ -6,6 +6,15 @@ Reusable Nix functions and data shared across the configuration.
 
 ______________________________________________________________________
 
+### `matrixRoutes` in traefik.nix
+
+Defines the MAS and Synapse Nginx route locations used by the Matrix MicroVM,
+plus the path probes used by its focused baseline check. Keep route boundaries
+and near-miss cases in this helper so the generated configuration and its
+runtime-selection tests share one contract.
+
+______________________________________________________________________
+
 ### constants.nix
 
 Shared string constants used throughout the configuration. Loaded once in
