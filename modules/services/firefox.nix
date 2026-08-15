@@ -17,8 +17,11 @@ let
   }
   // lib.optionalAttrs (cfg.driNode != null) { DRINODE = cfg.driNode; }
   // lib.optionalAttrs cfg.fileTransfer.enable {
-    PUID = toString cfg.fileTransfer.uid;
-    PGID = toString cfg.fileTransfer.gid;
+    # Keep the existing LinuxServer profile identity separate from the
+    # VM-side ownership of the shared transfer directory. Changing PUID to
+    # the VM user's UID also changes the identity that opens /config.
+    PUID = toString cfg.fileTransfer.containerUid;
+    PGID = toString cfg.fileTransfer.sharedGid;
     FILE_MANAGER_PATH = cfg.fileTransfer.containerPath;
     SELKIES_FILE_TRANSFERS = "upload,download";
   }
@@ -133,16 +136,22 @@ in
         description = "Path inside the Firefox container used for uploads and downloads.";
       };
 
-      uid = lib.mkOption {
+      hostUid = lib.mkOption {
         type = lib.types.ints.positive;
         default = 1000;
-        description = "PUID used by the LinuxServer container for the file-transfer volume.";
+        description = "Numeric owner UID for the VM-side file-transfer directory.";
       };
 
-      gid = lib.mkOption {
+      sharedGid = lib.mkOption {
         type = lib.types.ints.positive;
         default = 1000;
-        description = "PGID used by the LinuxServer container for the file-transfer volume.";
+        description = "Numeric group GID shared by the VM-side directory and container.";
+      };
+
+      containerUid = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 911;
+        description = "PUID for the LinuxServer container's existing /config profile identity.";
       };
     };
 
@@ -156,7 +165,7 @@ in
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0750 root root -"
     ]
-    ++ lib.optional cfg.fileTransfer.enable "d ${cfg.fileTransfer.hostPath} 2770 ${toString cfg.fileTransfer.uid} ${toString cfg.fileTransfer.gid} -";
+    ++ lib.optional cfg.fileTransfer.enable "d ${cfg.fileTransfer.hostPath} 2770 ${toString cfg.fileTransfer.hostUid} ${toString cfg.fileTransfer.sharedGid} -";
 
     systemd.services.firefox = lib.mkIf hasCredentials {
       after = [ "sops-install-secrets.service" ];
