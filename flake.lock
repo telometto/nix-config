@@ -307,11 +307,11 @@
         "xdph": "xdph"
       },
       "locked": {
-        "lastModified": 1786561078,
-        "narHash": "sha256-pQZdky4fH4jGqoIWy20g7bNgC8bLC4vEOIyRsfjp7qI=",
+        "lastModified": 1786805952,
+        "narHash": "sha256-4jKJcyNeA2Kx+gVHdsDKoPF1ggDL/ZnqOeRxYEgrRmA=",
         "owner": "hyprwm",
         "repo": "Hyprland",
-        "rev": "6d43ce8453f2d34b82b3da5ed9415f6fc3046ce4",
+        "rev": "fea3b3367b0990cf8f559e7bf3f71e98f6ca722b",
         "type": "github"
       },
       "original": {
@@ -638,11 +638,11 @@
     },
     "nix-secrets": {
       "locked": {
-        "lastModified": 1786535742,
-        "narHash": "sha256-H1VeNTHfvPcqIbA24ltCapwG7RwzXQmZ/+UW2snnfLE=",
+        "lastModified": 1786803729,
+        "narHash": "sha256-dMbpW8ugX4uBM3u6AQQG9QN5F2wjKBBzPSowqoGA9Qs=",
         "ref": "refs/heads/master",
-        "rev": "ca1de92129a4fd19da69ec590daf115f5be5af58",
-        "revCount": 130,
+        "rev": "38215cfd0b9cba83d6a4831d90019a7c72615040",
+        "revCount": 131,
         "type": "git",
         "url": "ssh://git@github.com/telometto/nix-secrets.git"
       },
@@ -848,11 +848,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1786795206,
-        "narHash": "sha256-pVcfHVkuS4ZhkDgg7XE7V9WtBSJxHQmVjmD+2U/kJNc=",
+        "lastModified": 1786805654,
+        "narHash": "sha256-RnJs78mmGFoerDqVjnBmnm8Xbpxsp91N4RUGqB3G8CA=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "c8cb81804401267cbc302194fa173cb4c306d97b",
+        "rev": "c26d2815a1a14afa96c487896ac6ee37e5fa5ea2",
         "type": "github"
       },
       "original": {
