@@ -7,6 +7,7 @@
 }:
 let
   reg = (import ./vm-registry.nix).firefox;
+  transferDir = "/home/admin/Downloads";
   vpnRoutes = [
     {
       Gateway = "10.100.0.1";
@@ -38,6 +39,11 @@ in
             mountPoint = "/var/lib/containers";
             image = "containers-storage.img";
             size = 4096;
+          }
+          {
+            mountPoint = transferDir;
+            image = "firefox-downloads.img";
+            size = 524288;
           }
         ];
         extraRoutes = vpnRoutes;
@@ -83,6 +89,12 @@ in
     services.firefox.environment.TMPDIR = "/var/lib/containers/tmp";
   };
 
+  users.groups.firefox-downloads.gid = 1000;
+  users.users.admin = {
+    uid = 1000;
+    extraGroups = lib.mkAfter [ "firefox-downloads" ];
+  };
+
   sys = {
     secrets = {
       firefoxUser = config.sops.secrets."firefox/user".path;
@@ -112,6 +124,14 @@ in
         timeZone = "Europe/Oslo";
         title = "Firefox";
         openFirewall = false;
+
+        fileTransfer = {
+          enable = true;
+          hostPath = transferDir;
+          containerPath = "/downloads";
+          uid = 1000;
+          gid = 1000;
+        };
 
         customUserFile = config.sys.secrets.firefoxUser;
         passwordFile = config.sys.secrets.firefoxPassword;
