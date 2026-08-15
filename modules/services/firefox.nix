@@ -16,6 +16,12 @@ let
     TITLE = cfg.title;
   }
   // lib.optionalAttrs (cfg.driNode != null) { DRINODE = cfg.driNode; }
+  // lib.optionalAttrs cfg.fileTransfer.enable {
+    PUID = toString cfg.fileTransfer.uid;
+    PGID = toString cfg.fileTransfer.gid;
+    FILE_MANAGER_PATH = cfg.fileTransfer.containerPath;
+    SELKIES_FILE_TRANSFERS = "upload,download";
+  }
   // lib.optionalAttrs isHost {
     CUSTOM_PORT = toString cfg.httpPort;
     CUSTOM_HTTPS_PORT = toString cfg.httpsPort;
@@ -112,6 +118,34 @@ in
       description = "Expose /dev/dri to the container.";
     };
 
+    fileTransfer = {
+      enable = lib.mkEnableOption "Firefox file transfers";
+
+      hostPath = lib.mkOption {
+        type = lib.types.str;
+        default = "/home/admin/Downloads";
+        description = "Writable VM path to expose to the browser file manager.";
+      };
+
+      containerPath = lib.mkOption {
+        type = lib.types.str;
+        default = "/downloads";
+        description = "Path inside the Firefox container used for uploads and downloads.";
+      };
+
+      uid = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 1000;
+        description = "PUID used by the LinuxServer container for the file-transfer volume.";
+      };
+
+      gid = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 1000;
+        description = "PGID used by the LinuxServer container for the file-transfer volume.";
+      };
+    };
+
     openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -121,7 +155,8 @@ in
   config = lib.mkIf cfg.enable {
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0750 root root -"
-    ];
+    ]
+    ++ lib.optional cfg.fileTransfer.enable "d ${cfg.fileTransfer.hostPath} 2770 ${toString cfg.fileTransfer.uid} ${toString cfg.fileTransfer.gid} -";
 
     systemd.services.firefox = lib.mkIf hasCredentials {
       after = [ "sops-install-secrets.service" ];
@@ -139,7 +174,10 @@ in
         inherit (cfg) image;
         inherit environments publishPorts;
         shmSize = "4g";
-        volumes = [ "${cfg.dataDir}:/config" ];
+        volumes = [
+          "${cfg.dataDir}:/config"
+        ]
+        ++ lib.optional cfg.fileTransfer.enable "${cfg.fileTransfer.hostPath}:${cfg.fileTransfer.containerPath}";
         networks = lib.optionals isHost [ "host" ];
         devices = lib.optionals cfg.enableDri [ "/dev/dri" ];
         environmentFiles = lib.optionals hasCredentials [ credentialsEnvFile ];
@@ -157,6 +195,14 @@ in
       {
         assertion = (cfg.customUserFile == null) == (cfg.passwordFile == null);
         message = "sys.services.firefox: customUserFile and passwordFile must both be set or both be null";
+      }
+      {
+        assertion = !cfg.fileTransfer.enable || lib.hasPrefix "/" cfg.fileTransfer.hostPath;
+        message = "sys.services.firefox.fileTransfer.hostPath must be an absolute path";
+      }
+      {
+        assertion = !cfg.fileTransfer.enable || lib.hasPrefix "/" cfg.fileTransfer.containerPath;
+        message = "sys.services.firefox.fileTransfer.containerPath must be an absolute path";
       }
     ];
   };
