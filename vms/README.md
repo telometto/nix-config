@@ -325,8 +325,10 @@ at `/home/admin/Downloads`. The LinuxServer Firefox container exposes only that
 directory at `/downloads`; its Selkies file manager is configured for both
 uploads and downloads. The Firefox browser itself must be pointed at `/downloads`
 once in its Settings → General → Downloads panel. This keeps browser transfer
-data separate from the `/config` profile volume and avoids changing the VM's
-passworded `wheel` sudo policy.
+data separate from the `/config` profile volume. The container keeps its existing
+LinuxServer profile UID for `/config`; only the shared transfer directory uses
+the VM user's group, so changing file-transfer permissions cannot make the
+Firefox profile inaccessible.
 
 The same directory is available to the VM's `admin` account, so ordinary SSH
 file transfer works without sudo or SSH forwarding. For example, from a device
@@ -342,6 +344,17 @@ The web UI's file sidebar and SFTP both operate on the dedicated directory. Do
 not mount the whole `/home/admin` directory into the container: the LinuxServer
 Firefox interface includes a terminal with passwordless sudo inside the
 container, so its access should remain limited to the intended transfer path.
+
+If the earlier file-transfer configuration was already applied, restore the
+PulseAudio subdirectory's original LinuxServer ownership once before restarting
+with the corrected configuration:
+
+```bash
+sudo podman exec --user 0 firefox chown -R 911:911 /config/.config/pulse
+```
+
+This is narrowly scoped to the directory that was changed during diagnosis;
+do not recursively chown the whole `/config` volume.
 
 ______________________________________________________________________
 
