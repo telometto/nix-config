@@ -51,6 +51,8 @@ in
     ))
   ];
 
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
+
   # SOPS configuration for this MicroVM
   # After first boot, derive the VM's age public key without copying the private key:
   #   ssh admin@10.100.0.52 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
@@ -129,8 +131,12 @@ in
           enable = true;
           hostPath = transferDir;
           containerPath = "/downloads";
-          uid = 1000;
-          gid = 1000;
+          hostUid = 1000;
+          sharedGid = 1000;
+          # LinuxServer's existing abc user owns the Firefox profile at UID
+          # 911. Only its group identity is shared with the VM Downloads
+          # directory; do not make the whole container run as admin (1000).
+          containerUid = 911;
         };
 
         customUserFile = config.sys.secrets.firefoxUser;
