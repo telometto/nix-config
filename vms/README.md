@@ -318,6 +318,31 @@ disabled on Blizzard. This ensures enabled download and browser sessions exit
 via the VPN rather than the host's public IP. Their default gateway is set to
 10.100.0.11 in the registry.
 
+### Firefox transfer directory
+
+The Firefox VM has a dedicated persistent `firefox-downloads.img` volume mounted
+at `/home/admin/Downloads`. The LinuxServer Firefox container exposes only that
+directory at `/downloads`; its Selkies file manager is configured for both
+uploads and downloads. The Firefox browser itself must be pointed at `/downloads`
+once in its Settings → General → Downloads panel. This keeps browser transfer
+data separate from the `/config` profile volume and avoids changing the VM's
+passworded `wheel` sudo policy.
+
+The same directory is available to the VM's `admin` account, so ordinary SSH
+file transfer works without sudo or SSH forwarding. For example, from a device
+that can reach the VM:
+
+```bash
+sftp admin@10.100.0.52
+put local-file /home/admin/Downloads/
+get /home/admin/Downloads/remote-file
+```
+
+The web UI's file sidebar and SFTP both operate on the dedicated directory. Do
+not mount the whole `/home/admin` directory into the container: the LinuxServer
+Firefox interface includes a terminal with passwordless sudo inside the
+container, so its access should remain limited to the intended transfer path.
+
 ______________________________________________________________________
 
 ### Creating a new VM
