@@ -41,6 +41,23 @@ mkdir -p hosts/<hostname>
 nixos-generate-config --show-hardware-config > hosts/<hostname>/hardware-configuration.nix
 ```
 
+For a host whose storage is managed by Disko, use `--no-filesystems` instead
+and keep the `disko.nix` layout as the source of truth:
+
+```bash
+nixos-generate-config --no-filesystems --show-hardware-config > hosts/<hostname>/hardware-configuration.nix
+```
+
+Before using a destructive layout, identify the target disk and prefer its
+stable by-id path:
+
+```bash
+ls -l /dev/disk/by-id/ | grep -i nvme
+```
+
+Disko's `destroy,format,mount` mode erases the selected disk. Review the
+resolved device and layout immediately before running it.
+
 ## Step 3: Create Host Directory
 
 Create `hosts/<hostname>/` and populate it with at minimum:
