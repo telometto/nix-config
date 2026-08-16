@@ -45,9 +45,20 @@ Reproducibility across hosts, clean input pinning, and ergonomic per-host switch
 
 The MicroVM base uses `pkgs.linuxPackages` (the standard kernel), not `pkgs.linuxPackages_hardened`. This is intentional for compatibility: the hardened kernel disables BPF JIT and other kernel features that some services require (e.g., certain monitoring and container workloads). The security surface is instead reduced via sysctl hardening, AppArmor profiles, blacklisted kernel modules, and a restrictive per-VM firewall. This gives most of the security benefit without the compatibility cost.
 
-## Why disko is Not Active
+## Disko and Btrfs
 
-disko is wired into every `mkHost` call but `hosts/snowfall/disko.nix` is the only file that exists for it, and it is commented out "on hold". Disk partitioning on all existing machines is handled manually via `hardware-configuration.nix`. disko would be valuable for reproducible fresh installs but the existing machines are already partitioned and there is no need to repartition them. The wiring is in place so it can be activated when provisioning a new host from scratch.
+Disko is wired into every `mkHost` call. Avalanche uses it for a fresh-install
+layout in `hosts/avalanche/disko.nix`: a GPT/EFI system disk, Btrfs
+subvolumes for the operating system, home, Nix store, state, logs, temporary
+files, and snapshots, plus an 8 GiB swapfile subvolume. The generated
+`hardware-configuration.nix` intentionally omits its local root, boot, and
+swap declarations so Disko remains the owner of the physical disk layout.
+
+The Disko layout is destructive when run in `destroy,format,mount` mode. The
+physical disk path must be verified on Avalanche before installation and
+replaced with its stable `/dev/disk/by-id/...` name. Disko creates the
+subvolume structure, but snapshot retention and scheduling still need a tool
+such as snapper or a manual Btrfs workflow.
 
 ## Why No `overlays/` Directory
 
