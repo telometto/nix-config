@@ -36,7 +36,10 @@ in
 
     desktop.flavor = "gnome";
 
-    users.zeno.enable = true;
+    users = {
+      zeno.enable = true;
+      frankie.enable = true;
+    };
 
     nix.distributedBuilds = {
       enable = true;
