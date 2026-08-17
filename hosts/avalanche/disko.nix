@@ -3,7 +3,7 @@ let
   # The generated hardware config shows Avalanche's system disk is NVMe, but
   # verify this on the installer and replace it with the matching by-id path
   # before running a destructive Disko command.
-    systemDisk = "/dev/disk/by-id/nvme-KINGSTON_SA2000M81000G_50026B72824AE629";
+  systemDisk = "/dev/disk/by-id/nvme-KINGSTON_SA2000M81000G_50026B72824AE629";
 in
 {
   boot = {
