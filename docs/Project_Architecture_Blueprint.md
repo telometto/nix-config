@@ -61,7 +61,7 @@ There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
 |--------|--------|
 | `./system-loader.nix` | repo |
 | `./host-loader.nix` | repo |
-| `inputs.disko.nixosModules.disko` | disko input (included; not actively used — see §13) |
+| `inputs.disko.nixosModules.disko` | disko input (used by Avalanche's Btrfs layout — see §13) |
 | `inputs.hm-stable.nixosModules.home-manager` | home-manager |
 | `inputs.sops-nix.nixosModules.sops` | sops-nix |
 | `inputs.lanzaboote.nixosModules.lanzaboote` | lanzaboote |
@@ -618,9 +618,17 @@ ______________________________________________________________________
 
 ### Disko (disk management)
 
-- Disko is included in `mkHost` but is **not actively used**. Only `hosts/snowfall/disko.nix`
-  exists and it is commented out as "on hold". Disks are managed manually via
-  `hardware-configuration.nix`.
+- Disko is included in `mkHost` and is active for Avalanche through
+  `hosts/avalanche/disko.nix`.
+- Avalanche's layout uses a GPT/EFI disk with Btrfs subvolumes for the system,
+  home, Nix store, state, logs, temporary files, and snapshots, plus a
+  dedicated swapfile subvolume.
+- Avalanche's generated `hardware-configuration.nix` does not declare the
+  local root, boot, or swap devices; Disko owns those physical-disk
+  declarations.
+- The layout is destructive when run in `destroy,format,mount` mode. Verify the
+  physical disk and replace the default `/dev/nvme0n1` with its stable
+  `/dev/disk/by-id/...` path before installation.
 
 ______________________________________________________________________
 
