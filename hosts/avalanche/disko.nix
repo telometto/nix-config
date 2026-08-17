@@ -14,6 +14,9 @@ in
   services.btrfs.autoScrub = {
     enable = true;
     interval = "weekly";
+    # All listed paths are subvolumes of this filesystem. Scrub its top-level
+    # mount once rather than scheduling duplicate scrubs for every subvolume.
+    fileSystems = [ "/" ];
   };
 
   disko.devices.disk.system = {
