@@ -34,7 +34,7 @@ Every physical host built with `mkHost` automatically receives:
 - `lanzaboote` NixOS module
 - `microvm.host` NixOS module
 - `quadlet-nix` NixOS module
-- `disko` NixOS module (wired in but not active; see [Why disko is not active](explanation-design.md#why-disko-is-not-active))
+- `disko` NixOS module (used by Avalanche; see [Disko and Btrfs](explanation-design.md#disko-and-btrfs))
 
 `specialArgs` available in every module: `inputs`, `system`, `VARS`, `consts`, `self`, `hostname`.
 
@@ -171,7 +171,7 @@ Operational tools used across the repo.
 | ruff | Python formatter | `treefmt.nix` |
 | sops-nix | Secret decryption at activation time | `modules/core/sops.nix` |
 | lanzaboote | Secure Boot (both roles) | `modules/boot/secureboot.nix` |
-| disko | Disk layout (included but not active) | `hosts/snowfall/disko.nix` (on hold) |
+| disko | Declarative Avalanche GPT/Btrfs layout | `hosts/avalanche/disko.nix` |
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
 Locally, `nix flake check` evaluates and builds the formatting, Cloudflare

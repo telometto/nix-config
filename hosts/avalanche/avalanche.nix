@@ -34,9 +34,18 @@ in
   sys = {
     role.desktop.enable = true;
 
+    # Bootstrap the fresh Disko installation with systemd-boot.  The desktop
+    # role enables Lanzaboote, but the new /var/lib/sbctl key bundle does not
+    # exist after the disk is wiped.  After the first successful boot, create
+    # fresh keys, remove this override, and rebuild to enable Lanzaboote again.
+    boot.lanzaboote.enable = lib.mkForce false;
+
     desktop.flavor = "gnome";
 
-    users.zeno.enable = true;
+    users = {
+      zeno.enable = true;
+      frankie.enable = true;
+    };
 
     nix.distributedBuilds = {
       enable = true;
@@ -235,5 +244,5 @@ in
 
   services.rpcbind.enable = lib.mkDefault true;
 
-  system.stateVersion = "24.05";
+  system.stateVersion = "26.05";
 }
