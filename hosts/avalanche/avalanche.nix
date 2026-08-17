@@ -123,12 +123,15 @@ in
 
       # Enable RAPL power monitoring for CPU
       prometheusExporters.node = {
+        enable = false;
         enableRapl = true;
         port = 11011;
       };
 
       prometheus = {
-        enable = true;
+        # Avalanche no longer collects local metrics; keep the stack disabled
+        # to avoid its services contributing to shutdown latency.
+        enable = false;
         port = 11009;
         listenAddress = "127.0.0.1";
         openFirewall = false;
@@ -136,7 +139,7 @@ in
       };
 
       grafana = {
-        enable = true;
+        enable = false;
         port = 11010;
         addr = "127.0.0.1";
         openFirewall = false;
@@ -147,9 +150,9 @@ in
         };
       };
 
-      # Remote write metrics to central VictoriaMetrics on Blizzard for long-term storage
+      # Avalanche no longer collects local metrics; do not send remote writes.
       victoriametricsRemoteWrite = {
-        enable = true;
+        enable = false;
         vmHost = "blizzard"; # Tailscale hostname
       };
 
