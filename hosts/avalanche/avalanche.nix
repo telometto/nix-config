@@ -244,5 +244,5 @@ in
 
   services.rpcbind.enable = lib.mkDefault true;
 
-  system.stateVersion = "24.05";
+  system.stateVersion = "26.05";
 }
