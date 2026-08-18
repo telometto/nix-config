@@ -41,6 +41,7 @@ let
     pkgs.deja-dup
     pkgs.peazip
     pkgs.mat2
+    pkgs.asdf-vm
   ];
 in
 {
