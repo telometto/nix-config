@@ -3,9 +3,11 @@
 ## Goal of next session
 
 Begin R-12 and R-13 from current `main`: establish the flake-native deployment
-and provenance contract on a disposable target, then audit Blizzard host and
-VM boundaries. Keep activation, target-side auto-upgrade changes, storage
-changes, and persistence changes behind the gates below.
+and provenance contract on a disposable target, then continue auditing
+Blizzard's physical-host and VM boundaries. The MicroVM enforce-mode acceptance
+slice is closed in the [final audit](2026-08-18-blizzard-microvm-enforce-audit.md).
+Keep activation, target-side auto-upgrade changes, storage changes, and
+persistence changes behind the gates below.
 
 ## State of play
 
@@ -15,6 +17,7 @@ changes, and persistence changes behind the gates below.
   - Added R-12, R-13, and R-14 and extended the existing logging, exposure, and provenance initiatives instead of creating duplicates — `docs/roadmap.md`
   - Indexed this durable handoff — `docs/README.md`
   - Read-only validation passed for the handoff, redaction, targeted formatting, path checks, `nix flake check --no-build`, Statix, and the Blizzard toplevel build — `docs/2026-08-14-blizzard-paranoid-nixos-handoff.md`, `flake.nix`
+  - Completed and closed the post-enforce MicroVM observation with operator-supplied nft counter evidence — `docs/2026-08-18-blizzard-microvm-enforce-audit.md`
 - In flight:
   - R-12 will add a pinned `deploy-rs` input and `deploy.nodes.blizzard` referring to `self.nixosConfigurations.blizzard`; this documentation pass intentionally adds no flake or deployment code — `docs/roadmap.md`, `flake.nix`
   - R-13 will audit physical-host SSH, Nix daemon access, service users, systemd sandboxing, and explicit LAN/Tailscale exposure, preserving the stronger compatible MicroVM controls — `docs/roadmap.md`, `hosts/blizzard/`, `modules/`, `vms/`
@@ -157,6 +160,7 @@ after controlled cutover, and keep storage/impermanence behind R-14's gates.
 - docs/README.md
 - docs/2026-08-13-blizzard-intrusion-audit.md
 - docs/deployment-audit-2026-08-08-microvm-networking.md
+- docs/2026-08-18-blizzard-microvm-enforce-audit.md
 - docs/reference-architecture.md
 - docs/reference-ci.md
 - docs/explanation-design.md

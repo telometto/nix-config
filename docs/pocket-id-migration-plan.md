@@ -634,9 +634,12 @@ and the Traefik dashboards.
   MicroVM bypasses before considering backend-auth removal.
 - Blizzard's network policy is currently `enforce`; the separately approved
   audit gate and enforcement decision are recorded in the [deployment
-  audit](deployment-audit-2026-08-08-microvm-networking.md). Treat `audit` only
-  as a temporary declarative rollback mode: investigate every event, add only
-  verified peer edges, and never switch automatically from audit to enforce.
+  audit](deployment-audit-2026-08-08-microvm-networking.md), and the finalized
+  post-enforce observation and root-counter closure are recorded in the
+  [Blizzard MicroVM enforce-mode audit](2026-08-18-blizzard-microvm-enforce-audit.md).
+  Treat `audit` only as a temporary declarative rollback mode: investigate every
+  event, add only verified peer edges, and never switch automatically from
+  audit to enforce.
 - Do not remove backend authentication until enforcement and negative
   reachability tests prove every alternate path is closed.
 - Treat Firefox last because bypassing its gateway exposes a remotely
