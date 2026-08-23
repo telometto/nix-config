@@ -74,6 +74,8 @@ flowchart LR
   Local-first security audit and hardening pass
 - [deployment-audit-2026-08-08-microvm-networking.md](deployment-audit-2026-08-08-microvm-networking.md) —
   Live Blizzard MicroVM audit, enforcement gate, and follow-up findings
+- [2026-08-18-blizzard-microvm-enforce-audit.md](2026-08-18-blizzard-microvm-enforce-audit.md) —
+  Finalized Blizzard MicroVM enforce-mode audit, counter evidence, and seven-day closure
 - [Project_Architecture_Blueprint.md](Project_Architecture_Blueprint.md) —
   Comprehensive architecture documentation
 
@@ -108,6 +110,7 @@ flowchart LR
 | Use the canonical infrastructure language | [Infrastructure Context](../CONTEXT.md) |
 | Review architecture decisions | [Public HTTP Publication ADR](adr/0001-model-public-http-publication-as-instance-intent.md) |
 | Review MicroVM network isolation | [Host-Owned MicroVM Network Policy ADR](adr/0002-enforce-host-owned-microvm-network-policy.md) |
+| Review final Blizzard MicroVM enforcement | [Blizzard MicroVM enforce-mode audit](2026-08-18-blizzard-microvm-enforce-audit.md) |
 | Review credential lifecycle | [Credential Lifecycle](credential-lifecycle.md) |
 | Track implementation initiatives | [Project Roadmap](roadmap.md) |
 | Resume Blizzard paranoid-NixOS hardening | [Blizzard paranoid-NixOS handoff](2026-08-14-blizzard-paranoid-nixos-handoff.md) |

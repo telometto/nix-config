@@ -42,6 +42,10 @@ network-policy change; do not silently broaden the approved exception set.
 
 The Matrix baseline was allowed to proceed only after this prerequisite merge.
 
+The finalized post-enforce observation and root-counter snapshot are recorded
+in the [Blizzard MicroVM enforce-mode audit](2026-08-18-blizzard-microvm-enforce-audit.md).
+The older deployment audit remains the historical rollout and approval record.
+
 ### 2. Complete the Matrix baseline gates
 
 The source implementation is merged through PRs

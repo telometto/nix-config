@@ -46,9 +46,12 @@ hardening decision per service.
 The most important deployment constraint is that Blizzard currently has
 [`networkPolicy.mode = "enforce"`](../hosts/blizzard/virtualisation/microvms.nix).
 The approved audit gate and enforcement decision are recorded in the
-[deployment audit](deployment-audit-2026-08-08-microvm-networking.md). `audit`
-remains a declarative rollback mode and does not block lateral MicroVM traffic;
-it must not be used to justify disabling an application's own authentication.
+[deployment audit](deployment-audit-2026-08-08-microvm-networking.md); the
+finalized post-enforce observation and root-counter closure are recorded in the
+[Blizzard MicroVM enforce-mode audit](2026-08-18-blizzard-microvm-enforce-audit.md).
+`audit` remains a declarative rollback mode and does not block lateral MicroVM
+traffic; it must not be used to justify disabling an application's own
+authentication.
 Host/LAN port forwards are equivalent bypasses and must also be closed or
 independently protected.
 

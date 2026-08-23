@@ -1,6 +1,6 @@
 # Project roadmap
 
-> Last reviewed: 2026-08-14
+> Last reviewed: 2026-08-23
 
 This is the repository's curated portfolio of meaningful initiatives that may
 be worth implementing. It is a planning index, not a task tracker, deployment
@@ -76,4 +76,4 @@ values; refresh linked evidence before acting on a runtime or security item.
 
 | Date | Initiative | Final status | Reason or outcome | Links |
 | --- | --- | --- | --- | --- |
-| 2026-08-14 | R-01 — Complete and keep auditable the host-owned MicroVM network-policy rollout | Done | The approved audit gate and shortened-window exception were recorded, verified service and WireGuard paths passed, and Blizzard is now running the host-owned policy in `enforce`. The 2026-08-13 live audit classified the enforced lateral traffic and found zero spoof, unknown-tap, gateway-bypass, or routed-bypass events. Future policy changes retain the declarative `audit` rollback and evidence-review gate. | [Deployment audit](deployment-audit-2026-08-08-microvm-networking.md), [Blizzard audit](2026-08-13-blizzard-intrusion-audit.md), [network-policy ADR](adr/0002-enforce-host-owned-microvm-network-policy.md) |
+| 2026-08-22 | R-01 — Complete and keep auditable the host-owned MicroVM network-policy rollout | Done | The approved audit gate and shortened-window exception were recorded, verified service and WireGuard paths passed, and Blizzard is running the host-owned policy in `enforce`. The finalized post-enforce audit closed the seven-day observation with zero spoof, unknown-tap, gateway-bypass, routed-lateral, or audit-mode accepts; nonzero invalid, multicast, and undeclared-lateral counters were expected enforced drops. Future policy changes retain the declarative `audit` rollback and evidence-review gate. | [Final enforce audit](2026-08-18-blizzard-microvm-enforce-audit.md), [deployment audit](deployment-audit-2026-08-08-microvm-networking.md), [Blizzard audit](2026-08-13-blizzard-intrusion-audit.md), [network-policy ADR](adr/0002-enforce-host-owned-microvm-network-policy.md) |
