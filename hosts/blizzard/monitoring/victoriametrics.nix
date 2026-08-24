@@ -1,8 +1,11 @@
-_: {
+{ consts, ... }:
+{
   sys.services.victoriametrics = {
     enable = true;
 
-    listenAddress = "127.0.0.1";
+    port = consts.victoriametricsPort;
+    listenAddress = consts.tailscale.hosts.blizzard.ipv4;
+    localAddress = consts.tailscale.hosts.blizzard.ipv4;
     openFirewall = false;
     retentionPeriod = "10y";
     prometheusRemoteWrite = {
@@ -25,5 +28,12 @@ _: {
       uid = null;
       isDefault = true;
     };
+  };
+
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ consts.victoriametricsPort ];
+
+  systemd.services.victoriametrics = {
+    after = [ "tailscaled-autoconnect.service" ];
+    wants = [ "tailscaled-autoconnect.service" ];
   };
 }
