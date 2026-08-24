@@ -5,6 +5,7 @@
   lib,
   config,
   pkgs,
+  consts,
   ...
 }:
 let
@@ -18,7 +19,7 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 11008;
+      default = consts.victoriametricsPort;
       description = "Port on which VictoriaMetrics listens for HTTP requests";
     };
 
@@ -30,6 +31,16 @@ in
         Set to "0.0.0.0" to listen on all interfaces (required for remote write from other hosts).
       '';
       example = "0.0.0.0";
+    };
+
+    localAddress = lib.mkOption {
+      type = lib.types.str;
+      default = "127.0.0.1";
+      description = ''
+        Address used by local Prometheus and Grafana clients to reach VictoriaMetrics.
+        Set this when listenAddress does not include the loopback interface.
+      '';
+      example = "127.0.0.1";
     };
 
     openFirewall = lib.mkOption {
@@ -176,7 +187,7 @@ in
       lib.mkIf (cfg.prometheusRemoteWrite.enable && config.services.prometheus.enable or false)
         [
           {
-            url = "http://127.0.0.1:${toString cfg.port}${cfg.prometheusRemoteWrite.path}";
+            url = "http://${cfg.localAddress}:${toString cfg.port}${cfg.prometheusRemoteWrite.path}";
 
             queue_config = {
               capacity = 10000;
@@ -225,7 +236,7 @@ in
               inherit (cfg.grafanaDatasource) name isDefault;
               type = "prometheus"; # VictoriaMetrics is PromQL-compatible
               access = "proxy";
-              url = "http://127.0.0.1:${toString cfg.port}";
+              url = "http://${cfg.localAddress}:${toString cfg.port}";
               editable = false;
               jsonData = {
                 # VictoriaMetrics supports Prometheus-compatible API
