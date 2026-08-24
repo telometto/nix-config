@@ -1,11 +1,11 @@
-{ VARS, ... }:
+{ VARS, consts, ... }:
 {
   sys.services = {
     paperless.enable = false;
 
     glance = {
       enable = true;
-      port = 11064;
+      port = consts.glancePort;
 
       reverseProxy = {
         enable = true;
@@ -17,7 +17,7 @@
     actual = {
       enable = false;
 
-      port = 11005;
+      port = consts.actualHostPort;
       dataDir = "/rpool/unenc/apps/nixos/actual";
     };
 
