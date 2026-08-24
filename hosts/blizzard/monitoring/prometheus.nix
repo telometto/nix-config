@@ -1,4 +1,9 @@
-{ config, consts, lib, ... }:
+{
+  config,
+  consts,
+  lib,
+  ...
+}:
 {
   sys.services.prometheus = {
     enable = true;
