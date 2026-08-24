@@ -1,10 +1,10 @@
-{ VARS, ... }:
+{ VARS, consts, ... }:
 {
   sys.services = {
     scrutiny = {
       enable = true;
 
-      port = 11001;
+      port = consts.scrutinyPort;
       openFirewall = true;
 
       reverseProxy = {
@@ -16,7 +16,7 @@
 
     cockpit = {
       enable = false;
-      port = 11006;
+      port = consts.cockpitPort;
       openFirewall = true;
     };
   };
