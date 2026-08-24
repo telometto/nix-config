@@ -3,6 +3,7 @@
   inputs,
   VARS,
   lib,
+  consts,
   ...
 }:
 let
@@ -75,7 +76,7 @@ in
         clip.modelName = "ViT-SO400M-16-SigLIP2-384__webli";
         ocr.modelName = "LATIN__PP-OCRv5_mobile";
         urls = [
-          "http://10.100.0.1:3003"
+          "http://10.100.0.1:${toString consts.immichMachineLearningPort}"
         ];
       };
       oauth = {
