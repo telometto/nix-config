@@ -1,4 +1,4 @@
-{ VARS, ... }:
+{ VARS, consts, ... }:
 {
   sys.services = {
     plex = {
@@ -22,7 +22,7 @@
     ombi = {
       enable = false;
 
-      port = 11003;
+      port = consts.ombiHostPort;
       openFirewall = true;
       dataDir = "/rpool/unenc/apps/nixos/ombi";
 
@@ -36,7 +36,7 @@
     tautulli = {
       enable = false;
 
-      port = 11004;
+      port = consts.tautulliHostPort;
       openFirewall = true;
       dataDir = "/rpool/unenc/apps/nixos/tautulli";
 
