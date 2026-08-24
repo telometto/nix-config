@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, consts, ... }:
 let
   reg = (import ./vm-registry.nix).qbittorrent;
   mediaShare = {
@@ -41,15 +41,15 @@ in
   networking.firewall = {
     allowedTCPPorts = [
       reg.port
-      50820
+      consts.qbittorrentTorrentPort
     ];
-    allowedUDPPorts = [ 50820 ];
+    allowedUDPPorts = [ consts.qbittorrentTorrentPort ];
   };
 
   sys.services.qbittorrent = {
     enable = true;
     webPort = reg.port;
-    torrentPort = 50820;
+    torrentPort = consts.qbittorrentTorrentPort;
     dataDir = "/var/lib/qbittorrent";
     openFirewall = false;
 
