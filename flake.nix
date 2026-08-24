@@ -4,6 +4,8 @@
   inputs = {
     # Primary channel - most packages come from here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    # Bleeding edge
+    nixpkgs-master.url = "github:NixOS/nixpkgs/master";
     # Latest stable alias (same target as nixpkgs; kept for symmetry and future bumps)
     nixpkgs-beta.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-stable-small.url = "github:NixOS/nixpkgs/nixos-26.05-small";
