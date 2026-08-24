@@ -3,6 +3,7 @@
 {
   lib,
   config,
+  consts,
   ...
 }:
 let
@@ -24,7 +25,7 @@ in
 
     vmPort = lib.mkOption {
       type = lib.types.port;
-      default = 11008;
+      default = consts.victoriametricsPort;
       description = "Port on which the remote VictoriaMetrics listens";
     };
 
