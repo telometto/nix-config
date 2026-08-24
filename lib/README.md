@@ -40,6 +40,13 @@ places.
 | Key | Value | Purpose |
 |-----|-------|---------|
 | `tailscale.suffix` | `"mole-delta.ts.net"` | Tailscale network domain suffix for building service FQDNs |
+| `tailscale.hosts.blizzard.ipv4` | `"100.86.227.97"` | Shared Blizzard Tailscale endpoint |
+| `<service>Port` | service-specific integer | Shared host, MicroVM, and secondary service ports |
+
+The port constants include names such as `immichPort`, `victoriametricsPort`,
+`prometheusPort`, and `immichMachineLearningPort`. MicroVM primary ports in
+`vms/vm-registry.nix` are sourced from these constants so the registry remains
+the assembled VM contract without duplicating the numeric assignments.
 
 ______________________________________________________________________
 
