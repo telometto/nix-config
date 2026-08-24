@@ -20,7 +20,12 @@ let
         "pocket-id"
         "seerr"
       ];
-      # nixpkgs-unstable = [ "cloud-hypervisor" ];
+
+      nixpkgs-master = [
+        "immich"
+        "immich-cli"
+        "immich-machine-learning"
+      ];
     };
   };
 
