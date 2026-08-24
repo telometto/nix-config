@@ -128,13 +128,13 @@ in
       # Enable RAPL power monitoring for CPU
       prometheusExporters.node = {
         enableRapl = true;
-        port = 11011;
+        port = consts.nodeExporterPort;
       };
 
       # Norwegian electricity price exporter (NO2 = Sør-Norge)
       electricityPriceExporter = {
         enable = true;
-        port = 11012;
+        port = consts.electricityPriceExporterPort;
         priceArea = "NO2";
       };
 
@@ -154,7 +154,7 @@ in
 
       prometheus = {
         enable = lib.mkDefault true;
-        port = 11009;
+        port = consts.prometheusPort;
         listenAddress = "127.0.0.1";
         openFirewall = lib.mkDefault false;
         scrapeInterval = "15s";
@@ -182,7 +182,7 @@ in
 
       grafana = {
         enable = lib.mkDefault true;
-        port = 11010;
+        port = consts.grafanaPort;
 
         addr = "127.0.0.1";
         openFirewall = lib.mkDefault false;
@@ -223,6 +223,7 @@ in
       victoriametricsRemoteWrite = {
         enable = true;
         vmHost = "blizzard"; # Tailscale hostname
+        vmPort = consts.victoriametricsPort;
       };
 
       traefik = {
@@ -271,7 +272,7 @@ in
 
   fileSystems = {
     "/mnt/backups" = {
-      device = "100.86.227.97:/rpool/enc/transfers";
+      device = "${consts.tailscale.hosts.blizzard.ipv4}:/rpool/enc/transfers";
       fsType = "nfs";
       options = [
         "nofail"
@@ -281,7 +282,7 @@ in
     };
 
     "/mnt/media" = {
-      device = "100.86.227.97:/rpool/unenc/media/data/media";
+      device = "${consts.tailscale.hosts.blizzard.ipv4}:/rpool/unenc/media/data/media";
       fsType = "nfs";
       options = [
         "nofail"
