@@ -1,4 +1,9 @@
-{ lib, pkgs, consts, ... }:
+{
+  lib,
+  pkgs,
+  consts,
+  ...
+}:
 let
   registry = import ./vm-registry.nix;
   reg = registry.wireguard;
