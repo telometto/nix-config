@@ -3,6 +3,7 @@
   config,
   pkgs,
   inputs,
+  consts,
   ...
 }:
 let
@@ -73,7 +74,7 @@ in
 
   networking.firewall.allowedTCPPorts = [
     reg.port
-    11053
+    consts.firefoxHttpsPort
   ];
 
   systemd = {
@@ -121,7 +122,7 @@ in
 
         dataDir = "/var/lib/firefox";
         httpPort = reg.port;
-        httpsPort = 11053;
+        httpsPort = consts.firefoxHttpsPort;
         networkMode = "bridge";
         timeZone = "Europe/Oslo";
         title = "Firefox";
