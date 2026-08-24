@@ -3,6 +3,7 @@
   config,
   pkgs,
   inputs,
+  consts,
   ...
 }:
 let
@@ -65,7 +66,7 @@ in
 
   networking.firewall.allowedTCPPorts = [
     reg.port
-    11055
+    consts.braveHttpsPort
   ];
 
   systemd = {
@@ -106,7 +107,7 @@ in
 
         dataDir = "/var/lib/brave";
         httpPort = reg.port;
-        httpsPort = 11055;
+        httpsPort = consts.braveHttpsPort;
         networkMode = "bridge";
         timeZone = "Europe/Oslo";
         title = "Brave";
