@@ -53,6 +53,13 @@
       ];
     };
 
+    # Keep the standalone Immich ML container image aligned with the server.
+    overlays.fromInputs.nixpkgs-master = [
+      "immich"
+      "immich-cli"
+      "immich-machine-learning"
+    ];
+
     hardware.nvidia = {
       enable = true;
 
