@@ -7,7 +7,7 @@
   ...
 }:
 let
-  reg = import ../../../vms/vm-registry.nix;
+  reg = import ../../../vms/vm-registry.nix { inherit consts; };
 
   mkPortForward =
     proto: sourcePort: destPort:
@@ -44,7 +44,7 @@ let
         (mkPortForward "both" 53 null)
         (mkPortForward "tcp" 443 null)
         (mkPortForward "tcp" 853 null)
-        (mkPortForward "tcp" consts.adguardPort null)
+        (mkPortForward "tcp" consts.ports.vm.adguard null)
       ];
       publication.hostname = "adguard";
     };
@@ -177,12 +177,12 @@ let
 
     qbittorrent = {
       enable = true;
-      portForwards = [ (mkPortForward "tcp" consts.qbittorrentPort null) ];
+      portForwards = [ (mkPortForward "tcp" consts.ports.vm.qbittorrent null) ];
     };
 
     sabnzbd = {
       enable = true;
-      portForwards = [ (mkPortForward "tcp" consts.sabnzbdPort null) ];
+      portForwards = [ (mkPortForward "tcp" consts.ports.vm.sabnzbd null) ];
       publication = {
         enable = true;
         hostname = "sab";
@@ -192,14 +192,14 @@ let
 
     wireguard = {
       enable = true;
-      portForwards = [ (mkPortForward "udp" 51820 consts.wireguardPort) ];
+      portForwards = [ (mkPortForward "udp" 51820 consts.ports.vm.wireguard) ];
     };
 
     firefox = {
       enable = true;
       portForwards = [
-        (mkPortForward "tcp" consts.firefoxPort null)
-        (mkPortForward "tcp" consts.firefoxHttpsPort null)
+        (mkPortForward "tcp" consts.ports.vm.firefox null)
+        (mkPortForward "tcp" consts.ports.secondary.firefoxHttps null)
       ];
       publication = {
         enable = true;
@@ -211,8 +211,8 @@ let
     brave = {
       enable = false;
       portForwards = [
-        (mkPortForward "tcp" consts.bravePort null)
-        (mkPortForward "tcp" consts.braveHttpsPort null)
+        (mkPortForward "tcp" consts.ports.vm.brave null)
+        (mkPortForward "tcp" consts.ports.secondary.braveHttps null)
       ];
       publication = {
         hostname = "brave";
@@ -231,7 +231,7 @@ let
 
     paperless = {
       enable = false;
-      portForwards = [ (mkPortForward "tcp" consts.paperlessPort null) ];
+      portForwards = [ (mkPortForward "tcp" consts.ports.vm.paperless null) ];
       publication = {
         hostname = "docs";
         policy = "csrf-compatible";
@@ -240,7 +240,7 @@ let
 
     firefly = {
       enable = false;
-      portForwards = [ (mkPortForward "tcp" consts.fireflyPort null) ];
+      portForwards = [ (mkPortForward "tcp" consts.ports.vm.firefly null) ];
       publication = {
         hostname = "finance";
         policy = "firefly-proxy";
@@ -249,7 +249,7 @@ let
 
     "firefly-importer" = {
       enable = false;
-      portForwards = [ (mkPortForward "tcp" consts.fireflyImporterPort null) ];
+      portForwards = [ (mkPortForward "tcp" consts.ports.vm.fireflyImporter null) ];
       publication = {
         hostname = "finimport";
         policy = "firefly-proxy";
@@ -260,7 +260,7 @@ let
       enable = true;
       # Keep the managed Cloudflare publication while also allowing direct
       # home-LAN access through Blizzard at TCP 11070.
-      portForwards = [ (mkPortForward "tcp" consts.immichPort null) ];
+      portForwards = [ (mkPortForward "tcp" consts.ports.vm.immich null) ];
       publication = {
         enable = true;
         hostname = "photos";
@@ -270,7 +270,7 @@ let
 
     mealie = {
       enable = false;
-      portForwards = [ (mkPortForward "tcp" consts.mealiePort null) ];
+      portForwards = [ (mkPortForward "tcp" consts.ports.vm.mealie null) ];
       publication.hostname = "recipes";
     };
 
@@ -294,7 +294,7 @@ let
   };
 in
 {
-  networking.firewall.interfaces."microvm-br0".allowedTCPPorts = [ consts.immichMachineLearningPort ];
+  networking.firewall.interfaces."microvm-br0".allowedTCPPorts = [ consts.ports.secondary.immichMachineLearning.hostPort ];
 
   systemd.services.immich-ml-proxy = {
     description = "Proxy Immich MicroVM machine-learning requests to Kaizer";
@@ -307,7 +307,7 @@ in
     wantedBy = [ "multi-user.target" ];
 
     serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.socat} TCP-LISTEN:${toString consts.immichMachineLearningPort},bind=10.100.0.1,reuseaddr,fork TCP:kaizer.boreal-ruler.ts.net:${toString consts.immichMachineLearningPort}";
+      ExecStart = "${lib.getExe pkgs.socat} TCP-LISTEN:${toString consts.ports.secondary.immichMachineLearning.hostPort},bind=10.100.0.1,reuseaddr,fork TCP:kaizer.boreal-ruler.ts.net:${toString consts.ports.secondary.immichMachineLearning.hostPort}";
       Restart = "always";
       RestartSec = "5s";
       DynamicUser = true;

@@ -128,13 +128,13 @@ in
       # Enable RAPL power monitoring for CPU
       prometheusExporters.node = {
         enableRapl = true;
-        port = consts.nodeExporterPort;
+        port = consts.ports.host.nodeExporter;
       };
 
       # Norwegian electricity price exporter (NO2 = Sør-Norge)
       electricityPriceExporter = {
         enable = true;
-        port = consts.electricityPriceExporterPort;
+        port = consts.ports.host.electricityPriceExporter;
         priceArea = "NO2";
       };
 
@@ -154,7 +154,7 @@ in
 
       prometheus = {
         enable = lib.mkDefault true;
-        port = consts.prometheusPort;
+        port = consts.ports.host.prometheus;
         listenAddress = "127.0.0.1";
         openFirewall = lib.mkDefault false;
         scrapeInterval = "15s";
@@ -182,7 +182,7 @@ in
 
       grafana = {
         enable = lib.mkDefault true;
-        port = consts.grafanaPort;
+        port = consts.ports.host.grafana;
 
         addr = "127.0.0.1";
         openFirewall = lib.mkDefault false;
@@ -223,7 +223,11 @@ in
       victoriametricsRemoteWrite = {
         enable = true;
         vmHost = "blizzard"; # Tailscale hostname
-        vmPort = consts.victoriametricsPort;
+        vmPort = consts.ports.host.victoriametrics;
+        basicAuth = {
+          username = consts.victoriametrics.username;
+          passwordFile = config.sops.secrets."victoriametrics/remote_write_password".path;
+        };
       };
 
       traefik = {
