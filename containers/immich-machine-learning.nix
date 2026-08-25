@@ -4,10 +4,12 @@
   lib,
   config,
   pkgs,
+  consts,
   ...
 }:
 let
   cfg = config.services.immich-machine-learning-container;
+  containerPort = consts.ports.secondary.immichMachineLearning.containerPort;
 
   imageSuffix = lib.optionalString (cfg.acceleration != "cpu") "-${cfg.acceleration}";
   defaultImage = "ghcr.io/immich-app/immich-machine-learning:v${pkgs.immich.version}${imageSuffix}";
@@ -18,7 +20,7 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 3003;
+      default = consts.ports.secondary.immichMachineLearning.hostPort;
       description = "Host port to expose the Immich machine-learning API on.";
     };
 
@@ -84,14 +86,14 @@ in
       containerConfig = {
         image = if cfg.image != null then cfg.image else defaultImage;
         publishPorts = [
-          "${cfg.listenAddress}:${toString cfg.port}:3003"
+          "${cfg.listenAddress}:${toString cfg.port}:${toString containerPort}"
         ];
         volumes = [
           "${cfg.cacheDir}:/cache:U"
         ];
         environments = {
           IMMICH_HOST = "0.0.0.0";
-          IMMICH_PORT = "3003";
+          IMMICH_PORT = toString containerPort;
           MACHINE_LEARNING_CACHE_FOLDER = "/cache";
           MACHINE_LEARNING_MODEL_TTL = cfg.modelTtl;
           HF_HOME = "/cache/huggingface";
