@@ -4,7 +4,7 @@
     scrutiny = {
       enable = true;
 
-      port = consts.scrutinyPort;
+      port = consts.ports.host.scrutiny;
       openFirewall = true;
 
       reverseProxy = {
@@ -16,7 +16,7 @@
 
     cockpit = {
       enable = false;
-      port = consts.cockpitPort;
+      port = consts.ports.host.cockpit;
       openFirewall = true;
     };
   };

@@ -36,7 +36,7 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = consts.cloudflareMetricsPort;
+      default = consts.ports.host.cloudflareMetrics;
       description = "Loopback port on which the collector exposes Prometheus metrics.";
     };
 

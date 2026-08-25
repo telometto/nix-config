@@ -4,27 +4,27 @@
     prometheusExporters = {
       node = {
         enableRapl = true;
-        port = consts.nodeExporterPort;
+        port = consts.ports.host.nodeExporter;
       };
 
       zfs = {
         enable = true;
 
-        port = consts.zfsExporterPort;
+        port = consts.ports.host.zfsExporter;
       };
     };
 
     electricityPriceExporter = {
       enable = true;
 
-      port = consts.electricityPriceExporterPort;
+      port = consts.ports.host.electricityPriceExporter;
       priceArea = "NO2";
     };
 
     cloudflareMetrics = {
       enable = true;
 
-      port = consts.cloudflareMetricsPort;
+      port = consts.ports.host.cloudflareMetrics;
       apiTokenFile = config.sys.secrets.cloudflareMetricsApiTokenFile;
       accountIdFile = config.sys.secrets.cloudflareAccountIdFile;
       ownerEmailsFile = config.sys.secrets.cloudflareAccessOwnerEmailsFile;
@@ -65,7 +65,7 @@
       prometheusExporter = {
         enable = true;
 
-        port = consts.upsExporterPort;
+      port = consts.ports.host.upsExporter;
         variables = [
           "battery.charge"
           "battery.charge.low"
