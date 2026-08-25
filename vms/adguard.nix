@@ -3,10 +3,11 @@
   config,
   inputs,
   VARS,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).adguard;
+  reg = (import ./vm-registry.nix { inherit consts; }).adguard;
 in
 {
   imports = [

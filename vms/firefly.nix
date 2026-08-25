@@ -3,10 +3,11 @@
   config,
   inputs,
   VARS,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).firefly;
+  reg = (import ./vm-registry.nix { inherit consts; }).firefly;
 in
 {
   imports = [

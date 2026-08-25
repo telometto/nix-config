@@ -17,9 +17,9 @@ ______________________________________________________________________
 
 ### constants.nix
 
-Shared string constants used throughout the configuration. Loaded once in
-`flake.nix` as `consts` and threaded through all hosts and VMs via
-`specialArgs`.
+Shared string, endpoint, and port constants used throughout the configuration.
+Loaded once in `flake.nix` as `consts` and threaded through all hosts, VMs, and
+Home Manager modules via `specialArgs`.
 
 **Purpose:** Avoid repeating magic strings (domain suffixes, IDs) in multiple
 places.
@@ -40,6 +40,17 @@ places.
 | Key | Value | Purpose |
 |-----|-------|---------|
 | `tailscale.suffix` | `"mole-delta.ts.net"` | Tailscale network domain suffix for building service FQDNs |
+| `tailscale.hosts.blizzard.ipv4` | `"100.86.227.97"` | Shared Blizzard Tailscale endpoint |
+| `ports.host.<service>` | service-specific integer | Physical-host service ports |
+| `ports.vm.<service>` | service-specific integer | MicroVM primary service ports |
+| `ports.secondary.<service>` | service-specific integer or `{ hostPort, containerPort }` | Secondary service endpoints and container contracts |
+| `ports.network.<service>` | service-specific integer | Network-only ports such as the qBittorrent torrent port |
+| `victoriametrics.username` | `"metrics-writer"` | Shared Basic Authentication username for the protected metrics endpoint |
+
+MicroVM primary ports in `vms/vm-registry.nix` are sourced from
+`consts.ports.vm`, so the registry remains the assembled VM contract without
+duplicating numeric assignments. The registry receives the same injected
+`consts` value as the rest of the NixOS configuration.
 
 ______________________________________________________________________
 

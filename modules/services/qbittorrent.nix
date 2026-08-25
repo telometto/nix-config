@@ -2,6 +2,7 @@
   lib,
   config,
   pkgs,
+  consts,
   ...
 }:
 let
@@ -25,7 +26,7 @@ in
 
     torrentPort = lib.mkOption {
       type = lib.types.nullOr lib.types.port;
-      default = 50820;
+      default = consts.ports.network.qbittorrentTorrent;
       description = "Incoming torrent port (TCP/UDP).";
     };
 

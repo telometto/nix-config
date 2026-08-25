@@ -2,11 +2,12 @@
   config,
   lib,
   pkgs,
+  consts,
   ...
 }:
 let
   cfg = config.sys.services.blackbox;
-  blackboxConstants = (import ../../lib/constants.nix).blackbox;
+  blackboxConstants = consts.blackbox;
   blackboxPort = blackboxConstants.port;
 
   targetType = lib.types.submodule {

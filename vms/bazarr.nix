@@ -1,6 +1,6 @@
-_:
+{ consts, ... }:
 let
-  reg = (import ./vm-registry.nix).bazarr;
+  reg = (import ./vm-registry.nix { inherit consts; }).bazarr;
   mediaShare = {
     source = "/rpool/unenc/media/data";
     mountPoint = "/data";

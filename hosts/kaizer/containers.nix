@@ -1,11 +1,12 @@
 # Rootless Podman containers on kaizer (managed via quadlet-nix + Home Manager)
-{ VARS, ... }:
+{ VARS, consts, ... }:
 let
   username = VARS.users.luke.user;
-  immichMlPort = 3003;
 in
 {
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ immichMlPort ];
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+    consts.ports.secondary.immichMachineLearning.hostPort
+  ];
 
   users.users.${username} = {
     linger = true;
@@ -23,7 +24,7 @@ in
 
     services.immich-machine-learning-container = {
       enable = true;
-      port = immichMlPort;
+      port = consts.ports.secondary.immichMachineLearning.hostPort;
       acceleration = "cuda";
     };
   };

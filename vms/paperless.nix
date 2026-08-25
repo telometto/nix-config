@@ -2,10 +2,11 @@
   config,
   inputs,
   VARS,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).paperless;
+  reg = (import ./vm-registry.nix { inherit consts; }).paperless;
   paperlessTmpDir = "/var/lib/paperless/tmp";
 in
 {

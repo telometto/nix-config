@@ -104,7 +104,12 @@
       consts = import ./lib/constants.nix;
       treefmtEval = inputs.treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} ./treefmt.nix;
       microvmConfigurations = import ./vms/flake-microvms.nix {
-        inherit inputs system VARS;
+        inherit
+          inputs
+          system
+          VARS
+          consts
+          ;
       };
       mkHost =
         hostname: extraModules:
@@ -186,6 +191,11 @@
           blizzard = self.nixosConfigurations.blizzard;
           pkgs = nixpkgs.legacyPackages.${system};
           publicDomain = VARS.domains.public;
+        };
+
+        victoriametrics = import ./tests/victoriametrics.nix {
+          inherit (self.nixosConfigurations) blizzard snowfall;
+          pkgs = nixpkgs.legacyPackages.${system};
         };
 
         microvm-network-policy = import ./tests/microvm-network-policy.nix {

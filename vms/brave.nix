@@ -3,10 +3,11 @@
   config,
   pkgs,
   inputs,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).brave;
+  reg = (import ./vm-registry.nix { inherit consts; }).brave;
   vpnRoutes = [
     {
       Gateway = "10.100.0.1";
@@ -65,7 +66,7 @@ in
 
   networking.firewall.allowedTCPPorts = [
     reg.port
-    11055
+    consts.ports.secondary.braveHttps
   ];
 
   systemd = {
@@ -106,7 +107,7 @@ in
 
         dataDir = "/var/lib/brave";
         httpPort = reg.port;
-        httpsPort = 11055;
+        httpsPort = consts.ports.secondary.braveHttps;
         networkMode = "bridge";
         timeZone = "Europe/Oslo";
         title = "Brave";

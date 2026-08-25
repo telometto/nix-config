@@ -21,6 +21,7 @@ Information reference for this repo's moving parts, options, and commands.
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
 | `checks.x86_64-linux.scrutiny` | Scrutiny service, secret, and systemd contract tests |
+| `checks.x86_64-linux.victoriametrics` | VictoriaMetrics listener, firewall, authentication, client credentials, and startup-order contract tests |
 | `devShells.x86_64-linux.default` | Dev shell with nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 ### `mkHost` — what it always injects
@@ -175,11 +176,12 @@ Operational tools used across the repo.
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
 Locally, `nix flake check` evaluates and builds the formatting, Cloudflare
-metrics, Matrix baseline, MicroVM publication, MicroVM network-policy, Sandfly
-target, and Scrutiny service checks. The `flake-check.yml` CI workflow first runs
+metrics, Matrix baseline, MicroVM publication, blackbox observability, MicroVM
+network-policy, Sandfly target, Scrutiny service, and VictoriaMetrics checks. The
+`flake-check.yml` CI workflow first runs
 `.github/scripts/evaluate-flake-outputs.sh`, which evaluates configurations,
 formatters, checks, and development shells in separate Nix processes, then
-explicitly builds all six executable test checks. Full host evaluation is
+explicitly builds all eight executable test checks. Full host evaluation is
 handled separately by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
@@ -274,7 +276,12 @@ ______________________________________________________________________
 
 ## Constants (`lib/constants.nix`)
 
-Centralises shared magic strings: Tailscale domain suffix, Cloudflare account/policy IDs. Imported once in `flake.nix` and passed into modules as `consts` via `specialArgs` (and similarly for MicroVMs in `vms/flake-microvms.nix`). Prefer the injected `consts` argument over ad-hoc direct imports.
+Centralises shared magic strings and service endpoints: the Tailscale domain
+suffix, the shared Blizzard Tailscale address, namespaced host/VM/secondary and
+network ports, and monitoring identifiers. Cloudflare account and policy IDs
+remain SOPS secrets, not constants. Imported once in `flake.nix` and passed
+into NixOS, MicroVM, and Home Manager modules as `consts` via `specialArgs`.
+Prefer the injected `consts` argument over ad-hoc direct imports.
 
 ______________________________________________________________________
 
@@ -311,6 +318,9 @@ nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
 # Build and run the Matrix baseline contract check
 nix build .#checks.x86_64-linux.matrix-baseline --no-link --print-build-logs
 
+# Build and run the blackbox observability contract check
+nix build .#checks.x86_64-linux.blackbox-observability --no-link --print-build-logs
+
 # Build and run the MicroVM network-policy integration test
 nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs
 
@@ -319,6 +329,9 @@ nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs
 
 # Build and run only the Scrutiny service contract check
 nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs
+
+# Build and run only the VictoriaMetrics contract check
+nix build .#checks.x86_64-linux.victoriametrics --no-link --print-build-logs
 
 # Dev shell (includes nil, nixfmt, deadnix, statix, sops, ssh-to-age)
 nix develop

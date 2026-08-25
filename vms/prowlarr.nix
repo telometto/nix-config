@@ -1,6 +1,6 @@
-_:
+{ consts, ... }:
 let
-  registry = import ./vm-registry.nix;
+  registry = import ./vm-registry.nix { inherit consts; };
   reg = registry.prowlarr;
   flaresolverrPort = registry.flaresolverr.port;
 in

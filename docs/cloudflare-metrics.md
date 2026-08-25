@@ -21,6 +21,24 @@ flowchart LR
     ALERTS --> NOTIFY["Configured Grafana contact point"]
 ```
 
+VictoriaMetrics is the long-term store for the local and remote Prometheus
+writers. On Blizzard it listens at
+`100.86.227.97:11008` (the Blizzard Tailscale address) and the firewall opens
+that port only on `tailscale0`; it is not a general host-firewall opening.
+VictoriaMetrics HTTP Basic Authentication protects the complete API, including
+remote-write, query, and administrative endpoints. The username is a stable
+configuration constant; the password is the SOPS secret
+`victoriametrics/remote_write_password` in the private `nix-secrets` flake.
+Add or rotate that key in the private flake before activating this configuration;
+this repository intentionally does not contain its value.
+
+Snowfall's remote writer and Blizzard's local Prometheus and Grafana datasource
+read that password from their SOPS-rendered file. Remote writes use HTTP inside
+the encrypted Tailscale transport, not an unprotected LAN or public route. A
+password rotation requires updating the private secret and restarting the
+VictoriaMetrics, Prometheus, and Grafana services together; never put the value
+in this repository or in a Nix command-line argument.
+
 The collector reads:
 
 - the active zone inventory and HTTP adaptive analytics
