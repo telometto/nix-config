@@ -36,6 +36,11 @@ flowchart TD
     HU -->|"conditionally imports"| HO["home/overrides/role/<role>.nix\nhome/overrides/host/<host>.nix\nhome/overrides/user/<user>.nix\nhome/overrides/user/<user>-<host>.nix"]
 ```
 
+`users.nix` forwards an explicit `uid` from `VARS.users` only when one is
+provided. When it is omitted, NixOS preserves the UID of an existing named
+account and allocates a free UID for a new account during activation. The
+order of entries in `VARS.users` is not an allocation contract.
+
 ### Home Manager Integration
 
 [home-options.nix](home-options.nix) provides:
