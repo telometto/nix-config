@@ -68,8 +68,8 @@ ______________________________________________________________________
 | [cloudflare-metrics.nix](cloudflare-metrics.nix) | `sys.services.cloudflareMetrics` | Host (blizzard) | Cloudflare HTTP analytics and Access authentication Prometheus collector ([runbook](../../docs/cloudflare-metrics.md)) |
 | [prometheus.nix](prometheus.nix) | `sys.services.prometheus` | Host (blizzard) | Metrics collection |
 | [prometheus-exporters.nix](prometheus-exporters.nix) | `sys.services.prometheusExporters` | Host + VMs | System metrics exporters |
-| [victoriametrics.nix](victoriametrics.nix) | `sys.services.victoriametrics` | Host (blizzard) | Long-term time-series storage |
-| [victoriametrics-remote-write.nix](victoriametrics-remote-write.nix) | `sys.services.victoriametricsRemoteWrite` | Host | Remote-write forwarding |
+| [victoriametrics.nix](victoriametrics.nix) | `sys.services.victoriametrics` | Host (blizzard) | Long-term time-series storage with optional SOPS-backed HTTP Basic Authentication |
+| [victoriametrics-remote-write.nix](victoriametrics-remote-write.nix) | `sys.services.victoriametricsRemoteWrite` | Host | Authenticated remote-write forwarding |
 | [arr-exporter.nix](arr-exporter.nix) | `sys.services.arrExporter` | MicroVM | Prometheus exporter for Arr stack |
 | [electricity-price-exporter.nix](electricity-price-exporter.nix) | `sys.services.electricityPriceExporter` | Host | Nord Pool electricity price exporter |
 | [scrutiny.nix](scrutiny.nix) | `sys.services.scrutiny` | Host (blizzard) | Disk health monitoring; consumes the root-only `scrutiny/token` SOPS secret as a service credential for local InfluxDB ([runbook](../../docs/scrutiny.md)) |
