@@ -37,7 +37,8 @@ let
     ];
   };
   networkDefaults = import ../vms/microvm-network-defaults.nix;
-  matrixRegistry = (import ../vms/vm-registry.nix)."matrix-synapse";
+  consts = import ../lib/constants.nix;
+  matrixRegistry = (import ../vms/vm-registry.nix { inherit consts; })."matrix-synapse";
   matrixGateway = matrixRegistry.gateway or networkDefaults.defaultGateway;
   matrixInstance = hostCfg.sys.virtualisation.microvm.instances.matrix-synapse;
   nginxLocations = vmCfg.services.nginx.virtualHosts.matrix.locations;
