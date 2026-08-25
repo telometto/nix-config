@@ -56,6 +56,13 @@ zeno = makeUser {
 This metadata is advisory. The public flake should not require it, because old
 `vars.nix` revisions and emergency rebuilds should continue to evaluate.
 
+UIDs are account identity metadata, not credentials. Keep the intentional
+`zeno = 1000` pin in the private registry, omit `uid` for accounts that should
+use NixOS allocation, and treat any explicit UID change as a filesystem and
+service-state migration. NixOS preserves an existing named user's UID, but it
+does not automatically `chown` that user's home, rootless-container state, or
+other files when a UID is changed or a host is rebuilt.
+
 ## Review Checklist
 
 Run this quarterly, or after a lost device, suspicious login, service owner
