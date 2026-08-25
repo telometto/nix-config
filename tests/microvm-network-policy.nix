@@ -5,7 +5,8 @@
   wireguardVm,
 }:
 let
-  registry = import ../vms/vm-registry.nix;
+  consts = import ../lib/constants.nix;
+  registry = import ../vms/vm-registry.nix { inherit consts; };
   networkDefaults = import ../vms/microvm-network-defaults.nix;
   wireguardCfg = wireguardVm.config;
   wireguardFirewallCommands = wireguardCfg.networking.firewall.extraCommands;
