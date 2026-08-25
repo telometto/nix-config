@@ -1,4 +1,9 @@
-{ kaizer, pkgs, snowfall, VARS }:
+{
+  kaizer,
+  pkgs,
+  snowfall,
+  VARS,
+}:
 let
   snowfallConfig = snowfall.config;
   kaizerConfig = kaizer.config;
