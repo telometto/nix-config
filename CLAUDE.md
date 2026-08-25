@@ -113,7 +113,9 @@ Enable in a host file: `sys.role.desktop.enable = true;`
 ### Lib helpers
 
 - `lib/traefik.nix` — `mkSecurityHeaders`, `mkRoutes`, `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`
-- `lib/constants.nix` — shared strings: `tailscale.suffix` (loaded as `consts` in flake.nix)
+- `lib/constants.nix` — shared Tailscale endpoints and namespaced ports
+  (`ports.host`, `ports.vm`, `ports.secondary`, `ports.network`), loaded as
+  `consts` in NixOS, VM, and Home Manager modules
 - `lib/grafana-dashboards.nix` — `fetchGrafanaDashboard`, pre-configured community and custom dashboard sets
 - `lib/grafana.nix` — panel-builder DSL: `mkDashboard`, `mkTimeseries`, `mkGauge`, `mkStat`, `mkBargauge`, `mkRow`, `mkTarget`
 
