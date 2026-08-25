@@ -104,7 +104,12 @@
       consts = import ./lib/constants.nix;
       treefmtEval = inputs.treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} ./treefmt.nix;
       microvmConfigurations = import ./vms/flake-microvms.nix {
-        inherit inputs system VARS consts;
+        inherit
+          inputs
+          system
+          VARS
+          consts
+          ;
       };
       mkHost =
         hostname: extraModules:

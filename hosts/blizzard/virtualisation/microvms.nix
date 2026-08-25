@@ -294,7 +294,9 @@ let
   };
 in
 {
-  networking.firewall.interfaces."microvm-br0".allowedTCPPorts = [ consts.ports.secondary.immichMachineLearning.hostPort ];
+  networking.firewall.interfaces."microvm-br0".allowedTCPPorts = [
+    consts.ports.secondary.immichMachineLearning.hostPort
+  ];
 
   systemd.services.immich-ml-proxy = {
     description = "Proxy Immich MicroVM machine-learning requests to Kaizer";

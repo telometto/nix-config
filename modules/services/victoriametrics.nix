@@ -307,16 +307,14 @@ in
       requires = [ "sops-install-secrets.service" ];
     };
 
-    systemd.services.prometheus = lib.mkIf (
-      hasHttpAuth && (config.services.prometheus.enable or false)
-    ) {
-      after = [ "sops-install-secrets.service" ];
-      requires = [ "sops-install-secrets.service" ];
-    };
+    systemd.services.prometheus =
+      lib.mkIf (hasHttpAuth && (config.services.prometheus.enable or false))
+        {
+          after = [ "sops-install-secrets.service" ];
+          requires = [ "sops-install-secrets.service" ];
+        };
 
-    systemd.services.grafana = lib.mkIf (
-      hasHttpAuth && (config.sys.services.grafana.enable or false)
-    ) {
+    systemd.services.grafana = lib.mkIf (hasHttpAuth && (config.sys.services.grafana.enable or false)) {
       after = [ "sops-install-secrets.service" ];
       requires = [ "sops-install-secrets.service" ];
     };
@@ -327,7 +325,13 @@ in
         message = "sys.services.victoriametrics.httpAuth.username and passwordFile must both be set or both be null";
       }
       {
-        assertion = lib.elem cfg.listenAddress [ "127.0.0.1" "::1" "localhost" ] || hasHttpAuth;
+        assertion =
+          lib.elem cfg.listenAddress [
+            "127.0.0.1"
+            "::1"
+            "localhost"
+          ]
+          || hasHttpAuth;
         message = "sys.services.victoriametrics requires HTTP Basic Authentication when listenAddress is not loopback";
       }
     ];
