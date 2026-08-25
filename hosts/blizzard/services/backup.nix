@@ -2,10 +2,11 @@
   config,
   lib,
   pkgs,
+  consts,
   ...
 }:
 let
-  immichReg = (import ../../../vms/vm-registry.nix).immich;
+  immichReg = (import ../../../vms/vm-registry.nix { inherit consts; }).immich;
   immichStorage = import ../../../vms/immich-storage.nix;
   immichBackupVolumes = immichStorage.backupVolumes;
   immichVmName = "${immichReg.name}-vm";
