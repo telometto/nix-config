@@ -10,6 +10,8 @@
 }:
 let
   cfg = config.sys.services.victoriametrics;
+  hasHttpAuth = cfg.httpAuth.username != null;
+  credentialGroup = "monitoring-credentials";
 in
 {
   options.sys.services.victoriametrics = {
@@ -19,8 +21,29 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = consts.victoriametricsPort;
+      default = consts.ports.host.victoriametrics;
       description = "Port on which VictoriaMetrics listens for HTTP requests";
+    };
+
+    httpAuth = {
+      username = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = ''
+          Username for VictoriaMetrics HTTP Basic Authentication. Set this
+          together with passwordFile to protect every HTTP endpoint.
+        '';
+      };
+
+      passwordFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = ''
+          SOPS-managed file containing the VictoriaMetrics HTTP Basic
+          Authentication password. The password is loaded through systemd
+          credentials and is never placed in the unit command line.
+        '';
+      };
     };
 
     listenAddress = lib.mkOption {
@@ -28,9 +51,10 @@ in
       default = "127.0.0.1";
       description = ''
         Address on which VictoriaMetrics listens.
-        Set to "0.0.0.0" to listen on all interfaces (required for remote write from other hosts).
+        Remote clients require a reachable non-loopback address. Bind to the
+        narrowest interface that serves the intended clients.
       '';
-      example = "0.0.0.0";
+      example = "100.86.227.97";
     };
 
     localAddress = lib.mkOption {
@@ -170,6 +194,9 @@ in
       enable = true;
       inherit (cfg) package retentionPeriod;
 
+      basicAuthUsername = cfg.httpAuth.username;
+      basicAuthPasswordFile = cfg.httpAuth.passwordFile;
+
       listenAddress = "${cfg.listenAddress}:${toString cfg.port}";
 
       extraOptions =
@@ -186,35 +213,43 @@ in
     services.prometheus.remoteWrite =
       lib.mkIf (cfg.prometheusRemoteWrite.enable && config.services.prometheus.enable or false)
         [
-          {
-            url = "http://${cfg.localAddress}:${toString cfg.port}${cfg.prometheusRemoteWrite.path}";
+          (
+            {
+              url = "http://${cfg.localAddress}:${toString cfg.port}${cfg.prometheusRemoteWrite.path}";
 
-            queue_config = {
-              capacity = 10000;
-              max_shards = 3;
-              min_shards = 1;
-              max_samples_per_send = 1000;
-              batch_send_deadline = "5s";
-              min_backoff = "30ms";
-              max_backoff = "5s";
-            };
+              queue_config = {
+                capacity = 10000;
+                max_shards = 3;
+                min_shards = 1;
+                max_samples_per_send = 1000;
+                batch_send_deadline = "5s";
+                min_backoff = "30ms";
+                max_backoff = "5s";
+              };
 
-            write_relabel_configs =
-              lib.optionals (cfg.prometheusRemoteWrite.excludedMetricNames != [ ]) [
-                {
-                  source_labels = [ "__name__" ];
-                  regex = lib.concatStringsSep "|" cfg.prometheusRemoteWrite.excludedMetricNames;
-                  action = "drop";
-                }
-              ]
-              ++ [
-                {
-                  source_labels = [ "__address__" ];
-                  target_label = "source_host";
-                  replacement = config.networking.hostName;
-                }
-              ];
-          }
+              write_relabel_configs =
+                lib.optionals (cfg.prometheusRemoteWrite.excludedMetricNames != [ ]) [
+                  {
+                    source_labels = [ "__name__" ];
+                    regex = lib.concatStringsSep "|" cfg.prometheusRemoteWrite.excludedMetricNames;
+                    action = "drop";
+                  }
+                ]
+                ++ [
+                  {
+                    source_labels = [ "__address__" ];
+                    target_label = "source_host";
+                    replacement = config.networking.hostName;
+                  }
+                ];
+            }
+            // lib.optionalAttrs hasHttpAuth {
+              basic_auth = {
+                username = cfg.httpAuth.username;
+                password_file = cfg.httpAuth.passwordFile;
+              };
+            }
+          )
         ];
 
     # Add VictoriaMetrics as Grafana datasource
@@ -245,6 +280,11 @@ in
                 manageAlerts = false;
               };
             }
+            // lib.optionalAttrs hasHttpAuth {
+              basicAuth = true;
+              basicAuthUser = cfg.httpAuth.username;
+              secureJsonData.basicAuthPassword = "$__file{${cfg.httpAuth.passwordFile}}";
+            }
             // lib.optionalAttrs (cfg.grafanaDatasource.uid != null) {
               inherit (cfg.grafanaDatasource) uid;
             }
@@ -253,5 +293,43 @@ in
 
     # Open firewall if requested
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
+
+    users.groups.${credentialGroup} = lib.mkIf hasHttpAuth { };
+    users.users.prometheus.extraGroups = lib.mkIf (
+      hasHttpAuth && (config.services.prometheus.enable or false)
+    ) (lib.mkAfter [ credentialGroup ]);
+    users.users.grafana.extraGroups = lib.mkIf (
+      hasHttpAuth && (config.sys.services.grafana.enable or false)
+    ) (lib.mkAfter [ credentialGroup ]);
+
+    systemd.services.victoriametrics = lib.mkIf hasHttpAuth {
+      after = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
+    };
+
+    systemd.services.prometheus = lib.mkIf (
+      hasHttpAuth && (config.services.prometheus.enable or false)
+    ) {
+      after = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
+    };
+
+    systemd.services.grafana = lib.mkIf (
+      hasHttpAuth && (config.sys.services.grafana.enable or false)
+    ) {
+      after = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
+    };
+
+    assertions = [
+      {
+        assertion = (cfg.httpAuth.username == null) == (cfg.httpAuth.passwordFile == null);
+        message = "sys.services.victoriametrics.httpAuth.username and passwordFile must both be set or both be null";
+      }
+      {
+        assertion = lib.elem cfg.listenAddress [ "127.0.0.1" "::1" "localhost" ] || hasHttpAuth;
+        message = "sys.services.victoriametrics requires HTTP Basic Authentication when listenAddress is not loopback";
+      }
+    ];
   };
 }
