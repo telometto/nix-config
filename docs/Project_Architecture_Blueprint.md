@@ -49,6 +49,7 @@ ______________________________________________________________________
 | `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
 | `checks.x86_64-linux.scrutiny` | Scrutiny service, secret, and systemd contract tests |
+| `checks.x86_64-linux.victoriametrics` | VictoriaMetrics listener, firewall, authentication, client credentials, and startup-order contract tests |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
 There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
@@ -524,7 +525,7 @@ ______________________________________________________________________
 
 | File | Exports | Purpose |
 |------|---------|---------|
-| `lib/constants.nix` | `{ tailscale.suffix = "mole-delta.ts.net"; }` | Loaded once as `consts` in `flake.nix`; shared strings across all modules |
+| `lib/constants.nix` | Tailscale endpoints, namespaced host/VM/secondary/network ports, and monitoring identifiers | Loaded once as `consts` in `flake.nix`; the same value is passed to NixOS, VM, and Home Manager modules |
 | `lib/traefik.nix` | `mkSecurityHeaders`, `mkRoutes`, `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`, `defaultPermissionsPolicy`, `defaultCsp` | Generates shared headers and host-service or bespoke route config; standard MicroVM publication is rendered by `microvm-base.nix` |
 | `lib/grafana-dashboards.nix` | `fetchGrafanaDashboard`, `community.*`, `custom.*`, `all` | Fetches Grafana.com dashboards by ID; bundles community (node-exporter-full, kubernetes-cluster) and custom (arr-services, cloudflare-overview, zfs-overview, power-consumption, ups-monitoring, electricity-prices) sets |
 | `lib/grafana.nix` | `prometheusDatasource`, `mkRow`, `mkGauge`, `mkStat`, `mkTimeseries`, `mkBargauge`, `mkTarget`, `mkDashboard`, default field configs | Nix-native Grafana panel/dashboard builders |
@@ -645,9 +646,11 @@ ______________________________________________________________________
 | Run only the Cloudflare metrics tests | `nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs` |
 | Run only the Matrix baseline tests | `nix build .#checks.x86_64-linux.matrix-baseline --no-link --print-build-logs` |
 | Run only the MicroVM publication tests | `nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs` |
+| Run only the blackbox observability tests | `nix build .#checks.x86_64-linux.blackbox-observability --no-link --print-build-logs` |
 | Run only the MicroVM network-policy test | `nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs` |
 | Run only the Sandfly target tests | `nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs` |
 | Run only the Scrutiny service tests | `nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs` |
+| Run only the VictoriaMetrics contract tests | `nix build .#checks.x86_64-linux.victoriametrics --no-link --print-build-logs` |
 | Build without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
 | Apply to current host | `sudo nixos-rebuild switch --flake .#<hostname>` |
 | Test without switching | `sudo nixos-rebuild test --flake .#<hostname>` |
@@ -657,8 +660,9 @@ The `flake-check.yml` CI workflow uses
 `.github/scripts/evaluate-flake-outputs.sh` to evaluate configurations,
 formatters, checks, and development shells in separate Nix processes, then
 explicitly builds the Cloudflare metrics, MicroVM publication, Matrix baseline,
-network-policy, Sandfly target, and Scrutiny service checks so their tests
-execute. Host evaluations run separately in `validate-config.yml`.
+blackbox observability, network-policy, Sandfly target, Scrutiny service, and
+VictoriaMetrics checks so their tests execute. Host evaluations run separately
+in `validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 
@@ -717,6 +721,8 @@ ______________________________________________________________________
 
 ### Add a service VM
 
+1. Add or reuse the service port in `lib/constants.nix` under the appropriate
+   `ports.*` namespace (`ports.vm` for a MicroVM primary service).
 1. Add an entry to `vms/vm-registry.nix` (CID, MAC, IP, port, mem, vcpu, gateway).
 1. Create `vms/<name>.nix` with the service NixOS config.
 1. Register the VM in `vms/flake-microvms.nix`.
