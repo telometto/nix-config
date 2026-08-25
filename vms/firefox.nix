@@ -7,7 +7,7 @@
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).firefox;
+  reg = (import ./vm-registry.nix { inherit consts; }).firefox;
   transferDir = "/home/admin/Downloads";
   vpnRoutes = [
     {
@@ -74,7 +74,7 @@ in
 
   networking.firewall.allowedTCPPorts = [
     reg.port
-    consts.firefoxHttpsPort
+    consts.ports.secondary.firefoxHttps
   ];
 
   systemd = {
@@ -122,7 +122,7 @@ in
 
         dataDir = "/var/lib/firefox";
         httpPort = reg.port;
-        httpsPort = consts.firefoxHttpsPort;
+        httpsPort = consts.ports.secondary.firefoxHttps;
         networkMode = "bridge";
         timeZone = "Europe/Oslo";
         title = "Firefox";

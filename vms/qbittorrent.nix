@@ -1,6 +1,6 @@
 { pkgs, consts, ... }:
 let
-  reg = (import ./vm-registry.nix).qbittorrent;
+  reg = (import ./vm-registry.nix { inherit consts; }).qbittorrent;
   mediaShare = {
     source = "/rpool/unenc/media/data";
     mountPoint = "/data";
@@ -41,15 +41,15 @@ in
   networking.firewall = {
     allowedTCPPorts = [
       reg.port
-      consts.qbittorrentTorrentPort
+      consts.ports.network.qbittorrentTorrent
     ];
-    allowedUDPPorts = [ consts.qbittorrentTorrentPort ];
+    allowedUDPPorts = [ consts.ports.network.qbittorrentTorrent ];
   };
 
   sys.services.qbittorrent = {
     enable = true;
     webPort = reg.port;
-    torrentPort = consts.qbittorrentTorrentPort;
+    torrentPort = consts.ports.network.qbittorrentTorrent;
     dataDir = "/var/lib/qbittorrent";
     openFirewall = false;
 

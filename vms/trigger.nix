@@ -2,10 +2,11 @@
   config,
   inputs,
   VARS,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).trigger;
+  reg = (import ./vm-registry.nix { inherit consts; }).trigger;
 in
 {
   imports = [
