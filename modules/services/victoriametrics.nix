@@ -294,29 +294,35 @@ in
     # Open firewall if requested
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 
-    users.groups.${credentialGroup} = lib.mkIf hasHttpAuth { };
-    users.users.prometheus.extraGroups = lib.mkIf (
-      hasHttpAuth && (config.services.prometheus.enable or false)
-    ) (lib.mkAfter [ credentialGroup ]);
-    users.users.grafana.extraGroups = lib.mkIf (
-      hasHttpAuth && (config.sys.services.grafana.enable or false)
-    ) (lib.mkAfter [ credentialGroup ]);
+    users = {
+      users = {
+        prometheus.extraGroups = lib.mkIf (hasHttpAuth && (config.services.prometheus.enable or false)) (
+          lib.mkAfter [ credentialGroup ]
+        );
 
-    systemd.services.victoriametrics = lib.mkIf hasHttpAuth {
-      after = [ "sops-install-secrets.service" ];
-      requires = [ "sops-install-secrets.service" ];
+        grafana.extraGroups = lib.mkIf (hasHttpAuth && (config.sys.services.grafana.enable or false)) (
+          lib.mkAfter [ credentialGroup ]
+        );
+      };
+
+      groups.${credentialGroup} = lib.mkIf hasHttpAuth { };
     };
 
-    systemd.services.prometheus =
-      lib.mkIf (hasHttpAuth && (config.services.prometheus.enable or false))
-        {
-          after = [ "sops-install-secrets.service" ];
-          requires = [ "sops-install-secrets.service" ];
-        };
+    systemd.services = {
+      victoriametrics = lib.mkIf hasHttpAuth {
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+      };
 
-    systemd.services.grafana = lib.mkIf (hasHttpAuth && (config.sys.services.grafana.enable or false)) {
-      after = [ "sops-install-secrets.service" ];
-      requires = [ "sops-install-secrets.service" ];
+      prometheus = lib.mkIf (hasHttpAuth && (config.services.prometheus.enable or false)) {
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+      };
+
+      grafana = lib.mkIf (hasHttpAuth && (config.sys.services.grafana.enable or false)) {
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+      };
     };
 
     assertions = [
