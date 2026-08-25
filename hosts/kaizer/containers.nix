@@ -4,7 +4,9 @@ let
   username = VARS.users.luke.user;
 in
 {
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ consts.ports.secondary.immichMachineLearning.hostPort ];
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+    consts.ports.secondary.immichMachineLearning.hostPort
+  ];
 
   users.users.${username} = {
     linger = true;

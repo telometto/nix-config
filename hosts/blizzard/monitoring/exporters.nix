@@ -65,7 +65,7 @@
       prometheusExporter = {
         enable = true;
 
-      port = consts.ports.host.upsExporter;
+        port = consts.ports.host.upsExporter;
         variables = [
           "battery.charge"
           "battery.charge.low"

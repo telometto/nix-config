@@ -24,7 +24,9 @@ let
   passwordSecret = blizzardCfg.sops.secrets."victoriametrics/remote_write_password";
   passwordPath = passwordSecret.path;
   localRemoteWrite = lib.findFirst (
-    entry: entry.url == "http://${vmCfg.localAddress}:${toString vmCfg.port}${vmCfg.prometheusRemoteWrite.path}"
+    entry:
+    entry.url
+    == "http://${vmCfg.localAddress}:${toString vmCfg.port}${vmCfg.prometheusRemoteWrite.path}"
   ) null blizzardCfg.services.prometheus.remoteWrite;
   grafanaDatasource = lib.findFirst (
     datasource: datasource.name == vmCfg.grafanaDatasource.name
@@ -42,8 +44,9 @@ assert vmCfg.httpAuth.passwordFile == passwordPath;
 assert lib.any (
   assertion:
   !assertion.assertion
-  && assertion.message
-  == "sys.services.victoriametrics requires HTTP Basic Authentication when listenAddress is not loopback"
+  &&
+    assertion.message
+    == "sys.services.victoriametrics requires HTTP Basic Authentication when listenAddress is not loopback"
 ) unauthenticatedRemote.config.assertions;
 assert passwordSecret.owner == "root";
 assert passwordSecret.group == "monitoring-credentials";
@@ -67,7 +70,9 @@ assert grafanaDatasource.basicAuthUser == consts.victoriametrics.username;
 assert grafanaDatasource.secureJsonData.basicAuthPassword == "$__file{${passwordPath}}";
 assert remoteCfg.vmPort == consts.ports.host.victoriametrics;
 assert remoteCfg.basicAuth.username == consts.victoriametrics.username;
-assert remoteCfg.basicAuth.passwordFile == snowfallCfg.sops.secrets."victoriametrics/remote_write_password".path;
+assert
+  remoteCfg.basicAuth.passwordFile
+  == snowfallCfg.sops.secrets."victoriametrics/remote_write_password".path;
 assert remoteWrite != null;
 assert remoteWrite.basic_auth.username == consts.victoriametrics.username;
 assert remoteWrite.basic_auth.password_file == remoteCfg.basicAuth.passwordFile;
