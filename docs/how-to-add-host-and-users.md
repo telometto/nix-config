@@ -25,6 +25,20 @@ sys.desktop.flavor = "kde";     # kde | gnome | hyprland
 sys.users.<username>.enable = true;  # e.g., zeno
 ```
 
+### UID policy
+
+The private `VARS.users` registry pins `zeno` to UID `1000`; other users omit
+`uid` and use NixOS allocation. On a fresh host where `zeno` is enabled and
+UID `1000` is free, this gives `zeno` that UID and leaves later new accounts to
+the next free IDs. On an existing host, NixOS preserves the UID of an existing
+named account and allocates a free UID only for a new account.
+
+The order of entries in `VARS.users` does not control allocation. The explicit
+`zeno` pin is also not a UID migration: if UID `1000` is already assigned to a
+different account, enabling `zeno` can conflict, and changing a UID does not
+rewrite ownership of existing files. Check the host's current account and file
+ownership state before treating a reimage or UID change as routine.
+
 4. Register the host in `flake.nix`:
 
 ```nix
