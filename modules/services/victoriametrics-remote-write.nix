@@ -8,6 +8,8 @@
 }:
 let
   cfg = config.sys.services.victoriametricsRemoteWrite;
+  hasBasicAuth = cfg.basicAuth.username != null;
+  credentialGroup = "monitoring-credentials";
 in
 {
   options.sys.services.victoriametricsRemoteWrite = {
@@ -25,8 +27,25 @@ in
 
     vmPort = lib.mkOption {
       type = lib.types.port;
-      default = consts.victoriametricsPort;
+      default = consts.ports.host.victoriametrics;
       description = "Port on which the remote VictoriaMetrics listens";
+    };
+
+    basicAuth = {
+      username = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Basic Authentication username for the remote VictoriaMetrics instance";
+      };
+
+      passwordFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = ''
+          SOPS-managed file containing the Basic Authentication password for
+          the remote VictoriaMetrics instance.
+        '';
+      };
     };
 
     path = lib.mkOption {
@@ -77,6 +96,10 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
+        assertion = (cfg.basicAuth.username == null) == (cfg.basicAuth.passwordFile == null);
+        message = "sys.services.victoriametricsRemoteWrite.basicAuth.username and passwordFile must both be set or both be null";
+      }
+      {
         assertion = config.services.prometheus.enable or config.sys.services.prometheus.enable or false;
         message = "victoriametricsRemoteWrite requires Prometheus to be enabled";
       }
@@ -90,33 +113,49 @@ in
     ];
 
     services.prometheus.remoteWrite = [
-      {
-        url =
-          let
-            protocol = if cfg.useHttps then "https" else "http";
-          in
-          "${protocol}://${cfg.vmHost}:${toString cfg.vmPort}${cfg.path}";
+      (
+        {
+          url =
+            let
+              protocol = if cfg.useHttps then "https" else "http";
+            in
+            "${protocol}://${cfg.vmHost}:${toString cfg.vmPort}${cfg.path}";
 
-        queue_config = {
-          inherit (cfg.queueConfig) capacity;
+          queue_config = {
+            inherit (cfg.queueConfig) capacity;
 
-          max_shards = cfg.queueConfig.maxShards;
-          min_shards = cfg.queueConfig.minShards;
-          max_samples_per_send = cfg.queueConfig.maxSamplesPerSend;
-          batch_send_deadline = cfg.queueConfig.batchSendDeadline;
-          min_backoff = "30ms";
-          max_backoff = "5s";
-        };
+            max_shards = cfg.queueConfig.maxShards;
+            min_shards = cfg.queueConfig.minShards;
+            max_samples_per_send = cfg.queueConfig.maxSamplesPerSend;
+            batch_send_deadline = cfg.queueConfig.batchSendDeadline;
+            min_backoff = "30ms";
+            max_backoff = "5s";
+          };
 
-        # Add hostname label to all metrics for identification
-        write_relabel_configs = [
-          {
-            source_labels = [ "__address__" ];
-            target_label = "source_host";
-            replacement = config.networking.hostName;
-          }
-        ];
-      }
+          # Add hostname label to all metrics for identification
+          write_relabel_configs = [
+            {
+              source_labels = [ "__address__" ];
+              target_label = "source_host";
+              replacement = config.networking.hostName;
+            }
+          ];
+        }
+        // lib.optionalAttrs hasBasicAuth {
+          basic_auth = {
+            username = cfg.basicAuth.username;
+            password_file = cfg.basicAuth.passwordFile;
+          };
+        }
+      )
     ];
+
+    users.groups.${credentialGroup} = lib.mkIf hasBasicAuth { };
+    users.users.prometheus.extraGroups = lib.mkIf hasBasicAuth (lib.mkAfter [ credentialGroup ]);
+
+    systemd.services.prometheus = lib.mkIf hasBasicAuth {
+      after = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
+    };
   };
 }
