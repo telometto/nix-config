@@ -2,6 +2,7 @@
   inputs,
   system,
   VARS,
+  consts,
   ...
 }:
 let
@@ -54,7 +55,7 @@ let
 
       specialArgs = {
         inherit inputs system VARS;
-        consts = import ../lib/constants.nix;
+        inherit consts;
       };
     };
 in

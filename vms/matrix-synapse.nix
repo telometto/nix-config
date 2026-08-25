@@ -4,10 +4,11 @@
   pkgs,
   inputs,
   VARS,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix)."matrix-synapse";
+  reg = (import ./vm-registry.nix { inherit consts; })."matrix-synapse";
   networkDefaults = import ./microvm-network-defaults.nix;
   matrixGateway = reg.gateway or networkDefaults.defaultGateway;
   traefikLib = import ../lib/traefik.nix { inherit lib; };

@@ -3,10 +3,11 @@
   inputs,
   VARS,
   lib,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix)."pocket-id";
+  reg = (import ./vm-registry.nix { inherit consts; })."pocket-id";
   dataDir = "/var/lib/pocket-id";
   blizzardSource = "${reg.gateway}/32";
   pocketIdVersion = lib.getVersion config.services.pocket-id.package;

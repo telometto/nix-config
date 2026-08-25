@@ -7,7 +7,7 @@
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).immich;
+  reg = (import ./vm-registry.nix { inherit consts; }).immich;
   storage = import ./immich-storage.nix;
   # Pocket ID assigns this public identifier. Keep it in sync with the
   # restricted Immich client documented in docs/immich.md.
@@ -76,7 +76,7 @@ in
         clip.modelName = "ViT-SO400M-16-SigLIP2-384__webli";
         ocr.modelName = "LATIN__PP-OCRv5_mobile";
         urls = [
-          "http://10.100.0.1:${toString consts.immichMachineLearningPort}"
+          "http://10.100.0.1:${toString consts.ports.secondary.immichMachineLearning.hostPort}"
         ];
       };
       oauth = {

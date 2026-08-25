@@ -1,6 +1,6 @@
-{ pkgs, ... }:
+{ pkgs, consts, ... }:
 let
-  reg = (import ./vm-registry.nix).searx;
+  reg = (import ./vm-registry.nix { inherit consts; }).searx;
 in
 {
   imports = [
