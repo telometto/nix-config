@@ -204,6 +204,12 @@
           inherit (self.nixosConfigurations) blizzard;
           pkgs = nixpkgs.legacyPackages.${system};
         };
+
+        user-accounts = import ./tests/user-accounts.nix {
+          inherit (self.nixosConfigurations) kaizer snowfall;
+          inherit VARS;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
       };
 
       devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {
