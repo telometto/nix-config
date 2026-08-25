@@ -21,6 +21,13 @@ NixOS module, building user configurations automatically for enabled users.
 | [services/](services/) | User services | `hm.services.gpgAgent.enable`, `hm.services.sshAgent.enable` |
 | [overrides/](overrides/) | Per-role, per-host, and per-user overrides | Not auto-loaded — see Override System |
 
+### User SOPS paths
+
+The Home Manager SOPS module uses `%r/secrets` for symlinks and
+`%r/secrets.d` for its mount point. `sops-nix` resolves `%r` to the active
+user's runtime directory when the user service runs, so these paths follow the
+actual runtime UID instead of an evaluation-time UID.
+
 ### Base Configuration
 
 [base.nix](base.nix) provides shared defaults for all users:
