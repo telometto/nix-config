@@ -79,3 +79,6 @@ jobs:
 
             - name: Run Scrutiny tests
               run: nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs
+
+            - name: Run VictoriaMetrics tests
+              run: nix build .#checks.x86_64-linux.victoriametrics --no-link --print-build-logs
