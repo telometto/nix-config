@@ -162,7 +162,7 @@ modules). Their outputs are assembled in [vms/flake-microvms.nix](flake-microvms
 and merged into `nixosConfigurations` from [flake.nix](../flake.nix):
 
 ```nix
-microvmConfigurations = import ./vms/flake-microvms.nix { inherit inputs system VARS; };
+microvmConfigurations = import ./vms/flake-microvms.nix { inherit inputs system VARS consts; };
 
 nixosConfigurations = {
   # hosts ...
@@ -360,6 +360,9 @@ ______________________________________________________________________
 
 ### Creating a new VM
 
+1. Add or reuse the service port in [lib/constants.nix](../lib/constants.nix)
+   under `ports.vm`; host and secondary endpoints belong under their matching
+   namespaces.
 1. Add an entry to [vm-registry.nix](vm-registry.nix) with a unique CID, MAC,
    IP, service port, memory, and vCPU count.
 1. Create `vms/<service>.nix` importing `./base.nix` and adding the

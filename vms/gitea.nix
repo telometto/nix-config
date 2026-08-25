@@ -9,7 +9,7 @@
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).gitea;
+  reg = (import ./vm-registry.nix { inherit consts; }).gitea;
 
 in
 {

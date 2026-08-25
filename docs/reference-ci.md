@@ -74,7 +74,7 @@ ______________________________________________________________________
 | Workflow | Trigger | Purpose | Auto-commits? |
 |----------|---------|---------|--------------|
 | `auto-format.yml` | PR / push to main / manual | Runs `nix fmt`, commits formatted changes back to the branch, comments on PR, enables auto-merge | Yes — formats in-place |
-| `flake-check.yml` | PR / push to main / manual (filtered to its workflow file, Nix/flake inputs, Cloudflare collector/tests/dashboard, the VM README, and ADRs) | Runs `.github/scripts/evaluate-flake-outputs.sh` to evaluate each flake output sequentially, redacts secrets in failure output, and builds the Cloudflare metrics, MicroVM publication, Matrix baseline, blackbox observability, MicroVM network-policy, Sandfly target, and Scrutiny service checks | No |
+| `flake-check.yml` | PR / push to main / manual (filtered to its workflow file, Nix/flake inputs, Cloudflare collector/tests/dashboard, the VM README, and ADRs) | Runs `.github/scripts/evaluate-flake-outputs.sh` to evaluate each flake output sequentially, redacts secrets in failure output, and builds the Cloudflare metrics, MicroVM publication, Matrix baseline, blackbox observability, MicroVM network-policy, Sandfly target, Scrutiny service, and VictoriaMetrics contract checks | No |
 | `validate-config.yml` | PR / push to main / manual | Discovers hosts via `mkHost` grep, evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix, and evaluates the Home Manager users attrset | No |
 | `change-impact-analysis.yml` | PR | Diffs changed files under `hosts/`, `modules/`, `home/`, `vms/`, `lib/`, `flake.*`, posts impact report as a PR comment | No |
 | `compliance-check.yml` | PR / push / cron Mon 09:00 | Runs `deadnix` and other Nix linters, comments results | No |
@@ -135,7 +135,7 @@ These run on every pull request:
 | Workflow | What it checks |
 |----------|---------------|
 | `auto-format.yml` | Formats all files and commits back; if this commits, the PR diff is automatically clean |
-| `flake-check.yml` | Evaluates the flake for Nix errors and runs the Cloudflare metrics, MicroVM publication, Matrix baseline, MicroVM network-policy, Sandfly target, and Scrutiny service checks when Nix/flake inputs or their scoped test, dashboard, VM README, or ADR contracts change |
+| `flake-check.yml` | Evaluates the flake for Nix errors and runs the Cloudflare metrics, MicroVM publication, Matrix baseline, blackbox observability, MicroVM network-policy, Sandfly target, Scrutiny service, and VictoriaMetrics contract checks when Nix/flake inputs or their scoped test, dashboard, VM README, or ADR contracts change |
 | `validate-config.yml` | Evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix (does not perform a full build) |
 | `change-impact-analysis.yml` | Posts a comment summarising which layer (hosts, modules, home, vms, lib, flake) is affected |
 | `compliance-check.yml` | Dead-code linting and other Nix hygiene checks |

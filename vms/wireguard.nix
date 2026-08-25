@@ -1,6 +1,11 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  consts,
+  ...
+}:
 let
-  registry = import ./vm-registry.nix;
+  registry = import ./vm-registry.nix { inherit consts; };
   reg = registry.wireguard;
   qbtIp = registry.qbittorrent.ip;
   wireguardInterface = "wg0";
@@ -21,10 +26,10 @@ let
       "-D FORWARD -i ${wireguardInterface} -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT"
       "-D FORWARD -i ens3 ! -o ${wireguardInterface} -j REJECT"
       "-D OUTPUT ! -o ${wireguardInterface} -m mark ! --mark ${toString wireguardFwmark} -m addrtype ! --dst-type LOCAL -j REJECT"
-      "-t nat -D PREROUTING -i ${wireguardInterface} -p tcp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820"
-      "-t nat -D PREROUTING -i ${wireguardInterface} -p udp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820"
-      "-D FORWARD -i ${wireguardInterface} -o ens3 -p tcp --dport 50820 -j ACCEPT"
-      "-D FORWARD -i ${wireguardInterface} -o ens3 -p udp --dport 50820 -j ACCEPT"
+      "-t nat -D PREROUTING -i ${wireguardInterface} -p tcp --dport ${toString consts.ports.network.qbittorrentTorrent} -j DNAT --to-destination ${qbtIp}:${toString consts.ports.network.qbittorrentTorrent}"
+      "-t nat -D PREROUTING -i ${wireguardInterface} -p udp --dport ${toString consts.ports.network.qbittorrentTorrent} -j DNAT --to-destination ${qbtIp}:${toString consts.ports.network.qbittorrentTorrent}"
+      "-D FORWARD -i ${wireguardInterface} -o ens3 -p tcp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT"
+      "-D FORWARD -i ${wireguardInterface} -o ens3 -p udp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT"
     ]
     ++ map (network: "-D OUTPUT -d ${network} -j ACCEPT") homeNetworks
   );
@@ -45,8 +50,8 @@ let
     -A WG_FORWARD -i ens3 -o ${wireguardInterface} -j ACCEPT
     -A WG_FORWARD -i ${wireguardInterface} -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT
     -A WG_FORWARD -i ens3 ! -o ${wireguardInterface} -j REJECT
-    -A WG_FORWARD -i ${wireguardInterface} -o ens3 -p tcp --dport 50820 -j ACCEPT
-    -A WG_FORWARD -i ${wireguardInterface} -o ens3 -p udp --dport 50820 -j ACCEPT
+    -A WG_FORWARD -i ${wireguardInterface} -o ens3 -p tcp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT
+    -A WG_FORWARD -i ${wireguardInterface} -o ens3 -p udp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT
     -A WG_FORWARD -j RETURN
     ${homeNetworkFirewallRules}
     -A WG_OUTPUT ! -o ${wireguardInterface} -m mark ! --mark ${toString wireguardFwmark} -m addrtype ! --dst-type LOCAL -j REJECT
@@ -58,8 +63,8 @@ let
     *nat
     :WG_PREROUTING - [0:0]
     -F WG_PREROUTING
-    -A WG_PREROUTING -i ${wireguardInterface} -p tcp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820
-    -A WG_PREROUTING -i ${wireguardInterface} -p udp --dport 50820 -j DNAT --to-destination ${qbtIp}:50820
+    -A WG_PREROUTING -i ${wireguardInterface} -p tcp --dport ${toString consts.ports.network.qbittorrentTorrent} -j DNAT --to-destination ${qbtIp}:${toString consts.ports.network.qbittorrentTorrent}
+    -A WG_PREROUTING -i ${wireguardInterface} -p udp --dport ${toString consts.ports.network.qbittorrentTorrent} -j DNAT --to-destination ${qbtIp}:${toString consts.ports.network.qbittorrentTorrent}
     -A WG_PREROUTING -j RETURN
     COMMIT
     EOF

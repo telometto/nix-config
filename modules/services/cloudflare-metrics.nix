@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  consts,
   ...
 }:
 let
@@ -35,7 +36,7 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 11015;
+      default = consts.ports.host.cloudflareMetrics;
       description = "Loopback port on which the collector exposes Prometheus metrics.";
     };
 

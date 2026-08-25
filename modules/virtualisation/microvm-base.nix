@@ -2,11 +2,12 @@
   lib,
   config,
   pkgs,
+  consts,
   ...
 }:
 let
   cfg = config.sys.virtualisation.microvm;
-  registry = import ../../vms/vm-registry.nix;
+  registry = import ../../vms/vm-registry.nix { inherit consts; };
   networkDefaults = import ../../vms/microvm-network-defaults.nix;
   sharedBridgeName = networkDefaults.sharedBridge.name;
   sharedBridgeNetworkUnit = "10-${sharedBridgeName}";

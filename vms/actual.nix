@@ -1,6 +1,6 @@
-_:
+{ consts, ... }:
 let
-  reg = (import ./vm-registry.nix).actual;
+  reg = (import ./vm-registry.nix { inherit consts; }).actual;
 in
 {
   imports = [

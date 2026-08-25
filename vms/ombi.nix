@@ -1,6 +1,6 @@
-_:
+{ consts, ... }:
 let
-  reg = (import ./vm-registry.nix).ombi;
+  reg = (import ./vm-registry.nix { inherit consts; }).ombi;
 in
 {
   imports = [

@@ -4,6 +4,7 @@
   inputs,
   self,
   VARS,
+  consts,
   ...
 }:
 let
@@ -24,7 +25,7 @@ in
       ];
 
       extraSpecialArgs = {
-        inherit inputs VARS;
+        inherit inputs VARS consts;
         inherit (config.networking) hostName;
       };
     };

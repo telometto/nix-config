@@ -125,14 +125,14 @@ in
       prometheusExporters.node = {
         enable = false;
         enableRapl = true;
-        port = 11011;
+        port = consts.ports.host.nodeExporter;
       };
 
       prometheus = {
         # Avalanche no longer collects local metrics; keep the stack disabled
         # to avoid its services contributing to shutdown latency.
         enable = false;
-        port = 11009;
+        port = consts.ports.host.prometheus;
         listenAddress = "127.0.0.1";
         openFirewall = false;
         scrapeInterval = "15s";
@@ -140,7 +140,7 @@ in
 
       grafana = {
         enable = false;
-        port = 11010;
+        port = consts.ports.host.grafana;
         addr = "127.0.0.1";
         openFirewall = false;
 
@@ -154,6 +154,7 @@ in
       victoriametricsRemoteWrite = {
         enable = false;
         vmHost = "blizzard"; # Tailscale hostname
+        vmPort = consts.ports.host.victoriametrics;
       };
 
       # nfs = {
@@ -194,7 +195,7 @@ in
 
   fileSystems = {
     "/mnt/backups" = {
-      device = "100.86.227.97:/rpool/enc/transfers";
+      device = "${consts.tailscale.hosts.blizzard.ipv4}:/rpool/enc/transfers";
       fsType = "nfs";
       options = [
         "nofail"

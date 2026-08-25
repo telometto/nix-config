@@ -1,6 +1,6 @@
-{ lib, ... }:
+{ lib, consts, ... }:
 let
-  reg = (import ./vm-registry.nix).overseerr;
+  reg = (import ./vm-registry.nix { inherit consts; }).overseerr;
 in
 {
   imports = [

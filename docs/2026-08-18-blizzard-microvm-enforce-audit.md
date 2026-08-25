@@ -226,12 +226,12 @@ the earlier read-only guest probes and journal telemetry.
 ## Recommendations
 
 1. Keep Blizzard in `enforce` mode. No source fix is indicated.
-2. Record the supplied counter snapshot with the deployment evidence. For any
+1. Record the supplied counter snapshot with the deployment evidence. For any
    future ruleset reload, record the reload time and counter reset explicitly.
-3. Record the deployed flake commit and lock revision at the next deployment
+1. Record the deployed flake commit and lock revision at the next deployment
    or audit handoff so the full system generation can be reconciled with the
    evaluated checkout.
-4. Preserve the existing focused test as the acceptance gate for future policy
+1. Preserve the existing focused test as the acceptance gate for future policy
    changes. Do not run live spoofing or bypass traffic against production just
    to fill this report's evidence matrix.
 

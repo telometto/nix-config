@@ -1,9 +1,14 @@
-{ config, lib, ... }:
+{
+  config,
+  consts,
+  lib,
+  ...
+}:
 {
   sys.services.prometheus = {
     enable = true;
 
-    port = 11009;
+    port = consts.ports.host.prometheus;
     listenAddress = "127.0.0.1";
     openFirewall = false;
     scrapeInterval = "5s";

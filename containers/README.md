@@ -51,7 +51,7 @@ ______________________________________________________________________
 | Option | File | Port(s) | Purpose |
 |--------|------|---------|---------|
 | `services.ollama-container.enable` | [ollama.nix](ollama.nix) | 11434 | Standalone LLM server (ROCm/AMD or CPU image) |
-| `services.immich-machine-learning-container.enable` | [immich-machine-learning.nix](immich-machine-learning.nix) | 3003 | Standalone Immich ML worker (CUDA/NVIDIA or CPU image) |
+| `services.immich-machine-learning-container.enable` | [immich-machine-learning.nix](immich-machine-learning.nix) | 3003 host/container defaults from [`lib/constants.nix`](../lib/constants.nix) | Standalone Immich ML worker (CUDA/NVIDIA or CPU image) |
 | `services.subgen-container.enable` | [subgen.nix](subgen.nix) | 11027 | Whisper-based subtitle generator (CPU or AMD GPU) |
 | `services.lingarr.enable` | [subtitle-stack.nix](subtitle-stack.nix) | 11025 | Full subtitle translation pipeline (lingarr + libretranslate + ollama + subgen as a pod) |
 | `services.subgen.enable` | [subtitle-stack.nix](subtitle-stack.nix) | 11027 | Subgen as part of the subtitle-stack pod |

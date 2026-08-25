@@ -4,10 +4,11 @@
   inputs,
   pkgs,
   VARS,
+  consts,
   ...
 }:
 let
-  registry = import ./vm-registry.nix;
+  registry = import ./vm-registry.nix { inherit consts; };
   reg = registry."firefly-importer";
   fireflyReg = registry.firefly;
   importerDomain = "finimport.${VARS.domains.public}";

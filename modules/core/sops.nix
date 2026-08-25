@@ -17,6 +17,8 @@ let
   hasSearx = config.services.searx.enable or false;
   hasGrafana = config.sys.services.grafana.enable or false;
   hasGrafanaCloud = config.sys.services.grafanaCloud.enable or false;
+  hasVictoriaMetrics = config.sys.services.victoriametrics.enable or false;
+  hasVictoriaMetricsRemoteWrite = config.sys.services.victoriametricsRemoteWrite.enable or false;
   hasCloudflared = config.sys.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
   hasCloudflareAccessIpUpdater = config.sys.services.cloudflareAccessIpUpdater.enable or false;
@@ -77,6 +79,15 @@ in
         "grafana/secret_key" = {
           owner = "grafana";
           group = "grafana";
+          mode = "0440";
+        };
+      }
+      // whenEnabled (hasVictoriaMetrics || hasVictoriaMetricsRemoteWrite) {
+        # Shared by the protected Blizzard endpoint and its Prometheus writers.
+        # The value itself lives in the private nix-secrets flake.
+        "victoriametrics/remote_write_password" = {
+          owner = "root";
+          group = "monitoring-credentials";
           mode = "0440";
         };
       }
