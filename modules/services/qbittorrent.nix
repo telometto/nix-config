@@ -26,7 +26,7 @@ in
 
     torrentPort = lib.mkOption {
       type = lib.types.nullOr lib.types.port;
-      default = consts.qbittorrentTorrentPort;
+      default = consts.ports.network.qbittorrentTorrent;
       description = "Incoming torrent port (TCP/UDP).";
     };
 

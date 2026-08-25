@@ -12,7 +12,7 @@ in
   sys.services.grafana = {
     enable = true;
 
-    port = consts.grafanaPort;
+    port = consts.ports.host.grafana;
     addr = "127.0.0.1";
     openFirewall = false;
     domain = "metrics.${VARS.domains.public}";

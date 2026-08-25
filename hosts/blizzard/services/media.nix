@@ -22,7 +22,7 @@
     ombi = {
       enable = false;
 
-      port = consts.ombiHostPort;
+      port = consts.ports.host.ombi;
       openFirewall = true;
       dataDir = "/rpool/unenc/apps/nixos/ombi";
 
@@ -36,7 +36,7 @@
     tautulli = {
       enable = false;
 
-      port = consts.tautulliHostPort;
+      port = consts.ports.host.tautulli;
       openFirewall = true;
       dataDir = "/rpool/unenc/apps/nixos/tautulli";
 

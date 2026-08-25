@@ -5,7 +5,7 @@
 
     glance = {
       enable = true;
-      port = consts.glancePort;
+      port = consts.ports.host.glance;
 
       reverseProxy = {
         enable = true;
@@ -17,7 +17,7 @@
     actual = {
       enable = false;
 
-      port = consts.actualHostPort;
+      port = consts.ports.host.actual;
       dataDir = "/rpool/unenc/apps/nixos/actual";
     };
 

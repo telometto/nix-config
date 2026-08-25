@@ -4,7 +4,7 @@ let
   username = VARS.users.luke.user;
 in
 {
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ consts.immichMachineLearningPort ];
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ consts.ports.secondary.immichMachineLearning.hostPort ];
 
   users.users.${username} = {
     linger = true;
@@ -22,7 +22,7 @@ in
 
     services.immich-machine-learning-container = {
       enable = true;
-      port = consts.immichMachineLearningPort;
+      port = consts.ports.secondary.immichMachineLearning.hostPort;
       acceleration = "cuda";
     };
   };

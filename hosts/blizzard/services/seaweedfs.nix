@@ -13,21 +13,21 @@
     configDir = "/rpool/unenc/apps/nixos/seaweedfs/config";
 
     master.dataDir = "/rpool/unenc/apps/nixos/seaweedfs/master";
-    master.port = consts.seaweedfsMasterPort;
+    master.port = consts.ports.host.seaweedfsMaster;
 
     volume = {
       dataDir = "/rpool/unenc/apps/nixos/seaweedfs/volume";
-      port = consts.seaweedfsVolumePort;
-      grpcPort = consts.seaweedfsGrpcPort;
+      port = consts.ports.host.seaweedfsVolume;
+      grpcPort = consts.ports.host.seaweedfsGrpc;
     };
 
     filer = {
       dataDir = "/rpool/unenc/apps/nixos/seaweedfs/filer";
-      port = consts.seaweedfsFilerPort;
+      port = consts.ports.host.seaweedfsFiler;
     };
 
     s3 = {
-      port = consts.seaweedfsS3Port;
+      port = consts.ports.host.seaweedfsS3;
       auth = {
         enable = true;
         accessKeyFile = config.sys.secrets.seaweedfsAccessKeyFile;
@@ -35,6 +35,6 @@
       };
     };
 
-    metrics.port = consts.seaweedfsMetricsPort;
+    metrics.port = consts.ports.host.seaweedfsMetrics;
   };
 }
