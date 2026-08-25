@@ -17,7 +17,7 @@ let
   userRecords = lib.mapAttrsToList mkUserRecord varsUsers;
 
   isValidUsername = username: builtins.isString username && username != "";
-  isValidUid = uid: builtins.isInt uid && uid > 0;
+  isValidUid = uid: uid == null || (builtins.isInt uid && uid > 0);
 
   usernames = map (record: record.username) (
     lib.filter (record: isValidUsername record.username) userRecords
@@ -61,7 +61,7 @@ let
       }
       {
         assertion = isValidUid record.uid;
-        message = "VARS.users.${record.roleName} (${label}) must define a positive integer uid.";
+        message = "VARS.users.${record.roleName} (${label}) may omit uid; when set, uid must be a positive integer.";
       }
       {
         assertion = userData ? hashedPassword && isValidPasswordHash userData.hashedPassword;
@@ -72,8 +72,12 @@ let
         message = "VARS.users.${record.roleName} (${label}) must define a valid bare OpenSSH public key in sshPubKey.";
       }
       {
-        assertion = userData ? gpgSshPubKey && isValidSshPubKey userData.gpgSshPubKey;
-        message = "VARS.users.${record.roleName} (${label}) must define a valid bare OpenSSH public key in gpgSshPubKey.";
+        assertion =
+          let
+            gpgSshPubKey = userData.gpgSshPubKey or null;
+          in
+          gpgSshPubKey == null || isValidSshPubKey gpgSshPubKey;
+        message = "VARS.users.${record.roleName} (${label}) may omit gpgSshPubKey; when set, it must be a valid bare OpenSSH public key.";
       }
     ]
   ) userRecords;
@@ -113,6 +117,9 @@ in
 
     users = lib.mapAttrs' (
       _roleName: userData:
+      let
+        gpgSshPubKey = userData.gpgSshPubKey or null;
+      in
       lib.nameValuePair userData.user {
         inherit (userData)
           description
@@ -125,8 +132,8 @@ in
         extraGroups = lib.mkDefault userData.extraGroups;
         openssh.authorizedKeys.keys = [
           userData.sshPubKey
-          userData.gpgSshPubKey
-        ];
+        ]
+        ++ lib.optional (gpgSshPubKey != null) gpgSshPubKey;
       }
     ) enabledUsers;
   };
