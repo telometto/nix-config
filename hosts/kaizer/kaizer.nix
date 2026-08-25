@@ -152,7 +152,6 @@
   };
 
   users.users.${VARS.users.luke.user} = {
-    uid = lib.mkForce 1003;
     extraGroups = VARS.users.luke.extraGroups ++ [
       "openrazer"
     ];
