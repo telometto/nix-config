@@ -148,18 +148,18 @@ an important account.
 1. Finish the Matrix baseline acceptance and clean observation gates recorded in
    [`matrix-hardening-plan.md`](matrix-hardening-plan.md). This bridge is a new
    Matrix runtime change, not part of the existing baseline or OIDC work.
-2. Evaluate the locked `services.mautrix-whatsapp` module and package. Confirm
+1. Evaluate the locked `services.mautrix-whatsapp` module and package. Confirm
    the generated registration path, data directory, service user, database
    behavior, optional media dependencies, and systemd hardening options.
-3. Add the bridge to the existing guest with a loopback listener and a
+1. Add the bridge to the existing guest with a loopback listener and a
    separate `/var/lib/mautrix-whatsapp` state image. Keep the bridge port out of
    the host registry and public publication configuration.
-4. Register the appservice with Synapse, provision only the required SOPS
+1. Register the appservice with Synapse, provision only the required SOPS
    values, and create a distinct bridge database if PostgreSQL is selected.
-5. Extend the Matrix backup/restore inventory and verify service ordering,
+1. Extend the Matrix backup/restore inventory and verify service ordering,
    permissions, listener scope, outbound connectivity, and clean restart before
    logging in.
-6. Configure encryption/double puppeting if approved, then perform the
+1. Configure encryption/double puppeting if approved, then perform the
    interactive QR/pairing login and validate portal creation, media, reconnect,
    logout, and re-login behavior.
 
