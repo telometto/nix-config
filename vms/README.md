@@ -132,14 +132,23 @@ later rotation was consumed.
 
 ______________________________________________________________________
 
-### Planned WhatsApp appservice boundary
+### Declarative WhatsApp appservice boundary
 
-The planned [`mautrix-whatsapp` bridge](../docs/matrix-whatsapp-bridge.md) will
-run as an additional service inside `matrix-synapse-vm`, not as a new MicroVM.
-It should call Synapse over loopback, listen for appservice transactions only
-on loopback, and have no public publication or host port-forward. Its
-registration file, linked-device state, and database remain separate from
-Synapse and MAS and must be added to the Matrix backup/restore inventory.
+The [`mautrix-whatsapp` bridge](../docs/matrix-whatsapp-bridge.md) is wired as
+an additional, pre-login service inside `matrix-synapse-vm`, not as a new
+MicroVM. It calls Synapse over `127.0.0.1:8008`, listens for appservice
+transactions only on `127.0.0.1:29318`, and has no public publication or host
+port-forward. Its `whatsapp-registration.yaml`,
+`mautrix-whatsapp-state.img`, and PostgreSQL database remain separate from
+Synapse and MAS and must be added to the approved Matrix backup/restore
+inventory before activation.
+
+The VM-owned registration gate runs before Synapse because the locked nixpkgs
+module otherwise generates the registration during the bridge service's
+`preStart`. The bridge's `PrivateUsers` sandbox is disabled only because the
+separate PostgreSQL database uses local peer authentication; memory, task,
+address-family, filesystem, and the remaining upstream systemd hardening stay
+explicit.
 
 This placement avoids a new registry identity and lateral network-policy edge
 for the initial rollout. A dedicated VM remains an isolation option for a
