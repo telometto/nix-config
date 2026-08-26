@@ -81,7 +81,8 @@ let
     set -eu
     cat "$3"
   '';
-  registrationScriptFor = systemctl:
+  registrationScriptFor =
+    systemctl:
     lib.replaceStrings
       [
         "${pkgs.systemd}/bin/systemctl"
@@ -100,10 +101,12 @@ let
         registrationTestRuntimeDir
       ]
       registrationService.script;
-  registrationInactiveScript = pkgs.writeText "matrix-whatsapp-registration-inactive.sh"
-    (registrationScriptFor fakeSystemctlInactive);
-  registrationActiveScript = pkgs.writeText "matrix-whatsapp-registration-active.sh"
-    (registrationScriptFor fakeSystemctlActive);
+  registrationInactiveScript = pkgs.writeText "matrix-whatsapp-registration-inactive.sh" (
+    registrationScriptFor fakeSystemctlInactive
+  );
+  registrationActiveScript = pkgs.writeText "matrix-whatsapp-registration-active.sh" (
+    registrationScriptFor fakeSystemctlActive
+  );
   scriptSyntaxCheck = pkgs.runCommand "matrix-whatsapp-bridge-script-syntax" { } ''
     ${pkgs.bash}/bin/bash -n ${registrationScript}
     ${pkgs.bash}/bin/bash -n ${dbInitScript}
@@ -137,7 +140,8 @@ in
 assert !defaultVmCfg.services.mautrix-whatsapp.enable;
 assert !(builtins.hasAttr "matrix-whatsapp/database_password" defaultVmCfg.sops.secrets);
 assert !(builtins.hasAttr "mautrix-whatsapp" defaultVmCfg.systemd.services);
-assert !(lib.any (volume: volume.mountPoint == "/var/lib/mautrix-whatsapp") defaultVmCfg.microvm.volumes);
+assert
+  !(lib.any (volume: volume.mountPoint == "/var/lib/mautrix-whatsapp") defaultVmCfg.microvm.volumes);
 assert bridge.enable;
 assert !bridge.registerToSynapse;
 assert bridgeSettings.homeserver.address == "http://127.0.0.1:8008";
@@ -149,7 +153,8 @@ assert !(bridgeSettings.appservice ? public_address);
 assert bridgeSettings.bridge.federate_rooms == false;
 assert bridgeSettings.network.history_sync.request_full_sync == false;
 assert bridgeSettings.database.type == "postgres";
-assert bridgeSettings.database.uri
+assert
+  bridgeSettings.database.uri
   == "postgresql://mautrix-whatsapp@127.0.0.1/mautrix-whatsapp?sslmode=disable";
 assert bridgeSettings.bridge.relay.enabled == false;
 assert bridgeSettings.bridge.permissions."*" == "relay";
@@ -210,7 +215,8 @@ assert synapseService.restartTriggers != [ ];
 assert lib.hasInfix "--generate-registration" registrationService.script;
 assert lib.hasInfix "is-active --quiet matrix-synapse.service" registrationService.script;
 assert lib.hasInfix "mautrix-whatsapp.service" registrationService.script;
-assert lib.hasInfix "/run/matrix-whatsapp-registration/whatsapp-registration.yaml" bridgeService.preStart;
+assert lib.hasInfix "/run/matrix-whatsapp-registration/whatsapp-registration.yaml"
+  bridgeService.preStart;
 assert dbInitService.serviceConfig.Type == "oneshot";
 assert dbInitService.serviceConfig.User == vmCfg.services.postgresql.superUser;
 assert lib.elem bridgeDatabaseSecret.path dbInitService.serviceConfig.ReadOnlyPaths;
