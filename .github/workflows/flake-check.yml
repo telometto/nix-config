@@ -13,6 +13,8 @@ on:
             - "tests/cloudflare_metrics/**"
             - "dashboards/host/blizzard/cloudflare-overview.json"
             - "vms/README.md"
+            - "docs/**"
+            - "tests/matrix-whatsapp-bridge.nix"
             - "docs/adr/**"
     push:
         branches: [main]
@@ -27,6 +29,8 @@ on:
             - "tests/cloudflare_metrics/**"
             - "dashboards/host/blizzard/cloudflare-overview.json"
             - "vms/README.md"
+            - "docs/**"
+            - "tests/matrix-whatsapp-bridge.nix"
             - "docs/adr/**"
 
 concurrency:
@@ -67,6 +71,9 @@ jobs:
 
             - name: Run Matrix baseline tests
               run: nix build .#checks.x86_64-linux.matrix-baseline --no-link --print-build-logs
+
+            - name: Run Matrix WhatsApp bridge tests
+              run: nix build .#checks.x86_64-linux.matrix-whatsapp-bridge --no-link --print-build-logs
 
             - name: Run Blackbox observability tests
               run: nix build .#checks.x86_64-linux.blackbox-observability --no-link --print-build-logs
