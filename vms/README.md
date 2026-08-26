@@ -132,6 +132,22 @@ later rotation was consumed.
 
 ______________________________________________________________________
 
+### Planned WhatsApp appservice boundary
+
+The planned [`mautrix-whatsapp` bridge](../docs/matrix-whatsapp-bridge.md) will
+run as an additional service inside `matrix-synapse-vm`, not as a new MicroVM.
+It should call Synapse over loopback, listen for appservice transactions only
+on loopback, and have no public publication or host port-forward. Its
+registration file, linked-device state, and database remain separate from
+Synapse and MAS and must be added to the Matrix backup/restore inventory.
+
+This placement avoids a new registry identity and lateral network-policy edge
+for the initial rollout. A dedicated VM remains an isolation option for a
+future multi-user or less-trusted deployment; the placement rationale and
+split requirements are recorded in the dedicated design document.
+
+______________________________________________________________________
+
 ### Base configuration (vms/base.nix)
 
 [base.nix](base.nix) provides a hardened-but-compatible foundation for every VM:
