@@ -134,6 +134,17 @@ verify runtime-file freshness and consumer behavior after every Matrix secret
 rotation. Keep the detailed Matrix acceptance and rollback gates in the
 [Matrix hardening plan](matrix-hardening-plan.md).
 
+The opt-in WhatsApp bridge follows the same rule. Its seven SOPS values queue
+`mautrix-whatsapp-db-init.service`,
+`mautrix-whatsapp-registration.service`, `matrix-synapse.service`, and
+`mautrix-whatsapp.service` for a coordinated restart. The registration gate
+regenerates `/run/matrix-whatsapp-registration/whatsapp-registration.yaml`
+from the current settings and values; it refuses to replace that file while
+Synapse or the bridge is active. Do not restart the registration unit by itself
+during a rotation: stop Synapse and the bridge first, then start the database
+initializer, registration gate, Synapse, and bridge in that order. The generated
+`/run` file is not the source of truth and must not be restored independently.
+
 ## Sources
 
 - [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html)
