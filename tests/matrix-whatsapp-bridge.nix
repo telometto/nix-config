@@ -60,7 +60,8 @@ assert bridgeEnvironment.group == "mautrix-whatsapp";
 assert bridgeEnvironment.mode == "0400";
 assert lib.all (
   name:
-  let secret = vmCfg.sops.secrets.${name};
+  let
+    secret = vmCfg.sops.secrets.${name};
   in
   secret.owner == "root" && secret.group == "mautrix-whatsapp" && secret.mode == "0440"
 ) bridgeSecrets;

@@ -27,9 +27,9 @@ let
   matrixWhatsappSettingsTempFile = "${matrixWhatsappSettingsFile}.tmp";
   matrixWhatsappRegistrationFile = "${matrixWhatsappDataDir}/whatsapp-registration.yaml";
   matrixWhatsappEnvironmentFile = config.sops.templates."matrix-whatsapp-environment".path;
-  matrixWhatsappSettingsUnsubstituted = pkgs.formats.json { }.generate
-    "mautrix-whatsapp-config-unsubstituted.json"
-    config.services.mautrix-whatsapp.settings;
+  matrixWhatsappSettingsUnsubstituted =
+    pkgs.formats.json { }.generate "mautrix-whatsapp-config-unsubstituted.json"
+      config.services.mautrix-whatsapp.settings;
   matrixWhatsappAdmin = "@${VARS.users.zeno.user}:${VARS.domains.public}";
   secretGeneratorHardening = {
     AmbientCapabilities = "";
@@ -192,12 +192,24 @@ in
       group = "mautrix-whatsapp";
       mode = "0400";
       content = ''
-        MAUTRIX_WHATSAPP_APPSERVICE_AS_TOKEN=${config.sops.placeholder."matrix-whatsapp/appservice_as_token"}
-        MAUTRIX_WHATSAPP_APPSERVICE_HS_TOKEN=${config.sops.placeholder."matrix-whatsapp/appservice_hs_token"}
-        MAUTRIX_WHATSAPP_PROVISIONING_SHARED_SECRET=${config.sops.placeholder."matrix-whatsapp/provisioning_shared_secret"}
-        MAUTRIX_WHATSAPP_ENCRYPTION_PICKLE_KEY=${config.sops.placeholder."matrix-whatsapp/encryption_pickle_key"}
-        MAUTRIX_WHATSAPP_PUBLIC_MEDIA_SIGNING_KEY=${config.sops.placeholder."matrix-whatsapp/public_media_signing_key"}
-        MAUTRIX_WHATSAPP_DIRECT_MEDIA_SERVER_KEY=${config.sops.placeholder."matrix-whatsapp/direct_media_server_key"}
+        MAUTRIX_WHATSAPP_APPSERVICE_AS_TOKEN=${
+          config.sops.placeholder."matrix-whatsapp/appservice_as_token"
+        }
+        MAUTRIX_WHATSAPP_APPSERVICE_HS_TOKEN=${
+          config.sops.placeholder."matrix-whatsapp/appservice_hs_token"
+        }
+        MAUTRIX_WHATSAPP_PROVISIONING_SHARED_SECRET=${
+          config.sops.placeholder."matrix-whatsapp/provisioning_shared_secret"
+        }
+        MAUTRIX_WHATSAPP_ENCRYPTION_PICKLE_KEY=${
+          config.sops.placeholder."matrix-whatsapp/encryption_pickle_key"
+        }
+        MAUTRIX_WHATSAPP_PUBLIC_MEDIA_SIGNING_KEY=${
+          config.sops.placeholder."matrix-whatsapp/public_media_signing_key"
+        }
+        MAUTRIX_WHATSAPP_DIRECT_MEDIA_SERVER_KEY=${
+          config.sops.placeholder."matrix-whatsapp/direct_media_server_key"
+        }
       '';
     };
   };
