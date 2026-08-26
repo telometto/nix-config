@@ -58,6 +58,12 @@ The service-mail document and other planning work may proceed in parallel
 because documentation does not alter the runtime. Runtime work must retain the
 sequence above.
 
+The planned WhatsApp bridge is tracked separately in the
+[Matrix–WhatsApp bridge design](matrix-whatsapp-bridge.md). Its implementation
+is a new Matrix runtime change and must wait for the current Matrix acceptance
+and clean-observation gates; its linked-device state must also be covered by
+the Matrix backup/restore evidence before login.
+
 ## Verified current state
 
 The statements in this section are source observations, not claims about the
@@ -454,6 +460,8 @@ The later Matrix OIDC design must retain these approved invariants:
   peer restrictions, quotas, monitoring, and secret handling.
 - Distributed tracing.
 - A central SMTP relay or shared Proton Bridge VM.
+- `mautrix-whatsapp` runtime activation and linked-device credentials; see the
+  separate [Matrix–WhatsApp bridge design](matrix-whatsapp-bridge.md).
 - Pocket ID client, group, secret, or MAS upstream-provider creation in the
   baseline or backup PR.
 - Automatic transition of the MicroVM network policy from `audit` to
