@@ -22,6 +22,15 @@ let
       "/run/mas-secret/config.json";
   masRuntimeConfigDirectory = builtins.dirOf masRuntimeConfigFile;
   masRuntimeDirectory = lib.removePrefix "/run/" masRuntimeConfigDirectory;
+  matrixWhatsappDataDir = "/var/lib/mautrix-whatsapp";
+  matrixWhatsappSettingsFile = "${matrixWhatsappDataDir}/config.yaml";
+  matrixWhatsappSettingsTempFile = "${matrixWhatsappSettingsFile}.tmp";
+  matrixWhatsappRegistrationFile = "${matrixWhatsappDataDir}/whatsapp-registration.yaml";
+  matrixWhatsappEnvironmentFile = config.sops.templates."matrix-whatsapp-environment".path;
+  matrixWhatsappSettingsUnsubstituted = pkgs.formats.json { }.generate
+    "mautrix-whatsapp-config-unsubstituted.json"
+    config.services.mautrix-whatsapp.settings;
+  matrixWhatsappAdmin = "@${VARS.users.zeno.user}:${VARS.domains.public}";
   secretGeneratorHardening = {
     AmbientCapabilities = "";
     CapabilityBoundingSet = "";
@@ -69,6 +78,11 @@ in
             mountPoint = "/var/lib/mas";
             image = "mas-state.img";
             size = 1024;
+          }
+          {
+            mountPoint = "/var/lib/mautrix-whatsapp";
+            image = "mautrix-whatsapp-state.img";
+            size = 10240;
           }
         ];
       }
@@ -138,6 +152,53 @@ in
         owner = "root";
         group = "matrix-shared";
       };
+      # Mautrix-WhatsApp appservice and bridge secrets. Values are consumed
+      # through the SOPS-rendered environment file below and never enter the
+      # Nix-generated bridge configuration.
+      "matrix-whatsapp/appservice_as_token" = {
+        mode = "0440";
+        owner = "root";
+        group = "mautrix-whatsapp";
+      };
+      "matrix-whatsapp/appservice_hs_token" = {
+        mode = "0440";
+        owner = "root";
+        group = "mautrix-whatsapp";
+      };
+      "matrix-whatsapp/provisioning_shared_secret" = {
+        mode = "0440";
+        owner = "root";
+        group = "mautrix-whatsapp";
+      };
+      "matrix-whatsapp/encryption_pickle_key" = {
+        mode = "0440";
+        owner = "root";
+        group = "mautrix-whatsapp";
+      };
+      "matrix-whatsapp/public_media_signing_key" = {
+        mode = "0440";
+        owner = "root";
+        group = "mautrix-whatsapp";
+      };
+      "matrix-whatsapp/direct_media_server_key" = {
+        mode = "0440";
+        owner = "root";
+        group = "mautrix-whatsapp";
+      };
+    };
+
+    templates."matrix-whatsapp-environment" = {
+      owner = "mautrix-whatsapp";
+      group = "mautrix-whatsapp";
+      mode = "0400";
+      content = ''
+        MAUTRIX_WHATSAPP_APPSERVICE_AS_TOKEN=${config.sops.placeholder."matrix-whatsapp/appservice_as_token"}
+        MAUTRIX_WHATSAPP_APPSERVICE_HS_TOKEN=${config.sops.placeholder."matrix-whatsapp/appservice_hs_token"}
+        MAUTRIX_WHATSAPP_PROVISIONING_SHARED_SECRET=${config.sops.placeholder."matrix-whatsapp/provisioning_shared_secret"}
+        MAUTRIX_WHATSAPP_ENCRYPTION_PICKLE_KEY=${config.sops.placeholder."matrix-whatsapp/encryption_pickle_key"}
+        MAUTRIX_WHATSAPP_PUBLIC_MEDIA_SIGNING_KEY=${config.sops.placeholder."matrix-whatsapp/public_media_signing_key"}
+        MAUTRIX_WHATSAPP_DIRECT_MEDIA_SERVER_KEY=${config.sops.placeholder."matrix-whatsapp/direct_media_server_key"}
+      '';
     };
   };
 
@@ -145,6 +206,18 @@ in
     {
       assertion = lib.hasPrefix "/run/" masRuntimeConfigDirectory && masRuntimeConfigDirectory != "/run";
       message = "The Matrix VM MAS runtimeConfigFile must be below /run and include a parent directory";
+    }
+    {
+      assertion = config.services.mautrix-whatsapp.settings.appservice.hostname == "127.0.0.1";
+      message = "Mautrix-WhatsApp must bind its appservice listener to the Matrix VM loopback address";
+    }
+    {
+      assertion = config.services.mautrix-whatsapp.settings.appservice.port == 29318;
+      message = "Mautrix-WhatsApp must use the reserved loopback appservice port 29318";
+    }
+    {
+      assertion = !(config.services.mautrix-whatsapp.settings.appservice ? public_address);
+      message = "Mautrix-WhatsApp must not publish an appservice public_address";
     }
   ];
 
@@ -158,17 +231,201 @@ in
     '';
   };
 
+  # The locked nixpkgs module generates the registration file in the bridge
+  # service's preStart. Synapse needs that file before its own service starts,
+  # so this VM-owned gate performs the same idempotent preparation first.
+  services.mautrix-whatsapp = {
+    enable = true;
+    registerToSynapse = true;
+    environmentFile = matrixWhatsappEnvironmentFile;
+    serviceDependencies = [
+      "matrix-synapse.service"
+      "mautrix-whatsapp-db-init.service"
+      "mautrix-whatsapp-registration.service"
+    ];
+    settings = {
+      homeserver = {
+        address = "http://127.0.0.1:8008";
+        domain = VARS.domains.public;
+      };
+      appservice = {
+        address = "http://127.0.0.1:29318";
+        hostname = "127.0.0.1";
+        port = 29318;
+        as_token = "$MAUTRIX_WHATSAPP_APPSERVICE_AS_TOKEN";
+        hs_token = "$MAUTRIX_WHATSAPP_APPSERVICE_HS_TOKEN";
+      };
+      bridge = {
+        # Relay mode is deliberately disabled. Only the named Matrix operator
+        # is granted admin access before the first interactive login.
+        relay.enabled = false;
+        permissions = {
+          "*" = "relay";
+          "${matrixWhatsappAdmin}" = "admin";
+        };
+      };
+      database = {
+        type = "postgres";
+        uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+      };
+      encryption = {
+        allow = true;
+        default = true;
+        require = true;
+        pickle_key = "$MAUTRIX_WHATSAPP_ENCRYPTION_PICKLE_KEY";
+      };
+      public_media.signing_key = "$MAUTRIX_WHATSAPP_PUBLIC_MEDIA_SIGNING_KEY";
+      direct_media.server_key = "$MAUTRIX_WHATSAPP_DIRECT_MEDIA_SERVER_KEY";
+      network = {
+        displayname_template = "{{or .BusinessName .PushName .Phone}} (WA)";
+        history_sync.request_full_sync = true;
+        identity_change_notices = true;
+      };
+      provisioning.shared_secret = "$MAUTRIX_WHATSAPP_PROVISIONING_SHARED_SECRET";
+    };
+  };
+
   systemd = {
     tmpfiles.rules = [
       "d /var/lib/matrix-synapse 0700 matrix-synapse matrix-synapse -"
       "d /var/lib/postgresql 0700 postgres postgres -"
       "d /var/lib/mas 0700 mas mas -"
+      "d /var/lib/mautrix-whatsapp 0750 mautrix-whatsapp mautrix-whatsapp -"
     ];
 
     services = {
       matrix-synapse = {
-        after = [ "sops-install-secrets.service" ];
-        requires = [ "sops-install-secrets.service" ];
+        after = [
+          "sops-install-secrets.service"
+          "mautrix-whatsapp-registration.service"
+        ];
+        requires = [
+          "sops-install-secrets.service"
+          "mautrix-whatsapp-registration.service"
+        ];
+      };
+
+      mautrix-whatsapp-db-init = {
+        description = "Create the dedicated Mautrix-WhatsApp PostgreSQL database";
+        after = [ "postgresql.service" ];
+        requires = [ "postgresql.service" ];
+        before = [
+          "mautrix-whatsapp-registration.service"
+          "mautrix-whatsapp.service"
+        ];
+        serviceConfig = secretGeneratorHardening // {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          User = config.services.postgresql.superUser;
+        };
+        script = ''
+          set -euo pipefail
+          ${config.services.postgresql.package}/bin/psql -tc \
+            "SELECT 1 FROM pg_roles WHERE rolname='mautrix-whatsapp'" | \
+            ${pkgs.gnugrep}/bin/grep -q 1 || \
+            ${config.services.postgresql.package}/bin/psql -c \
+              'CREATE ROLE "mautrix-whatsapp" WITH LOGIN'
+          ${config.services.postgresql.package}/bin/psql -tc \
+            "SELECT 1 FROM pg_database WHERE datname='mautrix-whatsapp'" | \
+            ${pkgs.gnugrep}/bin/grep -q 1 || \
+            ${config.services.postgresql.package}/bin/psql -c \
+              "CREATE DATABASE \"mautrix-whatsapp\" WITH OWNER \"mautrix-whatsapp\" TEMPLATE template0 LC_COLLATE = 'C' LC_CTYPE = 'C'"
+        '';
+      };
+
+      mautrix-whatsapp-registration = {
+        description = "Prepare the Mautrix-WhatsApp appservice registration";
+        after = [
+          "sops-install-secrets.service"
+          "mautrix-whatsapp-db-init.service"
+        ];
+        requires = [
+          "sops-install-secrets.service"
+          "mautrix-whatsapp-db-init.service"
+        ];
+        before = [
+          "matrix-synapse.service"
+          "mautrix-whatsapp.service"
+        ];
+        path = [
+          pkgs.envsubst
+          pkgs.yq
+        ];
+        serviceConfig = secretGeneratorHardening // {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          User = "mautrix-whatsapp";
+          Group = "mautrix-whatsapp";
+          UMask = "0027";
+          EnvironmentFile = matrixWhatsappEnvironmentFile;
+          StateDirectory = "mautrix-whatsapp";
+          StateDirectoryMode = "0750";
+          WorkingDirectory = matrixWhatsappDataDir;
+          ReadWritePaths = [ matrixWhatsappDataDir ];
+          RestrictAddressFamilies = [ "AF_UNIX" ];
+        };
+        restartTriggers = [ matrixWhatsappSettingsUnsubstituted ];
+        script = ''
+          set -euo pipefail
+          old_umask=$(umask)
+          umask 0177
+          ${pkgs.envsubst}/bin/envsubst \
+            -o ${lib.escapeShellArg matrixWhatsappSettingsFile} \
+            -i ${lib.escapeShellArg matrixWhatsappSettingsUnsubstituted}
+
+          if [ ! -f ${lib.escapeShellArg matrixWhatsappRegistrationFile} ]; then
+            ${config.services.mautrix-whatsapp.package}/bin/mautrix-whatsapp \
+              --generate-registration \
+              --config=${lib.escapeShellArg matrixWhatsappSettingsFile} \
+              --registration=${lib.escapeShellArg matrixWhatsappRegistrationFile}
+          fi
+
+          chmod 0640 ${lib.escapeShellArg matrixWhatsappRegistrationFile}
+          ${pkgs.yq}/bin/yq -s '.[0].appservice.as_token = .[1].as_token
+            | .[0].appservice.hs_token = .[1].hs_token
+            | .[0]' \
+            ${lib.escapeShellArg matrixWhatsappSettingsFile} \
+            ${lib.escapeShellArg matrixWhatsappRegistrationFile} \
+            > ${lib.escapeShellArg matrixWhatsappSettingsTempFile}
+          mv ${lib.escapeShellArg matrixWhatsappSettingsTempFile} \
+            ${lib.escapeShellArg matrixWhatsappSettingsFile}
+          umask $old_umask
+        '';
+      };
+
+      mautrix-whatsapp = {
+        after = [
+          "sops-install-secrets.service"
+          "mautrix-whatsapp-registration.service"
+          "mautrix-whatsapp-db-init.service"
+        ];
+        requires = [
+          "sops-install-secrets.service"
+          "mautrix-whatsapp-registration.service"
+          "mautrix-whatsapp-db-init.service"
+        ];
+        # The locked mautrix module supplies ffmpeg-headless; LottieConverter
+        # is added for animated sticker conversion.
+        path = [
+          pkgs.ffmpeg-headless
+          pkgs.lottieconverter
+        ];
+        serviceConfig = {
+          # PostgreSQL uses local peer authentication and must see the real
+          # mautrix-whatsapp UID rather than a private user namespace.
+          PrivateUsers = lib.mkForce false;
+          MemoryHigh = "512M";
+          MemoryMax = "1G";
+          CPUWeight = 50;
+          TasksMax = 256;
+          RestrictAddressFamilies = [
+            "AF_UNIX"
+            "AF_INET"
+            "AF_INET6"
+          ];
+          ReadOnlyPaths = [ matrixWhatsappEnvironmentFile ];
+          ReadWritePaths = [ matrixWhatsappDataDir ];
+        };
       };
 
       # Assembles Synapse's runtime config with its shared secret and MSC3861
