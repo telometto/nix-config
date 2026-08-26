@@ -67,7 +67,7 @@ flowchart LR
 - [matrix-hardening-plan.md](matrix-hardening-plan.md) —
   Staged Matrix baseline, backup, observability, and OIDC implementation handoff
 - [matrix-whatsapp-bridge.md](matrix-whatsapp-bridge.md) —
-  `mautrix-whatsapp` placement decision, integration contract, and rollout gates
+  `mautrix-whatsapp` placement decision, pre-login wiring, and rollout gates
 - [service-mail-architecture.md](service-mail-architecture.md) —
   Proton Mail, SimpleLogin, SMTP submission, and inbound IMAP trust boundaries
 - [security-audit-2026-05-13.md](security-audit-2026-05-13.md) —
