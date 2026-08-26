@@ -66,6 +66,8 @@ flowchart LR
   Branch, pull-request, merge-gate, and implementation order for the current security roadmap
 - [matrix-hardening-plan.md](matrix-hardening-plan.md) —
   Staged Matrix baseline, backup, observability, and OIDC implementation handoff
+- [matrix-whatsapp-bridge.md](matrix-whatsapp-bridge.md) —
+  `mautrix-whatsapp` placement decision, integration contract, and rollout gates
 - [service-mail-architecture.md](service-mail-architecture.md) —
   Proton Mail, SimpleLogin, SMTP submission, and inbound IMAP trust boundaries
 - [security-audit-2026-05-13.md](security-audit-2026-05-13.md) —
@@ -116,6 +118,7 @@ flowchart LR
 | Resume Blizzard paranoid-NixOS hardening | [Blizzard paranoid-NixOS handoff](2026-08-14-blizzard-paranoid-nixos-handoff.md) |
 | Follow the security roadmap | [Security Roadmap Implementation Order](security-roadmap-implementation-order.md) |
 | Plan Matrix hardening | [Matrix Hardening Plan](matrix-hardening-plan.md) |
+| Plan the Matrix–WhatsApp bridge | [Matrix–WhatsApp Bridge Design](matrix-whatsapp-bridge.md) |
 | Review service mail boundaries | [Service Mail Architecture](service-mail-architecture.md) |
 | Back up or restore Immich | [Immich Backup Operations](immich-backup.md) |
 | Operate Scrutiny | [Scrutiny Operations](scrutiny.md) |
