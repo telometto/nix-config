@@ -59,10 +59,10 @@ because documentation does not alter the runtime. Runtime work must retain the
 sequence above.
 
 The planned WhatsApp bridge is tracked separately in the
-[Matrix–WhatsApp bridge design](matrix-whatsapp-bridge.md). Its implementation
-is a new Matrix runtime change and must wait for the current Matrix acceptance
-and clean-observation gates; its linked-device state must also be covered by
-the Matrix backup/restore evidence before login.
+[Matrix–WhatsApp bridge design](matrix-whatsapp-bridge.md). Its opt-in
+implementation is a new Matrix runtime change and must wait for the current
+Matrix acceptance and clean-observation gates; its linked-device state must
+also be covered by the Matrix backup/restore evidence before login.
 
 ## Verified current state
 
@@ -72,7 +72,7 @@ currently deployed generation.
 | Area | Repository evidence | Consequence |
 | --- | --- | --- |
 | Workload boundary | [`vms/matrix-synapse.nix`](../vms/matrix-synapse.nix) runs Synapse, MAS, Nginx, and one PostgreSQL service with separate Synapse and MAS databases in one MicroVM | The approved target keeps this single-VM boundary |
-| Durable state | The VM declares Synapse, PostgreSQL, and MAS images; [`mkMicrovmConfig.nix`](../vms/mkMicrovmConfig.nix) adds `persist.img` | A consistent offsite backup must include all four images from one snapshot |
+| Durable state | The VM declares Synapse, PostgreSQL, and MAS images; [`mkMicrovmConfig.nix`](../vms/mkMicrovmConfig.nix) adds `persist.img`; enabling the bridge adds `mautrix-whatsapp-state.img` | A consistent offsite backup must include the four baseline images, or all five images when the bridge is enabled, from one snapshot |
 | Managed publication | [`hosts/blizzard/virtualisation/microvms.nix`](../hosts/blizzard/virtualisation/microvms.nix) publishes `matrix.<domain>` through the standard Cloudflare Tunnel, Traefik, and CrowdSec path | This becomes the only public workload path |
 | Raw publication | The Matrix instance declares no host TCP `11060` port-forward | The managed HTTP publication is the only public workload path |
 | Guest ingress | Nginx binds `0.0.0.0:11060`, and the guest firewall accepts only the primary guest interface and Blizzard's `10.100.0.1` gateway | Nginx is reachable only through the managed host publication path |
@@ -398,6 +398,10 @@ Do not expose shell fragments as the caller interface.
   to [`vms/immich-storage.nix`](../vms/immich-storage.nix).
 - [ ] Include `matrix-synapse-state.img`, `postgresql-state.img`,
   `mas-state.img`, and `persist.img` from the same stopped-VM ZFS snapshot.
+- [ ] When the WhatsApp bridge is enabled, include
+  `mautrix-whatsapp-state.img` in that same snapshot. Its PostgreSQL database
+  is already in `postgresql-state.img`; the generated registration under
+  `/run` is rebuilt from the locked configuration and SOPS values.
 - [ ] Use a separate Matrix Borg repository, append-only forced-command SSH
   key, and encryption passphrase. Never share Immich backup credentials.
 - [ ] Schedule Matrix daily at a different time from Immich. The accepted
@@ -409,14 +413,18 @@ Do not expose shell fragments as the caller interface.
 
 A Borg archive existing is not proof of recoverability.
 
-- [ ] Restore all four images from one archive into an isolated recovery
-  location or disposable MicroVM environment. Do not loop-mount untrusted guest
+- [ ] Restore the four baseline images from one archive into an isolated
+  recovery location or disposable MicroVM environment. When the bridge is
+  enabled, restore its fifth state image too. Do not loop-mount untrusted guest
   filesystems on Blizzard.
 - [ ] Start the restored Matrix stack without publishing it to the production
   hostname or contacting production peers unexpectedly.
 - [ ] Verify PostgreSQL, Synapse, MAS, local administrative access, existing
   password login, representative rooms/media, encryption keys, and the
   persisted SSH identity.
+- [ ] When the bridge is enabled, verify the separate database, linked-device
+  state, registration regeneration, and the documented re-login behavior if
+  linked-device state is intentionally not restored.
 - [ ] Record archive, date, duration, operator, result, and any manual steps.
 - [ ] Repeat after a material storage/backup format change and at least every
   six months.
