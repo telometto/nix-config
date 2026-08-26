@@ -357,8 +357,7 @@ in
       "d /var/lib/postgresql 0700 postgres postgres -"
       "d /var/lib/mas 0700 mas mas -"
     ]
-    ++ lib.optional matrixWhatsappEnabled
-      "d /var/lib/mautrix-whatsapp 0700 mautrix-whatsapp mautrix-whatsapp -";
+    ++ lib.optional matrixWhatsappEnabled "d /var/lib/mautrix-whatsapp 0700 mautrix-whatsapp mautrix-whatsapp -";
 
     services = {
       matrix-synapse = lib.mkIf matrixWhatsappEnabled {
@@ -1027,7 +1026,8 @@ in
   users = {
     groups = {
       matrix-shared = { };
-    } // lib.optionalAttrs matrixWhatsappEnabled {
+    }
+    // lib.optionalAttrs matrixWhatsappEnabled {
       ${matrixWhatsappRegistrationGroup} = { };
     };
     users = {
