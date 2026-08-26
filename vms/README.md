@@ -134,19 +134,23 @@ ______________________________________________________________________
 
 ### Declarative WhatsApp appservice boundary
 
-The [`mautrix-whatsapp` bridge](../docs/matrix-whatsapp-bridge.md) is wired as
-an additional, pre-login service inside `matrix-synapse-vm`, not as a new
-MicroVM. It calls Synapse over `127.0.0.1:8008`, listens for appservice
-transactions only on `127.0.0.1:29318`, and has no public publication or host
-port-forward. Its `whatsapp-registration.yaml`,
-`mautrix-whatsapp-state.img`, and PostgreSQL database remain separate from
-Synapse and MAS and must be added to the approved Matrix backup/restore
-inventory before activation.
+The [`mautrix-whatsapp` bridge](../docs/matrix-whatsapp-bridge.md) is an
+opt-in, pre-login service inside `matrix-synapse-vm`, not a new MicroVM. It
+calls Synapse over `127.0.0.1:8008`, listens for appservice transactions only
+on `127.0.0.1:29318`, and has no public publication or host port-forward. When
+enabled, its linked-device state is stored in `mautrix-whatsapp-state.img` and
+its separate PostgreSQL database remains distinct from Synapse and MAS. Both
+must be added to the approved Matrix backup/restore inventory before login;
+the registration file is generated under `/run` and is not an independent
+backup artifact.
 
 The VM-owned registration gate runs before Synapse because the locked nixpkgs
-module otherwise generates the registration during the bridge service's
-`preStart`. The bridge's `PrivateUsers` sandbox is disabled only because the
-separate PostgreSQL database uses local peer authentication; memory, task,
+module normally generates the registration during the bridge service's
+`preStart`; the VM-owned gate owns that preparation instead. The bridge's
+`PrivateUsers` sandbox remains enabled: the dedicated
+database uses loopback SCRAM password authentication, and the password is
+SOPS-backed. Raw bridge secrets remain bridge-only; Synapse receives only the
+generated registration through the dedicated read-only group. Memory, task,
 address-family, filesystem, and the remaining upstream systemd hardening stay
 explicit.
 
