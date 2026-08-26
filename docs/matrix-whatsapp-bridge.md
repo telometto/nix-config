@@ -1,7 +1,8 @@
 # Matrix–WhatsApp bridge
 
-> Status: shaping and placement decision only. This document does not authorize
-> a deployment, a WhatsApp login, or a change to `nix-secrets`.
+> Status: declarative pre-login wiring is implemented on
+> `feat/matrix-whatsapp-bridge`. This does not authorize a deployment, a
+> WhatsApp login, or a change to `nix-secrets`.
 >
 > Last reviewed: 2026-08-26
 
@@ -75,9 +76,19 @@ For the same-VM design, use a loopback contract similar to:
 - no Traefik, Cloudflare Tunnel, Nginx, or host port-forward route for the
   bridge listener.
 
-The exact Nix options must be checked against the locked nixpkgs revision before
-implementation. Nixpkgs carries a [`services.mautrix-whatsapp` module](https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/services/matrix/mautrix-whatsapp.nix),
-which should be evaluated before writing a bespoke service wrapper.
+The exact Nix options were checked against the locked nixpkgs revision before
+implementation. Nixpkgs carries a [`services.mautrix-whatsapp` module](https://github.com/NixOS/nixpkgs/blob/2c423e03bbafcff28bfadc6781a4a8257f205cb5/nixos/modules/services/matrix/mautrix-whatsapp.nix),
+which is used directly rather than replaced with a bespoke long-running
+service wrapper.
+
+The locked nixpkgs revision is `2c423e03bbafcff28bfadc6781a4a8257f205cb5`.
+Source inspection confirmed that its module provides the `mautrix-whatsapp`
+user and service, `/var/lib/mautrix-whatsapp` state directory, generated
+registration file, `environmentFile` substitution, PostgreSQL settings,
+ffmpeg-headless, and systemd hardening. It generates the registration in the
+bridge unit's `preStart`, however, while Synapse reads appservice registrations
+when its own service starts. The VM therefore adds a separate, idempotent
+registration-preparation unit and orders both Synapse and the bridge after it.
 
 ### Durable state and database
 
@@ -91,6 +102,14 @@ databases. Reusing the existing PostgreSQL service with a distinct
 `mautrix-whatsapp` database is the preferred durable setup. SQLite is an
 acceptable small single-user trial if its own state image and restore test are
 kept, but it must not be mistaken for a shared Synapse database.
+
+The current source implementation uses the preferred PostgreSQL layout. It
+adds `mautrix-whatsapp-state.img` for the bridge's own state and an idempotent
+guest-local initializer for the separate `mautrix-whatsapp` role/database. The
+PostgreSQL socket uses peer authentication, so the upstream module's
+`PrivateUsers = true` setting is explicitly disabled for the long-running
+bridge service; the remaining upstream hardening and new memory/task limits
+remain in force.
 
 The bridge state and its database must be added to the Matrix MicroVM backup
 inventory before WhatsApp login. A restore must preserve the linked-device
@@ -123,6 +142,24 @@ puppeting and end-to-bridge encryption should be configured before the first
 login if they are part of the desired user experience; upstream notes that
 encryption is difficult to retrofit into existing portal rooms.
 
+The source policy disables relay mode and grants `admin` only to
+`@<VARS.users.zeno.user>:<VARS.domains.public>`; this is the repository's
+current operator identity and must be confirmed to match the intended Matrix
+administrator before login. No other Matrix users are granted bridge access
+yet. End-to-bridge encryption is enabled and its pickle key is SOPS-backed;
+double puppeting remains deliberately unconfigured until its separate secret
+and user experience are approved.
+
+The source declares these guest-local SOPS values without containing their
+contents: `matrix-whatsapp/appservice_as_token`,
+`matrix-whatsapp/appservice_hs_token`,
+`matrix-whatsapp/provisioning_shared_secret`,
+`matrix-whatsapp/encryption_pickle_key`,
+`matrix-whatsapp/public_media_signing_key`, and
+`matrix-whatsapp/direct_media_server_key`. The private `nix-secrets` flake
+still needs to be provisioned through its normal review process; this branch
+does not change it.
+
 ### WhatsApp account lifecycle
 
 Login is performed interactively through the bridge bot with `login qr` or a
@@ -145,23 +182,57 @@ an important account.
 
 ## Implementation sequence
 
-1. Finish the Matrix baseline acceptance and clean observation gates recorded in
-   [`matrix-hardening-plan.md`](matrix-hardening-plan.md). This bridge is a new
-   Matrix runtime change, not part of the existing baseline or OIDC work.
-1. Evaluate the locked `services.mautrix-whatsapp` module and package. Confirm
-   the generated registration path, data directory, service user, database
-   behavior, optional media dependencies, and systemd hardening options.
-1. Add the bridge to the existing guest with a loopback listener and a
-   separate `/var/lib/mautrix-whatsapp` state image. Keep the bridge port out of
-   the host registry and public publication configuration.
-1. Register the appservice with Synapse, provision only the required SOPS
-   values, and create a distinct bridge database if PostgreSQL is selected.
-1. Extend the Matrix backup/restore inventory and verify service ordering,
-   permissions, listener scope, outbound connectivity, and clean restart before
-   logging in.
-1. Configure encryption/double puppeting if approved, then perform the
-   interactive QR/pairing login and validate portal creation, media, reconnect,
-   logout, and re-login behavior.
+1. **Blocked prerequisite:** finish the Matrix baseline acceptance and clean
+   observation gates recorded in [`matrix-hardening-plan.md`](matrix-hardening-plan.md).
+   This bridge remains a new Matrix runtime change, not part of the existing
+   baseline or OIDC work.
+1. **Complete by source inspection:** evaluate the locked
+   `services.mautrix-whatsapp` module and package. The implementation records
+   its registration path, data directory, service user, database behavior,
+   ffmpeg/LottieConverter closure, and hardening compatibility exception.
+1. **Complete declaratively, not activated:** add the bridge to the existing
+   guest with a `127.0.0.1:29318` listener and a separate
+   `/var/lib/mautrix-whatsapp` state image. The port is absent from the host
+   registry, MicroVM port forwards, Nginx, Traefik, and Cloudflare routes.
+1. **Complete by source wiring:** register the appservice with Synapse,
+   provision only the declared SOPS paths, and create a distinct PostgreSQL
+   database through a guest-local initializer. Private secret values remain
+   outside this repository.
+1. **Not complete:** extend the approved Matrix backup/restore inventory and
+   verify service ordering, permissions, listener scope, outbound connectivity,
+   and clean restart before logging in. The existing Matrix offsite-backup and
+   isolated-restore gates are still incomplete.
+1. **Not complete:** after the prior gates, configure double puppeting if
+   approved, then perform the interactive QR/pairing login and validate portal
+   creation, media, reconnect, logout, and re-login behavior.
+
+### Pre-login registration and recovery procedure
+
+Before any activation, provision the six named SOPS values in the private
+secrets flake and confirm that the derived Matrix administrator is the intended
+account. The first boot must show all of these units healthy before any login:
+
+```text
+sops-install-secrets.service
+postgresql.service
+mautrix-whatsapp-db-init.service
+mautrix-whatsapp-registration.service
+matrix-synapse.service
+mautrix-whatsapp.service
+```
+
+The registration file and bridge state are guest-local. A token rotation must
+be treated as a coordinated change: preserve the state-image backup, stop the
+bridge and Synapse, update the SOPS values, regenerate or restore the matching
+registration file, then restart the registration gate, Synapse, and bridge in
+that order. Never edit appservice tokens in a running state without a rollback
+copy of both the registration file and bridge state.
+
+The operator must also retain a recovery path for an offline phone, explicit
+WhatsApp logout, linked-device re-login, and an account-ban or account-recovery
+incident. The interactive bridge command is `login qr` (or the documented
+phone-pairing flow); it is intentionally not run by Nix activation or this
+branch's validation.
 
 ## Acceptance gates
 
@@ -179,6 +250,12 @@ an important account.
   WhatsApp linked-device state.
 - The operator has documented phone-offline, WhatsApp logout, account-ban, and
   re-login recovery procedures.
+
+Current status: the declarative listener, state, database, registration gate,
+secret paths, permission policy, and static contract test are present. The
+baseline acceptance/observation prerequisite, private secret provisioning,
+backup/restore evidence, live service checks, and interactive login remain
+intentionally incomplete.
 
 ## Upstream references
 
@@ -198,4 +275,5 @@ an important account.
 - [`vms/mkMicrovmConfig.nix`](../vms/mkMicrovmConfig.nix)
 - [`hosts/blizzard/virtualisation/microvms.nix`](../hosts/blizzard/virtualisation/microvms.nix)
 - [`hosts/blizzard/security/traefik.nix`](../hosts/blizzard/security/traefik.nix)
+- [`tests/matrix-whatsapp-bridge.nix`](../tests/matrix-whatsapp-bridge.nix)
 - [`docs/matrix-hardening-plan.md`](matrix-hardening-plan.md)
