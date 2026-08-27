@@ -149,12 +149,19 @@ login if they are part of the desired user experience; upstream notes that
 encryption is difficult to retrofit into existing portal rooms.
 
 The source policy disables relay mode and grants `admin` only to
-`@<VARS.users.zeno.user>:<VARS.domains.public>`; this is the repository's
-current operator identity and must be confirmed to match the intended Matrix
-administrator before login. No other Matrix users are granted bridge access
-yet. End-to-bridge encryption is enabled and its pickle key is SOPS-backed;
-double puppeting remains deliberately unconfigured until its separate secret
-and user experience are approved.
+`@telometto:<VARS.domains.public>`, the confirmed Matrix operator identity.
+This is intentionally explicit rather than derived from the VM's Unix
+username. No other Matrix users are granted bridge access yet. End-to-bridge
+encryption is enabled and its pickle key is SOPS-backed; double puppeting
+remains deliberately unconfigured until its separate secret and user
+experience are approved.
+
+Because this VM delegates authentication to MAS, the encrypted bridge uses
+MSC4190 device creation rather than the legacy
+`m.login.application_service` login flow. The bridge keeps its homeserver
+address on loopback Synapse (`http://127.0.0.1:8008`), and the generated
+appservice registration carries the corresponding `io.element.msc4190` flag;
+the public Nginx/MAS compatibility listener is not the bridge transport.
 
 The source declares these guest-local SOPS values without containing their
 contents: `matrix-whatsapp/appservice_as_token`,
