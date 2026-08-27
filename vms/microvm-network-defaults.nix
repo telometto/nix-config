@@ -6,11 +6,10 @@ let
     network = "10.100.0.0/24";
   };
 
-  # The current Cloud Hypervisor guest layout exposes the primary virtio NIC
-  # at PCI slot 6, which systemd names ens6. Keep firewall rules that target
-  # the VM's primary network boundary on this shared contract instead of
-  # scattering the device name through workloads.
-  guestInterface = "ens6";
+  # Cloud Hypervisor's virtio device ordering can shift when a guest gains a
+  # persistent volume, so systemd may expose the primary NIC as ens6, ens7,
+  # and so on. iptables accepts a trailing + as an interface-name wildcard.
+  guestInterface = "ens+";
 in
 {
   inherit sharedBridge guestInterface;
