@@ -39,10 +39,11 @@ let
     "matrix-synapse.service"
     "mautrix-whatsapp.service"
   ];
-  matrixWhatsappSettingsUnsubstituted =
-    pkgs.formats.json { }.generate "mautrix-whatsapp-config-unsubstituted.json"
-      config.services.mautrix-whatsapp.settings;
-  matrixWhatsappAdmin = "@${VARS.users.zeno.user}:${VARS.domains.public}";
+  matrixWhatsappSettingsFormat = pkgs.formats.json { };
+  matrixWhatsappSettingsUnsubstituted = matrixWhatsappSettingsFormat.generate "mautrix-whatsapp-config-unsubstituted.json" config.services.mautrix-whatsapp.settings;
+  # This is the Matrix account, not the VM's admin account or the operator's
+  # Unix username.
+  matrixWhatsappAdmin = "@telometto:${VARS.domains.public}";
   secretGeneratorHardening = {
     AmbientCapabilities = "";
     CapabilityBoundingSet = "";
@@ -270,8 +271,8 @@ in
   ];
 
   # Nginx is the only guest-network listener. Accept its traffic only from
-  # Blizzard's MicroVM gateway; all other sources fall through to the default
-  # firewall refusal path.
+  # Blizzard's MicroVM gateway on the primary predictable Ethernet interface;
+  # the ens+ pattern tolerates virtio device renumbering when volumes change.
   networking.firewall = {
     allowedTCPPorts = [ ];
     extraCommands = ''
@@ -285,7 +286,8 @@ in
   services.mautrix-whatsapp = {
     # Keep the integration opt-in until private SOPS values, backup evidence,
     # and interactive-login acceptance have been completed.
-    enable = lib.mkDefault false;
+    enable = true;
+    package = pkgs.mautrix-whatsapp.override { withGoolm = true; };
     registerToSynapse = false;
     environmentFile = lib.mkIf matrixWhatsappEnabled matrixWhatsappEnvironmentFile;
     serviceDependencies = lib.mkIf matrixWhatsappEnabled [
@@ -325,6 +327,9 @@ in
         allow = true;
         default = true;
         require = true;
+        # MAS does not expose the legacy m.login.application_service flow.
+        # Use MSC4190 device creation for the encrypted bridge bot instead.
+        msc4190 = true;
         pickle_key = "$MAUTRIX_WHATSAPP_ENCRYPTION_PICKLE_KEY";
       };
       public_media.signing_key = "$MAUTRIX_WHATSAPP_PUBLIC_MEDIA_SIGNING_KEY";
@@ -394,6 +399,7 @@ in
           ${config.services.postgresql.package}/bin/psql -tc \
             --no-psqlrc \
             --set=ON_ERROR_STOP=1 \
+            -c \
             "SELECT 1 FROM pg_roles WHERE rolname='mautrix-whatsapp'" | \
             ${pkgs.gnugrep}/bin/grep -q 1 || \
             ${config.services.postgresql.package}/bin/psql \
@@ -404,6 +410,7 @@ in
           ${config.services.postgresql.package}/bin/psql -tc \
             --no-psqlrc \
             --set=ON_ERROR_STOP=1 \
+            -c \
             "SELECT 1 FROM pg_database WHERE datname='mautrix-whatsapp'" | \
             ${pkgs.gnugrep}/bin/grep -q 1 || \
             ${config.services.postgresql.package}/bin/psql \
