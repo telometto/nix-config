@@ -376,7 +376,8 @@ assert productionPublicationHttp == expectedProductionPublicationHttp;
 assert actualProductionTunnelOrigins == expectedProductionTunnelOrigins;
 assert productionHttp.routers.matrix-well-known == expectedMatrixWellKnownRouter;
 assert !(builtins.hasAttr "contentSecurityPolicy" productionGiteaHeaders.headers);
-assert builtins.hasAttr "X-Content-Type-Options" productionGiteaHeaders.headers.customResponseHeaders;
+assert builtins.hasAttr "X-Content-Type-Options"
+  productionGiteaHeaders.headers.customResponseHeaders;
 assert actual == expected;
 assert !disabledTargetEvaluation.success;
 assert !missingTraefikEvaluation.success;
