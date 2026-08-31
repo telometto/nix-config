@@ -30,7 +30,7 @@ let
     gitea = {
       hostname = "git";
       middlewares = [
-        "security-headers"
+        "gitea-headers"
         "gitea-xfp-https"
       ];
       backend = "http://10.100.0.50:11050";
