@@ -92,7 +92,7 @@ All Home Manager options are defined under the `hm.*` namespace in `home/`.
 |-----------|-----------|---------|
 | `hm.langs` | `home/base.nix` | Regional formatting locale; does not set UI language |
 | `hm.desktop.{gnome,kde,hyprland,xdg}.enable` | `home/desktop/` | Desktop environment integration |
-| `hm.programs.{browsers,development,terminal,media,social,gaming,gpg,tools,beets,fastfetch,packages}.enable` | `home/programs/` | User program bundles |
+| `hm.programs.{browsers,development,terminal,media,social,gaming,gpg,tools,beets,fastfetch,packages,gitea}.enable` | `home/programs/` | User program bundles; `gitea` is an opt-in Git credential integration |
 | `hm.services.{gpgAgent,sshAgent}.enable` | `home/services/` | User-level background services |
 | `hm.security.sops.*` | `home/security/sops.nix` | User-level SOPS secret decryption |
 | `hm.accounts.{email,calendar,contact}.enable` | `home/accounts/` | PIM accounts (email, calendar, contacts) |
@@ -188,11 +188,34 @@ ______________________________________________________________________
 
 ## Secrets Flow
 
-Secrets are handled across three layers. The private `nix-secrets` flake contains the raw secret values encrypted with age keys. `sops-nix` decrypts them at system activation using the host's age key derived from its SSH host key. The decrypted value is written to a path under `/run/secrets/`.
+Secrets are handled across three distinct layers. The private `nix-secrets`
+flake contains raw secret values encrypted with age keys. System services use
+the system SOPS layer: `sops-nix` decrypts at system activation using the
+host's age identity and writes under `/run/secrets/`. The bridge between that
+layer and system service modules is the `sys.secrets.*` option namespace; those
+modules consume runtime path strings rather than SOPS primitives.
 
-The bridge between SOPS and service modules is the `sys.secrets.*` option namespace. Service modules never import SOPS directly; they read a path string exposed by `modules/core/sops.nix` (e.g. `config.sys.secrets.gitea.dbPassword`). This keeps service modules decoupled from the secret management backend.
+Home Manager profiles have a separate user SOPS layer. The
+`home/security/sops.nix` wrapper forwards `hm.security.sops.*` to the Home
+Manager SOPS-Nix module, which renders user-owned secrets under `%r/secrets.d`
+and stable symlinks under `%r/secrets`. These are not system `/run/secrets`
+paths and are not exposed through `sys.secrets.*`. Opt-in modules consume the
+user paths or placeholders directly within the Home Manager profile.
 
-The `whenEnabled` pattern ties secret definitions to service enablement. A secret is only declared in `sops.secrets` when its corresponding service module is enabled (`lib.mkIf cfg.enable { sops.secrets.X = ...; }`). Disabling a service automatically removes its secret definition, preventing dangling decryption rules that would fail on hosts where that service is not running.
+For example, `hm.programs.gitea.enable` is enabled only for zeno on snowfall.
+It declares `gitea/cf_access_id` and `gitea/cf_access_secret`, renders
+`$XDG_CONFIG_HOME/sops-nix/secrets/rendered/gitea-git-http` with mode `0400`,
+and scopes the Git include and `libsecret` helper to
+`https://git.<public-domain>/`. It asserts that the user SOPS and Git features
+remain enabled, and orders the user SOPS service before the target that starts
+it.
+
+The `whenEnabled` pattern ties secret definitions to their owning feature. A
+system secret is only declared when its corresponding service is enabled, and
+the Gitea user secrets/template are only declared when
+`hm.programs.gitea.enable` and `hm.security.sops.enable` are both effective.
+Disabling the owner removes the dependent declarations instead of leaving a
+dangling decryption rule or Git include.
 
 See also: [Architecture Blueprint — Section 8: Secrets Architecture](Project_Architecture_Blueprint.md#section-8---secrets-architecture) for a full diagram.
 

@@ -16,7 +16,7 @@ NixOS module, building user configurations automatically for enabled users.
 | [accounts/](accounts/) | PIM account definitions | `hm.accounts.email.enable`, `hm.accounts.calendar.enable` |
 | [desktop/](desktop/) | Desktop environment integration | `hm.desktop.gnome.enable`, `hm.desktop.kde.enable` |
 | [files/](files/) | Managed dotfiles and themes | File management, Vesktop themes |
-| [programs/](programs/) | User applications | `hm.programs.terminal.enable`, `hm.programs.browsers.enable` |
+| [programs/](programs/) | User applications | `hm.programs.terminal.enable`, `hm.programs.browsers.enable`, opt-in `hm.programs.gitea.enable` |
 | [security/](security/) | User-level SOPS secrets | `hm.security.sops.*` |
 | [services/](services/) | User services | `hm.services.gpgAgent.enable`, `hm.services.sshAgent.enable` |
 | [overrides/](overrides/) | Per-role, per-host, and per-user overrides | Not auto-loaded — see Override System |
@@ -27,6 +27,10 @@ The Home Manager SOPS module uses `%r/secrets` for symlinks and
 `%r/secrets.d` for its mount point. `sops-nix` resolves `%r` to the active
 user's runtime directory when the user service runs, so these paths follow the
 actual runtime UID instead of an evaluation-time UID.
+
+Rendered templates use the user's XDG config directory by default, at
+`$XDG_CONFIG_HOME/sops-nix/secrets/rendered/<name>`. Consumers should use the
+template option's `path` value rather than reconstructing this path.
 
 ### Base Configuration
 

@@ -27,6 +27,7 @@ bad `hashedPassword` or SSH key change can lock a real account out on rebuild.
 | GPG SSH keys | GPG auth subkey, preferably hardware-backed | Renew or replace deliberately | Do not silently rotate auth subkeys unless every consuming host and service is updated. |
 | Host SSH keys used by `sops-nix` | Host filesystem; age recipient in `nix-secrets/.sops.yaml` | Rotate on reimage, compromise, persistent storage loss, or algorithm upgrade | Treat these as infrastructure identity. Do not rotate casually. |
 | API tokens | SOPS, provider console, and Bitwarden as appropriate | Rotate on provider expiry, suspected exposure, broad privilege, or service-owner change | Prefer scoped tokens and provider-supported dual-token rollover. |
+| Home Manager Gitea HTTP credentials | Private `nix-secrets` SOPS keys rendered into the owning user's XDG config directory | Rotate on Cloudflare Access expiry, suspected exposure, ownership change, or provider policy change | `hm.programs.gitea` is opt-in and currently enabled only for zeno on snowfall. Never commit or copy the values into this repository. |
 | WireGuard keys | SOPS or host-specific private storage | Rotate on device loss, peer removal, or key exposure | Coordinate peer config before removing the old key. |
 | Backup and encryption passphrases | Bitwarden and/or offline recovery material | Avoid routine rotation unless migration is tested | Restore reliability is more important than arbitrary churn. |
 | Service secrets | SOPS runtime files | Rotate only with a restart/reload and rollback path | Session, signing, and encryption keys can invalidate users or data if changed blindly. |
@@ -133,6 +134,50 @@ the approved sequence. Because the generators use `RemainAfterExit=true`,
 verify runtime-file freshness and consumer behavior after every Matrix secret
 rotation. Keep the detailed Matrix acceptance and rollback gates in the
 [Matrix hardening plan](matrix-hardening-plan.md).
+
+## Gitea Git Credential Integration
+
+The opt-in `hm.programs.gitea` module is enabled by
+[`home/overrides/user/zeno-snowfall.nix`](../home/overrides/user/zeno-snowfall.nix)
+for zeno on snowfall only. It reads these keys from the private
+`nix-secrets` SOPS file:
+
+- `gitea/cf_access_id`
+- `gitea/cf_access_secret`
+
+Home Manager renders the values into the user-owned template
+`$XDG_CONFIG_HOME/sops-nix/secrets/rendered/gitea-git-http` with mode `0400`.
+The template is included only for `https://git.<public-domain>/`, and the
+matching Git credential helpers are reset before `libsecret` is selected.
+This prevents a previously configured helper such as `store` from being
+chained for this Gitea URL.
+
+The feature requires both `hm.security.sops.enable = true` and
+`programs.git.enable = true`; disabling SOPS while leaving the feature enabled
+fails with a clear assertion. The user `sops-nix` service is ordered before the
+target that starts it so the include is rendered before the normal user
+session. A Home Manager activation restarts that service; verify the service
+and template after activation before using Git.
+
+### Provision or rotate the credentials
+
+1. Create or rotate the Cloudflare Access service-token pair in the provider
+   console. Keep the old pair active until the replacement has been verified.
+1. Add the exact two keys above to the encrypted file in the private
+   `nix-secrets` repository. Do not add secret values, decrypted files, or the
+   rendered template to this repository.
+1. Re-encrypt the affected SOPS file for the snowfall recipient, then rebuild
+   snowfall and activate the zeno Home Manager profile.
+1. Verify as zeno that `systemctl --user status sops-nix` succeeds, the
+   runtime template exists with mode `0400`, and the URL-scoped Git helper is
+   `libsecret`. Run a small authenticated `git ls-remote` against the Gitea
+   repository without enabling curl tracing or verbose Git diagnostics.
+1. Revoke the old Cloudflare Access token in the provider console only after
+   the replacement request and the required Git operation succeed.
+
+When debugging, do not use `GIT_TRACE_CURL`, `GIT_CURL_VERBOSE`, or equivalent
+capture settings unless all bearer-like headers are redacted before storage or
+sharing.
 
 ## Sources
 
