@@ -175,7 +175,7 @@
             '';
 
         microvm-publication = import ./tests/microvm-publication.nix {
-          inherit self;
+          inherit self VARS;
           inherit (self.nixosConfigurations) blizzard;
           pkgs = nixpkgs.legacyPackages.${system};
         };
