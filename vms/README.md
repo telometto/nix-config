@@ -103,7 +103,9 @@ ______________________________________________________________________
 The Matrix VM's TCP `11060` port is a guest service port, not a host
 port-forward. Nginx listens on `0.0.0.0:11060` inside the VM, while the guest
 firewall accepts that port only from Blizzard's MicroVM gateway
-`10.100.0.1` on the primary `ens+` interface pattern. The public path is the managed
+`10.100.0.1` on the stable `microvm0` interface. `mkMicrovmConfig.nix` assigns
+that name by matching the VM's fixed MAC address, so Cloud Hypervisor device
+renumbering does not broaden or break the rule. The public path is the managed
 `matrix` publication through Cloudflare Tunnel and Traefik; no raw host
 forward bypasses those controls.
 
@@ -146,13 +148,17 @@ backup artifact.
 
 The VM-owned registration gate runs before Synapse because the locked nixpkgs
 module normally generates the registration during the bridge service's
-`preStart`; the VM-owned gate owns that preparation instead. The bridge's
+`preStart`; the VM-owned gate owns that preparation instead. Both Synapse and
+the bridge consume the generated registration at startup. The bridge's
 `PrivateUsers` sandbox remains enabled: the dedicated
 database uses loopback SCRAM password authentication, and the password is
 SOPS-backed. Raw bridge secrets remain bridge-only; Synapse receives only the
 generated registration through the dedicated read-only group. Memory, task,
 address-family, filesystem, and the remaining upstream systemd hardening stay
-explicit.
+explicit. Systemd also denies private, link-local, and CGNAT destinations for
+the bridge while preserving required loopback and public WhatsApp connectivity;
+the live acceptance test must verify the effective egress filter because this
+is defense in depth, not a separate network namespace.
 
 This placement avoids a new registry identity and lateral network-policy edge
 for the initial rollout. A dedicated VM remains an isolation option for a
