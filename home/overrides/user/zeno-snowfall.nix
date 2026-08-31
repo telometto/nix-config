@@ -3,35 +3,10 @@
 {
   lib,
   pkgs,
-  config,
-  VARS,
   ...
 }:
 {
   imports = [ ./zeno-desktop-ssh.nix ];
-
-  hm.security.sops.secrets."gitea/cf_access_id" = {
-    mode = "0400";
-  };
-
-  hm.security.sops.secrets."gitea/cf_access_secret" = {
-    mode = "0400";
-  };
-
-  sops.templates."gitea-git-http" = {
-    content = ''
-      [http "https://git.${VARS.domains.public}/"]
-          extraHeader = CF-Access-Client-Id: ${config.sops.placeholder."gitea/cf_access_id"}
-          extraHeader = CF-Access-Client-Secret: ${config.sops.placeholder."gitea/cf_access_secret"}
-    '';
-    mode = "0400";
-  };
-
-  programs.git.includes = [
-    {
-      path = config.sops.templates."gitea-git-http".path;
-    }
-  ];
 
   # User-specific packages for admin on snowfall
   home.packages = [
@@ -73,6 +48,8 @@
 
         git.lfs = true;
       };
+
+      gitea.enable = true;
     };
 
     files.sshAllowedSigners = lib.mkAfter [
