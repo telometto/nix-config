@@ -121,7 +121,7 @@ let
 in
 assert matrixInstance.portForward.ports == [ ];
 assert matrixInstance.portForward.enable == false;
-assert networkDefaults.guestInterface == "ens+";
+assert networkDefaults.guestInterface == "microvm0";
 assert !(lib.elem 11060 vmCfg.networking.firewall.allowedTCPPorts);
 assert lib.elem expectedFirewallRule firewallCommands;
 assert synapseListeners != [ ];
