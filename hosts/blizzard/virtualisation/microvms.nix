@@ -94,7 +94,7 @@ let
       publication = {
         enable = true;
         hostname = "git";
-        policy = "strict-forwarded-https";
+        policy = "gitea-compatible";
       };
     };
 

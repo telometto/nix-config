@@ -11,6 +11,7 @@ let
   productionTunnel =
     productionCfg.services.cloudflared.tunnels.${productionCfg.sys.services.cloudflared.tunnelId};
   productionHttp = productionCfg.services.traefik.dynamicConfigOptions.http;
+  productionGiteaHeaders = productionHttp.middlewares."gitea-headers";
   productionPublicationHttp =
     productionCfg.services.traefik.dynamic.files.microvm-publications.settings.http;
 
@@ -31,7 +32,7 @@ let
     gitea = {
       hostname = "git";
       middlewares = [
-        "security-headers"
+        "gitea-headers"
         "gitea-xfp-https"
       ];
       backend = "http://10.100.0.50:11050";
@@ -375,6 +376,9 @@ in
 assert productionPublicationHttp == expectedProductionPublicationHttp;
 assert actualProductionTunnelOrigins == expectedProductionTunnelOrigins;
 assert productionHttp.routers.matrix-well-known == expectedMatrixWellKnownRouter;
+assert !(builtins.hasAttr "contentSecurityPolicy" productionGiteaHeaders.headers);
+assert builtins.hasAttr "X-Content-Type-Options"
+  productionGiteaHeaders.headers.customResponseHeaders;
 assert actual == expected;
 assert !disabledTargetEvaluation.success;
 assert !missingTraefikEvaluation.success;
