@@ -43,44 +43,28 @@ let
   fakeSystemctlActive = pkgs.writeShellScriptBin "systemctl" ''
     exit 0
   '';
-  fakeEnvsubst = pkgs.writeShellScriptBin "envsubst" ''
-    set -eu
-    input=
-    output=
-    while [ "$#" -gt 0 ]; do
-      case "$1" in
-        -i)
-          input="$2"
-          shift 2
-          ;;
-        -o)
-          output="$2"
-          shift 2
-          ;;
-        *)
-          shift
-          ;;
-      esac
-    done
-    cp "$input" "$output"
-  '';
   fakeMautrix = pkgs.writeShellScriptBin "mautrix-whatsapp" ''
-    set -eu
+    set -euo pipefail
+    config=
     registration=
     for argument in "$@"; do
       case "$argument" in
+        --config=*) config="''${argument#--config=}" ;;
         --registration=*) registration="''${argument#--registration=}" ;;
       esac
     done
+    test -s "$config"
     test -n "$registration"
-    cat > "$registration" <<'EOF'
-    as_token: generated-as-token
-    hs_token: generated-hs-token
-    EOF
-  '';
-  fakeYq = pkgs.writeShellScriptBin "yq" ''
-    set -eu
-    cat "$3"
+    ! ${pkgs.gnugrep}/bin/grep -qF '$MAUTRIX_WHATSAPP_APPSERVICE_AS_TOKEN' "$config"
+    ${pkgs.gnugrep}/bin/grep -qF 'test-as-token' "$config"
+    ${pkgs.gnugrep}/bin/grep -qF 'test-hs-token' "$config"
+    ${pkgs.gnugrep}/bin/grep -qF 'test-provisioning-secret' "$config"
+    ${pkgs.gnugrep}/bin/grep -qF 'test-pickle-key' "$config"
+    ${pkgs.gnugrep}/bin/grep -qF 'test-media-signing-key' "$config"
+    ${pkgs.gnugrep}/bin/grep -qF 'test-media-server-key' "$config"
+    ${pkgs.coreutils}/bin/printf '%s\n' \
+      'as_token: generated-as-token' \
+      'hs_token: generated-hs-token' > "$registration"
   '';
   fakePsql = pkgs.writeShellScriptBin "psql" ''
     set -euo pipefail
@@ -92,10 +76,6 @@ let
           query="$2"
           shift 2
           ;;
-        SELECT*)
-          echo "missing \"=\" after \"$1\" in connection info string" >&2
-          exit 2
-          ;;
         *)
           shift
           ;;
@@ -103,14 +83,18 @@ let
     done
 
     case "$query" in
-      "SELECT 1 FROM pg_roles"*|"SELECT 1 FROM pg_database"*)
-        printf ' 1\n'
+      "SELECT 1 FROM pg_roles"*)
+        printf '%s\n' "''${PSQL_TEST_ROLE_EXISTS:-0}"
+        ;;
+      "SELECT 1 FROM pg_database"*)
+        printf '%s\n' "''${PSQL_TEST_DATABASE_EXISTS:-0}"
         ;;
       "CREATE ROLE"*|"CREATE DATABASE"*)
         printf '%s\n' "$query" >> "''${PSQL_TEST_LOG}"
         ;;
       "")
-        ${pkgs.coreutils}/bin/cat >/dev/null
+        test "''${BRIDGE_DATABASE_PASSWORD:-}" = "''${PSQL_EXPECTED_PASSWORD:?}"
+        ${pkgs.coreutils}/bin/cat >> "''${PSQL_TEST_LOG}"
         ;;
       *)
         printf '%s\n' "$query" >> "''${PSQL_TEST_LOG}"
@@ -120,7 +104,7 @@ let
   dbInitTestDataDir = "/tmp/matrix-whatsapp-db-init-test-data";
   dbInitTestPasswordFile = "${dbInitTestDataDir}/database-password";
   dbInitTestLog = "${dbInitTestDataDir}/psql.log";
-  dbInitExistingObjectsScript = pkgs.writeText "matrix-whatsapp-db-init-existing-objects.sh" (
+  dbInitScenariosScript = pkgs.writeText "matrix-whatsapp-db-init-scenarios.sh" (
     lib.replaceStrings
       [
         "${vmCfg.services.postgresql.package}/bin/psql"
@@ -132,18 +116,30 @@ let
       ]
       dbInitService.script
   );
-  dbInitExistingObjectsCheck = pkgs.runCommand "matrix-whatsapp-db-init-existing-objects-test" { } ''
+  dbInitScenariosCheck = pkgs.runCommand "matrix-whatsapp-db-init-scenarios-test" { } ''
     set -euo pipefail
     mkdir -p ${dbInitTestDataDir}
     printf 'test-password\n' > ${dbInitTestPasswordFile}
     : > ${dbInitTestLog}
     export PSQL_TEST_LOG=${dbInitTestLog}
-    ${pkgs.bash}/bin/bash ${dbInitExistingObjectsScript}
+    export PSQL_EXPECTED_PASSWORD=test-password
+    export PSQL_TEST_ROLE_EXISTS=1
+    export PSQL_TEST_DATABASE_EXISTS=1
+    ${pkgs.bash}/bin/bash ${dbInitScenariosScript}
     if ${pkgs.gnugrep}/bin/grep -Eq '^CREATE (ROLE|DATABASE) ' ${dbInitTestLog}; then
       echo "existing PostgreSQL objects were recreated" >&2
       ${pkgs.coreutils}/bin/cat ${dbInitTestLog} >&2
       exit 1
     fi
+    ${pkgs.gnugrep}/bin/grep -q 'ALTER ROLE "mautrix-whatsapp" PASSWORD' ${dbInitTestLog}
+
+    : > ${dbInitTestLog}
+    export PSQL_TEST_ROLE_EXISTS=0
+    export PSQL_TEST_DATABASE_EXISTS=0
+    ${pkgs.bash}/bin/bash ${dbInitScenariosScript}
+    ${pkgs.gnugrep}/bin/grep -q '^CREATE ROLE "mautrix-whatsapp"' ${dbInitTestLog}
+    ${pkgs.gnugrep}/bin/grep -q '^CREATE DATABASE "mautrix-whatsapp"' ${dbInitTestLog}
+    ${pkgs.gnugrep}/bin/grep -q 'ALTER ROLE "mautrix-whatsapp" PASSWORD' ${dbInitTestLog}
     touch "$out"
   '';
   registrationScriptFor =
@@ -151,17 +147,13 @@ let
     lib.replaceStrings
       [
         "${pkgs.systemd}/bin/systemctl"
-        "${pkgs.envsubst}/bin/envsubst"
         "${bridge.package}/bin/mautrix-whatsapp"
-        "${pkgs.yq}/bin/yq"
         "/var/lib/mautrix-whatsapp"
         "/run/matrix-whatsapp-registration"
       ]
       [
         "${systemctl}/bin/systemctl"
-        "${fakeEnvsubst}/bin/envsubst"
         "${fakeMautrix}/bin/mautrix-whatsapp"
-        "${fakeYq}/bin/yq"
         registrationTestDataDir
         registrationTestRuntimeDir
       ]
@@ -181,9 +173,23 @@ let
   registrationLifecycleCheck = pkgs.runCommand "matrix-whatsapp-bridge-registration-test" { } ''
     set -euo pipefail
     mkdir -p ${registrationTestDataDir} ${registrationTestRuntimeDir}
+    export MAUTRIX_WHATSAPP_APPSERVICE_AS_TOKEN=test-as-token
+    export MAUTRIX_WHATSAPP_APPSERVICE_HS_TOKEN=test-hs-token
+    export MAUTRIX_WHATSAPP_PROVISIONING_SHARED_SECRET=test-provisioning-secret
+    export MAUTRIX_WHATSAPP_ENCRYPTION_PICKLE_KEY=test-pickle-key
+    export MAUTRIX_WHATSAPP_PUBLIC_MEDIA_SIGNING_KEY=test-media-signing-key
+    export MAUTRIX_WHATSAPP_DIRECT_MEDIA_SERVER_KEY=test-media-server-key
+    export PGPASSWORD=test-password
     ${pkgs.bash}/bin/bash ${registrationInactiveScript}
     test -s ${registrationTestRuntimeDir}/whatsapp-registration.yaml
-    test -s ${registrationTestDataDir}/config.yaml
+    test -s ${registrationTestRuntimeDir}/config.yaml
+    test ! -e ${registrationTestDataDir}/config.yaml
+    ${pkgs.gnugrep}/bin/grep -qF 'test-provisioning-secret' ${registrationTestRuntimeDir}/config.yaml
+    ${pkgs.gnugrep}/bin/grep -qF 'test-pickle-key' ${registrationTestRuntimeDir}/config.yaml
+    ${pkgs.gnugrep}/bin/grep -qF 'test-media-signing-key' ${registrationTestRuntimeDir}/config.yaml
+    ${pkgs.gnugrep}/bin/grep -qF 'test-media-server-key' ${registrationTestRuntimeDir}/config.yaml
+    test "$(${pkgs.yq}/bin/yq -r '.appservice.as_token' ${registrationTestRuntimeDir}/config.yaml)" = generated-as-token
+    test "$(${pkgs.yq}/bin/yq -r '.appservice.hs_token' ${registrationTestRuntimeDir}/config.yaml)" = generated-hs-token
 
     printf 'existing-registration\n' > ${registrationTestRuntimeDir}/whatsapp-registration.yaml
     if ${pkgs.bash}/bin/bash ${registrationActiveScript}; then
@@ -208,7 +214,7 @@ assert !(builtins.hasAttr "mautrix-whatsapp" defaultVmCfg.systemd.services);
 assert
   !(lib.any (volume: volume.mountPoint == "/var/lib/mautrix-whatsapp") defaultVmCfg.microvm.volumes);
 assert lib.hasInfix "--dport 11060 -s 10.100.0.1 -j nixos-fw-accept" matrixFirewallAllow;
-assert lib.hasInfix "-i ens+" matrixFirewallAllow;
+assert lib.hasInfix "-i microvm0" matrixFirewallAllow;
 assert bridge.enable;
 assert !bridge.registerToSynapse;
 assert bridgeSettings.homeserver.address == "http://127.0.0.1:8008";
@@ -261,7 +267,9 @@ assert lib.elem "matrix-synapse.service" bridgeDatabaseSecret.restartUnits;
 assert lib.elem "mautrix-whatsapp.service" bridgeDatabaseSecret.restartUnits;
 assert matrixInstance.portForward.enable == false;
 assert matrixInstance.portForward.ports == [ ];
-assert vmCfg.networking.firewall.allowedTCPPorts == [ ];
+assert !(lib.elem 11060 vmCfg.networking.firewall.allowedTCPPorts);
+assert !(lib.elem 29318 vmCfg.networking.firewall.allowedTCPPorts);
+assert vmCfg.systemd.network.links."10-microvm-primary".linkConfig.Name == "microvm0";
 assert builtins.hasAttr bridgeRegistrationGroup vmCfg.users.groups;
 assert lib.elem bridgeRegistrationGroup synapseService.serviceConfig.SupplementaryGroups;
 assert !(lib.elem "mautrix-whatsapp" synapseService.serviceConfig.SupplementaryGroups);
@@ -288,11 +296,14 @@ assert lib.hasInfix "/run/matrix-whatsapp-registration/whatsapp-registration.yam
 assert dbInitService.serviceConfig.Type == "oneshot";
 assert dbInitService.serviceConfig.User == vmCfg.services.postgresql.superUser;
 assert lib.elem bridgeDatabaseSecret.path dbInitService.serviceConfig.ReadOnlyPaths;
+assert lib.elem "sops-install-secrets.service" dbInitService.after;
+assert lib.elem "sops-install-secrets.service" dbInitService.requires;
 assert lib.hasInfix "ALTER ROLE" dbInitService.script;
 assert lib.hasInfix "SET password_encryption = 'scram-sha-256'" dbInitService.script;
 assert lib.hasInfix "\\getenv bridge_password BRIDGE_DATABASE_PASSWORD" dbInitService.script;
 assert !(lib.hasInfix "--set=bridge_password" dbInitService.script);
-assert lib.hasInfix "/var/lib/mautrix-whatsapp/config.yaml" bridgeService.serviceConfig.ExecStart;
+assert lib.hasInfix "/run/matrix-whatsapp-registration/config.yaml"
+  bridgeService.serviceConfig.ExecStart;
 assert lib.hasInfix "/run/matrix-whatsapp-registration/whatsapp-registration.yaml"
   bridgeService.serviceConfig.ExecStart;
 assert lib.elem "mautrix-whatsapp-db-init.service" bridgeService.requires;
@@ -303,6 +314,9 @@ assert lib.elem "matrix-synapse.service" bridgeService.after;
 assert lib.elem "matrix-synapse.service" bridgeService.partOf;
 assert bridgeService.serviceConfig.User == "mautrix-whatsapp";
 assert bridgeService.serviceConfig.PrivateUsers == true;
+assert lib.elem "10.0.0.0/8" bridgeService.serviceConfig.IPAddressDeny;
+assert lib.elem "192.168.0.0/16" bridgeService.serviceConfig.IPAddressDeny;
+assert lib.elem "fc00::/7" bridgeService.serviceConfig.IPAddressDeny;
 assert bridgeService.serviceConfig.StateDirectoryMode == "0700";
 assert bridgeService.serviceConfig.MemoryHigh == "512M";
 assert bridgeService.serviceConfig.MemoryMax == "1G";
@@ -312,6 +326,6 @@ assert lib.elem pkgs.lottieconverter bridgeService.path;
 pkgs.runCommand "matrix-whatsapp-bridge-tests" { } ''
   test -e ${scriptSyntaxCheck}
   test -e ${registrationLifecycleCheck}
-  test -e ${dbInitExistingObjectsCheck}
+  test -e ${dbInitScenariosCheck}
   touch "$out"
 ''
