@@ -6,10 +6,10 @@ let
     network = "10.100.0.0/24";
   };
 
-  # Cloud Hypervisor's virtio device ordering can shift when a guest gains a
-  # persistent volume, so systemd may expose the primary NIC as ens6, ens7,
-  # and so on. iptables accepts a trailing + as an interface-name wildcard.
-  guestInterface = "ens+";
+  # mkMicrovmConfig assigns this name to the NIC matched by the VM's fixed MAC.
+  # The stable name avoids trusting a predictable-name suffix that can change
+  # when Cloud Hypervisor's device layout changes.
+  guestInterface = "microvm0";
 in
 {
   inherit sharedBridge guestInterface;
