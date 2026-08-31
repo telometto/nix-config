@@ -63,6 +63,10 @@ in
       "security-headers"
       "gitea-xfp-https"
     ];
+    gitea-compatible = [
+      "gitea-headers"
+      "gitea-xfp-https"
+    ];
   };
 
   # Trust model: Traefik ↔ VM communication uses plain HTTP over an isolated
@@ -147,6 +151,10 @@ in
           # WebSocket connections; keep this exception route-scoped.
           lingarr-headers = traefikLib.mkSecurityHeaders {
             csp = traefikLib.compatibilityCsp;
+          };
+
+          gitea-headers = traefikLib.mkSecurityHeaders {
+            csp = null;
           };
 
           gitea-xfp-https.headers.customRequestHeaders.X-Forwarded-Proto = "https";
