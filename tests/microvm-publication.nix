@@ -2,6 +2,7 @@
   blizzard,
   pkgs,
   self,
+  VARS
 }:
 let
   inherit (pkgs) lib;
@@ -94,7 +95,7 @@ let
 
   expectedProductionPublicationHttp = {
     routers = lib.mapAttrs (name: publication: {
-      rule = "Host(`${publication.hostname}.zzxyz.no`)";
+      rule = "Host(`${publication.hostname}.${VARS.domains.public}`)";
       service = name;
       entryPoints = [ "web" ];
       middlewares = publication.middlewares ++ [ "crowdsec" ];
@@ -106,19 +107,19 @@ let
 
   expectedProductionTunnelOrigins = builtins.listToAttrs (
     lib.mapAttrsToList (_: publication: {
-      name = "${publication.hostname}.zzxyz.no";
+      name = "${publication.hostname}.${VARS.domains.public}";
       value = "http://localhost:80";
     }) productionPublications
   );
   actualProductionTunnelOrigins = builtins.listToAttrs (
     lib.mapAttrsToList (_: publication: {
-      name = "${publication.hostname}.zzxyz.no";
-      value = productionTunnel.ingress."${publication.hostname}.zzxyz.no";
+      name = "${publication.hostname}.${VARS.domains.public}";
+      value = productionTunnel.ingress."${publication.hostname}.${VARS.domains.public}";
     }) productionPublications
   );
 
   expectedMatrixWellKnownRouter = {
-    rule = "Host(`zzxyz.no`) && PathPrefix(`/.well-known/matrix/`)";
+    rule = "Host(`${VARS.domains.public}`) && PathPrefix(`/.well-known/matrix/`)";
     service = "matrix-synapse";
     entryPoints = [ "web" ];
     middlewares = [
@@ -143,7 +144,7 @@ let
   http = cfg.services.traefik.dynamicConfigOptions.http;
 
   actual = {
-    tunnelOrigin = tunnel.ingress."downloads-test.zzxyz.no";
+    tunnelOrigin = tunnel.ingress."downloads-test.${VARS.domains.public}";
     router = http.routers.qbittorrent;
     backend = http.services.qbittorrent;
   };
@@ -151,7 +152,7 @@ let
   expected = {
     tunnelOrigin = "http://localhost:80";
     router = {
-      rule = "Host(`downloads-test.zzxyz.no`)";
+      rule = "Host(`downloads-test.${VARS.domains.public}`)";
       service = "qbittorrent";
       entryPoints = [ "web" ];
       middlewares = [
@@ -392,7 +393,7 @@ assert !invalidCanonicalDomainEvaluation.success;
 assert !undefinedMiddlewareEvaluation.success;
 assert !removedHostOptionEvaluation.success;
 assert !removedInstanceOptionEvaluation.success;
-assert !(builtins.hasAttr "matrix.zzxyz.no" matrixDisabledTunnel.ingress);
+assert !(builtins.hasAttr "matrix.${VARS.domains.public}" matrixDisabledTunnel.ingress);
 assert !(builtins.hasAttr "matrix-synapse" matrixDisabledPublicationHttp.routers);
 assert !(builtins.hasAttr "matrix-synapse" matrixDisabledPublicationHttp.services);
 assert !(builtins.hasAttr "matrix-well-known" matrixDisabledHttp.routers);
