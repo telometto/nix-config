@@ -205,7 +205,7 @@ flowchart LR
     subgraph "hm.* (Home Manager — home/)"
         HL[hm.langs]
         HD[hm.desktop\ngnome / kde / hyprland / xdg]
-        HPR[hm.programs\nbrowsers / development / terminal\nmedia / social / gaming\ngpg / tools / beets / fastfetch / packages]
+        HPR[hm.programs\nbrowsers / development / terminal\nmedia / social / gaming\ngpg / tools / beets / fastfetch / packages / gitea]
         HSV[hm.services\ngpgAgent / sshAgent]
         HSEC[hm.security.sops]
         HA[hm.accounts\nemail / calendar / contact]
@@ -332,7 +332,7 @@ not named after a hostname and therefore bypasses the auto-override path.
 |----------|----------|
 | `hm.langs` | regional formatting locale |
 | `hm.desktop` | gnome, kde, hyprland, xdg |
-| `hm.programs` | browsers, development, terminal, media, social, gaming, gpg, tools, beets, fastfetch, packages |
+| `hm.programs` | browsers, development, terminal, media, social, gaming, gpg, tools, beets, fastfetch, packages, gitea |
 | `hm.services` | gpgAgent, sshAgent |
 | `hm.security` | sops |
 | `hm.accounts` | email, calendar, contact |
@@ -583,6 +583,14 @@ ______________________________________________________________________
   (see §8). No dangling secret paths at runtime.
 - Consumer modules read `config.sys.secrets.*` path strings; they never reference `sops.secrets`
   directly.
+- Home Manager has a separate user-runtime layer. `home/security/sops.nix`
+  maps `hm.security.sops.*` into the Home Manager SOPS-Nix module, which uses
+  `%r/secrets.d` for generations and `%r/secrets` for stable user symlinks.
+- The opt-in `hm.programs.gitea` module declares the private
+  `gitea/cf_access_id` and `gitea/cf_access_secret` keys, renders the
+  `$XDG_CONFIG_HOME/sops-nix/secrets/rendered/gitea-git-http` include with mode
+  `0400`, and keeps the helper/template scoped to zeno on snowfall. It requires
+  user SOPS and Git to remain enabled.
 
 ### Sandfly targets
 
