@@ -141,9 +141,12 @@ The opt-in WhatsApp bridge follows the same rule. Its seven SOPS values queue
 regenerates `/run/matrix-whatsapp-registration/whatsapp-registration.yaml`
 from the current settings and values; it refuses to replace that file while
 Synapse or the bridge is active. Do not restart the registration unit by itself
-during a rotation: stop Synapse and the bridge first, then start the database
-initializer, registration gate, Synapse, and bridge in that order. The generated
-`/run` file is not the source of truth and must not be restored independently.
+during a rotation: `mautrix-whatsapp-db-init.service` and the registration gate
+both require and start after `sops-install-secrets.service`, so they cannot
+consume the previous SOPS generation. Stop Synapse and the bridge first, then
+start the database initializer, registration gate, Synapse, and bridge in that
+order. The generated `/run` file is not the source of truth and must not be
+restored independently.
 
 ## Sources
 
