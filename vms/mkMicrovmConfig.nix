@@ -127,24 +127,39 @@ in
     firewall.enable = true;
   };
 
-  systemd.network.networks."20-lan" = {
-    # Match the VM's primary NIC by its fixed MAC address so only the virtio
-    # interface gets the static LAN config; no other interface (Docker veth,
-    # future ether device, etc.) can accidentally match this unit.
-    matchConfig.MACAddress = mac;
-    networkConfig = {
-      Address = [ "${ip}/${toString prefixLength}" ];
-      Gateway = gateway;
-      DNS = [ dns ];
-      DHCP = "no";
-    };
-  }
-  // lib.optionalAttrs (extraRoutes != [ ]) { routes = extraRoutes; };
+  # Cloud Hypervisor can assign a different predictable name when the device
+  # layout changes. Match the fixed VM MAC and assign one stable guest name so
+  # firewall rules do not need an interface-name wildcard.
+  systemd = {
+    network = {
+      links."10-microvm-primary" = {
+        matchConfig.MACAddress = mac;
+        linkConfig.Name = networkDefaults.guestInterface;
+      };
 
-  # Explicitly tell systemd-networkd to leave Docker veth and bridge
-  # interfaces unmanaged so Docker can configure them freely.
-  systemd.network.networks."99-docker-ignore" = {
-    matchConfig.Name = "veth* br-* docker*";
-    linkConfig.Unmanaged = true;
+      networks = {
+        "20-lan" = {
+          # Match the VM's primary NIC by its fixed MAC address so only the
+          # virtio interface gets the static LAN config; no other interface
+          # (Docker veth, future ether device, etc.) can accidentally match
+          # this unit.
+          matchConfig.MACAddress = mac;
+          networkConfig = {
+            Address = [ "${ip}/${toString prefixLength}" ];
+            Gateway = gateway;
+            DNS = [ dns ];
+            DHCP = "no";
+          };
+        }
+        // lib.optionalAttrs (extraRoutes != [ ]) { routes = extraRoutes; };
+
+        # Explicitly tell systemd-networkd to leave Docker veth and bridge
+        # interfaces unmanaged so Docker can configure them freely.
+        "99-docker-ignore" = {
+          matchConfig.Name = "veth* br-* docker*";
+          linkConfig.Unmanaged = true;
+        };
+      };
+    };
   };
 }
