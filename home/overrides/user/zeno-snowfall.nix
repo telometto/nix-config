@@ -48,6 +48,8 @@
 
         git.lfs = true;
       };
+
+      gitea.enable = true;
     };
 
     files.sshAllowedSigners = lib.mkAfter [
