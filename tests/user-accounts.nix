@@ -49,15 +49,17 @@ assert builtins.hasAttr "gitea/cf_access_id" zenoHome.sops.secrets;
 assert builtins.hasAttr "gitea/cf_access_secret" zenoHome.sops.secrets;
 assert zenoHome.sops.secrets."gitea/cf_access_id".mode == "0400";
 assert zenoHome.sops.secrets."gitea/cf_access_secret".mode == "0400";
-assert
-  giteaTemplate.path
-  == "${zenoHome.xdg.configHome}/sops-nix/secrets/rendered/gitea-git-http";
+assert giteaTemplate.path == "${zenoHome.xdg.configHome}/sops-nix/secrets/rendered/gitea-git-http";
 assert giteaTemplate.mode == "0400";
 assert lib.hasInfix "[http \"${giteaUrl}/\"]" giteaTemplate.content;
 assert lib.hasInfix "<SOPS:" giteaTemplate.content;
 assert lib.hasInfix "CF-Access-Client-Id:" giteaTemplate.content;
 assert lib.hasInfix "CF-Access-Client-Secret:" giteaTemplate.content;
-assert giteaHelper == [ "" "libsecret" ];
+assert
+  giteaHelper == [
+    ""
+    "libsecret"
+  ];
 assert giteaInclude != null;
 assert lib.elem sopsTarget zenoHome.systemd.user.services.sops-nix.Unit.Before;
 assert lib.elem sopsTarget zenoHome.systemd.user.services.sops-nix.Install.WantedBy;
@@ -69,8 +71,7 @@ assert !(builtins.hasAttr giteaUrl (kaizerHome.programs.git.settings.credential 
 assert !(builtins.hasAttr "gitea/cf_access_id" sopsDisabledHome.sops.secrets);
 assert !(builtins.hasAttr "gitea-git-http" sopsDisabledHome.sops.templates);
 assert !(builtins.hasAttr giteaUrl (sopsDisabledHome.programs.git.settings.credential or { }));
-assert hasFailedAssertion
-  "hm.programs.gitea requires hm.security.sops.enable = true."
+assert hasFailedAssertion "hm.programs.gitea requires hm.security.sops.enable = true."
   sopsDisabledHome;
 pkgs.runCommand "user-account-tests" { } ''
   touch "$out"
