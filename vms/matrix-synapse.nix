@@ -26,7 +26,7 @@ let
   matrixWhatsappDataDir = "/var/lib/mautrix-whatsapp";
   matrixWhatsappRegistrationGroup = "matrix-whatsapp-registration";
   matrixWhatsappRegistrationDirectory = "/run/matrix-whatsapp-registration";
-  matrixWhatsappSettingsFile = "${matrixWhatsappDataDir}/config.yaml";
+  matrixWhatsappSettingsFile = "${matrixWhatsappRegistrationDirectory}/config.yaml";
   matrixWhatsappSettingsRenderedFile = "${matrixWhatsappSettingsFile}.rendered";
   matrixWhatsappSettingsTempFile = "${matrixWhatsappSettingsFile}.tmp";
   matrixWhatsappRegistrationFile = "${matrixWhatsappRegistrationDirectory}/whatsapp-registration.yaml";
@@ -38,6 +38,18 @@ let
     "mautrix-whatsapp-registration.service"
     "matrix-synapse.service"
     "mautrix-whatsapp.service"
+  ];
+  # The bridge needs loopback access to Synapse and PostgreSQL, plus public
+  # WhatsApp endpoints. Deny private, link-local, and CGNAT destinations so a
+  # compromised bridge cannot pivot to the VM network or the host LAN.
+  matrixWhatsappBlockedNetworks = [
+    "10.0.0.0/8"
+    "172.16.0.0/12"
+    "192.168.0.0/16"
+    "100.64.0.0/10"
+    "169.254.0.0/16"
+    "fc00::/7"
+    "fe80::/10"
   ];
   matrixWhatsappSettingsFormat = pkgs.formats.json { };
   matrixWhatsappSettingsUnsubstituted = matrixWhatsappSettingsFormat.generate "mautrix-whatsapp-config-unsubstituted.json" config.services.mautrix-whatsapp.settings;
@@ -271,8 +283,8 @@ in
   ];
 
   # Nginx is the only guest-network listener. Accept its traffic only from
-  # Blizzard's MicroVM gateway on the primary predictable Ethernet interface;
-  # the ens+ pattern tolerates virtio device renumbering when volumes change.
+  # Blizzard's MicroVM gateway on the primary guest interface. mkMicrovmConfig
+  # gives that interface a stable name based on the VM's fixed MAC address.
   networking.firewall = {
     allowedTCPPorts = [ ];
     extraCommands = ''
@@ -283,78 +295,158 @@ in
   # The locked nixpkgs module normally generates the registration file in the
   # bridge service's preStart. Synapse needs that file before its own service
   # starts, so this VM-owned gate owns that preparation instead.
-  services.mautrix-whatsapp = {
-    # Keep the integration opt-in until private SOPS values, backup evidence,
-    # and interactive-login acceptance have been completed.
-    enable = true;
-    package = pkgs.mautrix-whatsapp.override { withGoolm = true; };
-    registerToSynapse = false;
-    environmentFile = lib.mkIf matrixWhatsappEnabled matrixWhatsappEnvironmentFile;
-    serviceDependencies = lib.mkIf matrixWhatsappEnabled [
-      "matrix-synapse.service"
-      "mautrix-whatsapp-db-init.service"
-      "mautrix-whatsapp-registration.service"
+  services = {
+    mautrix-whatsapp = {
+      # Keep the integration opt-in until private SOPS values, backup evidence,
+      # and interactive-login acceptance have been completed.
+      enable = lib.mkDefault false;
+      # libolm is deprecated upstream. The locked mautrix-whatsapp package's
+      # available non-libolm backend is goolm; keep this explicit until the
+      # bridge provides a supported, audited vodozemac-backed alternative.
+      package = pkgs.mautrix-whatsapp.override { withGoolm = true; };
+      registerToSynapse = false;
+      environmentFile = lib.mkIf matrixWhatsappEnabled matrixWhatsappEnvironmentFile;
+      serviceDependencies = lib.mkIf matrixWhatsappEnabled [
+        "matrix-synapse.service"
+        "mautrix-whatsapp-db-init.service"
+        "mautrix-whatsapp-registration.service"
+      ];
+      settings = {
+        homeserver = {
+          address = "http://127.0.0.1:8008";
+          domain = VARS.domains.public;
+        };
+        appservice = {
+          address = "http://127.0.0.1:29318";
+          hostname = "127.0.0.1";
+          port = 29318;
+          as_token = "$MAUTRIX_WHATSAPP_APPSERVICE_AS_TOKEN";
+          hs_token = "$MAUTRIX_WHATSAPP_APPSERVICE_HS_TOKEN";
+        };
+        bridge = {
+          # Relay mode is deliberately disabled. Only the named Matrix operator
+          # is granted admin access before the first interactive login.
+          relay.enabled = false;
+          # Keep portal rooms on this homeserver until federation of bridged
+          # history has a separate privacy review.
+          federate_rooms = false;
+          permissions = {
+            "*" = "relay";
+            "${matrixWhatsappAdmin}" = "admin";
+          };
+        };
+        database = {
+          type = "postgres";
+          uri = "postgresql://mautrix-whatsapp@127.0.0.1/mautrix-whatsapp?sslmode=disable";
+        };
+        encryption = {
+          allow = true;
+          default = true;
+          require = true;
+          # MAS does not expose the legacy m.login.application_service flow.
+          # Use MSC4190 device creation for the encrypted bridge bot instead.
+          msc4190 = true;
+          pickle_key = "$MAUTRIX_WHATSAPP_ENCRYPTION_PICKLE_KEY";
+        };
+        public_media.signing_key = "$MAUTRIX_WHATSAPP_PUBLIC_MEDIA_SIGNING_KEY";
+        direct_media.server_key = "$MAUTRIX_WHATSAPP_DIRECT_MEDIA_SERVER_KEY";
+        network = {
+          displayname_template = "{{or .BusinessName .PushName .Phone}} (WA)";
+          history_sync.request_full_sync = false;
+          identity_change_notices = true;
+        };
+        provisioning.shared_secret = "$MAUTRIX_WHATSAPP_PROVISIONING_SHARED_SECRET";
+      };
+    };
+
+    matrix-synapse.settings.app_service_config_files = lib.mkIf matrixWhatsappEnabled [
+      matrixWhatsappRegistrationFile
     ];
-    settings = {
-      homeserver = {
-        address = "http://127.0.0.1:8008";
-        domain = VARS.domains.public;
-      };
-      appservice = {
-        address = "http://127.0.0.1:29318";
-        hostname = "127.0.0.1";
-        port = 29318;
-        as_token = "$MAUTRIX_WHATSAPP_APPSERVICE_AS_TOKEN";
-        hs_token = "$MAUTRIX_WHATSAPP_APPSERVICE_HS_TOKEN";
-      };
-      bridge = {
-        # Relay mode is deliberately disabled. Only the named Matrix operator
-        # is granted admin access before the first interactive login.
-        relay.enabled = false;
-        # Keep portal rooms on this homeserver until federation of bridged
-        # history has a separate privacy review.
-        federate_rooms = false;
-        permissions = {
-          "*" = "relay";
-          "${matrixWhatsappAdmin}" = "admin";
+
+    # Put the bridge's dedicated database rule before the generic loopback rules
+    # from the PostgreSQL module. The URI is loopback-only and the password is
+    # supplied through the bridge's SOPS-rendered environment file.
+    postgresql.authentication = lib.mkIf matrixWhatsappEnabled (
+      lib.mkBefore ''
+        host    mautrix-whatsapp    mautrix-whatsapp    127.0.0.1/32    scram-sha-256
+      ''
+    );
+
+    # Nginx sits in front of Synapse (8008) and MAS (8081) on port 11060.
+    # Routes auth-related paths to MAS, everything else to Synapse.
+    nginx = {
+      enable = true;
+      enableReload = true;
+
+      recommendedProxySettings = true;
+      recommendedOptimisation = true;
+      recommendedGzipSettings = true;
+
+      appendHttpConfig = ''
+        proxy_headers_hash_max_size 1024;
+        proxy_headers_hash_bucket_size 128;
+      '';
+
+      virtualHosts."matrix" = {
+        listen = [
+          {
+            addr = "0.0.0.0";
+            inherit (reg) port;
+          }
+        ];
+
+        locations = matrixRoutes.locations // {
+          # --- MAS compatibility layer ---
+          # Route Synapse login/logout/refresh to MAS so legacy and OIDC
+          # clients both work through the same endpoints.
+          # Keep Synapse administration on the local SSH/loopback path. The
+          # client rendezvous endpoint remains in the Synapse catch-all below.
+          "~ ^/_synapse/admin(?:/|$)" = {
+            return = "403";
+          };
+
+          # --- Synapse (everything else) ---
+          "/" = {
+            proxyPass = "http://127.0.0.1:8008";
+            proxyWebsockets = true;
+            extraConfig = ''
+              proxy_set_header X-Forwarded-Proto https;
+              proxy_read_timeout 600s;
+              client_max_body_size 90M;
+            '';
+          };
+
+          # --- Well-known ---
+          "= /.well-known/matrix/server" = {
+            return = "200 '{\"m.server\":\"matrix.${VARS.domains.public}:443\"}'";
+            extraConfig = ''
+              default_type application/json;
+              add_header Access-Control-Allow-Origin *;
+            '';
+          };
+
+          # Includes m.authentication (stable) and org.matrix.msc2965.authentication
+          # (unstable) so OIDC-native clients (Element X) discover MAS.
+          "= /.well-known/matrix/client" = {
+            return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"},\"m.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"},\"org.matrix.msc2965.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"}}'";
+            extraConfig = ''
+              default_type application/json;
+              add_header Access-Control-Allow-Origin *;
+            '';
+          };
+
+          # MSC1929: admin contact info for homeserver discovery
+          "= /.well-known/matrix/support" = {
+            return = "200 '{\"contacts\":[{\"role\":\"admin\",\"email_address\":\"matrix@${VARS.domains.public}\"}]}'";
+            extraConfig = ''
+              default_type application/json;
+              add_header Access-Control-Allow-Origin *;
+            '';
+          };
         };
       };
-      database = {
-        type = "postgres";
-        uri = "postgresql://mautrix-whatsapp@127.0.0.1/mautrix-whatsapp?sslmode=disable";
-      };
-      encryption = {
-        allow = true;
-        default = true;
-        require = true;
-        # MAS does not expose the legacy m.login.application_service flow.
-        # Use MSC4190 device creation for the encrypted bridge bot instead.
-        msc4190 = true;
-        pickle_key = "$MAUTRIX_WHATSAPP_ENCRYPTION_PICKLE_KEY";
-      };
-      public_media.signing_key = "$MAUTRIX_WHATSAPP_PUBLIC_MEDIA_SIGNING_KEY";
-      direct_media.server_key = "$MAUTRIX_WHATSAPP_DIRECT_MEDIA_SERVER_KEY";
-      network = {
-        displayname_template = "{{or .BusinessName .PushName .Phone}} (WA)";
-        history_sync.request_full_sync = false;
-        identity_change_notices = true;
-      };
-      provisioning.shared_secret = "$MAUTRIX_WHATSAPP_PROVISIONING_SHARED_SECRET";
     };
   };
-
-  services.matrix-synapse.settings.app_service_config_files = lib.mkIf matrixWhatsappEnabled [
-    matrixWhatsappRegistrationFile
-  ];
-
-  # Put the bridge's dedicated database rule before the generic loopback rules
-  # from the PostgreSQL module. The URI is loopback-only and the password is
-  # supplied through the bridge's SOPS-rendered environment file.
-  services.postgresql.authentication = lib.mkIf matrixWhatsappEnabled (
-    lib.mkBefore ''
-      host    mautrix-whatsapp    mautrix-whatsapp    127.0.0.1/32    scram-sha-256
-    ''
-  );
 
   systemd = {
     tmpfiles.rules = [
@@ -365,23 +457,31 @@ in
     ++ lib.optional matrixWhatsappEnabled "d /var/lib/mautrix-whatsapp 0700 mautrix-whatsapp mautrix-whatsapp -";
 
     services = {
-      matrix-synapse = lib.mkIf matrixWhatsappEnabled {
+      matrix-synapse = {
         after = [
           "sops-install-secrets.service"
-          "mautrix-whatsapp-registration.service"
-        ];
+        ]
+        ++ lib.optional matrixWhatsappEnabled "mautrix-whatsapp-registration.service";
         requires = [
           "sops-install-secrets.service"
-          "mautrix-whatsapp-registration.service"
-        ];
+        ]
+        ++ lib.optional matrixWhatsappEnabled "mautrix-whatsapp-registration.service";
+      }
+      // lib.optionalAttrs matrixWhatsappEnabled {
         restartTriggers = [ matrixWhatsappSettingsUnsubstituted ];
         serviceConfig.SupplementaryGroups = [ matrixWhatsappRegistrationGroup ];
       };
 
       mautrix-whatsapp-db-init = lib.mkIf matrixWhatsappEnabled {
         description = "Create the dedicated Mautrix-WhatsApp PostgreSQL database";
-        after = [ "postgresql.service" ];
-        requires = [ "postgresql.service" ];
+        after = [
+          "sops-install-secrets.service"
+          "postgresql.service"
+        ];
+        requires = [
+          "sops-install-secrets.service"
+          "postgresql.service"
+        ];
         before = [
           "mautrix-whatsapp-registration.service"
           "mautrix-whatsapp.service"
@@ -486,6 +586,9 @@ in
           done
 
           ${pkgs.envsubst}/bin/envsubst \
+            -no-unset \
+            -no-empty \
+            -fail-fast \
             -o ${lib.escapeShellArg matrixWhatsappSettingsRenderedFile} \
             -i ${lib.escapeShellArg matrixWhatsappSettingsUnsubstituted}
 
@@ -559,7 +662,9 @@ in
           ReadOnlyPaths = [
             matrixWhatsappEnvironmentFile
             matrixWhatsappRegistrationFile
+            matrixWhatsappSettingsFile
           ];
+          IPAddressDeny = matrixWhatsappBlockedNetworks;
           ReadWritePaths = [ matrixWhatsappDataDir ];
         };
       };
@@ -950,81 +1055,6 @@ in
           # --- Performance ---
 
           caches.global_factor = 1.0;
-        };
-      };
-    };
-  };
-
-  # Nginx sits in front of Synapse (8008) and MAS (8081) on port 11060.
-  # Routes auth-related paths to MAS, everything else to Synapse.
-  services.nginx = {
-    enable = true;
-    enableReload = true;
-
-    recommendedProxySettings = true;
-    recommendedOptimisation = true;
-    recommendedGzipSettings = true;
-
-    appendHttpConfig = ''
-      proxy_headers_hash_max_size 1024;
-      proxy_headers_hash_bucket_size 128;
-    '';
-
-    virtualHosts."matrix" = {
-      listen = [
-        {
-          addr = "0.0.0.0";
-          inherit (reg) port;
-        }
-      ];
-
-      locations = matrixRoutes.locations // {
-        # --- MAS compatibility layer ---
-        # Route Synapse login/logout/refresh to MAS so legacy and OIDC
-        # clients both work through the same endpoints.
-        # Keep Synapse administration on the local SSH/loopback path. The
-        # client rendezvous endpoint remains in the Synapse catch-all below.
-        "~ ^/_synapse/admin(?:/|$)" = {
-          return = "403";
-        };
-
-        # --- Synapse (everything else) ---
-        "/" = {
-          proxyPass = "http://127.0.0.1:8008";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-            proxy_read_timeout 600s;
-            client_max_body_size 90M;
-          '';
-        };
-
-        # --- Well-known ---
-        "= /.well-known/matrix/server" = {
-          return = "200 '{\"m.server\":\"matrix.${VARS.domains.public}:443\"}'";
-          extraConfig = ''
-            default_type application/json;
-            add_header Access-Control-Allow-Origin *;
-          '';
-        };
-
-        # Includes m.authentication (stable) and org.matrix.msc2965.authentication
-        # (unstable) so OIDC-native clients (Element X) discover MAS.
-        "= /.well-known/matrix/client" = {
-          return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"},\"m.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"},\"org.matrix.msc2965.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"}}'";
-          extraConfig = ''
-            default_type application/json;
-            add_header Access-Control-Allow-Origin *;
-          '';
-        };
-
-        # MSC1929: admin contact info for homeserver discovery
-        "= /.well-known/matrix/support" = {
-          return = "200 '{\"contacts\":[{\"role\":\"admin\",\"email_address\":\"matrix@${VARS.domains.public}\"}]}'";
-          extraConfig = ''
-            default_type application/json;
-            add_header Access-Control-Allow-Origin *;
-          '';
         };
       };
     };
