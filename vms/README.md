@@ -255,7 +255,7 @@ message:
 | `instances.<name>.cfTunnel` | `instances.<name>.publication` or a bespoke host ingress |
 | `instances.<name>.reverseProxy` | `instances.<name>.publication` or a bespoke host route |
 
-`immich` is published at `https://photos.zzxyz.no` through Cloudflare Tunnel
+`immich` is published at `https://photos.${VARS.domains.public}` through Cloudflare Tunnel
 and Traefik. Blizzard also forwards TCP `11070` to the same registry service
 for direct home-LAN access; `10.100.0.70:11070` remains reachable on the
 MicroVM network and through the advertised Tailscale subnet route.
