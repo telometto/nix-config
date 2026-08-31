@@ -76,7 +76,7 @@ ______________________________________________________________________
 | firefly | 10.100.0.62 | 11062 | 2 GB | 2 | Direct | Firefly III finance |
 | firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Direct | Firefly data importer |
 | firefox | 10.100.0.52 | 11052 | 4 GB | 4 | Via WG | Containerized Firefox browser |
-| gitea | 10.100.0.50 | 11050 | 2 GB | 2 | Direct | Self-hosted git forge |
+| gitea | 10.100.0.50 | 11050 | 2 GB | 2 | Direct | Self-hosted git forge; public `git.<canonical-domain>` via Cloudflare Tunnel/Traefik |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Direct | Photo library |
 | lidarr | 10.100.0.26 | 11028 | 1 GB | 1 | Direct | Music PVR |
 | matrix-synapse | 10.100.0.60 | 11060 | 4 GB | 4 | Gateway only | Matrix homeserver |
