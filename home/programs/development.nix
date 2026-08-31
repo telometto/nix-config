@@ -122,7 +122,6 @@ in
 
       git = {
         enable = lib.mkDefault true;
-        package = pkgs.git.override { withLibsecret = true; };
 
         signing.format = "ssh";
 
@@ -141,8 +140,6 @@ in
           pull.rebase = false;
 
           gpg.format = "ssh";
-
-          credential."https://git.${VARS.domains.public}".helper = "libsecret";
         };
 
         includes = [
