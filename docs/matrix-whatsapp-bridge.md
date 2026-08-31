@@ -5,7 +5,7 @@
 > explicit runtime acceptance. This does not authorize a deployment, a
 > WhatsApp login, or a change to `nix-secrets`.
 >
-> Last reviewed: 2026-08-26
+> Last reviewed: 2026-08-27
 
 This document describes the planned and opt-in addition of
 [`mautrix-whatsapp`](https://github.com/mautrix/whatsapp) to the Matrix
@@ -34,6 +34,14 @@ The same-VM placement is appropriate because:
 This does not mean that the bridge should share Synapse's data or database. It
 should remain a separately managed systemd service with its own persistent
 state, database, secrets, permissions, and backup/restore checklist.
+
+The same-VM arrangement is service-level containment, not a separate network
+namespace. The bridge keeps the loopback connections required by Synapse and
+PostgreSQL, while its systemd unit denies private, link-local, and CGNAT
+destinations. This is defense in depth rather than a namespace boundary, and
+the live gate must verify the effective systemd egress filter on the target
+kernel. If the bridge becomes a less-trusted or multi-user workload, the
+dedicated-VM split below is the stronger isolation boundary.
 
 A dedicated VM becomes reasonable later if the bridge is opened to many users,
 needs independent resource/restart isolation, or is deliberately treated as a
@@ -66,13 +74,12 @@ The implementation should preserve the following boundaries.
 ### Application Service API
 
 The bridge needs a generated `registration.yaml` file. Synapse must include
-that file under `app_service_config_files`, and Synapse must be restarted when
-the registration changes. The bridge itself does not read the registration
-file at runtime; its own configuration contains the corresponding application
-service values. The VM keeps the nixpkgs module's automatic
-`registerToSynapse` wiring disabled so Synapse is not added to the bridge's
-raw-secret group. Instead, Synapse reads the generated file from
-`/run/matrix-whatsapp-registration/` through a dedicated read-only group.
+that file under `app_service_config_files`, and both Synapse and the bridge
+must be restarted when the registration changes. The bridge is launched with
+the generated file as its `--registration` input, while Synapse reads the same
+file through a dedicated read-only group. The VM keeps the nixpkgs module's
+automatic `registerToSynapse` wiring disabled so Synapse is not added to the
+bridge's raw-secret group.
 
 For the same-VM design, use a loopback contract similar to:
 
@@ -92,15 +99,27 @@ systemd hardening. Its normal `preStart` can generate a registration after
 Synapse has already started, so the VM replaces that hook with a fail-closed
 check and uses a separate registration-preparation unit before Synapse.
 
+### End-to-bridge encryption backend
+
+`libolm` is deprecated upstream. The locked `mautrix-whatsapp` package exposes
+its pure-Go `goolm` backend as the non-libolm option, so the VM selects it
+explicitly with `withGoolm = true`. This avoids falling back to the deprecated
+C implementation, but the package still describes goolm as experimental. Keep
+the package revision pinned, retain required encryption, and repeat the
+encrypted send/receive and restart/restore checks after package updates. Do not
+silently switch back to libolm; move to a supported vodozemac-backed bridge
+only when `mautrix-whatsapp` provides one.
+
 ### Durable state and database
 
 The bridge's linked-device session and crypto state must survive a VM restart.
 Keep them in the separate guest state boundary for
 `/var/lib/mautrix-whatsapp`; do not place them in the Synapse or MAS state image
 without an explicit migration and restore plan. The generated bridge
-configuration and registration live under `/var/lib/mautrix-whatsapp` and
-`/run/matrix-whatsapp-registration` respectively and are recreated from the
-locked configuration plus SOPS values.
+configuration and registration live under `/run/matrix-whatsapp-registration`
+and are recreated from the locked configuration plus SOPS values. Only linked
+device and crypto state is kept under `/var/lib/mautrix-whatsapp` so the
+secret-bearing rendered configuration is not part of the durable state image.
 
 The bridge database must be separate from both the `matrix-synapse` and `mas`
 databases. Reusing the existing PostgreSQL service with a distinct
@@ -230,8 +249,21 @@ Before any activation, explicitly enable the bridge, provision the seven named
 SOPS values in the private secrets flake, and confirm that the derived Matrix
 administrator is the intended account. The VM defaults to
 `services.mautrix-whatsapp.enable = false`; enabling it must be an explicit
-deployment override after the gates above. The first boot must show all of
-these units healthy before any login:
+deployment override after the gates above. The guest override belongs in the
+`matrix-synapse-vm` module list in `vms/flake-microvms.nix`, not in the
+Blizzard VM registry (which only controls whether the guest exists):
+
+```nix
+matrix-synapse-vm = mkMicrovm [
+  microvmModule
+  sopsModule
+  ./matrix-synapse.nix
+  { services.mautrix-whatsapp.enable = true; }
+];
+```
+
+Keep that final module out of the production list until the gates above pass.
+The first enabled boot must show all of these units healthy before any login:
 
 ```text
 sops-install-secrets.service
@@ -267,9 +299,13 @@ validation.
 - Synapse starts with the registration file, and a registration change has a
   clear restart/rollback procedure.
 - The opt-in bridge has its own service identity, state image, database, secrets,
-  registration-read group, and systemd resource/hardening policy.
-- The host/guest MicroVM network policy is unchanged because no new VM or
-  lateral peer is introduced.
+  registration-read group, and systemd resource/hardening policy. Its service
+  can reach required loopback and public endpoints, but systemd denies private,
+  link-local, and CGNAT destinations to limit lateral pivoting; the live test
+  must confirm those destinations are actually denied.
+- The host/guest MicroVM network policy keeps the existing shared bridge and no
+  new lateral peer; each guest's primary NIC is matched by its fixed MAC and
+  exposed to firewall rules as stable `microvm0`.
 - Matrix's existing federation, client, MAS, media-retention, and raw-port
   acceptance checks still pass.
 - A backup and isolated restore preserve or deliberately re-establish the
