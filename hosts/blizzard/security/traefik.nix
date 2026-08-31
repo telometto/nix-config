@@ -59,6 +59,9 @@ in
     oidc-provider = [ "pocket-id-headers" ];
     plex-compatible = [ "plex-headers" ];
     sabnzbd-ui = [ "sabnzbd-headers" ];
+    # Keep this legacy name for possible out-of-tree overlays. In-tree Gitea
+    # uses gitea-compatible because security-headers adds a static CSP that
+    # cannot authorize Gitea's per-response bootstrap nonce.
     strict-forwarded-https = [
       "security-headers"
       "gitea-xfp-https"
@@ -153,6 +156,13 @@ in
             csp = traefikLib.compatibilityCsp;
           };
 
+          # Gitea renders a per-response nonce-bearing bootstrap script. A
+          # static Traefik CSP cannot carry that nonce, so CSP ownership is
+          # delegated to Gitea for this route only. Deploy only after the
+          # authenticated checks in docs/gitea.md confirm an effective Gitea
+          # CSP with a matching nonce; the other shared headers,
+          # X-Forwarded-Proto, and CrowdSec remain enforced by
+          # gitea-compatible.
           gitea-headers = traefikLib.mkSecurityHeaders {
             csp = null;
           };
