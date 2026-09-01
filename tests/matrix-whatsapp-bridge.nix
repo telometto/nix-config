@@ -23,6 +23,10 @@ let
   dbInitService = vmCfg.systemd.services."mautrix-whatsapp-db-init";
   registrationService = vmCfg.systemd.services."mautrix-whatsapp-registration";
   reconcileService = vmCfg.systemd.services."mautrix-whatsapp-stack-reconcile";
+  bridgeRuntimeSettingsFile = lib.findFirst (
+    path: lib.hasInfix "mautrix-whatsapp-config-unsubstituted.json" (toString path)
+  ) null reconcileService.restartTriggers;
+  bridgeRuntimeSettings = builtins.fromJSON (builtins.readFile bridgeRuntimeSettingsFile);
   postgresqlService = vmCfg.systemd.services.postgresql;
   stackTarget = vmCfg.systemd.targets."mautrix-whatsapp-stack";
   synapseService = vmCfg.systemd.services."matrix-synapse";
@@ -185,8 +189,15 @@ let
     ${pkgs.gnugrep}/bin/grep -qF 'test-pickle-key' ${registrationTestRuntimeDir}/current/config.yaml
     ${pkgs.gnugrep}/bin/grep -qF 'test-media-signing-key' ${registrationTestRuntimeDir}/current/config.yaml
     ${pkgs.gnugrep}/bin/grep -qF 'test-media-server-key' ${registrationTestRuntimeDir}/current/config.yaml
-    test "$(${pkgs.yq}/bin/yq -r '.appservice.as_token' ${registrationTestRuntimeDir}/current/config.yaml)" = generated-as-token
-    test "$(${pkgs.yq}/bin/yq -r '.appservice.hs_token' ${registrationTestRuntimeDir}/current/config.yaml)" = generated-hs-token
+    generatedAsToken="$(${pkgs.yq}/bin/yq -r '.as_token' ${registrationTestRuntimeDir}/current/whatsapp-registration.yaml)"
+    generatedHsToken="$(${pkgs.yq}/bin/yq -r '.hs_token' ${registrationTestRuntimeDir}/current/whatsapp-registration.yaml)"
+    test -n "$generatedAsToken"
+    test -n "$generatedHsToken"
+    test "$generatedAsToken" != test-as-token
+    test "$generatedHsToken" != test-hs-token
+    test "$generatedAsToken" != "$generatedHsToken"
+    test "$(${pkgs.yq}/bin/yq -r '.appservice.as_token' ${registrationTestRuntimeDir}/current/config.yaml)" = "$generatedAsToken"
+    test "$(${pkgs.yq}/bin/yq -r '.appservice.hs_token' ${registrationTestRuntimeDir}/current/config.yaml)" = "$generatedHsToken"
 
     rm -f ${registrationTestRuntimeDir}/current
     mkdir -p ${registrationTestRuntimeDir}/.generation-existing
@@ -290,8 +301,9 @@ assert
   bridgeSettings.database.uri
   == "postgresql://mautrix-whatsapp@127.0.0.1/mautrix-whatsapp?sslmode=disable";
 assert bridgeSettings.bridge.relay.enabled == false;
-assert !(bridgeSettings.bridge.permissions ? "*");
 assert bridgeSettings.bridge.permissions.${bridgeAdmin} == "admin";
+assert !(bridgeRuntimeSettings.bridge.permissions ? "*");
+assert bridgeRuntimeSettings.bridge.permissions.${bridgeAdmin} == "admin";
 assert bridgeSettings.encryption.allow;
 assert bridgeSettings.encryption.default;
 assert bridgeSettings.encryption.require;
@@ -364,7 +376,8 @@ assert lib.elem "sops-install-secrets.service" dbInitService.requires;
 assert lib.hasInfix "ALTER ROLE" dbInitService.script;
 assert lib.hasInfix "SET password_encryption = 'scram-sha-256'" dbInitService.script;
 assert lib.hasInfix "\\getenv bridge_password BRIDGE_DATABASE_PASSWORD" dbInitService.script;
-assert !(lib.hasInfix "${pkgs.gnugrep}/bin/grep" dbInitService.script);
+assert
+  !(lib.hasInfix (builtins.unsafeDiscardStringContext "${pkgs.gnugrep}/bin/grep") dbInitService.script);
 assert lib.hasInfix "/run/matrix-whatsapp-registration/current/config.yaml"
   bridgeService.serviceConfig.ExecStart;
 assert lib.hasInfix "/run/matrix-whatsapp-registration/current/whatsapp-registration.yaml"
