@@ -5,7 +5,7 @@
 > explicit runtime acceptance. This does not authorize a deployment, a
 > WhatsApp login, or a change to `nix-secrets`.
 >
-> Last reviewed: 2026-08-27
+> Last reviewed: 2026-09-01
 
 This document describes the planned and opt-in addition of
 [`mautrix-whatsapp`](https://github.com/mautrix/whatsapp) to the Matrix
@@ -63,9 +63,12 @@ WhatsApp integration is an opt-in addition to that VM:
 | Host exposure | No raw host TCP `11060` forward; the guest firewall accepts the Matrix service only from Blizzard's MicroVM gateway |
 | Persistent state | Separate images for Synapse, PostgreSQL, and MAS, plus the guest `/persist` volume; enabling the bridge adds `mautrix-whatsapp-state.img` |
 
-The source of truth for these contracts is [`vms/matrix-synapse.nix`](../vms/matrix-synapse.nix),
-the [`matrix-synapse` registry entry](../vms/vm-registry.nix), and the
-[Matrix section of the MicroVM reference](../vms/README.md#matrix-network-and-authentication-boundary).
+The source of truth for these contracts is the Matrix VM composition in
+[`vms/matrix-synapse.nix`](../vms/matrix-synapse.nix), the bridge module in
+[`vms/matrix-whatsapp.nix`](../vms/matrix-whatsapp.nix), the storage contract in
+[`vms/matrix-storage.nix`](../vms/matrix-storage.nix), the
+[`matrix-synapse` registry entry](../vms/vm-registry.nix), and the [Matrix
+section of the MicroVM reference](../vms/README.md#matrix-network-and-authentication-boundary).
 
 ## Integration contract
 
@@ -79,7 +82,10 @@ must be restarted when the registration changes. The bridge is launched with
 the generated file as its `--registration` input, while Synapse reads the same
 file through a dedicated read-only group. The VM keeps the nixpkgs module's
 automatic `registerToSynapse` wiring disabled so Synapse is not added to the
-bridge's raw-secret group.
+bridge's raw-secret group. The registration gate builds a complete generation
+under `/run/matrix-whatsapp-registration/.generation-*` and atomically switches
+the `current` symlink only after both the registration and bridge configuration
+validate.
 
 For the same-VM design, use a loopback contract similar to:
 
@@ -235,10 +241,12 @@ an important account.
    the generated guest-local file, provision only the declared SOPS paths, and
    create a distinct PostgreSQL database through a guest-local initializer.
    Private secret values remain outside this repository.
-1. **Not complete:** extend the approved Matrix backup/restore inventory and
-   verify service ordering, permissions, listener scope, outbound connectivity,
-   and clean restart before logging in. The existing Matrix offsite-backup and
-   isolated-restore gates are still incomplete.
+1. **Source-complete, live gate outstanding:** the host now declares an
+   encrypted offsite Matrix backup for the stopped-VM image set and the
+   [Matrix backup runbook](matrix-backup.md). Verify the repository's forced
+   command, run the first backup, and complete the isolated restore before
+   logging in. Also verify service ordering, permissions, listener scope,
+   outbound connectivity, and clean restart.
 1. **Not complete:** after the prior gates, configure double puppeting if
    approved, then perform the interactive QR/pairing login and validate portal
    creation, media, reconnect, logout, and re-login behavior.
@@ -268,23 +276,25 @@ The first enabled boot must show all of these units healthy before any login:
 ```text
 sops-install-secrets.service
 postgresql.service
+mautrix-whatsapp-stack-reconcile.service
+mautrix-whatsapp-stack.target
 mautrix-whatsapp-db-init.service
 mautrix-whatsapp-registration.service
 matrix-synapse.service
 mautrix-whatsapp.service
 ```
 
-The registration file is generated at `/run/matrix-whatsapp-registration/` and
-the bridge state is guest-local. A token or database-password rotation must be
+The registration file is generated at
+`/run/matrix-whatsapp-registration/current/whatsapp-registration.yaml` and the
+bridge state is guest-local. A token or database-password rotation must be
 treated as a coordinated change: preserve the state-image backup, update the
 encrypted SOPS value, allow `sops-install-secrets.service` to re-materialize the
-value and queue the registered restarts, then verify that the database init,
-registration gate, Synapse, and bridge restart in that order. The registration
-gate always regenerates the file from the current settings and refuses to
-replace it while Synapse or the bridge is running. For manual recovery, stop
-Synapse and the bridge first, restart the gate, then start Synapse and the
-bridge. Do not treat the generated `/run` file as the source of truth or restore
-it independently.
+value, and verify `mautrix-whatsapp-stack-reconcile.service`. The coordinator
+restarts the stack target, which reruns the database initializer, atomically
+switches the complete registration generation, and starts Synapse and the
+bridge in order. PostgreSQL recovery re-enters the same target. Do not restart
+the registration unit by itself, and do not treat generated `/run` files as the
+source of truth or restore them independently.
 
 The operator must also retain a recovery path for an offline phone, explicit
 WhatsApp logout, linked-device re-login, and an account-ban or account-recovery
@@ -304,21 +314,22 @@ validation.
   link-local, and CGNAT destinations to limit lateral pivoting; the live test
   must confirm those destinations are actually denied.
 - The host/guest MicroVM network policy keeps the existing shared bridge and no
-  new lateral peer; each guest's primary NIC is matched by its fixed MAC and
-  exposed to firewall rules as stable `microvm0`.
+  new lateral peer; every generated guest uses the shared fixed-MAC-to-
+  `microvm0` interface contract, and the network checks pass.
 - Matrix's existing federation, client, MAS, media-retention, and raw-port
   acceptance checks still pass.
-- A backup and isolated restore preserve or deliberately re-establish the
-  WhatsApp linked-device state.
+- The [Matrix backup runbook](matrix-backup.md) has been provisioned and an
+  isolated restore preserves or deliberately re-establishes the WhatsApp
+  linked-device state.
 - The operator has documented phone-offline, WhatsApp logout, account-ban, and
   re-login recovery procedures.
 
 Current status: the declarative listener, optional state/database wiring,
-registration gate, least-privilege secret paths, permission policy, and static
-contract test are present. The bridge is disabled by default. The baseline
-acceptance/observation prerequisite, private secret provisioning,
-backup/restore evidence, live service checks, and interactive login remain
-intentionally incomplete.
+registration gate, least-privilege secret paths, permission policy, static
+contract test, Matrix backup job, and backup runbook are present. The bridge is
+disabled by default. The baseline acceptance/observation prerequisite, private
+secret provisioning, repository/restore evidence, live service checks, and
+interactive login remain intentionally incomplete.
 
 ## Upstream references
 
@@ -332,11 +343,15 @@ intentionally incomplete.
 ## Repository sources reviewed
 
 - [`vms/matrix-synapse.nix`](../vms/matrix-synapse.nix)
+- [`vms/matrix-whatsapp.nix`](../vms/matrix-whatsapp.nix)
+- [`vms/matrix-storage.nix`](../vms/matrix-storage.nix)
 - [`modules/services/matrix-synapse.nix`](../modules/services/matrix-synapse.nix)
 - [`modules/services/matrix-authentication-service.nix`](../modules/services/matrix-authentication-service.nix)
 - [`vms/vm-registry.nix`](../vms/vm-registry.nix)
 - [`vms/mkMicrovmConfig.nix`](../vms/mkMicrovmConfig.nix)
 - [`hosts/blizzard/virtualisation/microvms.nix`](../hosts/blizzard/virtualisation/microvms.nix)
 - [`hosts/blizzard/security/traefik.nix`](../hosts/blizzard/security/traefik.nix)
+- [`hosts/blizzard/services/backup.nix`](../hosts/blizzard/services/backup.nix)
 - [`tests/matrix-whatsapp-bridge.nix`](../tests/matrix-whatsapp-bridge.nix)
+- [`docs/matrix-backup.md`](matrix-backup.md)
 - [`docs/matrix-hardening-plan.md`](matrix-hardening-plan.md)
