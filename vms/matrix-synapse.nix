@@ -230,6 +230,11 @@ in
     ];
 
     services = {
+      matrix-synapse = {
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+      };
+
       # Assembles Synapse's runtime config with its shared secret and MSC3861
       # auth delegation block. Shallow-merged by Synapse on top of the main
       # config. MAS owns all Matrix SMTP configuration.
