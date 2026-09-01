@@ -283,14 +283,8 @@ in
       };
 
       matrix-synapse = lib.mkIf matrixWhatsappEnabled {
-        after = [
-          "sops-install-secrets.service"
-          "mautrix-whatsapp-registration.service"
-        ];
-        requires = [
-          "sops-install-secrets.service"
-          "mautrix-whatsapp-registration.service"
-        ];
+        after = [ "mautrix-whatsapp-registration.service" ];
+        requires = [ "mautrix-whatsapp-registration.service" ];
         wantedBy = lib.mkForce [ ];
         partOf = [ matrixWhatsappStackTarget ];
         serviceConfig.SupplementaryGroups = [ matrixWhatsappRegistrationGroup ];
