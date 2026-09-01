@@ -652,6 +652,7 @@ ______________________________________________________________________
 | Run only the MicroVM network-policy test | `nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs` |
 | Run only the Sandfly target tests | `nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs` |
 | Run only the Scrutiny service tests | `nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs` |
+| Run only the user accounts tests | `nix build .#checks.x86_64-linux.user-accounts --no-link --print-build-logs` |
 | Run only the VictoriaMetrics contract tests | `nix build .#checks.x86_64-linux.victoriametrics --no-link --print-build-logs` |
 | Build without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
 | Apply to current host | `sudo nixos-rebuild switch --flake .#<hostname>` |
@@ -663,8 +664,8 @@ The `flake-check.yml` CI workflow uses
 formatters, checks, and development shells in separate Nix processes, then
 explicitly builds the Cloudflare metrics, MicroVM publication, Matrix baseline,
 Matrix–WhatsApp bridge, blackbox observability, network-policy, Sandfly target,
-Scrutiny service, and VictoriaMetrics checks so their tests execute. Host
-evaluations run separately in `validate-config.yml`.
+Scrutiny service, user-accounts, and VictoriaMetrics checks so their tests
+execute. Host evaluations run separately in `validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 
