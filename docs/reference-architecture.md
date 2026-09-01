@@ -17,6 +17,7 @@ Information reference for this repo's moving parts, options, and commands.
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
 | `checks.x86_64-linux.blackbox-observability` | Rendered public HTTP/TLS probe, alert, exporter-hardening, and dashboard contract tests |
 | `checks.x86_64-linux.matrix-baseline` | Matrix publication, listener, firewall, routing, authentication, systemd-ordering, service-hardening, and runtime-secret-path contract tests |
+| `checks.x86_64-linux.matrix-whatsapp-bridge` | Opt-in Matrix–WhatsApp listener, registration, secret-ownership, PostgreSQL, and systemd contract tests |
 | `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
@@ -176,12 +177,13 @@ Operational tools used across the repo.
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
 Locally, `nix flake check` evaluates and builds the formatting, Cloudflare
-metrics, Matrix baseline, MicroVM publication, blackbox observability, MicroVM
-network-policy, Sandfly target, Scrutiny service, and VictoriaMetrics checks. The
+metrics, Matrix baseline, Matrix–WhatsApp bridge, MicroVM publication, blackbox
+observability, MicroVM network-policy, Sandfly target, Scrutiny service,
+user-accounts, and VictoriaMetrics checks. The
 `flake-check.yml` CI workflow first runs
 `.github/scripts/evaluate-flake-outputs.sh`, which evaluates configurations,
 formatters, checks, and development shells in separate Nix processes, then
-explicitly builds all eight executable test checks. Full host evaluation is
+explicitly builds all ten executable test checks. Full host evaluation is
 handled separately by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
@@ -340,6 +342,9 @@ nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
 
 # Build and run the Matrix baseline contract check
 nix build .#checks.x86_64-linux.matrix-baseline --no-link --print-build-logs
+
+# Build and run the opt-in Matrix–WhatsApp bridge contract check
+nix build .#checks.x86_64-linux.matrix-whatsapp-bridge --no-link --print-build-logs
 
 # Build and run the blackbox observability contract check
 nix build .#checks.x86_64-linux.blackbox-observability --no-link --print-build-logs
