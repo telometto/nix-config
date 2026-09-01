@@ -1,4 +1,4 @@
-{
+let
   serviceVolumes = [
     {
       name = "matrix-synapse";
@@ -37,6 +37,15 @@
   optionalBackupVolumes = [ bridgeVolume ];
 
   toMicrovmVolume = volume: builtins.removeAttrs volume [ "name" ];
+in
+{
+  inherit
+    serviceVolumes
+    persistVolume
+    bridgeVolume
+    optionalBackupVolumes
+    toMicrovmVolume
+    ;
   microvmVolumes = builtins.map toMicrovmVolume serviceVolumes;
   microvmPersistVolume = toMicrovmVolume persistVolume;
   backupVolumes = serviceVolumes ++ [ persistVolume ];
