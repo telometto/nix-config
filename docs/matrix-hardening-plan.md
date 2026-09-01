@@ -357,9 +357,10 @@ end, review the evidence and obtain explicit approval before proceeding.
 
 ## Work package B: reusable MicroVM offsite backup
 
-This is a separate PR deployed only after the baseline observation gate. It
-must preserve Immich's current behavior while moving the common mechanism into
-a deep reusable module, tentatively
+The source-side Matrix backup is now declared alongside the existing Immich
+job, but its repository provisioning and restore evidence remain gated on the
+baseline observation. The common mechanism should still move into a deep
+reusable module, tentatively
 `modules/virtualisation/microvm-offsite-backup.nix`.
 
 ### Module boundary
@@ -394,20 +395,21 @@ Do not expose shell fragments as the caller interface.
   or runbook contract.
 - [ ] Add focused evaluation/tests comparing the generated Immich job and its
   safety assertions before and after extraction.
-- [ ] Extract Matrix's volumes into an authoritative storage contract analogous
+- [x] Extract Matrix's volumes into an authoritative storage contract analogous
   to [`vms/immich-storage.nix`](../vms/immich-storage.nix).
-- [ ] Include `matrix-synapse-state.img`, `postgresql-state.img`,
+- [x] Include `matrix-synapse-state.img`, `postgresql-state.img`,
   `mas-state.img`, and `persist.img` from the same stopped-VM ZFS snapshot.
-- [ ] When the WhatsApp bridge is enabled, include
+- [x] When the WhatsApp bridge is enabled, include
   `mautrix-whatsapp-state.img` in that same snapshot. Its PostgreSQL database
   is already in `postgresql-state.img`; the generated registration under
   `/run` is rebuilt from the locked configuration and SOPS values.
-- [ ] Use a separate Matrix Borg repository, append-only forced-command SSH
-  key, and encryption passphrase. Never share Immich backup credentials.
-- [ ] Schedule Matrix daily at a different time from Immich. The accepted
+- [x] Declare a separate Matrix Borg repository and encryption passphrase. Never
+  share Immich backup credentials.
+- [ ] Provision and verify the separate append-only forced-command SSH key.
+- [x] Schedule Matrix daily at a different time from Immich. The accepted
   offsite recovery-point objective is at most 24 hours; local ZFS snapshots
   cover shorter recovery windows.
-- [ ] Add a Matrix backup and restore runbook. Do not put secret values in it.
+- [x] Add a Matrix backup and restore runbook. Do not put secret values in it.
 
 ### Restore gate
 
@@ -488,6 +490,8 @@ The later Matrix OIDC design must retain these approved invariants:
 ## Repository sources reviewed
 
 - [`vms/matrix-synapse.nix`](../vms/matrix-synapse.nix)
+- [`vms/matrix-whatsapp.nix`](../vms/matrix-whatsapp.nix)
+- [`vms/matrix-storage.nix`](../vms/matrix-storage.nix)
 - [`modules/services/matrix-synapse.nix`](../modules/services/matrix-synapse.nix)
 - [`modules/services/matrix-authentication-service.nix`](../modules/services/matrix-authentication-service.nix)
 - [`tests/matrix-baseline.nix`](../tests/matrix-baseline.nix)
@@ -504,4 +508,5 @@ The later Matrix OIDC design must retain these approved invariants:
 - [`docs/pocket-id-migration-plan.md`](pocket-id-migration-plan.md)
 - [`docs/pocket-id-service-support.md`](pocket-id-service-support.md)
 - [`docs/credential-lifecycle.md`](credential-lifecycle.md)
+- [`docs/matrix-backup.md`](matrix-backup.md)
 - [PR #6581 — Enhance service hardening and secret management](https://github.com/telometto/nix-config/pull/6581)
