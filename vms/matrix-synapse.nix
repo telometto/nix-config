@@ -10,6 +10,7 @@
 let
   reg = (import ./vm-registry.nix { inherit consts; })."matrix-synapse";
   networkDefaults = import ./microvm-network-defaults.nix;
+  matrixStorage = import ./matrix-storage.nix;
   matrixGateway = reg.gateway or networkDefaults.defaultGateway;
   traefikLib = import ../lib/traefik.nix { inherit lib; };
   inherit (traefikLib) matrixRoutes;
@@ -54,25 +55,11 @@ in
     (import ./mkMicrovmConfig.nix (
       reg
       // {
-        volumes = [
-          {
-            mountPoint = "/var/lib/matrix-synapse";
-            image = "matrix-synapse-state.img";
-            size = 20480;
-          }
-          {
-            mountPoint = "/var/lib/postgresql";
-            image = "postgresql-state.img";
-            size = 102400;
-          }
-          {
-            mountPoint = "/var/lib/mas";
-            image = "mas-state.img";
-            size = 1024;
-          }
-        ];
+        volumes = matrixStorage.microvmVolumes;
+        persistVolume = matrixStorage.microvmPersistVolume;
       }
     ))
+    ./matrix-whatsapp.nix
   ];
 
   # After first boot, get the VM's age key with:
@@ -149,13 +136,90 @@ in
   ];
 
   # Nginx is the only guest-network listener. Accept its traffic only from
-  # Blizzard's MicroVM gateway; all other sources fall through to the default
-  # firewall refusal path.
+  # Blizzard's MicroVM gateway on the primary guest interface. mkMicrovmConfig
+  # gives that interface a stable name based on the VM's fixed MAC address.
   networking.firewall = {
     allowedTCPPorts = [ ];
     extraCommands = ''
       ${pkgs.iptables}/bin/iptables -A nixos-fw -i ${networkDefaults.guestInterface} -p tcp --dport ${toString reg.port} -s ${matrixGateway} -j nixos-fw-accept
     '';
+  };
+
+  services = {
+    # Nginx sits in front of Synapse (8008) and MAS (8081) on port 11060.
+    # Routes auth-related paths to MAS, everything else to Synapse.
+    nginx = {
+      enable = true;
+      enableReload = true;
+
+      recommendedProxySettings = true;
+      recommendedOptimisation = true;
+      recommendedGzipSettings = true;
+
+      appendHttpConfig = ''
+        proxy_headers_hash_max_size 1024;
+        proxy_headers_hash_bucket_size 128;
+      '';
+
+      virtualHosts."matrix" = {
+        listen = [
+          {
+            addr = "0.0.0.0";
+            inherit (reg) port;
+          }
+        ];
+
+        locations = matrixRoutes.locations // {
+          # --- MAS compatibility layer ---
+          # Route Synapse login/logout/refresh to MAS so legacy and OIDC
+          # clients both work through the same endpoints.
+          # Keep Synapse administration on the local SSH/loopback path. The
+          # client rendezvous endpoint remains in the Synapse catch-all below.
+          "~ ^/_synapse/admin(?:/|$)" = {
+            return = "403";
+          };
+
+          # --- Synapse (everything else) ---
+          "/" = {
+            proxyPass = "http://127.0.0.1:8008";
+            proxyWebsockets = true;
+            extraConfig = ''
+              proxy_set_header X-Forwarded-Proto https;
+              proxy_read_timeout 600s;
+              client_max_body_size 90M;
+            '';
+          };
+
+          # --- Well-known ---
+          "= /.well-known/matrix/server" = {
+            return = "200 '{\"m.server\":\"matrix.${VARS.domains.public}:443\"}'";
+            extraConfig = ''
+              default_type application/json;
+              add_header Access-Control-Allow-Origin *;
+            '';
+          };
+
+          # Includes m.authentication (stable) and org.matrix.msc2965.authentication
+          # (unstable) so OIDC-native clients (Element X) discover MAS.
+          "= /.well-known/matrix/client" = {
+            return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"},\"m.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"},\"org.matrix.msc2965.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"}}'";
+            extraConfig = ''
+              default_type application/json;
+              add_header Access-Control-Allow-Origin *;
+            '';
+          };
+
+          # MSC1929: admin contact info for homeserver discovery
+          "= /.well-known/matrix/support" = {
+            return = "200 '{\"contacts\":[{\"role\":\"admin\",\"email_address\":\"matrix@${VARS.domains.public}\"}]}'";
+            extraConfig = ''
+              default_type application/json;
+              add_header Access-Control-Allow-Origin *;
+            '';
+          };
+        };
+      };
+    };
   };
 
   systemd = {
@@ -562,83 +626,10 @@ in
     };
   };
 
-  # Nginx sits in front of Synapse (8008) and MAS (8081) on port 11060.
-  # Routes auth-related paths to MAS, everything else to Synapse.
-  services.nginx = {
-    enable = true;
-    enableReload = true;
-
-    recommendedProxySettings = true;
-    recommendedOptimisation = true;
-    recommendedGzipSettings = true;
-
-    appendHttpConfig = ''
-      proxy_headers_hash_max_size 1024;
-      proxy_headers_hash_bucket_size 128;
-    '';
-
-    virtualHosts."matrix" = {
-      listen = [
-        {
-          addr = "0.0.0.0";
-          inherit (reg) port;
-        }
-      ];
-
-      locations = matrixRoutes.locations // {
-        # --- MAS compatibility layer ---
-        # Route Synapse login/logout/refresh to MAS so legacy and OIDC
-        # clients both work through the same endpoints.
-        # Keep Synapse administration on the local SSH/loopback path. The
-        # client rendezvous endpoint remains in the Synapse catch-all below.
-        "~ ^/_synapse/admin(?:/|$)" = {
-          return = "403";
-        };
-
-        # --- Synapse (everything else) ---
-        "/" = {
-          proxyPass = "http://127.0.0.1:8008";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Proto https;
-            proxy_read_timeout 600s;
-            client_max_body_size 90M;
-          '';
-        };
-
-        # --- Well-known ---
-        "= /.well-known/matrix/server" = {
-          return = "200 '{\"m.server\":\"matrix.${VARS.domains.public}:443\"}'";
-          extraConfig = ''
-            default_type application/json;
-            add_header Access-Control-Allow-Origin *;
-          '';
-        };
-
-        # Includes m.authentication (stable) and org.matrix.msc2965.authentication
-        # (unstable) so OIDC-native clients (Element X) discover MAS.
-        "= /.well-known/matrix/client" = {
-          return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"},\"m.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"},\"org.matrix.msc2965.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"}}'";
-          extraConfig = ''
-            default_type application/json;
-            add_header Access-Control-Allow-Origin *;
-          '';
-        };
-
-        # MSC1929: admin contact info for homeserver discovery
-        "= /.well-known/matrix/support" = {
-          return = "200 '{\"contacts\":[{\"role\":\"admin\",\"email_address\":\"matrix@${VARS.domains.public}\"}]}'";
-          extraConfig = ''
-            default_type application/json;
-            add_header Access-Control-Allow-Origin *;
-          '';
-        };
-      };
-    };
-  };
-
   users = {
-    groups.matrix-shared = { };
+    groups = {
+      matrix-shared = { };
+    };
     users = {
       mas.extraGroups = [ "matrix-shared" ];
       matrix-synapse.extraGroups = [ "matrix-shared" ];

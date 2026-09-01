@@ -14,11 +14,14 @@ secret change, or merge.
 | Current runtime priority | Run the merged Matrix baseline's live acceptance matrix and seven-day observation gate; deployment and activation still require their explicit gates |
 | Next runtime branch | Create a separate branch from current `main` only for an approved Matrix follow-up or the reusable offsite-backup work after the baseline gate |
 | Open-PR snapshot | 2026-08-13, live GitHub metadata |
-| Planning status | Matrix baseline source implementation is merged; live acceptance, observation, backup, and OIDC work remain |
+| Planning status | Matrix baseline source implementation is merged; Matrix backup source wiring is present, while live acceptance, observation, restore, and OIDC work remain |
 
-Do not start backup or OIDC implementation before the Matrix baseline's live
-acceptance and observation gates pass. Every runtime branch starts from `main`
-after its required predecessor has passed its live gate and merged.
+Do not activate the Matrix backup or bridge, or claim the backup/restore gate is
+complete, before the Matrix baseline's live acceptance and observation gates
+pass. The source-side backup declaration may land as a safety prerequisite, but
+its repository provisioning and restore rehearsal remain gated. Every runtime
+branch starts from `main` after its required predecessor has passed its live
+gate and merged.
 
 ## How to use the planning documents
 
@@ -83,7 +86,8 @@ and explicit approval are complete.
 
 ### 3. Implement reusable MicroVM offsite backup
 
-After the Matrix baseline's live acceptance and observation gates, create
+After the Matrix baseline's live acceptance and observation gates, complete the
+remaining reusable-backup work and create
 `security/microvm-offsite-backup` from the updated `main` branch. Follow work
 package B in the
 [Matrix hardening plan](matrix-hardening-plan.md#work-package-b-reusable-microvm-offsite-backup).

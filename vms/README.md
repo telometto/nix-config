@@ -103,9 +103,14 @@ ______________________________________________________________________
 The Matrix VM's TCP `11060` port is a guest service port, not a host
 port-forward. Nginx listens on `0.0.0.0:11060` inside the VM, while the guest
 firewall accepts that port only from Blizzard's MicroVM gateway
-`10.100.0.1` on the primary `ens6` interface. The public path is the managed
-`matrix` publication through Cloudflare Tunnel and Traefik; no raw host
-forward bypasses those controls.
+`10.100.0.1` on the stable `microvm0` interface. `microvm0` is the shared
+all-MicroVM guest-interface contract, not a Matrix-only alias:
+`mkMicrovmConfig.nix` assigns it by matching each VM's fixed MAC address, so
+Cloud Hypervisor device renumbering does not broaden or break interface-bound
+firewall rules. Any future interface-name change must update this shared
+helper, its consumers, and the VM network checks together. The public path is
+the managed `matrix` publication through Cloudflare Tunnel and Traefik; no raw
+host forward bypasses those controls.
 
 Synapse and MAS web/health listeners are loopback-only. Nginx is the only
 trusted MAS proxy, and the public `/_synapse/admin` path returns `403`. MAS
@@ -129,6 +134,44 @@ The generators are `Type=oneshot` units with `RemainAfterExit=true`. Treat a
 SOPS rotation as an explicit generator-and-consumer restart operation and verify
 the resulting runtime files; an initial successful boot does not prove that a
 later rotation was consumed.
+
+______________________________________________________________________
+
+### Declarative WhatsApp appservice boundary
+
+The [`mautrix-whatsapp` bridge](../docs/matrix-whatsapp-bridge.md) is an
+opt-in, pre-login service inside `matrix-synapse-vm`, not a new MicroVM. It
+calls Synapse over `127.0.0.1:8008`, listens for appservice transactions only
+on `127.0.0.1:29318`, and has no public publication or host port-forward. When
+enabled, its linked-device state is stored in `mautrix-whatsapp-state.img` and
+its separate PostgreSQL database remains distinct from Synapse and MAS. Both
+must be added to the approved Matrix backup/restore inventory before login;
+the registration file is generated under `/run` and is not an independent
+backup artifact.
+
+The bridge implementation is composed in
+[`matrix-whatsapp.nix`](matrix-whatsapp.nix). Its VM-owned registration gate
+runs before Synapse because the locked nixpkgs module normally generates the
+registration during the bridge service's `preStart`; the VM-owned gate owns
+that preparation instead. It builds a complete generation and switches
+`/run/matrix-whatsapp-registration/current` atomically, so Synapse and the
+bridge consume a matching registration/configuration pair at startup. The
+`mautrix-whatsapp-stack.target` and its reconcile service coordinate SOPS
+rotation and re-enter the same order after PostgreSQL recovery. The bridge's
+`PrivateUsers` sandbox remains enabled: the dedicated
+database uses loopback SCRAM password authentication, and the password is
+SOPS-backed. Raw bridge secrets remain bridge-only; Synapse receives only the
+generated registration through the dedicated read-only group. Memory, task,
+address-family, filesystem, and the remaining upstream systemd hardening stay
+explicit. Systemd also denies private, link-local, and CGNAT destinations for
+the bridge while preserving required loopback and public WhatsApp connectivity;
+the live acceptance test must verify the effective egress filter because this
+is defense in depth, not a separate network namespace.
+
+This placement avoids a new registry identity and lateral network-policy edge
+for the initial rollout. A dedicated VM remains an isolation option for a
+future multi-user or less-trusted deployment; the placement rationale and
+split requirements are recorded in the dedicated design document.
 
 ______________________________________________________________________
 
@@ -402,6 +445,7 @@ ______________________________________________________________________
 
 - [microvm.nix upstream](https://github.com/microvm-nix/microvm.nix)
 - [Immich backup and recovery](../docs/immich-backup.md) — Offsite image backup, retention, and restore runbook
+- [Matrix backup and recovery](../docs/matrix-backup.md) — Matrix image backup, retention, and isolated restore runbook
 - [modules/services/README.md](../modules/services/README.md) — Service module catalog
 - [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
 - [vm-registry.nix](vm-registry.nix) — Single source of truth for all VM parameters

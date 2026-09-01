@@ -45,6 +45,7 @@ ______________________________________________________________________
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
 | `checks.x86_64-linux.blackbox-observability` | Rendered public HTTP/TLS probe, alert, exporter-hardening, and dashboard contract tests |
 | `checks.x86_64-linux.matrix-baseline` | Matrix publication, listener, firewall, routing, authentication, systemd-ordering, service-hardening, and runtime-secret-path contract tests |
+| `checks.x86_64-linux.matrix-whatsapp-bridge` | Opt-in Matrix–WhatsApp listener, registration, secret-ownership, PostgreSQL, and systemd contract tests |
 | `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
 | `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
 | `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
@@ -653,11 +654,13 @@ ______________________________________________________________________
 | Evaluate all flake outputs without building | `nix flake check --no-build` |
 | Run only the Cloudflare metrics tests | `nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs` |
 | Run only the Matrix baseline tests | `nix build .#checks.x86_64-linux.matrix-baseline --no-link --print-build-logs` |
+| Run only the Matrix–WhatsApp bridge tests | `nix build .#checks.x86_64-linux.matrix-whatsapp-bridge --no-link --print-build-logs` |
 | Run only the MicroVM publication tests | `nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs` |
 | Run only the blackbox observability tests | `nix build .#checks.x86_64-linux.blackbox-observability --no-link --print-build-logs` |
 | Run only the MicroVM network-policy test | `nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs` |
 | Run only the Sandfly target tests | `nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs` |
 | Run only the Scrutiny service tests | `nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs` |
+| Run only the user accounts tests | `nix build .#checks.x86_64-linux.user-accounts --no-link --print-build-logs` |
 | Run only the VictoriaMetrics contract tests | `nix build .#checks.x86_64-linux.victoriametrics --no-link --print-build-logs` |
 | Build without switching | `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` |
 | Apply to current host | `sudo nixos-rebuild switch --flake .#<hostname>` |
@@ -668,9 +671,9 @@ The `flake-check.yml` CI workflow uses
 `.github/scripts/evaluate-flake-outputs.sh` to evaluate configurations,
 formatters, checks, and development shells in separate Nix processes, then
 explicitly builds the Cloudflare metrics, MicroVM publication, Matrix baseline,
-blackbox observability, network-policy, Sandfly target, Scrutiny service, and
-VictoriaMetrics checks so their tests execute. Host evaluations run separately
-in `validate-config.yml`.
+Matrix–WhatsApp bridge, blackbox observability, network-policy, Sandfly target,
+Scrutiny service, user-accounts, and VictoriaMetrics checks so their tests
+execute. Host evaluations run separately in `validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 

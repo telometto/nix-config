@@ -179,6 +179,34 @@ When debugging, do not use `GIT_TRACE_CURL`, `GIT_CURL_VERBOSE`, or equivalent
 capture settings unless all bearer-like headers are redacted before storage or
 sharing.
 
+## WhatsApp Bridge Credential Rotation
+
+The opt-in WhatsApp bridge follows the same rule, but its seven SOPS values all
+queue only `mautrix-whatsapp-stack-reconcile.service`. That coordinator runs
+after `sops-install-secrets.service` and PostgreSQL, then restarts
+`mautrix-whatsapp-stack.target`. The target stops the consumers, reruns the
+database initializer, atomically switches the registration/configuration
+generation, and starts Synapse and the bridge only after both generated files
+are ready. PostgreSQL is bound to the target so a PostgreSQL restart also
+re-enters the same stack sequence.
+
+For a planned rotation, update the encrypted value, allow
+`sops-install-secrets.service` to materialize it, and verify the coordinator:
+
+```bash
+sudo systemctl restart mautrix-whatsapp-stack-reconcile.service
+sudo systemctl is-active mautrix-whatsapp-stack.target
+sudo systemctl is-active matrix-synapse.service mautrix-whatsapp.service
+sudo readlink /run/matrix-whatsapp-registration/current
+sudo stat /run/matrix-whatsapp-registration/current/config.yaml \
+  /run/matrix-whatsapp-registration/current/whatsapp-registration.yaml
+```
+
+Do not restart the registration unit by itself during a rotation. The generated
+`/run` files are not the source of truth and must not be restored independently;
+if the coordinator fails, leave the bridge disabled and inspect its journal
+before retrying.
+
 ## Sources
 
 - [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html)

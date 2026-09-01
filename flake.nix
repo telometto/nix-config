@@ -187,6 +187,13 @@
           blizzard = self.nixosConfigurations.blizzard;
         };
 
+        matrix-whatsapp-bridge = import ./tests/matrix-whatsapp-bridge.nix {
+          inherit VARS;
+          pkgs = nixpkgs.legacyPackages.${system};
+          matrix = self.nixosConfigurations.matrix-synapse-vm;
+          blizzard = self.nixosConfigurations.blizzard;
+        };
+
         blackbox-observability = import ./tests/blackbox-observability.nix {
           blizzard = self.nixosConfigurations.blizzard;
           pkgs = nixpkgs.legacyPackages.${system};
