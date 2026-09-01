@@ -134,19 +134,31 @@ verify runtime-file freshness and consumer behavior after every Matrix secret
 rotation. Keep the detailed Matrix acceptance and rollback gates in the
 [Matrix hardening plan](matrix-hardening-plan.md).
 
-The opt-in WhatsApp bridge follows the same rule. Its seven SOPS values queue
-`mautrix-whatsapp-db-init.service`,
-`mautrix-whatsapp-registration.service`, `matrix-synapse.service`, and
-`mautrix-whatsapp.service` for a coordinated restart. The registration gate
-regenerates `/run/matrix-whatsapp-registration/whatsapp-registration.yaml`
-from the current settings and values; it refuses to replace that file while
-Synapse or the bridge is active. Do not restart the registration unit by itself
-during a rotation: `mautrix-whatsapp-db-init.service` and the registration gate
-both require and start after `sops-install-secrets.service`, so they cannot
-consume the previous SOPS generation. Stop Synapse and the bridge first, then
-start the database initializer, registration gate, Synapse, and bridge in that
-order. The generated `/run` file is not the source of truth and must not be
-restored independently.
+The opt-in WhatsApp bridge follows the same rule, but its seven SOPS values all
+queue only `mautrix-whatsapp-stack-reconcile.service`. That coordinator runs
+after `sops-install-secrets.service` and PostgreSQL, then restarts
+`mautrix-whatsapp-stack.target`. The target stops the consumers, reruns the
+database initializer, atomically switches the registration/configuration
+generation, and starts Synapse and the bridge only after both generated files
+are ready. PostgreSQL is bound to the target so a PostgreSQL restart also
+re-enters the same stack sequence.
+
+For a planned rotation, update the encrypted value, allow
+`sops-install-secrets.service` to materialize it, and verify the coordinator:
+
+```bash
+sudo systemctl restart mautrix-whatsapp-stack-reconcile.service
+sudo systemctl is-active mautrix-whatsapp-stack.target
+sudo systemctl is-active matrix-synapse.service mautrix-whatsapp.service
+sudo readlink /run/matrix-whatsapp-registration/current
+sudo stat /run/matrix-whatsapp-registration/current/config.yaml \
+  /run/matrix-whatsapp-registration/current/whatsapp-registration.yaml
+```
+
+Do not restart the registration unit by itself during a rotation. The generated
+`/run` files are not the source of truth and must not be restored independently;
+if the coordinator fails, leave the bridge disabled and inspect its journal
+before retrying.
 
 ## Sources
 
