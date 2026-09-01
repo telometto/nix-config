@@ -101,10 +101,9 @@ let
     registrationScriptFor fakeSystemctlInactive "${fakeMautrixMissingRegistration}/bin/mautrix-whatsapp"
   );
   registrationYqFailureScript = pkgs.writeText "matrix-whatsapp-registration-yq-failure.sh" (
-    lib.replaceStrings
-      [ "${pkgs.yq}/bin/yq" ]
-      [ "${fakeYqFailure}/bin/yq" ]
-      (registrationScriptFor fakeSystemctlInactive "${bridge.package}/bin/mautrix-whatsapp")
+    lib.replaceStrings [ "${pkgs.yq}/bin/yq" ] [ "${fakeYqFailure}/bin/yq" ] (
+      registrationScriptFor fakeSystemctlInactive "${bridge.package}/bin/mautrix-whatsapp"
+    )
   );
   scriptSyntaxCheck = pkgs.runCommand "matrix-whatsapp-bridge-script-syntax" { } ''
     ${pkgs.bash}/bin/bash -n ${registrationScript}
@@ -260,9 +259,10 @@ assert matrixBackupJob.encryption.passCommand == "cat ${matrixBackupPassphrase.p
 assert matrixBackupJob.encryption.passCommand != immichBackupJob.encryption.passCommand;
 assert lib.hasInfix "-i /root/.ssh/matrix-rsyncnet" matrixBackupJob.environment.BORG_RSH;
 assert !(lib.hasInfix "/root/.ssh/immich-rsyncnet" matrixBackupJob.environment.BORG_RSH);
-assert matrixBackupJob.paths == [
-  "${hostCfg.sys.virtualisation.microvm.stateDir}/.zfs/snapshot/matrix-synapse-rsyncnet/matrix-synapse-vm"
-];
+assert
+  matrixBackupJob.paths == [
+    "${hostCfg.sys.virtualisation.microvm.stateDir}/.zfs/snapshot/matrix-synapse-rsyncnet/matrix-synapse-vm"
+  ];
 assert matrixBackupPassphrase.owner == "root";
 assert matrixBackupPassphrase.group == "root";
 assert matrixBackupPassphrase.mode == "0400";
@@ -317,8 +317,7 @@ assert lib.all (
   secret.owner == "root" && secret.group == "mautrix-whatsapp" && secret.mode == "0440"
 ) bridgeSecrets;
 assert lib.all (
-  name:
-  vmCfg.sops.secrets.${name}.restartUnits == [ "mautrix-whatsapp-stack-reconcile.service" ]
+  name: vmCfg.sops.secrets.${name}.restartUnits == [ "mautrix-whatsapp-stack-reconcile.service" ]
 ) bridgeSecrets;
 assert bridgeDatabaseSecret.owner == "root";
 assert bridgeDatabaseSecret.group == "postgres";
@@ -353,7 +352,8 @@ assert lib.elem "mautrix-whatsapp-registration.service" synapseService.after;
 assert synapseService.partOf == [ "mautrix-whatsapp-stack.target" ];
 assert lib.hasInfix "--generate-registration" registrationService.script;
 assert lib.hasInfix "mv -T -- \"$generationLink\" \"$currentLink\"" registrationService.script;
-assert lib.hasInfix "ln -s -- \"$(basename \"$generationDirectory\")\" \"$generationLink\"" registrationService.script;
+assert lib.hasInfix "ln -s -- \"$(basename \"$generationDirectory\")\" \"$generationLink\""
+  registrationService.script;
 assert lib.hasInfix "/run/matrix-whatsapp-registration/current/whatsapp-registration.yaml"
   bridgeService.preStart;
 assert dbInitService.serviceConfig.Type == "oneshot";
@@ -404,7 +404,8 @@ assert lib.elem "mautrix-whatsapp-stack.target" postgresqlService.wants;
 assert reconcileService.serviceConfig.Type == "oneshot";
 assert reconcileService.serviceConfig.RemainAfterExit;
 assert lib.elem "mautrix-whatsapp-stack.target" reconcileService.after;
-assert reconcileService.serviceConfig.ExecStart
+assert
+  reconcileService.serviceConfig.ExecStart
   == "${pkgs.systemd}/bin/systemctl restart mautrix-whatsapp-stack.target";
 assert reconcileService.restartTriggers != [ ];
 pkgs.runCommand "matrix-whatsapp-bridge-tests" { } ''

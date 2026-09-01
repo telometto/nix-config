@@ -60,46 +60,50 @@ in
     group = "root";
   };
 
-  assertions = lib.optionals immichVmEnabled [
-    {
-      assertion = lib.hasPrefix "/" microvmStateDir;
-      message = "Immich backup requires sys.virtualisation.microvm.stateDir to be an absolute ZFS dataset mount path";
-    }
-    {
-      assertion =
-        immichBackupVolumes != [ ]
-        && builtins.length (lib.unique immichBackupNames) == builtins.length immichBackupNames
-        && builtins.length (lib.unique immichBackupImages) == builtins.length immichBackupImages;
-      message = "vms/immich-storage.nix must define unique backup volume names and image files";
-    }
-    {
-      assertion = lib.any (volume: volume.mountPoint == "/persist") immichBackupVolumes;
-      message = "Immich backup storage contract must include the /persist volume";
-    }
-  ] ++ lib.optionals matrixVmEnabled [
-    {
-      assertion = lib.hasPrefix "/" microvmStateDir;
-      message = "Matrix backup requires sys.virtualisation.microvm.stateDir to be an absolute ZFS dataset mount path";
-    }
-    {
-      assertion =
-        matrixBackupVolumes != [ ]
-        && matrixOptionalBackupVolumes != [ ]
-        && builtins.length (lib.unique (matrixBackupNames ++ matrixOptionalBackupNames))
-          == builtins.length (matrixBackupNames ++ matrixOptionalBackupNames)
-        && builtins.length (lib.unique (matrixBackupImages ++ matrixOptionalBackupImages))
-          == builtins.length (matrixBackupImages ++ matrixOptionalBackupImages);
-      message = "vms/matrix-storage.nix must define unique Matrix backup volume names and image files";
-    }
-    {
-      assertion = lib.any (volume: volume.mountPoint == "/persist") matrixBackupVolumes;
-      message = "Matrix backup storage contract must include the /persist volume";
-    }
-    {
-      assertion = matrixBackupPassphrase.path != config.sys.secrets.borgKeyFile;
-      message = "Matrix backup must use a passphrase separate from the Immich Borg backup";
-    }
-  ];
+  assertions =
+    lib.optionals immichVmEnabled [
+      {
+        assertion = lib.hasPrefix "/" microvmStateDir;
+        message = "Immich backup requires sys.virtualisation.microvm.stateDir to be an absolute ZFS dataset mount path";
+      }
+      {
+        assertion =
+          immichBackupVolumes != [ ]
+          && builtins.length (lib.unique immichBackupNames) == builtins.length immichBackupNames
+          && builtins.length (lib.unique immichBackupImages) == builtins.length immichBackupImages;
+        message = "vms/immich-storage.nix must define unique backup volume names and image files";
+      }
+      {
+        assertion = lib.any (volume: volume.mountPoint == "/persist") immichBackupVolumes;
+        message = "Immich backup storage contract must include the /persist volume";
+      }
+    ]
+    ++ lib.optionals matrixVmEnabled [
+      {
+        assertion = lib.hasPrefix "/" microvmStateDir;
+        message = "Matrix backup requires sys.virtualisation.microvm.stateDir to be an absolute ZFS dataset mount path";
+      }
+      {
+        assertion =
+          matrixBackupVolumes != [ ]
+          && matrixOptionalBackupVolumes != [ ]
+          &&
+            builtins.length (lib.unique (matrixBackupNames ++ matrixOptionalBackupNames))
+            == builtins.length (matrixBackupNames ++ matrixOptionalBackupNames)
+          &&
+            builtins.length (lib.unique (matrixBackupImages ++ matrixOptionalBackupImages))
+            == builtins.length (matrixBackupImages ++ matrixOptionalBackupImages);
+        message = "vms/matrix-storage.nix must define unique Matrix backup volume names and image files";
+      }
+      {
+        assertion = lib.any (volume: volume.mountPoint == "/persist") matrixBackupVolumes;
+        message = "Matrix backup storage contract must include the /persist volume";
+      }
+      {
+        assertion = matrixBackupPassphrase.path != config.sys.secrets.borgKeyFile;
+        message = "Matrix backup must use a passphrase separate from the Immich Borg backup";
+      }
+    ];
 
   services.borgbackup.jobs.immich-rsyncnet = lib.mkIf immichVmEnabled {
     repo = "ssh://zh6100@zh6100.rsync.net/./immich-borg";

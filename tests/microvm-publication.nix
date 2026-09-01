@@ -2,7 +2,7 @@
   blizzard,
   pkgs,
   self,
-  VARS
+  VARS,
 }:
 let
   inherit (pkgs) lib;

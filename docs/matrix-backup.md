@@ -101,10 +101,10 @@ sudo journalctl -u borgbackup-job-matrix-rsyncnet.service
 Confirm the following after the first successful run:
 
 1. The repository preflight passed before the VM was stopped.
-2. The VM returned to `active` before the upload began.
-3. The archive contains the four baseline images from one snapshot. When the
+1. The VM returned to `active` before the upload began.
+1. The archive contains the four baseline images from one snapshot. When the
    bridge is enabled, it also contains `mautrix-whatsapp-state.img`.
-4. The temporary snapshot was removed.
+1. The temporary snapshot was removed.
 
 Useful checks are:
 
