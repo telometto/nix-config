@@ -135,6 +135,53 @@ This avoids forcing every host to decrypt secrets for services it does not run.
 
 ______________________________________________________________________
 
+## Home Manager user secrets
+
+The system SOPS layer above is separate from user-profile secrets. The
+repository's [`home/security/sops.nix`](../home/security/sops.nix) wrapper
+maps `hm.security.sops.*` into the Home Manager SOPS-Nix module. Enabled user
+profiles use the runtime paths `%r/secrets.d` for generations and `%r/secrets`
+for stable symlinks; these are user-runtime paths, not system `/run/secrets`
+paths and not `sys.secrets.*` options.
+
+The Gitea Git integration is the concrete opt-in example:
+
+- module: [`home/programs/gitea.nix`](../home/programs/gitea.nix)
+- enablement: `hm.programs.gitea.enable = true`
+- current scope: zeno on snowfall via
+  [`home/overrides/user/zeno-snowfall.nix`](../home/overrides/user/zeno-snowfall.nix)
+- private SOPS keys: `gitea/cf_access_id` and `gitea/cf_access_secret`
+- rendered template: `$XDG_CONFIG_HOME/sops-nix/secrets/rendered/gitea-git-http`, mode `0400`
+- consumer: Git configuration for `https://git.<public-domain>/`, using
+  `libsecret` after clearing inherited helpers for that URL
+
+The module asserts that `hm.security.sops.enable` and `programs.git.enable`
+remain enabled. Do not enable the feature on a profile that intentionally
+disables SOPS; remove the feature or keep the assertion failure visible.
+The user `sops-nix` service is ordered before its `default.target` or
+`graphical-session-pre.target` installation target so the rendered include is
+available before the normal session starts.
+
+### Provision and rotate the Gitea user credentials
+
+1. Create or rotate the Cloudflare Access service-token pair in the provider
+   console.
+1. Add or update only the two named keys in the private `nix-secrets` SOPS
+   file, then re-encrypt it for the snowfall recipient. Never copy plaintext
+   values into this repository.
+1. Rebuild snowfall and activate Home Manager for zeno.
+1. As zeno, check `systemctl --user status sops-nix`, confirm the rendered
+   template is mode `0400`, and run an authenticated `git ls-remote` against
+   Gitea. Do not enable curl tracing or verbose Git logging because the
+   rendered include contains bearer-like headers.
+1. Revoke the old provider token after the replacement has been verified.
+
+If `hm.security.sops.enable = false` is required for a profile, the Gitea
+feature must also be disabled. Its test contract covers both the normal path
+and this rejected combination so it cannot silently leave a dangling include.
+
+______________________________________________________________________
+
 ## Troubleshooting
 
 ### SOPS decryption fails on a new host
@@ -151,6 +198,18 @@ Check that:
 Check that the service option is enabled. If the service is disabled,
 `modules/core/sops.nix` will not declare its secret, and the corresponding
 `config.sys.secrets.*` path will not exist.
+
+### A Home Manager user secret or template is missing
+
+Check that:
+
+- the relevant opt-in module is enabled for the intended user and host
+- `hm.security.sops.enable` is true for that profile
+- the exact key exists in the private SOPS file and is encrypted for the
+  user's configured age identity
+- `systemctl --user status sops-nix` succeeds after Home Manager activation
+- secret symlinks are under `%r/secrets`, while rendered templates are under
+  `$XDG_CONFIG_HOME/sops-nix/secrets/rendered`
 
 ### Local flake evaluation fails with SSH errors
 

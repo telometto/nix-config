@@ -2,6 +2,7 @@
   blizzard,
   pkgs,
   self,
+  VARS
 }:
 let
   inherit (pkgs) lib;
@@ -10,6 +11,7 @@ let
   productionTunnel =
     productionCfg.services.cloudflared.tunnels.${productionCfg.sys.services.cloudflared.tunnelId};
   productionHttp = productionCfg.services.traefik.dynamicConfigOptions.http;
+  productionGiteaHeaders = productionHttp.middlewares."gitea-headers";
   productionPublicationHttp =
     productionCfg.services.traefik.dynamic.files.microvm-publications.settings.http;
 
@@ -30,7 +32,7 @@ let
     gitea = {
       hostname = "git";
       middlewares = [
-        "security-headers"
+        "gitea-headers"
         "gitea-xfp-https"
       ];
       backend = "http://10.100.0.50:11050";
@@ -94,7 +96,7 @@ let
 
   expectedProductionPublicationHttp = {
     routers = lib.mapAttrs (name: publication: {
-      rule = "Host(`${publication.hostname}.zzxyz.no`)";
+      rule = "Host(`${publication.hostname}.${VARS.domains.public}`)";
       service = name;
       entryPoints = [ "web" ];
       middlewares = publication.middlewares ++ [ "crowdsec" ];
@@ -106,19 +108,19 @@ let
 
   expectedProductionTunnelOrigins = builtins.listToAttrs (
     lib.mapAttrsToList (_: publication: {
-      name = "${publication.hostname}.zzxyz.no";
+      name = "${publication.hostname}.${VARS.domains.public}";
       value = "http://localhost:80";
     }) productionPublications
   );
   actualProductionTunnelOrigins = builtins.listToAttrs (
     lib.mapAttrsToList (_: publication: {
-      name = "${publication.hostname}.zzxyz.no";
-      value = productionTunnel.ingress."${publication.hostname}.zzxyz.no";
+      name = "${publication.hostname}.${VARS.domains.public}";
+      value = productionTunnel.ingress."${publication.hostname}.${VARS.domains.public}";
     }) productionPublications
   );
 
   expectedMatrixWellKnownRouter = {
-    rule = "Host(`zzxyz.no`) && PathPrefix(`/.well-known/matrix/`)";
+    rule = "Host(`${VARS.domains.public}`) && PathPrefix(`/.well-known/matrix/`)";
     service = "matrix-synapse";
     entryPoints = [ "web" ];
     middlewares = [
@@ -143,7 +145,7 @@ let
   http = cfg.services.traefik.dynamicConfigOptions.http;
 
   actual = {
-    tunnelOrigin = tunnel.ingress."downloads-test.zzxyz.no";
+    tunnelOrigin = tunnel.ingress."downloads-test.${VARS.domains.public}";
     router = http.routers.qbittorrent;
     backend = http.services.qbittorrent;
   };
@@ -151,7 +153,7 @@ let
   expected = {
     tunnelOrigin = "http://localhost:80";
     router = {
-      rule = "Host(`downloads-test.zzxyz.no`)";
+      rule = "Host(`downloads-test.${VARS.domains.public}`)";
       service = "qbittorrent";
       entryPoints = [ "web" ];
       middlewares = [
@@ -374,6 +376,9 @@ in
 assert productionPublicationHttp == expectedProductionPublicationHttp;
 assert actualProductionTunnelOrigins == expectedProductionTunnelOrigins;
 assert productionHttp.routers.matrix-well-known == expectedMatrixWellKnownRouter;
+assert !(builtins.hasAttr "contentSecurityPolicy" productionGiteaHeaders.headers);
+assert builtins.hasAttr "X-Content-Type-Options"
+  productionGiteaHeaders.headers.customResponseHeaders;
 assert actual == expected;
 assert !disabledTargetEvaluation.success;
 assert !missingTraefikEvaluation.success;
@@ -392,7 +397,7 @@ assert !invalidCanonicalDomainEvaluation.success;
 assert !undefinedMiddlewareEvaluation.success;
 assert !removedHostOptionEvaluation.success;
 assert !removedInstanceOptionEvaluation.success;
-assert !(builtins.hasAttr "matrix.zzxyz.no" matrixDisabledTunnel.ingress);
+assert !(builtins.hasAttr "matrix.${VARS.domains.public}" matrixDisabledTunnel.ingress);
 assert !(builtins.hasAttr "matrix-synapse" matrixDisabledPublicationHttp.routers);
 assert !(builtins.hasAttr "matrix-synapse" matrixDisabledPublicationHttp.services);
 assert !(builtins.hasAttr "matrix-well-known" matrixDisabledHttp.routers);

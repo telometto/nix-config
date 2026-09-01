@@ -170,6 +170,7 @@ in
       [
         pkgs.nixd
         pkgs.ansible
+        pkgs.libsecret
       ]
       ++ cfg.extraPackages
     );

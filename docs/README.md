@@ -34,6 +34,9 @@ flowchart LR
         EX["Explanation: Design\nexplanation-design.md"]
         ADR["Architecture Decisions\nadr/"]
     end
+    subgraph Operations["Operations"]
+        GT["Gitea Operations\ngitea.md"]
+    end
 ```
 
 ### Available Documentation
@@ -94,6 +97,7 @@ flowchart LR
 - [sops-setup-guide.md](sops-setup-guide.md) — How to set up SOPS secrets and age keys
 - [scrutiny.md](scrutiny.md) — Provision, verify, and rotate the Scrutiny InfluxDB token
 - [blackbox-monitoring.md](blackbox-monitoring.md) — Configure, verify, and recover public HTTP/TLS availability probes
+- [gitea.md](gitea.md) — Operate and verify the public Gitea publication
 - [immich-backup.md](immich-backup.md) — Provision, operate, and restore the Immich offsite backup
 - [matrix-backup.md](matrix-backup.md) — Provision, operate, and restore the Matrix offsite backup
 - [pocket-id.md](pocket-id.md) — Deploy, bootstrap, operate, and recover the Pocket ID provider
@@ -125,6 +129,7 @@ flowchart LR
 | Back up or restore Matrix | [Matrix Backup Operations](matrix-backup.md) |
 | Operate Scrutiny | [Scrutiny Operations](scrutiny.md) |
 | Operate public availability probes | [Blackbox Monitoring](blackbox-monitoring.md) |
+| Operate Gitea publication | [Gitea Operations](gitea.md) |
 | Operate Pocket ID | [Pocket ID Operations](pocket-id.md) |
 | Operate Immich OAuth | [Immich OAuth Operations](immich.md) |
 | Operate Sandfly targets | [Sandfly Target Operations](sandfly.md) |
