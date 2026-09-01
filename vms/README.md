@@ -103,11 +103,14 @@ ______________________________________________________________________
 The Matrix VM's TCP `11060` port is a guest service port, not a host
 port-forward. Nginx listens on `0.0.0.0:11060` inside the VM, while the guest
 firewall accepts that port only from Blizzard's MicroVM gateway
-`10.100.0.1` on the stable `microvm0` interface. `mkMicrovmConfig.nix` assigns
-that name by matching the VM's fixed MAC address, so Cloud Hypervisor device
-renumbering does not broaden or break the rule. The public path is the managed
-`matrix` publication through Cloudflare Tunnel and Traefik; no raw host
-forward bypasses those controls.
+`10.100.0.1` on the stable `microvm0` interface. `microvm0` is the shared
+all-MicroVM guest-interface contract, not a Matrix-only alias:
+`mkMicrovmConfig.nix` assigns it by matching each VM's fixed MAC address, so
+Cloud Hypervisor device renumbering does not broaden or break interface-bound
+firewall rules. Any future interface-name change must update this shared
+helper, its consumers, and the VM network checks together. The public path is
+the managed `matrix` publication through Cloudflare Tunnel and Traefik; no raw
+host forward bypasses those controls.
 
 Synapse and MAS web/health listeners are loopback-only. Nginx is the only
 trusted MAS proxy, and the public `/_synapse/admin` path returns `403`. MAS
@@ -146,10 +149,15 @@ must be added to the approved Matrix backup/restore inventory before login;
 the registration file is generated under `/run` and is not an independent
 backup artifact.
 
-The VM-owned registration gate runs before Synapse because the locked nixpkgs
-module normally generates the registration during the bridge service's
-`preStart`; the VM-owned gate owns that preparation instead. Both Synapse and
-the bridge consume the generated registration at startup. The bridge's
+The bridge implementation is composed in
+[`matrix-whatsapp.nix`](matrix-whatsapp.nix). Its VM-owned registration gate
+runs before Synapse because the locked nixpkgs module normally generates the
+registration during the bridge service's `preStart`; the VM-owned gate owns
+that preparation instead. It builds a complete generation and switches
+`/run/matrix-whatsapp-registration/current` atomically, so Synapse and the
+bridge consume a matching registration/configuration pair at startup. The
+`mautrix-whatsapp-stack.target` and its reconcile service coordinate SOPS
+rotation and re-enter the same order after PostgreSQL recovery. The bridge's
 `PrivateUsers` sandbox remains enabled: the dedicated
 database uses loopback SCRAM password authentication, and the password is
 SOPS-backed. Raw bridge secrets remain bridge-only; Synapse receives only the
@@ -437,6 +445,7 @@ ______________________________________________________________________
 
 - [microvm.nix upstream](https://github.com/microvm-nix/microvm.nix)
 - [Immich backup and recovery](../docs/immich-backup.md) — Offsite image backup, retention, and restore runbook
+- [Matrix backup and recovery](../docs/matrix-backup.md) — Matrix image backup, retention, and isolated restore runbook
 - [modules/services/README.md](../modules/services/README.md) — Service module catalog
 - [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
 - [vm-registry.nix](vm-registry.nix) — Single source of truth for all VM parameters
