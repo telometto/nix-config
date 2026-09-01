@@ -178,12 +178,12 @@ Operational tools used across the repo.
 
 Locally, `nix flake check` evaluates and builds the formatting, Cloudflare
 metrics, Matrix baseline, Matrix–WhatsApp bridge, MicroVM publication, blackbox
-observability, MicroVM network-policy, Sandfly target, Scrutiny service, and
-VictoriaMetrics checks. The
+observability, MicroVM network-policy, Sandfly target, Scrutiny service,
+user-accounts, and VictoriaMetrics checks. The
 `flake-check.yml` CI workflow first runs
 `.github/scripts/evaluate-flake-outputs.sh`, which evaluates configurations,
 formatters, checks, and development shells in separate Nix processes, then
-explicitly builds all nine executable test checks. Full host evaluation is
+explicitly builds all ten executable test checks. Full host evaluation is
 handled separately by the `validate-config.yml` CI workflow.
 
 ______________________________________________________________________
