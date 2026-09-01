@@ -32,7 +32,12 @@ let
     "fe80::/10"
   ];
   matrixWhatsappSettingsFormat = pkgs.formats.json { };
-  matrixWhatsappSettingsUnsubstituted = matrixWhatsappSettingsFormat.generate "mautrix-whatsapp-config-unsubstituted.json" config.services.mautrix-whatsapp.settings;
+  matrixWhatsappSettings = config.services.mautrix-whatsapp.settings // {
+    bridge = config.services.mautrix-whatsapp.settings.bridge // {
+      permissions = lib.removeAttrs config.services.mautrix-whatsapp.settings.bridge.permissions [ "*" ];
+    };
+  };
+  matrixWhatsappSettingsUnsubstituted = matrixWhatsappSettingsFormat.generate "mautrix-whatsapp-config-unsubstituted.json" matrixWhatsappSettings;
   # This is the Matrix account, not the VM's admin account or the operator's
   # Unix username.
   matrixWhatsappAdmin = "@telometto:${VARS.domains.public}";
