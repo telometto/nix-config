@@ -51,7 +51,6 @@ in
       variables.SSH_ASKPASS_REQUIRE = lib.mkDefault "prefer";
 
       systemPackages = [
-        pkgs.kdePackages.yakuake
         pkgs.kdePackages.qtwebengine
         SDDM_ASTRONAUT
       ];
