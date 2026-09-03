@@ -10,8 +10,9 @@ let
   reg = registry.wireguard;
   qbtIp = registry.qbittorrent.ip;
   inherit (networkDefaults) guestInterface historicalGuestInterfaces;
-  legacyGuestInterfaces =
-    lib.filter (interface: interface != guestInterface) historicalGuestInterfaces;
+  legacyGuestInterfaces = lib.filter (
+    interface: interface != guestInterface
+  ) historicalGuestInterfaces;
   guestInterfaceDevice = "sys-subsystem-net-devices-${guestInterface}.device";
   wireguardInterface = "wg0";
   wireguardFwmark = 51820;
