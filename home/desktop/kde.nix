@@ -158,6 +158,8 @@ in
       pkgs.kdePackages.kcalc
       pkgs.kdePackages.kolourpaint
       pkgs.kdePackages.kgamma
+      pkgs.kdePackages.plasma-vault
+      pkgs.kdePackages.yakuake
       pkgs.nomacs
     ]
     ++ cfg.extraPackages;
