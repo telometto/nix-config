@@ -10,9 +10,14 @@ let
   # The stable name avoids trusting a predictable-name suffix that can change
   # when Cloud Hypervisor's device layout changes.
   guestInterface = "microvm0";
+
+  # Names used by earlier generations of the guest-interface contract. Keep
+  # each name here until all deployed generations that may have installed
+  # direct firewall rules with it have been retired.
+  historicalGuestInterfaces = [ "ens3" ];
 in
 {
-  inherit sharedBridge guestInterface;
+  inherit sharedBridge guestInterface historicalGuestInterfaces;
   defaultGateway = sharedBridge.address;
   defaultPrefixLength = sharedBridge.prefixLength;
 }
