@@ -7,6 +7,13 @@
 }:
 let
   inherit (pkgs) lib;
+  matrixWithoutBridge = matrix.extendModules {
+    modules = [
+      {
+        services.mautrix-whatsapp.enable = lib.mkForce false;
+      }
+    ];
+  };
   matrixWithBridge = matrix.extendModules {
     modules = [
       {
@@ -14,7 +21,7 @@ let
       }
     ];
   };
-  defaultVmCfg = matrix.config;
+  disabledVmCfg = matrixWithoutBridge.config;
   vmCfg = matrixWithBridge.config;
   hostCfg = blizzard.config;
   bridge = vmCfg.services.mautrix-whatsapp;
@@ -255,11 +262,12 @@ let
     "matrix-whatsapp/direct_media_server_key"
   ];
 in
-assert !defaultVmCfg.services.mautrix-whatsapp.enable;
-assert !(builtins.hasAttr "matrix-whatsapp/database_password" defaultVmCfg.sops.secrets);
-assert !(builtins.hasAttr "mautrix-whatsapp" defaultVmCfg.systemd.services);
+assert matrix.config.services.mautrix-whatsapp.enable;
+assert !disabledVmCfg.services.mautrix-whatsapp.enable;
+assert !(builtins.hasAttr "matrix-whatsapp/database_password" disabledVmCfg.sops.secrets);
+assert !(builtins.hasAttr "mautrix-whatsapp" disabledVmCfg.systemd.services);
 assert
-  !(lib.any (volume: volume.mountPoint == "/var/lib/mautrix-whatsapp") defaultVmCfg.microvm.volumes);
+  !(lib.any (volume: volume.mountPoint == "/var/lib/mautrix-whatsapp") disabledVmCfg.microvm.volumes);
 assert lib.hasInfix "--dport 11060 -s 10.100.0.1 -j nixos-fw-accept" matrixFirewallAllow;
 assert lib.hasInfix "-i microvm0" matrixFirewallAllow;
 assert matrixBackupJob.repo == "ssh://zh6100@zh6100.rsync.net/./matrix-borg";
