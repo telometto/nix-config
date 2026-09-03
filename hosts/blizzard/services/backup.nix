@@ -424,104 +424,106 @@ in
 
   # Keep the Matrix backup timer independent from Immich while applying the
   # same boot ordering and read-only credential boundary.
-  systemd.services."borgbackup-job-matrix-rsyncnet" = lib.mkIf matrixVmEnabled {
-    wants = [
-      "network-online.target"
-      "sops-install-secrets.service"
-    ];
-    requires = [ "sops-install-secrets.service" ];
-    after = [
-      "network-online.target"
-      "multi-user.target"
-      "sops-install-secrets.service"
-      matrixVmUnit
-    ];
-    unitConfig = lib.optionalAttrs pushoverEnabled {
-      OnFailure = [ "matrix-backup-failure-notify.service" ];
-    };
-    serviceConfig = {
-      ProtectHome = "read-only";
-      ReadOnlyPaths = [
-        "-${matrixRsyncNetKey}"
-        "-${matrixRsyncNetKnownHosts}"
-        "-${matrixBackupPassphrase.path}"
+  systemd.services = {
+    "borgbackup-job-matrix-rsyncnet" = lib.mkIf matrixVmEnabled {
+      wants = [
+        "network-online.target"
+        "sops-install-secrets.service"
       ];
+      requires = [ "sops-install-secrets.service" ];
+      after = [
+        "network-online.target"
+        "multi-user.target"
+        "sops-install-secrets.service"
+        matrixVmUnit
+      ];
+      unitConfig = lib.optionalAttrs pushoverEnabled {
+        OnFailure = [ "matrix-backup-failure-notify.service" ];
+      };
+      serviceConfig = {
+        ProtectHome = "read-only";
+        ReadOnlyPaths = [
+          "-${matrixRsyncNetKey}"
+          "-${matrixRsyncNetKnownHosts}"
+          "-${matrixBackupPassphrase.path}"
+        ];
+      };
     };
-  };
 
-  systemd.services.immich-backup-failure-notify = lib.mkIf (pushoverEnabled && immichVmEnabled) {
-    description = "Notify Pushover when the Immich backup fails";
-    wants = [ "network-online.target" ];
-    after = [ "network-online.target" ];
-    script = ''
-      ${curl} \
-        --fail \
-        --silent \
-        --show-error \
-        --max-time 30 \
-        --retry 2 \
-        --form "token=<${config.sys.secrets.pushoverApiTokenFile}" \
-        --form "user=<${config.sys.secrets.pushoverUserKeyFile}" \
-        --form-string "title=Immich backup failed" \
-        --form-string "message=borgbackup-job-immich-rsyncnet.service failed on blizzard. Inspect its journal before the next scheduled run." \
-        https://api.pushover.net/1/messages.json
-    '';
-    serviceConfig = {
-      Type = "oneshot";
-      User = "root";
-      NoNewPrivileges = true;
-      PrivateDevices = true;
-      PrivateTmp = true;
-      ProtectHome = true;
-      ProtectSystem = "strict";
-      ReadOnlyPaths = [
-        config.sys.secrets.pushoverApiTokenFile
-        config.sys.secrets.pushoverUserKeyFile
-      ];
-      RestrictAddressFamilies = [
-        "AF_UNIX"
-        "AF_INET"
-        "AF_INET6"
-      ];
-      UMask = "0077";
+    immich-backup-failure-notify = lib.mkIf (pushoverEnabled && immichVmEnabled) {
+      description = "Notify Pushover when the Immich backup fails";
+      wants = [ "network-online.target" ];
+      after = [ "network-online.target" ];
+      script = ''
+        ${curl} \
+          --fail \
+          --silent \
+          --show-error \
+          --max-time 30 \
+          --retry 2 \
+          --form "token=<${config.sys.secrets.pushoverApiTokenFile}" \
+          --form "user=<${config.sys.secrets.pushoverUserKeyFile}" \
+          --form-string "title=Immich backup failed" \
+          --form-string "message=borgbackup-job-immich-rsyncnet.service failed on blizzard. Inspect its journal before the next scheduled run." \
+          https://api.pushover.net/1/messages.json
+      '';
+      serviceConfig = {
+        Type = "oneshot";
+        User = "root";
+        NoNewPrivileges = true;
+        PrivateDevices = true;
+        PrivateTmp = true;
+        ProtectHome = true;
+        ProtectSystem = "strict";
+        ReadOnlyPaths = [
+          config.sys.secrets.pushoverApiTokenFile
+          config.sys.secrets.pushoverUserKeyFile
+        ];
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
+        UMask = "0077";
+      };
     };
-  };
 
-  systemd.services.matrix-backup-failure-notify = lib.mkIf (pushoverEnabled && matrixVmEnabled) {
-    description = "Notify Pushover when the Matrix backup fails";
-    wants = [ "network-online.target" ];
-    after = [ "network-online.target" ];
-    script = ''
-      ${curl} \
-        --fail \
-        --silent \
-        --show-error \
-        --max-time 30 \
-        --retry 2 \
-        --form "token=<${config.sys.secrets.pushoverApiTokenFile}" \
-        --form "user=<${config.sys.secrets.pushoverUserKeyFile}" \
-        --form-string "title=Matrix backup failed" \
-        --form-string "message=borgbackup-job-matrix-rsyncnet.service failed on blizzard. Inspect its journal before the next scheduled run." \
-        https://api.pushover.net/1/messages.json
-    '';
-    serviceConfig = {
-      Type = "oneshot";
-      User = "root";
-      NoNewPrivileges = true;
-      PrivateDevices = true;
-      PrivateTmp = true;
-      ProtectHome = true;
-      ProtectSystem = "strict";
-      ReadOnlyPaths = [
-        config.sys.secrets.pushoverApiTokenFile
-        config.sys.secrets.pushoverUserKeyFile
-      ];
-      RestrictAddressFamilies = [
-        "AF_UNIX"
-        "AF_INET"
-        "AF_INET6"
-      ];
-      UMask = "0077";
+    matrix-backup-failure-notify = lib.mkIf (pushoverEnabled && matrixVmEnabled) {
+      description = "Notify Pushover when the Matrix backup fails";
+      wants = [ "network-online.target" ];
+      after = [ "network-online.target" ];
+      script = ''
+        ${curl} \
+          --fail \
+          --silent \
+          --show-error \
+          --max-time 30 \
+          --retry 2 \
+          --form "token=<${config.sys.secrets.pushoverApiTokenFile}" \
+          --form "user=<${config.sys.secrets.pushoverUserKeyFile}" \
+          --form-string "title=Matrix backup failed" \
+          --form-string "message=borgbackup-job-matrix-rsyncnet.service failed on blizzard. Inspect its journal before the next scheduled run." \
+          https://api.pushover.net/1/messages.json
+      '';
+      serviceConfig = {
+        Type = "oneshot";
+        User = "root";
+        NoNewPrivileges = true;
+        PrivateDevices = true;
+        PrivateTmp = true;
+        ProtectHome = true;
+        ProtectSystem = "strict";
+        ReadOnlyPaths = [
+          config.sys.secrets.pushoverApiTokenFile
+          config.sys.secrets.pushoverUserKeyFile
+        ];
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
+        UMask = "0077";
+      };
     };
   };
 }
