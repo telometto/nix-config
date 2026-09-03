@@ -155,6 +155,7 @@ in
     microvmModule
     sopsModule
     ./matrix-synapse.nix
+    { services.mautrix-whatsapp.enable = true; }
   ];
 
   paperless-vm = mkMicrovm [
