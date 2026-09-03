@@ -13,6 +13,7 @@ let
   wireguardFirewallStopCommands = wireguardCfg.networking.firewall.extraStopCommands;
   wireguardInterface = wireguardCfg.networking.wg-quick.interfaces.wg0;
   wireguardUnit = wireguardCfg.systemd.services.wg-quick-wg0;
+  wireguardGuestInterface = networkDefaults.guestInterface;
 
   enforced = blizzard.extendModules {
     modules = [
@@ -232,6 +233,13 @@ assert lib.all
   ];
 assert !lib.hasInfix "tcp dport { 5355 }" policyText;
 assert lib.hasInfix ''iifname "vm-qbittorrent" oifname "vm-wireguard"'' policyText;
+assert lib.all
+  (clientName: lib.hasInfix ''iifname "vm-${clientName}" oifname "vm-wireguard"'' policyText)
+  [
+    "qbittorrent"
+    "sabnzbd"
+    "firefox"
+  ];
 assert lib.hasInfix ''iifname "vm-*" jump deny_unknown_tap'' policyText;
 assert lib.hasInfix "vm-prowlarr microvm-br0 ${registry.prowlarr.mac}"
   enforcedCfg.systemd.services."microvm-tap-interfaces@prowlarr-vm".postStart;
@@ -252,6 +260,17 @@ assert wireguardCfg.boot.kernel.sysctl."net.ipv6.conf.all.disable_ipv6" or null 
 assert wireguardCfg.boot.kernel.sysctl."net.ipv6.conf.default.disable_ipv6" or null == 1;
 assert wireguardInterface.extraOptions.FwMark or null == 51820;
 assert !lib.hasInfix "%i" wireguardInterface.postUp;
+assert wireguardCfg.networking.nat.internalInterfaces == [ wireguardGuestInterface ];
+assert lib.elem wireguardGuestInterface wireguardCfg.networking.firewall.trustedInterfaces;
+assert wireguardCfg.services.dnsmasq.settings.interface == [ wireguardGuestInterface ];
+assert lib.hasInfix "-A WG_FORWARD -i ${wireguardGuestInterface} -o wg0 -j ACCEPT"
+  wireguardFirewallCommands;
+assert lib.hasInfix
+  "-A WG_FORWARD -i wg0 -o ${wireguardGuestInterface} -m state --state RELATED,ESTABLISHED -j ACCEPT"
+  wireguardFirewallCommands;
+assert lib.hasInfix "-D FORWARD -i ens3 -o wg0 -j ACCEPT" wireguardFirewallCommands;
+assert !lib.hasInfix "-A WG_FORWARD -i ens3" wireguardFirewallCommands;
+assert !lib.hasInfix "-A WG_FORWARD -i wg0 -o ens3" wireguardFirewallCommands;
 assert lib.hasInfix
   "-A WG_OUTPUT ! -o wg0 -m mark ! --mark 51820 -m addrtype ! --dst-type LOCAL -j REJECT"
   wireguardFirewallCommands;
