@@ -31,6 +31,7 @@
     pkgs.filen-cli
     pkgs.codex
     pkgs.nodejs
+    pkgs.annotation-mono
   ]
   ++ (with pkgs.sweethome3d; [
     application
