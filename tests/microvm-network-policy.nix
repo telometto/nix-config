@@ -241,9 +241,9 @@ assert lib.all
     "readarr"
   ];
 assert !lib.hasInfix "tcp dport { 5355 }" policyText;
-assert lib.all
-  (clientName: lib.hasInfix ''iifname "vm-${clientName}" oifname "vm-wireguard"'' policyText)
-  vpnClientNames;
+assert lib.all (
+  clientName: lib.hasInfix ''iifname "vm-${clientName}" oifname "vm-wireguard"'' policyText
+) vpnClientNames;
 assert lib.hasInfix ''iifname "vm-*" jump deny_unknown_tap'' policyText;
 assert lib.hasInfix "vm-prowlarr microvm-br0 ${registry.prowlarr.mac}"
   enforcedCfg.systemd.services."microvm-tap-interfaces@prowlarr-vm".postStart;
@@ -269,7 +269,8 @@ assert lib.elem wireguardGuestInterface wireguardCfg.networking.firewall.trusted
 assert !lib.elem "ens3" wireguardCfg.networking.firewall.trustedInterfaces;
 assert wireguardCfg.services.dnsmasq.settings.interface == [ wireguardGuestInterface ];
 assert wireguardCfg.systemd.network.wait-online.enable;
-assert wireguardCfg.systemd.network.links."10-microvm-primary".linkConfig.Name == wireguardGuestInterface;
+assert
+  wireguardCfg.systemd.network.links."10-microvm-primary".linkConfig.Name == wireguardGuestInterface;
 assert wireguardCfg.systemd.network.networks."20-lan".linkConfig.RequiredForOnline == "routable";
 assert lib.hasInfix "-A WG_FORWARD -i ${wireguardGuestInterface} -o wg0 -j ACCEPT"
   wireguardFirewallCommands;
@@ -279,8 +280,8 @@ assert lib.hasInfix
 assert lib.hasInfix "-A WG_FORWARD -i wg0 -o ${wireguardGuestInterface} -j REJECT"
   wireguardFirewallCommands;
 assert lib.hasInfix "-D FORWARD -i ens3 -o wg0 -j ACCEPT" wireguardFirewallCommands;
-assert !lib.hasInfix "-D FORWARD -i ${wireguardGuestInterface} -o wg0 -j ACCEPT"
-  wireguardFirewallCommands;
+assert
+  !lib.hasInfix "-D FORWARD -i ${wireguardGuestInterface} -o wg0 -j ACCEPT" wireguardFirewallCommands;
 assert !lib.hasInfix "-A WG_FORWARD -i ens3" wireguardFirewallCommands;
 assert !lib.hasInfix "-A WG_FORWARD -i wg0 -o ens3" wireguardFirewallCommands;
 assert lib.hasInfix
