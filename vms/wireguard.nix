@@ -6,8 +6,14 @@
 }:
 let
   registry = import ./vm-registry.nix { inherit consts; };
+  networkDefaults = import ./microvm-network-defaults.nix;
   reg = registry.wireguard;
   qbtIp = registry.qbittorrent.ip;
+  inherit (networkDefaults) guestInterface;
+  legacyGuestInterfaces = lib.unique [
+    "ens3"
+    guestInterface
+  ];
   wireguardInterface = "wg0";
   wireguardFwmark = 51820;
   iptablesPath = "${pkgs.iptables}/bin/iptables";
@@ -21,15 +27,19 @@ let
     network: "-A WG_OUTPUT -d ${network} -j ACCEPT"
   ) homeNetworks;
   legacyFirewallCleanup = lib.concatMapStringsSep "\n" (rule: "${iptablesPath} ${rule} || true") (
-    [
-      "-D FORWARD -i ens3 -o ${wireguardInterface} -j ACCEPT"
-      "-D FORWARD -i ${wireguardInterface} -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT"
-      "-D FORWARD -i ens3 ! -o ${wireguardInterface} -j REJECT"
+    lib.concatMap (interface: [
+      # Keep deletion-only cleanup for the pre-migration predictable name;
+      # no active rule below uses it.
+      "-D FORWARD -i ${interface} -o ${wireguardInterface} -j ACCEPT"
+      "-D FORWARD -i ${wireguardInterface} -o ${interface} -m state --state RELATED,ESTABLISHED -j ACCEPT"
+      "-D FORWARD -i ${interface} ! -o ${wireguardInterface} -j REJECT"
+      "-D FORWARD -i ${wireguardInterface} -o ${interface} -p tcp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT"
+      "-D FORWARD -i ${wireguardInterface} -o ${interface} -p udp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT"
+    ]) legacyGuestInterfaces
+    ++ [
       "-D OUTPUT ! -o ${wireguardInterface} -m mark ! --mark ${toString wireguardFwmark} -m addrtype ! --dst-type LOCAL -j REJECT"
       "-t nat -D PREROUTING -i ${wireguardInterface} -p tcp --dport ${toString consts.ports.network.qbittorrentTorrent} -j DNAT --to-destination ${qbtIp}:${toString consts.ports.network.qbittorrentTorrent}"
       "-t nat -D PREROUTING -i ${wireguardInterface} -p udp --dport ${toString consts.ports.network.qbittorrentTorrent} -j DNAT --to-destination ${qbtIp}:${toString consts.ports.network.qbittorrentTorrent}"
-      "-D FORWARD -i ${wireguardInterface} -o ens3 -p tcp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT"
-      "-D FORWARD -i ${wireguardInterface} -o ens3 -p udp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT"
     ]
     ++ map (network: "-D OUTPUT -d ${network} -j ACCEPT") homeNetworks
   );
@@ -47,11 +57,11 @@ let
     :WG_OUTPUT - [0:0]
     -F WG_FORWARD
     -F WG_OUTPUT
-    -A WG_FORWARD -i ens3 -o ${wireguardInterface} -j ACCEPT
-    -A WG_FORWARD -i ${wireguardInterface} -o ens3 -m state --state RELATED,ESTABLISHED -j ACCEPT
-    -A WG_FORWARD -i ens3 ! -o ${wireguardInterface} -j REJECT
-    -A WG_FORWARD -i ${wireguardInterface} -o ens3 -p tcp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT
-    -A WG_FORWARD -i ${wireguardInterface} -o ens3 -p udp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT
+    -A WG_FORWARD -i ${guestInterface} -o ${wireguardInterface} -j ACCEPT
+    -A WG_FORWARD -i ${wireguardInterface} -o ${guestInterface} -m state --state RELATED,ESTABLISHED -j ACCEPT
+    -A WG_FORWARD -i ${guestInterface} ! -o ${wireguardInterface} -j REJECT
+    -A WG_FORWARD -i ${wireguardInterface} -o ${guestInterface} -p tcp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT
+    -A WG_FORWARD -i ${wireguardInterface} -o ${guestInterface} -p udp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT
     -A WG_FORWARD -j RETURN
     ${homeNetworkFirewallRules}
     -A WG_OUTPUT ! -o ${wireguardInterface} -m mark ! --mark ${toString wireguardFwmark} -m addrtype ! --dst-type LOCAL -j REJECT
@@ -111,12 +121,12 @@ in
     nat = {
       enable = true;
       externalInterface = wireguardInterface;
-      internalInterfaces = [ "ens3" ];
+      internalInterfaces = [ guestInterface ];
     };
 
     firewall = {
       allowPing = true;
-      trustedInterfaces = [ "ens3" ];
+      trustedInterfaces = [ guestInterface ];
       allowedUDPPorts = [ reg.port ];
       extraCommands = wireguardFirewallSetup;
       extraStopCommands = "";
@@ -126,7 +136,7 @@ in
   services.dnsmasq = {
     enable = true;
     settings = {
-      interface = "ens3";
+      interface = guestInterface;
       bind-interfaces = true;
       listen-address = reg.ip;
       server = [
