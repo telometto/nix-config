@@ -272,7 +272,14 @@ in
     "openrazer"
   ];
 
-  services.rpcbind.enable = lib.mkDefault true;
+  services = {
+    stirling-pdf = {
+      enable = true;
+      environment.SERVER_PORT = 50000;
+    };
+
+    rpcbind.enable = lib.mkDefault true;
+  };
 
   fileSystems = {
     "/mnt/backups" = {
