@@ -13,7 +13,16 @@ let
   wireguardFirewallStopCommands = wireguardCfg.networking.firewall.extraStopCommands;
   wireguardInterface = wireguardCfg.networking.wg-quick.interfaces.wg0;
   wireguardUnit = wireguardCfg.systemd.services.wg-quick-wg0;
+  dnsmasqUnit = wireguardCfg.systemd.services.dnsmasq;
+  firewallUnit = wireguardCfg.systemd.services.firewall;
   wireguardGuestInterface = networkDefaults.guestInterface;
+  wireguardGuestInterfaceDevice = "sys-subsystem-net-devices-${wireguardGuestInterface}.device";
+  wireguardTorrentPort = consts.ports.network.qbittorrentTorrent;
+  wireguardBlockedPort = wireguardTorrentPort + 1;
+  wireguardFirewallSetupScript = pkgs.writeShellScript "wireguard-firewall-test-setup" ''
+    set -eu
+    ${wireguardFirewallCommands}
+  '';
 
   enforced = blizzard.extendModules {
     modules = [
@@ -232,14 +241,9 @@ assert lib.all
     "readarr"
   ];
 assert !lib.hasInfix "tcp dport { 5355 }" policyText;
-assert lib.hasInfix ''iifname "vm-qbittorrent" oifname "vm-wireguard"'' policyText;
 assert lib.all
   (clientName: lib.hasInfix ''iifname "vm-${clientName}" oifname "vm-wireguard"'' policyText)
-  [
-    "qbittorrent"
-    "sabnzbd"
-    "firefox"
-  ];
+  vpnClientNames;
 assert lib.hasInfix ''iifname "vm-*" jump deny_unknown_tap'' policyText;
 assert lib.hasInfix "vm-prowlarr microvm-br0 ${registry.prowlarr.mac}"
   enforcedCfg.systemd.services."microvm-tap-interfaces@prowlarr-vm".postStart;
@@ -262,13 +266,21 @@ assert wireguardInterface.extraOptions.FwMark or null == 51820;
 assert !lib.hasInfix "%i" wireguardInterface.postUp;
 assert wireguardCfg.networking.nat.internalInterfaces == [ wireguardGuestInterface ];
 assert lib.elem wireguardGuestInterface wireguardCfg.networking.firewall.trustedInterfaces;
+assert !lib.elem "ens3" wireguardCfg.networking.firewall.trustedInterfaces;
 assert wireguardCfg.services.dnsmasq.settings.interface == [ wireguardGuestInterface ];
+assert wireguardCfg.systemd.network.wait-online.enable;
+assert wireguardCfg.systemd.network.links."10-microvm-primary".linkConfig.Name == wireguardGuestInterface;
+assert wireguardCfg.systemd.network.networks."20-lan".linkConfig.RequiredForOnline == "routable";
 assert lib.hasInfix "-A WG_FORWARD -i ${wireguardGuestInterface} -o wg0 -j ACCEPT"
   wireguardFirewallCommands;
 assert lib.hasInfix
   "-A WG_FORWARD -i wg0 -o ${wireguardGuestInterface} -m state --state RELATED,ESTABLISHED -j ACCEPT"
   wireguardFirewallCommands;
+assert lib.hasInfix "-A WG_FORWARD -i wg0 -o ${wireguardGuestInterface} -j REJECT"
+  wireguardFirewallCommands;
 assert lib.hasInfix "-D FORWARD -i ens3 -o wg0 -j ACCEPT" wireguardFirewallCommands;
+assert !lib.hasInfix "-D FORWARD -i ${wireguardGuestInterface} -o wg0 -j ACCEPT"
+  wireguardFirewallCommands;
 assert !lib.hasInfix "-A WG_FORWARD -i ens3" wireguardFirewallCommands;
 assert !lib.hasInfix "-A WG_FORWARD -i wg0 -o ens3" wireguardFirewallCommands;
 assert lib.hasInfix
@@ -284,6 +296,18 @@ assert lib.all (chain: !lib.hasInfix chain wireguardFirewallStopCommands) [
 ];
 assert lib.elem "firewall.service" wireguardUnit.requires;
 assert lib.elem "firewall.service" wireguardUnit.after;
+assert lib.elem "network-online.target" wireguardUnit.wants;
+assert lib.elem "network-online.target" wireguardUnit.after;
+assert lib.elem wireguardGuestInterfaceDevice wireguardUnit.requires;
+assert lib.elem wireguardGuestInterfaceDevice wireguardUnit.after;
+assert lib.elem wireguardGuestInterfaceDevice wireguardUnit.unitConfig.BindsTo;
+assert lib.elem "network-online.target" dnsmasqUnit.wants;
+assert lib.elem "network-online.target" dnsmasqUnit.after;
+assert lib.elem wireguardGuestInterfaceDevice dnsmasqUnit.after;
+assert lib.elem wireguardGuestInterfaceDevice dnsmasqUnit.unitConfig.BindsTo;
+assert lib.elem wireguardGuestInterfaceDevice firewallUnit.requires;
+assert lib.elem wireguardGuestInterfaceDevice firewallUnit.after;
+assert lib.elem wireguardGuestInterfaceDevice firewallUnit.unitConfig.BindsTo;
 assert lib.all (
   clientName:
   let
@@ -321,7 +345,10 @@ pkgs.testers.runNixOSTest {
   nodes.machine =
     { pkgs, ... }:
     {
-      boot.kernelModules = [ "nf_conntrack_bridge" ];
+      boot.kernelModules = [
+        "nf_conntrack"
+        "nf_conntrack_bridge"
+      ];
       boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
       networking = {
@@ -472,5 +499,22 @@ pkgs.testers.runNixOSTest {
         machine.fail("ip netns exec ns-rogue ping -c 1 -W 1 10.100.0.1")
         machine.fail("ping -c 1 -W 1 10.100.0.90")
         machine.succeed("nft list counter bridge microvm_policy unknown_tap_drops | grep -Eq 'packets [1-9]'")
+
+    with subtest("WireGuard forwarding rejects non-torrent guest traffic"):
+        machine.succeed("${setupNamespace} ns-wg wg0 02:00:00:00:00:FD 198.18.0.2/24 198.18.0.1")
+        machine.succeed("${setupNamespace} ns-wg-guest microvm0 02:00:00:00:00:FE 198.18.1.2/24 198.18.1.1")
+        machine.succeed("ip address add 198.18.0.1/24 dev wg0")
+        machine.succeed("ip address add 198.18.1.1/24 dev microvm0")
+        machine.succeed("${wireguardFirewallSetupScript}")
+        # The production NAT chain targets the real qBittorrent address. Flush
+        # only that private chain so this harness can exercise the filter path
+        # between two isolated test networks without changing WG_FORWARD.
+        machine.succeed("${pkgs.iptables}/bin/iptables -t nat -F WG_PREROUTING")
+        machine.succeed("systemd-run --unit wireguard-torrent-listener --property=NetworkNamespacePath=/run/netns/ns-wg-guest ${pkgs.socat}/bin/socat TCP-LISTEN:${toString wireguardTorrentPort},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
+        machine.succeed("systemd-run --unit wireguard-blocked-listener --property=NetworkNamespacePath=/run/netns/ns-wg-guest ${pkgs.socat}/bin/socat TCP-LISTEN:${toString wireguardBlockedPort},reuseaddr,fork EXEC:${pkgs.coreutils}/bin/cat")
+        machine.wait_for_unit("wireguard-torrent-listener.service")
+        machine.wait_for_unit("wireguard-blocked-listener.service")
+        machine.succeed("echo allowed | ip netns exec ns-wg ${pkgs.socat}/bin/socat - TCP:198.18.1.2:${toString wireguardTorrentPort},connect-timeout=2 | grep -q allowed")
+        machine.fail("echo denied | ip netns exec ns-wg ${pkgs.socat}/bin/socat - TCP:198.18.1.2:${toString wireguardBlockedPort},connect-timeout=1 | grep -q denied")
   '';
 }
