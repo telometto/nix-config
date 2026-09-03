@@ -132,6 +132,8 @@ in
   # firewall rules do not need an interface-name wildcard.
   systemd = {
     network = {
+      wait-online.enable = true;
+
       links."10-microvm-primary" = {
         matchConfig.MACAddress = mac;
         linkConfig.Name = networkDefaults.guestInterface;
@@ -150,6 +152,7 @@ in
             DNS = [ dns ];
             DHCP = "no";
           };
+          linkConfig.RequiredForOnline = "routable";
         }
         // lib.optionalAttrs (extraRoutes != [ ]) { routes = extraRoutes; };
 
