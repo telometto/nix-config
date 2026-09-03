@@ -158,14 +158,6 @@
     ];
   };
 
-  documentation = {
-    enable = true;
-    doc.enable = false;
-    man.enable = true;
-    info.enable = false;
-    nixos.enable = false;
-  };
-
   environment = {
     etc."profile.local".text = ''
       umask 027
