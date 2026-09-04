@@ -367,6 +367,7 @@ pkgs.testers.runNixOSTest {
 
       environment.systemPackages = with pkgs; [
         iproute2
+        iptables
         iputils
         jq
         nftables
