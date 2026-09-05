@@ -268,9 +268,9 @@ def exercise(traefik, production, directory):
                 path = f"/case/{name}/{case}"
                 echo = request(host, port, path, host, forwarded)
                 incoming_chain = [] if forwarded is None else forwarded.split(", ")
-                assert echo["x-forwarded-for"].split(", ") == incoming_chain + [
-                    host
-                ], echo
+                assert echo["x-forwarded-for"].split(", ") == incoming_chain + [host], (
+                    echo
+                )
                 assert echo["authorization"] == TOKEN
                 assert echo["cookie"] == COOKIE
                 assert echo["x-test-private"] == "synthetic-private-header"
@@ -333,8 +333,7 @@ def exercise(traefik, production, directory):
             ):
                 assert private_value not in encoded, record
         print(
-            f"Passed {len(expected)} real Traefik access-log "
-            "and forwarded-header cases"
+            f"Passed {len(expected)} real Traefik access-log and forwarded-header cases"
         )
     except Exception:
         for path in (output, errors):
