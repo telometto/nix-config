@@ -16,6 +16,14 @@ secret change, or merge.
 | Open-PR snapshot | 2026-08-13, live GitHub metadata |
 | Planning status | Matrix baseline source implementation is merged; Matrix backup source wiring is present, while live acceptance, observation, restore, and OIDC work remain |
 
+R-02's [HTTP detection and client-attribution source work](crowdsec-http-detection.md)
+can proceed independently of these Matrix runtime gates. Message-only
+acquisition, tunnel-only proxy trust, and a focused flake regression check are
+implemented; live acceptance and the rest of R-02's retention/audit work remain.
+Because Traefik/CrowdSec is shared with Matrix, coordinate any eventual edge
+deployment with Matrix acceptance and restart its observation after a material
+change. This does not advance the backup, bridge, or OIDC activation gates.
+
 Do not activate the Matrix backup or bridge, or claim the backup/restore gate is
 complete, before the Matrix baseline's live acceptance and observation gates
 pass. The source-side backup declaration may land as a safety prerequisite, but

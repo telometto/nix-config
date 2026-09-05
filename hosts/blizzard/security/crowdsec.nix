@@ -64,6 +64,8 @@
           source = "journalctl";
           journalctl_filter = [
             "_SYSTEMD_UNIT=traefik.service"
+            # The Traefik parser needs the JSON MESSAGE without journal prefixes.
+            "--output=cat"
           ];
 
           labels = {
