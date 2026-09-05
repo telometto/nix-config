@@ -31,22 +31,25 @@ assert cfg.services.crowdsec.enable;
 assert cfg.services.traefik.enable;
 assert builtins.length acquisitions == 1;
 assert acquisition.source == "journalctl";
-assert acquisition.journalctl_filter == [
-  "_SYSTEMD_UNIT=traefik.service"
-  "--output=cat"
-];
+assert
+  acquisition.journalctl_filter == [
+    "_SYSTEMD_UNIT=traefik.service"
+    "--output=cat"
+  ];
 assert lib.elem pkgs.systemd cfg.systemd.services.crowdsec.path;
 assert static.accessLog.format == "json";
 assert static.accessLog.fields.headers.defaultMode == "drop";
 assert static.accessLog.fields.headers.names == { User-Agent = "keep"; };
-assert lib.all (
-  name:
-  static.entryPoints.${name}.forwardedHeaders.trustedIPs == trustedIPs
-  && static.entryPoints.${name}.forwardedHeaders.insecure == false
-) [
-  "web"
-  "websecure"
-];
+assert lib.all
+  (
+    name:
+    static.entryPoints.${name}.forwardedHeaders.trustedIPs == trustedIPs
+    && static.entryPoints.${name}.forwardedHeaders.insecure == false
+  )
+  [
+    "web"
+    "websecure"
+  ];
 assert bouncer.forwardedHeadersTrustedIPs == trustedIPs;
 assert (bouncer.forwardedHeadersCustomName or "X-Forwarded-For") == "X-Forwarded-For";
 pkgs.runCommand "crowdsec-http-tests"
