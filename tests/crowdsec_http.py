@@ -245,7 +245,9 @@ def exercise(traefik, production, directory):
                 assert record["Duration"] >= 0, record
                 assert record["RouterName"] == "fixture@file", record
                 assert record["ServiceName"] == "fixture@file", record
-                assert record["ServiceAddr"] == f"127.0.0.1:{backend.server_port}", record
+                assert record["ServiceAddr"] == f"127.0.0.1:{backend.server_port}", (
+                    record
+                )
                 assert record["time"], record
                 assert record["request_User-Agent"] == USER_AGENT, record
                 logged_headers = {
