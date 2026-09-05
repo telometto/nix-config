@@ -66,7 +66,10 @@ Traefik 3.7.12 Windows binary (archive SHA-256
 `f2bb10a353baf11321840d9ce95028a9847eb32b2c39e1905952a7d82f069245`).
 That run used synthetic settings matching this change; Nix was unavailable,
 so effective Nix configuration evaluation and the Linux flake check remain
-pending. No production requests or deployment were performed.
+pending. This is supplementary evidence from a different binary than the
+Traefik 3.7.10 package pinned by the root flake input; it does not establish
+the pinned Linux package's runtime behavior. No production requests or
+deployment were performed.
 
 ## Live acceptance after approved deployment
 
@@ -113,9 +116,9 @@ or a passing HTTP request alone is not durable forensic retention evidence.
 
 - [CrowdSec journalctl acquisition](https://docs.crowdsec.net/docs/log_processor/data_sources/journald/)
   supports journalctl arguments in `journalctl_filter`.
-- [Traefik 3.7.12 access logging](https://github.com/traefik/traefik/blob/v3.7.12/pkg/middlewares/accesslog/logger.go)
-  and [forwarded-header sanitization](https://github.com/traefik/traefik/blob/v3.7.12/pkg/middlewares/forwardedheaders/forwarded_header.go)
-  define the pinned access-log boundary.
+- [Traefik 3.7.10 access logging](https://github.com/traefik/traefik/blob/v3.7.10/pkg/middlewares/accesslog/logger.go)
+  and [forwarded-header sanitization](https://github.com/traefik/traefik/blob/v3.7.10/pkg/middlewares/forwardedheaders/forwarded_header.go)
+  define the configured source boundary.
 - [CrowdSec Traefik parser](https://github.com/crowdsecurity/hub/blob/master/parsers/s01-parse/crowdsecurity/traefik-logs.yaml)
   defines source-IP and HTTP metadata extraction; this URL is mutable.
 - [Bouncer 1.4.5 IP selection](https://github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin/blob/v1.4.5/pkg/ip/ip.go)
