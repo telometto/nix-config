@@ -63,6 +63,8 @@ flowchart LR
   Password, SSH key, SOPS recipient, and service secret lifecycle policy
 - [roadmap.md](roadmap.md) —
   Curated repo-wide initiatives, priorities, dependencies, relevant paths, and planning links
+- [crowdsec-http-detection.md](crowdsec-http-detection.md) —
+  Blizzard HTTP log acquisition, client-IP trust contract, regression tests, and R-02 acceptance gates
 - [2026-08-14-blizzard-paranoid-nixos-handoff.md](2026-08-14-blizzard-paranoid-nixos-handoff.md) —
   Gated Blizzard paranoid-NixOS deployment, host/VM hardening, and recovery-state handoff
 - [security-roadmap-implementation-order.md](security-roadmap-implementation-order.md) —
