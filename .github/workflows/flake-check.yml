@@ -11,6 +11,7 @@ on:
             - ".github/scripts/redact-secrets.sh"
             - "modules/services/scripts/cloudflare_metrics.py"
             - "tests/cloudflare_metrics/**"
+            - "tests/crowdsec_http.py"
             - "dashboards/host/blizzard/cloudflare-overview.json"
             - "vms/README.md"
             - "docs/**"
@@ -27,6 +28,7 @@ on:
             - ".github/scripts/redact-secrets.sh"
             - "modules/services/scripts/cloudflare_metrics.py"
             - "tests/cloudflare_metrics/**"
+            - "tests/crowdsec_http.py"
             - "dashboards/host/blizzard/cloudflare-overview.json"
             - "vms/README.md"
             - "docs/**"
@@ -77,6 +79,9 @@ jobs:
 
             - name: Run Blackbox observability tests
               run: nix build .#checks.x86_64-linux.blackbox-observability --no-link --print-build-logs
+
+            - name: Run CrowdSec HTTP tests
+              run: nix build .#checks.x86_64-linux.crowdsec-http --no-link --print-build-logs
 
             - name: Run MicroVM network policy tests
               run: nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs
