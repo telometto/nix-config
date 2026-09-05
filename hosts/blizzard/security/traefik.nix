@@ -28,12 +28,11 @@ let
     (vmInstances."matrix-synapse".enable or false)
     && (vmInstances."matrix-synapse".publication.enable or false);
 
+  # Cloudflared connects to localhost:80. LAN, VM, and Tailscale clients are
+  # callers, not trusted proxies; their forwarded headers must be discarded.
   trustedIPs = [
     "127.0.0.1/32"
-    "10.0.0.0/8"
-    "172.16.0.0/12"
-    "192.168.0.0/16"
-    "100.64.0.0/10"
+    "::1/128"
   ];
 
   immichUploadTimeouts = {
@@ -78,7 +77,15 @@ in
     enable = true;
 
     static.settings = {
-      accessLog.format = "json";
+      accessLog = {
+        format = "json";
+        fields.headers = {
+          defaultMode = "drop";
+          # Required by the configured http-bad-user-agent scenario. Other
+          # headers, including cookies and authorization, stay out of the log.
+          names.User-Agent = "keep";
+        };
+      };
       log.level = "WARN";
 
       experimental.plugins.bouncer = {
@@ -93,11 +100,17 @@ in
         # entrypoint, so Immich's large uploads need the longer timeout here.
         web = immichUploadTimeouts // {
           address = ":80";
-          forwardedHeaders = { inherit trustedIPs; };
+          forwardedHeaders = {
+            inherit trustedIPs;
+            insecure = false;
+          };
         };
         websecure = {
           address = ":443";
-          forwardedHeaders = { inherit trustedIPs; };
+          forwardedHeaders = {
+            inherit trustedIPs;
+            insecure = false;
+          };
         };
       };
 
@@ -120,24 +133,11 @@ in
               crowdsecLapiScheme = "http";
               crowdsecLapiHost = "127.0.0.1:8085";
               crowdsecLapiKeyFile = "/run/traefik/crowdsec-bouncer-key";
-              forwardedHeadersTrustedIPs = [
-                "127.0.0.1/32"
-                "173.245.48.0/20"
-                "103.21.244.0/22"
-                "103.22.200.0/22"
-                "103.31.4.0/22"
-                "141.101.64.0/18"
-                "108.162.192.0/18"
-                "190.93.240.0/20"
-                "188.114.96.0/20"
-                "197.234.240.0/22"
-                "198.41.128.0/17"
-                "162.158.0.0/15"
-                "104.16.0.0/13"
-                "104.24.0.0/14"
-                "172.64.0.0/13"
-                "131.0.72.0/22"
-              ];
+              # Use Traefik's sanitized XFF chain for the same source as the
+              # CrowdSec Traefik parser. CF-Connecting-IP is not sanitized on
+              # direct requests and must not be used as a custom IP header.
+              forwardedHeadersCustomName = "X-Forwarded-For";
+              forwardedHeadersTrustedIPs = trustedIPs;
             };
           };
 

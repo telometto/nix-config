@@ -1,5 +1,4 @@
-_:
-{
+_: {
   documentation = {
     enable = true;
     doc.enable = false;
