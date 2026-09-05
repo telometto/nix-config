@@ -200,6 +200,11 @@
           publicDomain = VARS.domains.public;
         };
 
+        crowdsec-http = import ./tests/crowdsec-http.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         victoriametrics = import ./tests/victoriametrics.nix {
           inherit (self.nixosConfigurations) blizzard snowfall;
           pkgs = nixpkgs.legacyPackages.${system};
