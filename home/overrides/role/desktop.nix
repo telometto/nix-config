@@ -33,7 +33,7 @@ in
       cursor-style = "bar";
       cursor-style-blink = true;
 
-      font-family = "FiraCode Nerd Font Mono";
+      font-family = "Annotation Mono";
       font-size = 13;
 
       mouse-hide-while-typing = true;
