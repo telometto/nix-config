@@ -148,8 +148,14 @@
       // microvmConfigurations;
 
       formatter.${system} = treefmtEval.config.build.wrapper;
+      packages.${system} = import ./packages {
+        pkgs = nixpkgs.legacyPackages.${system};
+      };
       checks.${system} = {
         formatting = treefmtEval.config.build.check inputs.self;
+        rustdesk-unattended = import ./tests/rustdesk-unattended.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
 
         cloudflare-metrics =
           nixpkgs.legacyPackages.${system}.runCommand "cloudflare-metrics-tests"
