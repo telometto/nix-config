@@ -22,6 +22,12 @@ ______________________________________________________________________
 
 ### Service catalog
 
+#### Remote desktop
+
+| Module file | Option prefix | Typical location | Purpose |
+|-------------|--------------|-----------------|---------|
+| [rustdesk-unattended.nix](rustdesk-unattended.nix) | `sys.services.rustdeskUnattended` | Kaizer | Root desktop client service with DRM/Wayland capture; see [operations](../../docs/rustdesk-unattended-wayland.md) |
+
 #### Media — PVR / Arr stack
 
 | Module file | Option prefix | Typical location | Purpose |
