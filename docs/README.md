@@ -96,6 +96,7 @@ flowchart LR
 
 #### Operations
 
+- [rustdesk-unattended-wayland.md](rustdesk-unattended-wayland.md) — Build, configure, and verify Kaizer's unattended Wayland desktop access
 - [sops-setup-guide.md](sops-setup-guide.md) — How to set up SOPS secrets and age keys
 - [scrutiny.md](scrutiny.md) — Provision, verify, and rotate the Scrutiny InfluxDB token
 - [blackbox-monitoring.md](blackbox-monitoring.md) — Configure, verify, and recover public HTTP/TLS availability probes
