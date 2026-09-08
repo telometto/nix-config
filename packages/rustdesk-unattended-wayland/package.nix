@@ -180,6 +180,9 @@ flutter329.buildFlutterApplication rec {
     substituteInPlace src/platform/linux.rs \
       --replace-fail '@rustdesk-wrapper@' '${placeholder "out"}/bin/rustdesk' \
       --replace-fail 'Command::new("sudo")' 'Command::new("/run/wrappers/bin/sudo")'
+    substituteInPlace src/platform/gtk_sudo.rs \
+      --replace-fail 'let su_or_sudo = if su_user.is_some() { "su" } else { "sudo" };' \
+      'let su_or_sudo = if su_user.is_some() { "/run/wrappers/bin/su" } else { "/run/wrappers/bin/sudo" };'
     cd flutter
     # Flutter 3.29 adds SelectionHandler APIs absent from extended_text 14.
     substituteInPlace pubspec.yaml \
