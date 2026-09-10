@@ -64,6 +64,21 @@ let
     name: (registry.${name}.gateway or networkDefaults.defaultGateway) == registry.wireguard.ip
   ) policyIdentityNames;
   policyRuleset = enforcedCfg.environment.etc."microvm-network-policy/ruleset.nft".source;
+  vmWithDefaults = blizzard.config.microvm.vms."matrix-synapse-vm";
+  flakeReferenceService = blizzard.config.systemd.services."microvm-flake-ref-matrix-synapse-vm";
+
+  vmWithOverrides = blizzard.extendModules {
+    modules = [
+      {
+        sys.virtualisation.microvm.instances.matrix-synapse.vmConfig = {
+          restartIfChanged = lib.mkForce false;
+          updateFlake = "git+file:///srv/nix-config";
+        };
+      }
+    ];
+  };
+  overriddenFlakeReferenceService =
+    vmWithOverrides.config.systemd.services."microvm-flake-ref-matrix-synapse-vm";
 
   audited = blizzard.extendModules {
     modules = [
@@ -214,6 +229,16 @@ assert blizzard.options.sys.virtualisation.microvm.networkPolicy.mode.default ==
 assert blizzard.config.sys.virtualisation.microvm.networkPolicy.mode == "enforce";
 assert enforcedCfg.sys.virtualisation.microvm.networkPolicy.mode == "enforce";
 assert !blizzard.config.networking.nftables.enable;
+assert vmWithDefaults.restartIfChanged;
+assert vmWithDefaults.updateFlake == "github:telometto/nix-config";
+assert flakeReferenceService.serviceConfig.User == "microvm";
+assert flakeReferenceService.serviceConfig.Group == "kvm";
+assert lib.elem "install-microvm-matrix-synapse-vm.service" flakeReferenceService.requires;
+assert lib.hasInfix "github:telometto/nix-config" flakeReferenceService.script;
+assert vmWithOverrides.config.microvm.vms."matrix-synapse-vm".restartIfChanged == false;
+assert
+  vmWithOverrides.config.microvm.vms."matrix-synapse-vm".updateFlake == "git+file:///srv/nix-config";
+assert lib.hasInfix "git+file:///srv/nix-config" overriddenFlakeReferenceService.script;
 assert policyService.reloadTriggers != [ ];
 assert policyService.restartTriggers == [ ];
 assert
