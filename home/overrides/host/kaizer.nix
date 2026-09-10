@@ -3,7 +3,7 @@
 { lib, pkgs, ... }:
 {
   home.packages = [
-    pkgs.rustdesk-flutter
+    # RustDesk is installed system-wide by sys.services.rustdeskUnattended.
     pkgs.polychromatic # Razer configuration tool
     # pkgs.kdePackages.krdc
     pkgs.meld
