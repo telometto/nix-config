@@ -601,14 +601,47 @@ let
   derivedVms = builtins.listToAttrs (
     lib.mapAttrsToList (name: instance: {
       name = mkVmName name;
-      value =
-        instance.vmConfig // lib.optionalAttrs (instance.flake != null) { inherit (instance) flake; };
+      value = {
+        # Restart the guest when a host-managed runner changes. Individual
+        # instances can explicitly opt out through vmConfig.restartIfChanged.
+        restartIfChanged = lib.mkDefault true;
+      }
+      // instance.vmConfig
+      // lib.optionalAttrs (instance.flake != null) { inherit (instance) flake; };
     }) enabledInstances
   );
 
   derivedAutostart = lib.mapAttrsToList (name: _: mkVmName name) (
     lib.filterAttrs (_: instance: instance.autostart) enabledInstances
   );
+
+  updateFlakeInstances = lib.filterAttrs (
+    _: instance: (instance.vmConfig.updateFlake or null) != null
+  ) enabledInstances;
+  updateFlakeServices = lib.mapAttrs' (
+    name: instance:
+    let
+      vmName = mkVmName name;
+      flakeRef = instance.vmConfig.updateFlake;
+    in
+    lib.nameValuePair "microvm-flake-ref-${vmName}" {
+      description = "Persist the update flake reference for MicroVM '${vmName}'";
+      requires = [ "install-microvm-${vmName}.service" ];
+      after = [ "install-microvm-${vmName}.service" ];
+      before = [ "microvm@${vmName}.service" ];
+      wantedBy = [ "microvms.target" ];
+      unitConfig.ConditionPathExists = "${cfg.stateDir}/${vmName}";
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        User = "microvm";
+        Group = "kvm";
+      };
+      script = ''
+        printf '%s\n' ${lib.escapeShellArg flakeRef} > ${lib.escapeShellArg "${cfg.stateDir}/${vmName}/flake"}
+      '';
+    }
+  ) updateFlakeInstances;
 
   # Generate NAT forwardPorts from enabled VM instances.
   mkForwardPorts =
@@ -978,7 +1011,8 @@ in
           };
         };
       }
-      // policyUnitOverrides;
+      // policyUnitOverrides
+      // updateFlakeServices;
     };
 
     networking = {
