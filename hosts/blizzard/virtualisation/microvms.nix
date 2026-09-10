@@ -8,6 +8,7 @@
 }:
 let
   reg = import ../../../vms/vm-registry.nix { inherit consts; };
+  defaultUpdateFlake = "github:telometto/nix-config";
 
   mkPortForward =
     proto: sourcePort: destPort:
@@ -31,7 +32,14 @@ let
     }
     // lib.optionalAttrs (spec ? enable) { inherit (spec) enable; }
     // {
-      vmConfig = spec.vmConfig or { };
+      # microvm.nix stores this reference in the VM state directory during
+      # initial installation. It lets `microvm -u` rebuild one VM without a
+      # Blizzard system switch. Individual VMs may override it or set it to
+      # null to retain the host's declarative flake source.
+      vmConfig = {
+        updateFlake = lib.mkDefault defaultUpdateFlake;
+      }
+      // (spec.vmConfig or { });
       portForward.ports = spec.portForwards or [ ];
       publication = spec.publication or { };
       networkPolicy = spec.networkPolicy or { };
@@ -284,7 +292,6 @@ let
 
     "pocket-id" = {
       enable = true;
-      vmConfig.restartIfChanged = true;
       publication = {
         enable = true;
         hostname = "id";
