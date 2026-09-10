@@ -247,6 +247,8 @@ forwarding, and the standard public HTTP publication path.
 | `sys.virtualisation.microvm.instances.<name>.publication.enable` | Explicitly enable standard public HTTP publication |
 | `sys.virtualisation.microvm.instances.<name>.publication.hostname` | One DNS label under the canonical public domain |
 | `sys.virtualisation.microvm.instances.<name>.publication.policy` | Named compatibility policy; defaults to the built-in `strict` policy |
+| `sys.virtualisation.microvm.instances.<name>.vmConfig.restartIfChanged` | Restart the guest when the host generation changes; defaults to `true` |
+| `sys.virtualisation.microvm.instances.<name>.vmConfig.updateFlake` | Flake reference persisted for per-VM `microvm -u` updates; defaults on Blizzard to `github:telometto/nix-config` |
 | `sys.virtualisation.microvm.publication.canonicalDomain` | Domain suffix for standard publications |
 | `sys.virtualisation.microvm.networkPolicy.mode` | `enforce` by default; temporary `audit` logs and accepts only otherwise-valid undeclared registered unicast |
 | `services.traefik.publicationPolicyMiddlewares` | Host-owned mapping from compatibility-policy names to Traefik middleware implementations |
@@ -263,6 +265,21 @@ raw port forwarding, and bespoke multi-host or path routes such as Matrix stay
 outside this interface. See the
 [publication diagram](../vms/README.md#host-side-enablement) and
 [ADR 0001](adr/0001-model-public-http-publication-as-instance-intent.md).
+
+Guest-only changes can be built and updated independently of the Blizzard
+system generation. The VM output is the `microvm.declaredRunner`, and the
+host-installed `microvm` command uses each instance's persisted
+`vmConfig.updateFlake` reference:
+
+```bash
+nix build .#nixosConfigurations.<name>-vm.config.microvm.declaredRunner
+sudo microvm -Ru <name>-vm
+```
+
+The first host switch after enabling an instance installs the VM and records
+the update reference. A later host switch is still required for host-owned
+changes such as instance enablement, autostart, publication, forwarding,
+network policy, registry identity, or `stateDir`.
 
 The network-policy implementation derives tap/MAC/IP/FDB/neighbor identity and
 WireGuard gateway pairs from the registry. Native nftables `bridge` and `inet`
