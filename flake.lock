@@ -763,6 +763,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-rustdesk": {
+      "locked": {
+        "lastModified": 1788957731,
+        "narHash": "sha256-1UghzK91fwI2sUW3uAfkX8t5SJdeCLeQrsO3G+g4fHQ=",
+        "owner": "telometto",
+        "repo": "nixpkgs",
+        "rev": "86fb8aca9dcd694480c58b087dc73f8b1ed5d38b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "telometto",
+        "ref": "add-rustdesk-nightly",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-stable-small": {
       "locked": {
         "lastModified": 1789023521,
@@ -960,6 +976,7 @@
         "nixpkgs": "nixpkgs_4",
         "nixpkgs-beta": "nixpkgs-beta",
         "nixpkgs-master": "nixpkgs-master",
+        "nixpkgs-rustdesk": "nixpkgs-rustdesk",
         "nixpkgs-stable-small": "nixpkgs-stable-small",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nixpkgs-unstable-small": "nixpkgs-unstable-small",
