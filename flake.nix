@@ -2,6 +2,9 @@
   description = "NixOS configuration with auto-imported modules";
 
   inputs = {
+    # RustDesk nightly until the package is merged into nixpkgs.
+    nixpkgs-rustdesk.url = "github:telometto/nixpkgs/add-rustdesk-nightly";
+
     # Primary channel - most packages come from here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     # Bleeding edge
