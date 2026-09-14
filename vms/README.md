@@ -257,6 +257,49 @@ Tunnel ingress and the matching Traefik router and service, applies CrowdSec,
 and uses strict security headers unless a registered compatibility policy is
 selected.
 
+### VM-only updates
+
+The shared MicroVM adapter defaults `restartIfChanged` to `true`, so a host
+switch restarts an affected guest when its host-managed runner changes. An
+individual instance can explicitly override this through `vmConfig` if it has
+a special maintenance requirement.
+
+Blizzard also gives enabled instances the default `vmConfig.updateFlake` value
+`github:telometto/nix-config`. The host persists that reference under its
+MicroVM state directory (`/flash/enc/vms/<name>-vm/flake`), and the host's
+`microvm` command can subsequently update one guest without switching the
+Blizzard system:
+
+```bash
+sudo microvm -Ru <name>-vm
+```
+
+The command evaluates and builds the flake named by the persisted reference,
+installs the new `microvm.declaredRunner`, and restarts only that VM. Commit and
+push the VM change first when using the default GitHub reference.
+
+The VM flake imports the private `nix-secrets` input, so the host running
+`microvm -u` must also have the SSH access required to evaluate that input.
+A VM can use a different source, or retain only the host's declarative flake
+source, with an instance-local override:
+
+```nix
+vmConfig = {
+  updateFlake = "git+https://git.example/nix-config?ref=main";
+  # updateFlake = null; # use the host's immutable flake source
+  # restartIfChanged = false;
+};
+```
+
+This path applies to guest configuration changes. Host-owned changes such as
+enablement, autostart, publication, port forwarding, network policy, registry
+identity, or the state directory still require a Blizzard switch. The initial
+installation and changes to the host-side MicroVM wiring also require:
+
+```bash
+sudo nixos-rebuild switch --flake .#blizzard
+```
+
 ```mermaid
 flowchart LR
     DECL["instances.<name>.publication\nhostname label + policy"]

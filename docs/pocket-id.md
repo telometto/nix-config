@@ -129,8 +129,8 @@ sudo nixos-rebuild switch --flake .#blizzard
 ```
 
 The second rebuild gives the VM the encrypted value and the recipient needed
-to decrypt it. The Pocket ID host instance enables `vmConfig.restartIfChanged`,
-so a switch restarts the VM when its generated configuration changes. On
+to decrypt it. The Pocket ID VM inherits the shared `restartIfChanged = true`
+default, so a switch restarts it when its generated configuration changes. On
 Blizzard, verify that the new unit is active and consuming the updated
 configuration:
 
