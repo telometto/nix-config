@@ -4,7 +4,7 @@
   tailscale = {
     suffix = "mole-delta.ts.net";
     # Shared endpoint consumed by multiple hosts and the Blizzard services.
-    hosts.blizzard.ipv4 = "100.86.227.97";
+    hosts.blizzard.ipv4 = "100.85.254.99";
   };
 
   # Keep host, MicroVM, secondary-service, and network ports in separate
