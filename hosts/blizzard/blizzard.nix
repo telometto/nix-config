@@ -58,7 +58,7 @@
       #     "pipx"
       #     "openrazer"
       #   ];
-        nixpkgs-unstable = [ "tailscale" ];
+      nixpkgs-unstable = [ "tailscale" ];
       # };
 
       ## Add custom overlays
