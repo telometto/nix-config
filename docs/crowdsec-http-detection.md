@@ -47,6 +47,10 @@ to overwrite headers. Any Worker that rewrites client-IP headers also needs
 separate validation. Those provider settings are live acceptance prerequisites,
 not facts established by this repository change.
 
+See [CrowdSec investigation and health](crowdsec-observability.md) for the
+pinned local bouncer extension, structured remediation events, and their
+separate integration checks.
+
 ## Source validation
 
 ```bash
