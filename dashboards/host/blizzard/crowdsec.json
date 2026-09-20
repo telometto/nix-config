@@ -1,0 +1,368 @@
+{
+  "uid": "crowdsec-investigation",
+  "title": "CrowdSec investigation",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "tags": [
+    "security",
+    "crowdsec"
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Blocked sources and decision reasons",
+      "description": "Decision reason is the reason the IP was banned, not proof of the payload attempted in this request.",
+      "type": "table",
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "security-logs"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "security-logs"
+          },
+          "expr": "_stream:{service=\"crowdsec\"} | unpack_json | filter kind:=\"decision\" | stats by (source_ip, origin, scenario, target_host) count() requests | sort by (requests) desc | limit 100",
+          "queryType": "instant",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 2,
+      "title": "Locally detected attacks",
+      "description": "Locally detected scenarios. Country/ASN are supplied by CrowdSec alert enrichment; blocked requests without local alerts may not have them.",
+      "type": "table",
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "security-logs"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "security-logs"
+          },
+          "expr": "_stream:{service=\"crowdsec\"} | unpack_json | filter kind:=\"local_detection\" | fields _time, source_ip, country, asn, as_name, scenario, target_host, target_uri, http_method, events_count, simulated",
+          "queryType": "instant",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 3,
+      "title": "Blocked request details",
+      "description": "Each record captures the decision metadata at enforcement time, retaining the reason after the ban expires. Query strings are omitted.",
+      "type": "table",
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "security-logs"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "security-logs"
+          },
+          "expr": "_stream:{service=\"crowdsec\"} | unpack_json | filter kind:=\"decision\" | fields _time, source_ip, target_host, target_uri, http_method, user_agent, origin, scenario, decision_id | sort by (_time) desc | limit 200",
+          "queryType": "instant",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 4,
+      "title": "Operational denials requiring investigation",
+      "description": "These fail-closed denials are excluded from prevented-attack counts. Inspect the Traefik journal for the underlying error.",
+      "type": "table",
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "security-logs"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "security-logs"
+          },
+          "expr": "_stream:{service=\"crowdsec\"} | unpack_json | filter kind:=\"enforcement_error\" | fields _time, source_ip, target_host, target_uri, http_method | sort by (_time) desc | limit 100",
+          "queryType": "instant",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 5,
+      "title": "Acquisition lines per second",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 18,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (acquis_type) (rate(cs_journalctlsource_hits_total{job=\"crowdsec\"}[5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 6,
+      "title": "Unparsed lines per second",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 18,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (acquis_type) (rate(cs_parser_hits_ko_total{job=\"crowdsec\"}[5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 7,
+      "title": "Detection scenario activity",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (name) (rate(cs_bucket_poured_total{job=\"crowdsec\"}[5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 8,
+      "title": "Active decisions by origin and reason",
+      "description": "Inventory of active bans, not attacks observed on Blizzard.",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 27,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (origin,reason) (cs_active_decisions{job=\"crowdsec\"})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 9,
+      "title": "Bouncer API polling",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (bouncer) (rate(cs_lapi_bouncer_requests_total{job=\"crowdsec\",route=\"/v1/decisions/stream\"}[5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 10,
+      "title": "Collection services reachable",
+      "description": "",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 36,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "up{job=~\"crowdsec|crowdsec-firewall|security-logs|security-alloy\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 11,
+      "title": "AppSec observations (not blocked)",
+      "description": "URL/header virtual-patch matches from the observation rollout. Request bodies are not inspected.",
+      "type": "table",
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "security-logs"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 45,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "security-logs"
+          },
+          "expr": "_stream:{service=\"crowdsec\"} | unpack_json | filter kind:=\"appsec_observation\" | fields _time, source_ip, country, asn, as_name, scenario, target_host, target_uri, http_method, events_count",
+          "queryType": "instant",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    }
+  ]
+}
