@@ -68,11 +68,16 @@ in
           # ];
           # nixpkgs-beta = [ ];
           # nixpkgs-unstable = [ "vscode" ];
-          # nixpkgs-stable-small = [ "openblas" ];
-          nixpkgs-unstable-small = [
+          nixpkgs-stable-small = [
             "atuin"
             "brave-origin"
+            "tailscale"
           ];
+          # nixpkgs-unstable-small = [
+          #   "atuin"
+          #   "brave-origin"
+          #   "tailscale"
+          # ];
         };
 
         ## Add custom overlays
