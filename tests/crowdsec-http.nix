@@ -35,6 +35,7 @@ assert
   acquisition.journalctl_filter == [
     "_SYSTEMD_UNIT=traefik.service"
     "--output=cat"
+    "--grep=^\\{.*\"ClientHost\":"
   ];
 assert lib.elem pkgs.systemd cfg.systemd.services.crowdsec.path;
 assert static.accessLog.format == "json";
