@@ -67,12 +67,16 @@ in
           #   "openrazer"
           # ];
           # nixpkgs-beta = [ ];
-          # nixpkgs-unstable = [ "vscode" ];
-          nixpkgs-stable-small = [
+          nixpkgs-unstable = [
             "atuin"
             "brave-origin"
             "tailscale"
           ];
+          # nixpkgs-stable-small = [
+          #   "atuin"
+          #   "brave-origin"
+          #   "tailscale"
+          # ];
           # nixpkgs-unstable-small = [
           #   "atuin"
           #   "brave-origin"
