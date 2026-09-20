@@ -63,6 +63,8 @@ flowchart LR
   Password, SSH key, SOPS recipient, and service secret lifecycle policy
 - [roadmap.md](roadmap.md) —
   Curated repo-wide initiatives, priorities, dependencies, relevant paths, and planning links
+- [crowdsec-observability.md](crowdsec-observability.md) —
+  Source/decision investigation, local security-event retention, bouncer reporting and health alerts
 - [crowdsec-http-detection.md](crowdsec-http-detection.md) —
   Blizzard HTTP log acquisition, client-IP trust contract, regression tests, and R-02 acceptance gates
 - [2026-08-14-blizzard-paranoid-nixos-handoff.md](2026-08-14-blizzard-paranoid-nixos-handoff.md) —
