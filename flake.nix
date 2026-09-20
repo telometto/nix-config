@@ -203,6 +203,11 @@
           publicDomain = VARS.domains.public;
         };
 
+        crowdsec-observability = import ./tests/crowdsec-observability.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         crowdsec-http = import ./tests/crowdsec-http.nix {
           inherit (self.nixosConfigurations) blizzard;
           pkgs = nixpkgs.legacyPackages.${system};
