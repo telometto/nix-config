@@ -7,6 +7,7 @@
   ...
 }:
 let
+  bouncerSource = import ../../../packages/crowdsec-bouncer { inherit pkgs; };
   traefikLib = import ../../../lib/traefik.nix { inherit lib; };
   vmInstances = config.sys.virtualisation.microvm.instances;
   hostRoutes = {
@@ -88,9 +89,8 @@ in
       };
       log.level = "WARN";
 
-      experimental.plugins.bouncer = {
+      experimental.localPlugins.bouncer = {
         moduleName = "github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin";
-        version = "v1.4.5";
       };
 
       api.dashboard = true;
@@ -133,6 +133,13 @@ in
               crowdsecLapiScheme = "http";
               crowdsecLapiHost = "127.0.0.1:8085";
               crowdsecLapiKeyFile = "/run/traefik/crowdsec-bouncer-key";
+              # First rollout observes URL/header matches only. Body inspection
+              # needs separate upload, federation and streaming acceptance.
+              crowdsecAppsecEnabled = true;
+              crowdsecAppsecHost = "127.0.0.1:7422";
+              crowdsecAppsecBodyLimit = 0;
+              crowdsecAppsecFailureBlock = false;
+              crowdsecAppsecUnreachableBlock = false;
               # Use Traefik's sanitized XFF chain for the same source as the
               # CrowdSec Traefik parser. CF-Connecting-IP is not sanitized on
               # direct requests and must not be used as a custom IP header.
@@ -267,18 +274,40 @@ in
     };
   };
 
-  systemd.services.traefik.serviceConfig = {
-    # Copy the bouncer token into Traefik's RuntimeDirectory so the
-    # DynamicUser can read it without making the SOPS source world-readable.
-    # The directory is 0750 (only root + dynamic user), so 0444 on the copy
-    # is safe - no other user can even enter the directory.
-    RuntimeDirectory = "traefik";
-    RuntimeDirectoryMode = "0750";
-    ExecStartPre = [
-      "+${pkgs.writeShellScript "copy-bouncer-key" ''
-        set -euo pipefail
-        install -m 0444 ${config.sys.secrets.crowdsecTraefikBouncerTokenFile} /run/traefik/crowdsec-bouncer-key
-      ''}"
+  # Traefik local plugins are resolved relative to its WorkingDirectory.
+  # The source and dependencies are immutable and tested before installation.
+  systemd = {
+    tmpfiles.rules = [
+      # Declare every parent so tmpfiles also repairs directories created by
+      # older rules. Root-owned children below the traefik-owned dataDir cause
+      # tmpfiles to reject the path as an unsafe ownership transition.
+      "d ${config.services.traefik.dataDir}/plugins-local 0755 traefik traefik -"
+      "d ${config.services.traefik.dataDir}/plugins-local/src 0755 traefik traefik -"
+      "d ${config.services.traefik.dataDir}/plugins-local/src/github.com 0755 traefik traefik -"
+      "d ${config.services.traefik.dataDir}/plugins-local/src/github.com/maxlerebourg 0755 traefik traefik -"
+      "L+ ${config.services.traefik.dataDir}/plugins-local/src/github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin - - - - ${bouncerSource}"
     ];
+
+    services.traefik = {
+      restartTriggers = [ bouncerSource ];
+
+      serviceConfig = {
+        # Copy the bouncer token into Traefik's RuntimeDirectory so the
+        # DynamicUser can read it without making the SOPS source world-readable.
+        # The directory is 0750 (only root + dynamic user), so 0444 on the copy
+        # is safe - no other user can even enter the directory.
+        RuntimeDirectory = "traefik";
+        RuntimeDirectoryMode = "0750";
+        ExecStartPre = [
+          # Fail service startup clearly if plugin installation is incomplete,
+          # instead of starting Traefik with all protected routers broken.
+          "${pkgs.coreutils}/bin/test -r ${config.services.traefik.dataDir}/plugins-local/src/github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin/.traefik.yml"
+          "+${pkgs.writeShellScript "copy-bouncer-key" ''
+            set -euo pipefail
+            install -m 0444 ${config.sys.secrets.crowdsecTraefikBouncerTokenFile} /run/traefik/crowdsec-bouncer-key
+          ''}"
+        ];
+      };
+    };
   };
 }
