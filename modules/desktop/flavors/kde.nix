@@ -52,6 +52,7 @@ in
 
       systemPackages = [
         pkgs.kdePackages.qtwebengine
+        pkgs.kdePackages.flatpak-kcm
         SDDM_ASTRONAUT
       ];
 
