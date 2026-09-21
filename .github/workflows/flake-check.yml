@@ -11,7 +11,9 @@ on:
             - ".github/scripts/redact-secrets.sh"
             - "modules/services/scripts/cloudflare_metrics.py"
             - "tests/cloudflare_metrics/**"
-            - "tests/crowdsec_http.py"
+            - "tests/crowdsec_*.py"
+            - "packages/crowdsec-*/**"
+            - "dashboards/host/blizzard/crowdsec.json"
             - "dashboards/host/blizzard/cloudflare-overview.json"
             - "vms/README.md"
             - "docs/**"
@@ -28,7 +30,9 @@ on:
             - ".github/scripts/redact-secrets.sh"
             - "modules/services/scripts/cloudflare_metrics.py"
             - "tests/cloudflare_metrics/**"
-            - "tests/crowdsec_http.py"
+            - "tests/crowdsec_*.py"
+            - "packages/crowdsec-*/**"
+            - "dashboards/host/blizzard/crowdsec.json"
             - "dashboards/host/blizzard/cloudflare-overview.json"
             - "vms/README.md"
             - "docs/**"
@@ -82,6 +86,45 @@ jobs:
 
             - name: Run CrowdSec HTTP tests
               run: nix build .#checks.x86_64-linux.crowdsec-http --no-link --print-build-logs
+
+            - name: CrowdSec observability checks
+              run: nix build .#checks.x86_64-linux.crowdsec-observability --no-link --print-build-logs
+
+            - name: Prepare CrowdSec integration fixture paths
+              id: crowdsec-fixtures
+              run: |
+                  echo "traefik=$(nix build .#nixosConfigurations.blizzard.config.services.traefik.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
+                  echo "bouncer=$(nix eval --raw .#checks.x86_64-linux.crowdsec-observability.bouncer)" >> "$GITHUB_OUTPUT"
+                  echo "alloy=$(nix build .#nixosConfigurations.blizzard.config.services.alloy.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
+                  echo "vlogs=$(nix build .#nixosConfigurations.blizzard.config.services.victorialogs.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
+                  echo "crowdsec=$(nix build .#nixosConfigurations.blizzard.config.services.crowdsec.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
+                  echo "settings=$(nix build .#checks.x86_64-linux.crowdsec-observability.runtimeSettings --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
+                  nix eval --raw '.#nixosConfigurations.blizzard.config.environment.etc."alloy/crowdsec.alloy".text' > "$RUNNER_TEMP/crowdsec.alloy"
+
+            - name: Remove private repository credentials
+              run: |
+                  if [ -n "${SSH_AGENT_PID:-}" ]; then
+                      kill "$SSH_AGENT_PID" || true
+                  fi
+                  printf 'SSH_AUTH_SOCK=\nSSH_AGENT_PID=\n' >> "$GITHUB_ENV"
+
+            - name: Run CrowdSec integration fixtures
+              env:
+                  TRAEFIK: ${{ steps.crowdsec-fixtures.outputs.traefik }}
+                  BOUNCER: ${{ steps.crowdsec-fixtures.outputs.bouncer }}
+                  ALLOY: ${{ steps.crowdsec-fixtures.outputs.alloy }}
+                  VICTORIALOGS: ${{ steps.crowdsec-fixtures.outputs.vlogs }}
+                  CROWDSEC: ${{ steps.crowdsec-fixtures.outputs.crowdsec }}
+                  SETTINGS: ${{ steps.crowdsec-fixtures.outputs.settings }}
+              run: |
+                  env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_bouncer_runtime.py --traefik "$TRAEFIK/bin/traefik" --plugin "$BOUNCER"
+                  env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_logs_runtime.py --alloy "$ALLOY/bin/alloy" --victorialogs "$VICTORIALOGS/bin/victoria-logs" --config "$RUNNER_TEMP/crowdsec.alloy" --settings "$SETTINGS"
+                  env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_appsec_runtime.py --package "$CROWDSEC" --settings "$SETTINGS"
+
+            - name: Restore private repository credentials for remaining Nix checks
+              uses: webfactory/ssh-agent@v0.10.0
+              with:
+                  ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
             - name: Run MicroVM network policy tests
               run: nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs

@@ -9,10 +9,11 @@ This work can proceed while R-03 waits for Matrix live acceptance. Deploying
 this shared edge change still requires the Matrix coordination and observation
 gates in [the security sequence](security-roadmap-implementation-order.md).
 
-R-02 remains **In progress**. Persistent local retention, an off-host retention
-destination with independent recovery access, auditd execution telemetry, and
-live detection/remediation evidence remain outstanding. This implementation
-adds no logging backend, provider changes, secrets, or deployment. The older
+R-02 remains **In progress**. This implementation now retains an allowlisted
+local security-event projection in VictoriaLogs for 90 days, but raw access
+logs, an off-host retention destination with independent recovery access,
+auditd execution telemetry, and live detection/remediation evidence remain
+outstanding. It adds no provider changes, secrets, or deployment. The older
 `2026-08-13-blizzard-intrusion-audit.md` referenced by the roadmap is absent
 from this checkout and is not used as acceptance evidence.
 
@@ -46,6 +47,10 @@ For IPv6 attribution, confirm that Cloudflare Pseudo IPv4 is not configured
 to overwrite headers. Any Worker that rewrites client-IP headers also needs
 separate validation. Those provider settings are live acceptance prerequisites,
 not facts established by this repository change.
+
+See [CrowdSec investigation and health](crowdsec-observability.md) for the
+pinned local bouncer extension, structured remediation events, and their
+separate integration checks.
 
 ## Source validation
 
