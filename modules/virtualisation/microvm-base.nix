@@ -615,33 +615,11 @@ let
     lib.filterAttrs (_: instance: instance.autostart) enabledInstances
   );
 
-  updateFlakeInstances = lib.filterAttrs (
-    _: instance: (instance.vmConfig.updateFlake or null) != null
-  ) enabledInstances;
-  updateFlakeServices = lib.mapAttrs' (
-    name: instance:
-    let
-      vmName = mkVmName name;
-      flakeRef = instance.vmConfig.updateFlake;
-    in
-    lib.nameValuePair "microvm-flake-ref-${vmName}" {
-      description = "Persist the update flake reference for MicroVM '${vmName}'";
-      requires = [ "install-microvm-${vmName}.service" ];
-      after = [ "install-microvm-${vmName}.service" ];
-      before = [ "microvm@${vmName}.service" ];
-      wantedBy = [ "microvms.target" ];
-      unitConfig.ConditionPathExists = "${cfg.stateDir}/${vmName}";
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        User = "microvm";
-        Group = "kvm";
-      };
-      script = ''
-        printf '%s\n' ${lib.escapeShellArg flakeRef} > ${lib.escapeShellArg "${cfg.stateDir}/${vmName}/flake"}
-      '';
-    }
-  ) updateFlakeInstances;
+  installServices = import ../../lib/microvm-install-services.nix {
+    inherit lib;
+    inherit (cfg) stateDir;
+    vms = lib.genAttrs (builtins.attrNames derivedVms) (name: config.microvm.vms.${name});
+  };
 
   # Generate NAT forwardPorts from enabled VM instances.
   mkForwardPorts =
@@ -1012,7 +990,7 @@ in
         };
       }
       // policyUnitOverrides
-      // updateFlakeServices;
+      // installServices;
     };
 
     networking = {
