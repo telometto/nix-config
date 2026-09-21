@@ -9,8 +9,47 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 )
+
+func TestDroppedLogReportsSurviveSaturation(t *testing.T) {
+	queue := make(chan string, 1)
+	queue <- "blocked"
+	var counter uint64 = 50
+	var producers sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		producers.Add(1)
+		go func() {
+			defer producers.Done()
+			if !enqueueLogEvent(queue, "security event") {
+				atomic.AddUint64(&counter, 1)
+			}
+			reportDroppedLogEvents(queue, &counter)
+		}()
+	}
+	producers.Wait()
+	if got := atomic.LoadUint64(&counter); got != 150 {
+		t.Fatalf("lost accumulated drops: got %d, want 150", got)
+	}
+	<-queue
+	reportDroppedLogEvents(queue, &counter)
+	var report struct {
+		Event string `json:"event"`
+		Count uint64 `json:"count"`
+	}
+	if err := json.Unmarshal([]byte(<-queue), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Event != "crowdsec_remediation_log_drop" || report.Count != 150 || atomic.LoadUint64(&counter) != 0 {
+		t.Fatalf("incorrect recovery report: %+v, pending %d", report, counter)
+	}
+	reportDroppedLogEvents(queue, &counter)
+	if len(queue) != 0 {
+		t.Fatal("reported losses twice")
+	}
+}
 
 type optionalResponseWriter struct {
 	*httptest.ResponseRecorder
