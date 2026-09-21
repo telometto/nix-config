@@ -1,10 +1,13 @@
 """Regression checks for context ownership and safe alert projection."""
 
 import importlib.util
+import io
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -70,6 +73,49 @@ class Observability(unittest.TestCase):
         self.assertEqual(event["target_host"], "example.test")
         self.assertNotIn("SECRET", json.dumps(event))
         self.assertNotIn("events", event)
+
+    def test_alert_archive_query_is_bounded_and_incremental(self):
+        alerts = load("alerts")
+        arguments = alerts.query_arguments("cscli", "crowdsec.yaml", 60)
+        self.assertIn("--since", arguments)
+        self.assertIn("60s", arguments)
+        self.assertIn(str(alerts.MAX_ALERTS_PER_QUERY + 1), arguments)
+        self.assertNotIn("0", arguments)
+
+    def test_alert_archive_advances_cursor_and_deduplicates_overlap(self):
+        alerts = load("alerts")
+        payload = json.dumps([{"id": 42, "kind": "waf"}]).encode()
+        with tempfile.TemporaryDirectory() as tmp:
+            database = Path(tmp) / "seen.sqlite"
+            argv = ["alerts.py", str(database), "cscli", "crowdsec.yaml"]
+            output = io.StringIO()
+            with (
+                patch.object(
+                    alerts.subprocess, "check_output", return_value=payload
+                ) as query,
+                patch.object(alerts.time, "time", side_effect=[1000, 1005]),
+                patch("sys.argv", argv),
+                redirect_stdout(output),
+            ):
+                alerts.main()
+                alerts.main()
+
+            self.assertEqual(len(output.getvalue().splitlines()), 1)
+            first_query = query.call_args_list[0].args[0]
+            second_query = query.call_args_list[1].args[0]
+            self.assertIn("86400s", first_query)
+            self.assertIn("305s", second_query)
+
+            with alerts.sqlite3.connect(database) as db:
+                self.assertEqual(
+                    db.execute("SELECT count(*) FROM seen").fetchone()[0], 1
+                )
+                self.assertEqual(
+                    db.execute("SELECT value FROM state WHERE key='cursor'").fetchone()[
+                        0
+                    ],
+                    "1005",
+                )
 
 
 if __name__ == "__main__":
