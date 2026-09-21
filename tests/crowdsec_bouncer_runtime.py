@@ -5,7 +5,6 @@ Run outside the Nix build sandbox (requires loopback sockets).
 import argparse
 import http.server
 import json
-from pathlib import Path
 import socket
 import subprocess
 import tempfile
@@ -13,6 +12,29 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
+
+
+def wait_security_records(proc, path, timeout=5):
+    deadline = time.monotonic() + timeout
+    while True:
+        records = []
+        output = path.read_text()
+        for line in output.splitlines():
+            try:
+                value = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(value, dict) and value.get("event") == "crowdsec_remediation":
+                records.append(value)
+        kinds = {r.get("kind") for r in records}
+        if {"decision", "enforcement_error"} <= kinds:
+            return records
+        if proc.poll() is not None or time.monotonic() >= deadline:
+            raise AssertionError(
+                f"Missing asynchronous security logs; exit={proc.poll()}: {output}"
+            )
+        time.sleep(0.05)
 
 
 def main():
@@ -225,14 +247,7 @@ def main():
                     time.sleep(0.1)
                 else:
                     raise AssertionError("Expected fail-closed denial")
-                records = []
-                for line in (root / "output").read_text().splitlines():
-                    try:
-                        value = json.loads(line)
-                    except ValueError:
-                        continue
-                    if value.get("event") == "crowdsec_remediation":
-                        records.append(value)
+                records = wait_security_records(proc, root / "output")
                 assert any(
                     r["kind"] == "decision"
                     and r["source_ip"] == "198.51.100.42"
