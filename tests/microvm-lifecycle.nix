@@ -105,10 +105,17 @@ pkgs.testers.runNixOSTest {
         restartIfChanged = true;
       };
     };
-    systemd.services = import ../lib/microvm-install-services.nix {
-      inherit lib;
-      inherit (config.microvm) stateDir vms;
-    };
+    systemd.services = lib.mkMerge [
+      (import ../lib/microvm-install-services.nix {
+        inherit lib;
+        inherit (config.microvm) stateDir vms;
+      })
+      {
+        # Widen the rollback race: booted must wait for installation even when
+        # switch-to-configuration queues the VM restart before the installer.
+        "install-microvm-probe-vm".preStart = "sleep 2";
+      }
+    ];
     specialisation = {
       second.configuration.microvm.vms.probe-vm.flake = lib.mkForce secondFlake;
       reference.configuration.microvm.vms.probe-vm = {
@@ -154,6 +161,10 @@ pkgs.testers.runNixOSTest {
     def current(expected):
         assert machine.succeed(f"readlink -f {state}/current").strip() == expected
 
+    def booted(expected):
+        actual = machine.succeed(f"readlink -f {state}/booted").strip()
+        assert actual == expected, f"booted runner: expected {expected}, got {actual}"
+
     def reference(expected):
         assert machine.succeed(f"cat {state}/flake") == expected + "\n"
         assert machine.succeed(f"stat -c '%U:%G:%a' {state}/flake").strip() == "microvm:kvm:644"
@@ -161,12 +172,14 @@ pkgs.testers.runNixOSTest {
     with subtest("fresh installation boots the declared generation"):
         report("first", "${first.config.system.build.toplevel}")
         current("${runner first}")
+        booted("${runner first}")
         reference(source_a)
 
     with subtest("existing VM advances runner and running configuration"):
         switch("second")
         current("${runner second}")
         report("second", "${second.config.system.build.toplevel}")
+        booted("${runner second}")
         reference(source_a)
 
     with subtest("reference changes and null opt-out are atomic for concurrent readers"):
@@ -176,7 +189,7 @@ pkgs.testers.runNixOSTest {
         switch("reference")
         reference(source_b)
         # Reset the normal systemd rate limit for this artificial stress loop.
-        machine.succeed("set -e; for i in $(seq 1 30); do systemctl reset-failed install-microvm-probe-vm.service; systemctl start install-microvm-probe-vm.service; done")
+        machine.succeed("set -e; for i in $(seq 1 30); do systemctl reset-failed install-microvm-probe-vm.service; systemctl restart install-microvm-probe-vm.service; done")
         switch("immutable")
         reference(immutable)
         machine.succeed("touch /tmp/stop-reader")
@@ -189,13 +202,22 @@ pkgs.testers.runNixOSTest {
     with subtest("restart opt-out installs runner but retains running guest"):
         machine.succeed(f"{base}/bin/switch-to-configuration test", timeout=300)
         before = report("first", "${first.config.system.build.toplevel}")
+        booted("${runner first}")
         pid = machine.succeed("systemctl show microvm@probe-vm.service -p MainPID --value")
         switch("no-restart")
         assert machine.succeed("systemctl show microvm@probe-vm.service -p MainPID --value") == pid
-        assert machine.succeed(f"readlink -f {state}/booted").strip() == "${runner first}"
+        booted("${runner first}")
         current("${runner second}")
         assert report("first", "${first.config.system.build.toplevel}") == before
         machine.succeed("systemctl restart microvm@probe-vm.service")
         report("second", "${second.config.system.build.toplevel}")
+        booted("${runner second}")
+        # Exercise the runner-selection/restart boundary used by microvm -Ru
+        # without fetching a remote flake from the network-isolated test VM.
+        machine.succeed(f"ln -sTf '${runner first}' {state}/current")
+        machine.succeed("systemctl restart microvm@probe-vm.service")
+        current("${runner first}")
+        report("first", "${first.config.system.build.toplevel}")
+        booted("${runner first}")
   '';
 }
