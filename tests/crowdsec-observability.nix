@@ -70,7 +70,7 @@ assert lib.any (
 ) sources;
 assert lib.any (s: s.source == "appsec" && s.listen_addr == "127.0.0.1:7422") sources;
 assert cfg.services.crowdsec.settings.simulation.simulation == false;
-assert builtins.length cfg.services.crowdsec.settings.simulation.exclusions == 4;
+assert !(builtins.hasAttr "exclusions" cfg.services.crowdsec.settings.simulation);
 assert cfg.services.crowdsec.autoUpdateService;
 assert lib.any (
   c: (c.context.target_host or [ ]) == [ "req != nil ? req.Host : evt.Meta.target_fqdn" ]
