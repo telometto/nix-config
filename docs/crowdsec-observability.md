@@ -51,10 +51,22 @@ by changing future reporting.
   preserving administrator-owned files and the current generation's links.
 - `crowdsec-alert-archive` polls a bounded recent alert window once per minute
   and advances an incremental cursor with a small overlap. Its durable UUID
-  ledger avoids routine re-export. A query that reaches the safety cap fails
-  without advancing the cursor, so a busy burst is visible instead of being
-  silently truncated. A crash between emission and commit can replay an alert;
+  ledger avoids routine re-export. Queries exceeding 500 alerts are split into
+  smaller time windows, oldest first. At one second or less, the complete
+  window is fetched without a count cap, preserving alerts sharing a timestamp.
+  Relative CLI filters include a 45-second latency margin; local filtering
+  keeps only the intended interval. Dense windows can therefore use more memory
+  than a normal page. Each completed window is committed, and interrupted sweeps
+  resume their saved interval before starting a new sweep. A crash between
+  emission and commit can replay an alert;
   use `alert_id` to identify it. It does not copy raw event payloads.
+- The bouncer's 256-entry queue drops security records rather than blocking
+  requests when journal output stalls. Failed drop-report attempts retain the
+  accumulated count, including concurrent losses. A later request retries the
+  `crowdsec_remediation_log_drop` report after queue capacity returns. Pending
+  events and counts are in memory and are lost on restart. Inspect these reports
+  in the Traefik journal: Alloy's two-event allowlist does not forward them to
+  the investigation dashboard, and its WAL cannot recover pre-journal losses.
 - Alloy reads only the Traefik and alert-archive journals, then forwards only
   the two structured security event types. Regular access logs are discarded.
   Event timestamps retain the original detection/enforcement time.
