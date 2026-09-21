@@ -247,8 +247,8 @@ forwarding, and the standard public HTTP publication path.
 | `sys.virtualisation.microvm.instances.<name>.publication.enable` | Explicitly enable standard public HTTP publication |
 | `sys.virtualisation.microvm.instances.<name>.publication.hostname` | One DNS label under the canonical public domain |
 | `sys.virtualisation.microvm.instances.<name>.publication.policy` | Named compatibility policy; defaults to the built-in `strict` policy |
-| `sys.virtualisation.microvm.instances.<name>.vmConfig.restartIfChanged` | Restart the guest when the host generation changes; defaults to `true` |
-| `sys.virtualisation.microvm.instances.<name>.vmConfig.updateFlake` | Flake reference persisted for per-VM `microvm -u` updates; defaults on Blizzard to `github:telometto/nix-config` |
+| `sys.virtualisation.microvm.instances.<name>.vmConfig.restartIfChanged` | Restart the guest when its host-managed runner changes; defaults to `true` |
+| `sys.virtualisation.microvm.instances.<name>.vmConfig.updateFlake` | Flake reference atomically persisted without disabling host-managed upgrades, for per-VM `microvm -u` updates; defaults on Blizzard to `github:telometto/nix-config` |
 | `sys.virtualisation.microvm.publication.canonicalDomain` | Domain suffix for standard publications |
 | `sys.virtualisation.microvm.networkPolicy.mode` | `enforce` by default; temporary `audit` logs and accepts only otherwise-valid undeclared registered unicast |
 | `services.traefik.publicationPolicyMiddlewares` | Host-owned mapping from compatibility-policy names to Traefik middleware implementations |
