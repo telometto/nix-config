@@ -2,12 +2,16 @@ package crowdsec_bouncer_traefik_plugin
 
 // Local observability extension. Enforcement still uses upstream cache values.
 import (
+	"bufio"
 	"encoding/json"
+	"errors"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -50,6 +54,18 @@ func (w *securityWriter) Header() http.Header            { return w.ResponseWrit
 func (w *securityWriter) WriteHeader(code int)           { w.status = code; w.ResponseWriter.WriteHeader(code) }
 func (w *securityWriter) Write(data []byte) (int, error) { return w.ResponseWriter.Write(data) }
 func (w *securityWriter) Unwrap() http.ResponseWriter    { return w.ResponseWriter }
+func (w *securityWriter) Flush() {
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+func (w *securityWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := w.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("underlying response writer does not support hijacking")
+	}
+	return hijacker.Hijack()
+}
 func originalWriter(w http.ResponseWriter) http.ResponseWriter {
 	if s, ok := w.(*securityWriter); ok {
 		return s.ResponseWriter
@@ -72,6 +88,70 @@ var telemetry = struct {
 }{Counts: make(map[metricKey]int64), Started: time.Now()}
 var reportLock sync.Mutex
 var eventLog = log.New(os.Stdout, "", 0)
+
+const remediationEventQueueSize = 256
+
+var (
+	eventLogQueue    = make(chan string, remediationEventQueueSize)
+	eventLogStarted  sync.Once
+	droppedLogEvents uint64
+)
+
+func queueRemediationEvent(event string) {
+	eventLogStarted.Do(func() {
+		go func() {
+			for queued := range eventLogQueue {
+				eventLog.Print(queued)
+			}
+		}()
+	})
+	select {
+	case eventLogQueue <- event:
+	default:
+		// Never let a blocked journal pipe stall a request goroutine. The next
+		// successfully queued event reports that telemetry was dropped.
+		atomic.AddUint64(&droppedLogEvents, 1)
+	}
+}
+
+func takeDroppedLogEvents() uint64 {
+	return atomic.SwapUint64(&droppedLogEvents, 0)
+}
+
+func queueDroppedLogEvent() {
+	if dropped := takeDroppedLogEvents(); dropped > 0 {
+		data, _ := json.Marshal(map[string]interface{}{
+			"event": "crowdsec_remediation_log_drop",
+			"count": dropped,
+		})
+		queueRemediationEvent(string(data))
+	}
+}
+
+func safeAppsecHeaders(headers http.Header) http.Header {
+	allowed := map[string]struct{}{
+		"accept":          {},
+		"accept-encoding": {},
+		"accept-language": {},
+		"cache-control":   {},
+		"content-type":    {},
+		"range":           {},
+		"sec-fetch-dest":  {},
+		"sec-fetch-mode":  {},
+		"sec-fetch-site":  {},
+		"sec-fetch-user":  {},
+		"user-agent":      {},
+		"x-requested-with": {},
+	}
+	result := make(http.Header)
+	for key, values := range headers {
+		if _, ok := allowed[strings.ToLower(key)]; !ok {
+			continue
+		}
+		result[key] = append([]string(nil), values...)
+	}
+	return result
+}
 
 func (w *securityWriter) finish() {
 	origin, remediation := "clean", "bypass"
@@ -99,12 +179,14 @@ func (w *securityWriter) finish() {
 			"time": time.Now().UTC().Format(time.RFC3339Nano),
 		}
 		data, _ := json.Marshal(event)
-		eventLog.Print(string(data))
+		queueRemediationEvent(string(data))
 		// Fail-closed outages are operational errors, not prevented attacks.
 		if kind == "enforcement_error" {
+			queueDroppedLogEvent()
 			return
 		}
 	}
+	queueDroppedLogEvent()
 	telemetry.Lock()
 	telemetry.Counts[metricKey{origin, remediation, ipType}]++
 	telemetry.Unlock()
