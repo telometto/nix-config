@@ -17,10 +17,17 @@ let
           microvm = {
             hypervisor = "qemu";
             cpu = "qemu64";
-            # Keep TCG fallback without building emulators for unrelated CPUs.
+            # Include software emulation without building unrelated CPU targets.
             qemu.package = pkgs.qemu_kvm;
-            # Use the PC platform for reliable nested-guest boot and ACPI shutdown.
+            # Use the PC platform for guest devices and ACPI shutdown.
             qemu.machine = "q35";
+            # Avoid nested KVM stalls on hosted CI; the outer test VM still uses KVM.
+            # machineOpts replaces upstream defaults, so retain ACPI and memory merging.
+            qemu.machineOpts = {
+              accel = "tcg";
+              acpi = "on";
+              mem-merge = "on";
+            };
             mem = 512;
             storeOnDisk = true;
             shares = [
@@ -34,7 +41,12 @@ let
           environment.etc."generation".text = generation;
           systemd.services.report-generation = {
             wantedBy = [ "multi-user.target" ];
-            after = [ "local-fs.target" ];
+            # The first report permits a restart, so ACPI shutdown must be ready.
+            wants = [ "systemd-logind.service" ];
+            after = [
+              "local-fs.target"
+              "systemd-logind.service"
+            ];
             serviceConfig.Restart = "always";
             path = [ pkgs.coreutils ];
             script = ''
@@ -128,10 +140,15 @@ pkgs.testers.runNixOSTest {
         machine.succeed(f"{base}/specialisation/{name}/bin/switch-to-configuration test", timeout=300)
 
     def report(generation, system):
-        machine.wait_until_succeeds(
-            f"grep -F -- {shlex.quote(generation + ' ' + system + ' ')} /var/lib/probe/report",
-            timeout=300,
-        )
+        try:
+            machine.wait_until_succeeds(
+                f"test -f /var/lib/probe/report && grep -F -- {shlex.quote(generation + ' ' + system + ' ')} /var/lib/probe/report",
+                timeout=300,
+            )
+        except Exception:
+            print(machine.execute("systemctl status --no-pager --full microvm@probe-vm.service install-microvm-probe-vm.service")[1])
+            print(machine.execute("journalctl -b --no-pager -n 200 -u microvm@probe-vm.service -u install-microvm-probe-vm.service")[1])
+            raise
         return machine.succeed("cat /var/lib/probe/report").strip()
 
     def current(expected):
