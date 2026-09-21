@@ -285,12 +285,15 @@ push the VM change first when using the default GitHub reference. A subsequent
 host installer run restores the runner declared by that host configuration;
 keep the host checkout and locked inputs current after a manual VM update.
 With `restartIfChanged = false`, the installer can advance `current` while the
-old guest continues running until an explicit restart.
+old guest continues running until an explicit restart. Recording `booted` pulls
+the installer into the same start transaction, including on rollback. The
+installer remains active after completion, and manual guest restarts do not
+restart it, preserving runners selected by `microvm -Ru`.
 
 The `microvm-lifecycle` flake check boots a real guest and switches between host
-generations. It checks the installed runner and running guest configuration,
-reference changes, null fallback, restart opt-out, and concurrent reference
-readers:
+generations. It checks the installed and booted runners, running guest
+configuration, reference changes, null fallback, restart opt-out, manual runner
+selection, and concurrent reference readers:
 
 ```bash
 nix build .#checks.x86_64-linux.microvm-lifecycle --no-link --print-build-logs
