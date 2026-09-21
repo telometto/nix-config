@@ -32,8 +32,8 @@ let
     }
     // lib.optionalAttrs (spec ? enable) { inherit (spec) enable; }
     // {
-      # microvm.nix stores this reference in the VM state directory during
-      # initial installation. It lets `microvm -u` rebuild one VM without a
+      # The adapter atomically persists this reference on installation and
+      # host upgrades. It lets `microvm -u` rebuild one VM without a
       # Blizzard system switch. Individual VMs may override it or set it to
       # null to retain the host's declarative flake source.
       vmConfig = {
