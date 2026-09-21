@@ -90,18 +90,41 @@ jobs:
             - name: CrowdSec observability checks
               run: nix build .#checks.x86_64-linux.crowdsec-observability --no-link --print-build-logs
 
-            - name: CrowdSec integration fixtures
+            - name: Prepare CrowdSec integration fixture paths
+              id: crowdsec-fixtures
               run: |
-                  traefik=$(nix build .#nixosConfigurations.blizzard.config.services.traefik.package --no-link --print-out-paths)
-                  bouncer=$(nix eval --raw .#checks.x86_64-linux.crowdsec-observability.bouncer)
-                  alloy=$(nix build .#nixosConfigurations.blizzard.config.services.alloy.package --no-link --print-out-paths)
-                  vlogs=$(nix build .#nixosConfigurations.blizzard.config.services.victorialogs.package --no-link --print-out-paths)
-                  crowdsec=$(nix build .#nixosConfigurations.blizzard.config.services.crowdsec.package --no-link --print-out-paths)
-                  cssettings=$(nix build .#checks.x86_64-linux.crowdsec-observability.runtimeSettings --no-link --print-out-paths)
+                  echo "traefik=$(nix build .#nixosConfigurations.blizzard.config.services.traefik.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
+                  echo "bouncer=$(nix eval --raw .#checks.x86_64-linux.crowdsec-observability.bouncer)" >> "$GITHUB_OUTPUT"
+                  echo "alloy=$(nix build .#nixosConfigurations.blizzard.config.services.alloy.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
+                  echo "vlogs=$(nix build .#nixosConfigurations.blizzard.config.services.victorialogs.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
+                  echo "crowdsec=$(nix build .#nixosConfigurations.blizzard.config.services.crowdsec.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
+                  echo "settings=$(nix build .#checks.x86_64-linux.crowdsec-observability.runtimeSettings --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
                   nix eval --raw '.#nixosConfigurations.blizzard.config.environment.etc."alloy/crowdsec.alloy".text' > "$RUNNER_TEMP/crowdsec.alloy"
-                  python3 tests/crowdsec_bouncer_runtime.py --traefik "$traefik/bin/traefik" --plugin "$bouncer"
-                  python3 tests/crowdsec_logs_runtime.py --alloy "$alloy/bin/alloy" --victorialogs "$vlogs/bin/victoria-logs" --config "$RUNNER_TEMP/crowdsec.alloy" --settings "$cssettings"
-                  python3 tests/crowdsec_appsec_runtime.py --package "$crowdsec" --settings "$cssettings"
+
+            - name: Remove private repository credentials
+              run: |
+                  if [ -n "${SSH_AGENT_PID:-}" ]; then
+                      kill "$SSH_AGENT_PID" || true
+                  fi
+                  printf 'SSH_AUTH_SOCK=\nSSH_AGENT_PID=\n' >> "$GITHUB_ENV"
+
+            - name: Run CrowdSec integration fixtures
+              env:
+                  TRAEFIK: ${{ steps.crowdsec-fixtures.outputs.traefik }}
+                  BOUNCER: ${{ steps.crowdsec-fixtures.outputs.bouncer }}
+                  ALLOY: ${{ steps.crowdsec-fixtures.outputs.alloy }}
+                  VICTORIALOGS: ${{ steps.crowdsec-fixtures.outputs.vlogs }}
+                  CROWDSEC: ${{ steps.crowdsec-fixtures.outputs.crowdsec }}
+                  SETTINGS: ${{ steps.crowdsec-fixtures.outputs.settings }}
+              run: |
+                  env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_bouncer_runtime.py --traefik "$TRAEFIK/bin/traefik" --plugin "$BOUNCER"
+                  env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_logs_runtime.py --alloy "$ALLOY/bin/alloy" --victorialogs "$VICTORIALOGS/bin/victoria-logs" --config "$RUNNER_TEMP/crowdsec.alloy" --settings "$SETTINGS"
+                  env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_appsec_runtime.py --package "$CROWDSEC" --settings "$SETTINGS"
+
+            - name: Restore private repository credentials for remaining Nix checks
+              uses: webfactory/ssh-agent@v0.10.0
+              with:
+                  ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
             - name: Run MicroVM network policy tests
               run: nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs
