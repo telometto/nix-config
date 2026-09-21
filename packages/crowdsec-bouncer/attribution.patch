@@ -1,0 +1,163 @@
+--- a/bouncer.go
++++ b/bouncer.go
+@@ -14,7 +14,7 @@
+ 	"net/url"
+ 	"strconv"
+ 	"strings"
+-	"sync/atomic"
++
+ 	"text/template"
+ 	"time"
+ 
+@@ -68,7 +68,6 @@
+ 	streamTicker            chan bool
+ 	metricsTicker           chan bool
+ 	lastMetricsPush         time.Time
+-	blockedRequests         int64
+ )
+ 
+ // CreateConfig creates the default plugin configuration.
+@@ -288,12 +287,16 @@
+ //nolint:nestif,gocyclo
+ func (bouncer *Bouncer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+ 	if !bouncer.enabled {
+-		bouncer.next.ServeHTTP(rw, req)
++		bouncer.next.ServeHTTP(originalWriter(rw), req)
+ 		return
+ 	}
+ 
++	observation := &securityWriter{ResponseWriter: rw, request: req}
++	rw = observation
++	defer observation.finish()
+ 	// Here we check for the trusted IPs in the forwardedCustomHeader
+ 	remoteIP, err := ip.GetRemoteIP(req, bouncer.serverPoolStrategy, bouncer.forwardedCustomHeader)
++	observation.source = remoteIP
+ 	if err != nil {
+ 		bouncer.log.Error(fmt.Sprintf("ServeHTTP:getRemoteIp ip:%s %s", remoteIP, err.Error()))
+ 		handleBanServeHTTP(bouncer, rw)
+@@ -308,7 +311,7 @@
+ 	// if our IP is in the trusted list we bypass the next checks
+ 	bouncer.log.Debug(fmt.Sprintf("ServeHTTP ip:%s isTrusted:%v", remoteIP, isTrusted))
+ 	if isTrusted {
+-		bouncer.next.ServeHTTP(rw, req)
++		bouncer.next.ServeHTTP(originalWriter(rw), req)
+ 		return
+ 	}
+ 
+@@ -320,6 +323,7 @@
+ 	// TODO This should be simplified
+ 	if bouncer.crowdsecMode != configuration.NoneMode {
+ 		value, cacheErr := bouncer.cacheClient.Get(remoteIP)
++		value, observation.decision = decodeDecision(value)
+ 		if cacheErr != nil {
+ 			cacheErrString := cacheErr.Error()
+ 			bouncer.log.Debug(fmt.Sprintf("ServeHTTP:Get ip:%s isBanned:false %s", remoteIP, cacheErrString))
+@@ -354,6 +358,7 @@
+ 		}
+ 	} else {
+ 		value, err := handleNoStreamCache(bouncer, remoteIP)
++		value, observation.decision = decodeDecision(value)
+ 		if value == cache.NoBannedValue {
+ 			handleNextServeHTTP(bouncer, remoteIP, rw, req)
+ 		} else {
+@@ -393,7 +398,7 @@
+ 
+ // To append Headers we need to call rw.WriteHeader after set any header.
+ func handleBanServeHTTP(bouncer *Bouncer, rw http.ResponseWriter) {
+-	atomic.AddInt64(&blockedRequests, 1)
++	markBlocked(rw, "ban")
+ 
+ 	if bouncer.remediationCustomHeader != "" {
+ 		rw.Header().Set(bouncer.remediationCustomHeader, "ban")
+@@ -417,7 +422,7 @@
+ 			handleNextServeHTTP(bouncer, remoteIP, rw, req)
+ 			return
+ 		}
+-		atomic.AddInt64(&blockedRequests, 1) //  If we serve a captcha that should count as a dropped request.
++		markBlocked(rw, "captcha")
+ 		bouncer.captchaClient.ServeHTTP(rw, req, remoteIP)
+ 		return
+ 	}
+@@ -432,7 +437,7 @@
+ 			return
+ 		}
+ 	}
+-	bouncer.next.ServeHTTP(rw, req)
++	bouncer.next.ServeHTTP(originalWriter(rw), req)
+ }
+ 
+ func handleStreamTicker(bouncer *Bouncer) {
+@@ -524,6 +529,7 @@
+ 	default:
+ 		bouncer.log.Debug("handleStreamCache:unknownType " + decision.Type)
+ 	}
++	value = encodeDecision(value, decision)
+ 	if isLiveMode {
+ 		durationSecond := int64(duration.Seconds())
+ 		if bouncer.defaultDecisionTimeout < durationSecond {
+@@ -607,7 +613,7 @@
+ 			default:
+ 				bouncer.log.Debug("handleStreamCache:unknownType " + decision.Type)
+ 			}
+-			bouncer.cacheClient.Set(decision.Value, value, int64(duration.Seconds()))
++			bouncer.cacheClient.Set(decision.Value, encodeDecision(value, decision), int64(duration.Seconds()))
+ 		}
+ 	}
+ 	for _, decision := range stream.Deleted {
+@@ -643,1 +643,1 @@
+-	for key, headers := range httpReq.Header {
++	for key, headers := range safeAppsecHeaders(httpReq.Header) {
+@@ -721,37 +727,30 @@
+ }
+ 
+ func reportMetrics(bouncer *Bouncer) error {
++	reportLock.Lock()
++	defer reportLock.Unlock()
+ 	now := time.Now()
+-	currentCount := atomic.LoadInt64(&blockedRequests)
++	snapshot, items := metricSnapshot()
+ 	windowSizeSeconds := int(now.Sub(lastMetricsPush).Seconds())
+ 
+-	bouncer.log.Debug(fmt.Sprintf("reportMetrics: blocked_requests=%d window_size=%ds", currentCount, windowSizeSeconds))
++	bouncer.log.Debug(fmt.Sprintf("reportMetrics: window_size=%ds", windowSizeSeconds))
+ 
+ 	metrics := map[string]interface{}{
+ 		"remediation_components": []map[string]interface{}{
+ 			{
+-				"version": "1.X.X",
++				"version": "1.4.5-attribution.1",
+ 				"type":    "bouncer",
+ 				"name":    "traefik_plugin",
+ 				"metrics": []map[string]interface{}{
+ 					{
+-						"items": []map[string]interface{}{
+-							{
+-								"name":  "dropped",
+-								"value": currentCount,
+-								"unit":  "request",
+-								"labels": map[string]string{
+-									"type": "traefik_plugin",
+-								},
+-							},
+-						},
++						"items": items,
+ 						"meta": map[string]interface{}{
+ 							"window_size_seconds": windowSizeSeconds,
+ 							"utc_now_timestamp":   now.Unix(),
+ 						},
+ 					},
+ 				},
+-				"utc_startup_timestamp": time.Now().Unix(),
++				"utc_startup_timestamp": telemetry.Started.Unix(),
+ 				"feature_flags":         []string{},
+ 				"os": map[string]string{
+ 					"name":    "unknown",
+@@ -777,7 +776,7 @@
+ 		return fmt.Errorf("reportMetrics:query %w", err)
+ 	}
+ 
+-	atomic.StoreInt64(&blockedRequests, 0)
++	acknowledgeMetrics(snapshot)
+ 	lastMetricsPush = now
+ 	return nil
+ }
