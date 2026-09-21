@@ -65,7 +65,7 @@ let
   ) policyIdentityNames;
   policyRuleset = enforcedCfg.environment.etc."microvm-network-policy/ruleset.nft".source;
   vmWithDefaults = blizzard.config.microvm.vms."matrix-synapse-vm";
-  flakeReferenceService = blizzard.config.systemd.services."microvm-flake-ref-matrix-synapse-vm";
+  flakeReferenceService = blizzard.config.systemd.services."install-microvm-matrix-synapse-vm";
 
   vmWithOverrides = blizzard.extendModules {
     modules = [
@@ -78,7 +78,17 @@ let
     ];
   };
   overriddenFlakeReferenceService =
-    vmWithOverrides.config.systemd.services."microvm-flake-ref-matrix-synapse-vm";
+    vmWithOverrides.config.systemd.services."install-microvm-matrix-synapse-vm";
+
+  vmWithImmutableSource = blizzard.extendModules {
+    modules = [
+      {
+        sys.virtualisation.microvm.instances.matrix-synapse.vmConfig.updateFlake = null;
+      }
+    ];
+  };
+  immutableInstaller =
+    vmWithImmutableSource.config.systemd.services."install-microvm-matrix-synapse-vm";
 
   audited = blizzard.extendModules {
     modules = [
@@ -231,14 +241,20 @@ assert enforcedCfg.sys.virtualisation.microvm.networkPolicy.mode == "enforce";
 assert !blizzard.config.networking.nftables.enable;
 assert vmWithDefaults.restartIfChanged;
 assert vmWithDefaults.updateFlake == "github:telometto/nix-config";
-assert flakeReferenceService.serviceConfig.User == "microvm";
-assert flakeReferenceService.serviceConfig.Group == "kvm";
-assert lib.elem "install-microvm-matrix-synapse-vm.service" flakeReferenceService.requires;
+assert flakeReferenceService.unitConfig.ConditionPathExists == "";
+assert lib.hasInfix ''mv -fT -- "$reference_tmp" flake'' flakeReferenceService.script;
+assert lib.elem "microvm@matrix-synapse-vm.service" flakeReferenceService.before;
 assert lib.hasInfix "github:telometto/nix-config" flakeReferenceService.script;
 assert vmWithOverrides.config.microvm.vms."matrix-synapse-vm".restartIfChanged == false;
 assert
   vmWithOverrides.config.microvm.vms."matrix-synapse-vm".updateFlake == "git+file:///srv/nix-config";
 assert lib.hasInfix "git+file:///srv/nix-config" overriddenFlakeReferenceService.script;
+assert overriddenFlakeReferenceService.unitConfig.ConditionPathExists == "";
+assert immutableInstaller.unitConfig.ConditionPathExists == "";
+assert lib.hasInfix (builtins.unsafeDiscardStringContext (
+  toString vmWithDefaults.flake
+)) immutableInstaller.script;
+assert !(blizzard.config.systemd.services ? microvm-flake-ref-matrix-synapse-vm);
 assert policyService.reloadTriggers != [ ];
 assert policyService.restartTriggers == [ ];
 assert
