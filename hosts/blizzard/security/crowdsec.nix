@@ -137,13 +137,9 @@ in
 
     settings = {
       simulation = {
+        # Keep scenario remediation active. AppSec has a separate observation
+        # policy; this global setting does not put HTTP DoS in simulation.
         simulation = false;
-        exclusions = [
-          "crowdsecurity/http-dos-bypass-cache"
-          "crowdsecurity/http-dos-random-uri"
-          "crowdsecurity/http-dos-switching-ua"
-          "crowdsecurity/http-dos-invalid-http-versions"
-        ];
       };
       lapi.credentialsFile = "/var/lib/crowdsec/state/local_api_credentials.yaml";
       capi.credentialsFile = "/var/lib/crowdsec/state/online_api_credentials.yaml";
