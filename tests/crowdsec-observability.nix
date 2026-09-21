@@ -112,6 +112,7 @@ pkgs.runCommand "crowdsec-observability-tests"
   ''
       mkdir -p source/tests source/packages/crowdsec-observability
       cp ${./crowdsec_observability.py} source/tests/crowdsec_observability.py
+      cp ${./crowdsec_bouncer_runtime.py} source/tests/crowdsec_bouncer_runtime.py
       cp ${../packages/crowdsec-observability/alerts.py} source/packages/crowdsec-observability/alerts.py
       cp ${../packages/crowdsec-observability/contexts.py} source/packages/crowdsec-observability/contexts.py
       cp ${../packages/crowdsec-observability/hub-status.py} source/packages/crowdsec-observability/hub-status.py
