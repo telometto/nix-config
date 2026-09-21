@@ -135,11 +135,16 @@ Blizzard, verify that the new unit is active and consuming the updated
 configuration:
 
 ```bash
+readlink -f /flash/enc/vms/pocket-id-vm/current/share/microvm/system
+ssh admin@10.100.1.2 readlink -f /run/current-system
 systemctl status microvm@pocket-id-vm.service
 ssh admin@10.100.1.2 systemctl is-active sops-install-secrets.service
 ssh admin@10.100.1.2 systemctl is-active pocket-id.service
 ssh admin@10.100.1.2 env HOST=127.0.0.1 PORT=11081 pocket-id healthcheck
 ```
+
+The two system paths must match; an active host unit alone does not prove that
+the guest is running the new generation.
 
 Before opening `/setup`, verify the dedicated bridge membership on Blizzard:
 
