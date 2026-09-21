@@ -66,6 +66,7 @@ in
   '';
   systemd.services.crowdsec-alert-archive = {
     description = "Archive normalized CrowdSec alert metadata";
+    requires = [ "crowdsec.service" ];
     after = [ "crowdsec.service" ];
     serviceConfig = {
       Type = "oneshot";
