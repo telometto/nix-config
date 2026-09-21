@@ -16,7 +16,7 @@ pkgs.stdenvNoCC.mkDerivation {
   doCheck = true;
   checkPhase = ''
     export CGO_ENABLED=0 GOCACHE=$TMPDIR/go-cache
-    go test -mod=vendor -run TestTelemetryPure ./...
+    go test -mod=vendor ./...
   '';
   installPhase = ''
     mkdir -p $out
