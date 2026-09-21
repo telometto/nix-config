@@ -213,6 +213,11 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        microvm-lifecycle = import ./tests/microvm-lifecycle.nix {
+          inherit inputs;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         microvm-network-policy = import ./tests/microvm-network-policy.nix {
           inherit (nixpkgs) lib;
           inherit (self.nixosConfigurations) blizzard;
