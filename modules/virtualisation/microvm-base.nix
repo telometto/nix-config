@@ -601,14 +601,25 @@ let
   derivedVms = builtins.listToAttrs (
     lib.mapAttrsToList (name: instance: {
       name = mkVmName name;
-      value =
-        instance.vmConfig // lib.optionalAttrs (instance.flake != null) { inherit (instance) flake; };
+      value = {
+        # Restart the guest when a host-managed runner changes. Individual
+        # instances can explicitly opt out through vmConfig.restartIfChanged.
+        restartIfChanged = lib.mkDefault true;
+      }
+      // instance.vmConfig
+      // lib.optionalAttrs (instance.flake != null) { inherit (instance) flake; };
     }) enabledInstances
   );
 
   derivedAutostart = lib.mapAttrsToList (name: _: mkVmName name) (
     lib.filterAttrs (_: instance: instance.autostart) enabledInstances
   );
+
+  installServices = import ../../lib/microvm-install-services.nix {
+    inherit lib;
+    inherit (cfg) stateDir;
+    vms = lib.genAttrs (builtins.attrNames derivedVms) (name: config.microvm.vms.${name});
+  };
 
   # Generate NAT forwardPorts from enabled VM instances.
   mkForwardPorts =
@@ -978,7 +989,8 @@ in
           };
         };
       }
-      // policyUnitOverrides;
+      // policyUnitOverrides
+      // installServices;
     };
 
     networking = {
