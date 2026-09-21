@@ -1,37 +1,67 @@
 package crowdsec_bouncer_traefik_plugin
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
+type optionalResponseWriter struct {
+	*httptest.ResponseRecorder
+	connection net.Conn
+	flushed    bool
+}
+
+func (w *optionalResponseWriter) Flush() {
+	w.flushed = true
+}
+
+func (w *optionalResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return w.connection, bufio.NewReadWriter(bufio.NewReader(w.connection), bufio.NewWriter(w.connection)), nil
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func jsonResponse(req *http.Request, status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Body:       io.NopCloser(strings.NewReader(body)),
+		Header:     make(http.Header),
+		Request:    req,
+	}
+}
+
 // Exercise the real stream -> cache -> request -> usage-metrics path.
 func TestAttributedReporting(t *testing.T) {
 	var payload map[string]interface{}
 	failReport := false
-	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(r.URL.Path, "usage-metrics") {
-			if failReport {
-				w.WriteHeader(503)
-				return
-			}
-			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-				t.Error(err)
-			}
-			w.Write([]byte(`{}`))
-			return
-		}
-		w.Write([]byte(`{"new":[{"id":42,"origin":"lists","scenario":"test-list","type":"ban","scope":"Ip","value":"198.51.100.42","duration":"1h"}],"deleted":[]}`))
-	}))
-	defer api.Close()
+	oldStreamTicker, oldMetricsTicker := streamTicker, metricsTicker
+	oldStreamHealthy := isCrowdsecStreamHealthy
+	streamTicker = make(chan bool)
+	metricsTicker = nil
+	isCrowdsecStreamHealthy = true
+	defer func() {
+		streamTicker = oldStreamTicker
+		metricsTicker = oldMetricsTicker
+		isCrowdsecStreamHealthy = oldStreamHealthy
+	}()
+	telemetry.Lock()
+	telemetry.Counts = make(map[metricKey]int64)
+	telemetry.Unlock()
 	cfg := CreateConfig()
 	cfg.Enabled = true
 	cfg.CrowdsecMode = "stream"
-	cfg.CrowdsecLapiHost = strings.TrimPrefix(api.URL, "http://")
+	cfg.CrowdsecLapiHost = "fixture"
 	cfg.CrowdsecLapiKey = "fixture"
 	cfg.MetricsUpdateIntervalSeconds = 0
 	cfg.UpdateIntervalSeconds = 3600
@@ -40,6 +70,21 @@ func TestAttributedReporting(t *testing.T) {
 		t.Fatal(err)
 	}
 	b := h.(*Bouncer)
+	b.httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		if strings.Contains(r.URL.Path, "usage-metrics") {
+			if failReport {
+				return jsonResponse(r, 503, `{}`), nil
+			}
+			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				t.Error(err)
+			}
+			return jsonResponse(r, 200, `{}`), nil
+		}
+		return jsonResponse(r, 200, `{"new":[{"id":42,"origin":"lists","scenario":"test-list","type":"ban","scope":"Ip","value":"198.51.100.42","duration":"1h"}],"deleted":[]}`), nil
+	})
+	if err := handleStreamCache(b); err != nil {
+		t.Fatal(err)
+	}
 	blocked := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "http://example.test/admin?token=SECRET", nil)
 	req.RemoteAddr = "198.51.100.42:1234"
@@ -100,4 +145,53 @@ func TestTelemetryPure(t *testing.T) {
 		t.Fatal("concurrent request lost during acknowledgement")
 	}
 	telemetry.Counts = make(map[metricKey]int64)
+}
+
+func TestResponseWriterInterfaces(t *testing.T) {
+	client, server := net.Pipe()
+	defer client.Close()
+	defer server.Close()
+	underlying := &optionalResponseWriter{
+		ResponseRecorder: httptest.NewRecorder(),
+		connection:       server,
+	}
+	wrapped := &securityWriter{ResponseWriter: underlying}
+
+	if originalWriter(wrapped) != underlying {
+		t.Fatal("original response writer was not restored")
+	}
+	flusher, ok := http.ResponseWriter(wrapped).(http.Flusher)
+	if !ok {
+		t.Fatal("response writer lost http.Flusher")
+	}
+	flusher.Flush()
+	if !underlying.flushed {
+		t.Fatal("flush was not forwarded")
+	}
+	hijacker, ok := http.ResponseWriter(wrapped).(http.Hijacker)
+	if !ok {
+		t.Fatal("response writer lost http.Hijacker")
+	}
+	connection, _, err := hijacker.Hijack()
+	if err != nil || connection != server {
+		t.Fatalf("hijack was not forwarded: %v", err)
+	}
+}
+
+func TestSafeAppsecHeaders(t *testing.T) {
+	safe := safeAppsecHeaders(http.Header{
+		"Accept":                  []string{"text/html"},
+		"Authorization":           []string{"Bearer secret"},
+		"Cookie":                  []string{"session=secret"},
+		"Cf-Access-Jwt-Assertion": []string{"secret"},
+		"User-Agent":              []string{"fixture"},
+	})
+	if safe.Get("Accept") != "text/html" || safe.Get("User-Agent") != "fixture" {
+		t.Fatalf("safe headers were not preserved: %#v", safe)
+	}
+	for _, name := range []string{"Authorization", "Cookie", "Cf-Access-Jwt-Assertion"} {
+		if safe.Get(name) != "" {
+			t.Fatalf("sensitive header was copied: %s", name)
+		}
+	}
 }
