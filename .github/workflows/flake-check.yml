@@ -83,6 +83,9 @@ jobs:
             - name: Run CrowdSec HTTP tests
               run: nix build .#checks.x86_64-linux.crowdsec-http --no-link --print-build-logs
 
+            - name: Run MicroVM lifecycle tests
+              run: nix build .#checks.x86_64-linux.microvm-lifecycle --no-link --print-build-logs
+
             - name: Run MicroVM network policy tests
               run: nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs
 
