@@ -5,8 +5,8 @@ import sqlite3
 import subprocess
 import sys
 import time
-from urllib.parse import urlsplit
-
+from contextlib import closing
+from datetime import datetime
 
 MAX_ALERTS_PER_QUERY = 500
 MAX_LOOKBACK_SECONDS = 24 * 60 * 60
@@ -16,7 +16,16 @@ SEEN_RETENTION_SECONDS = 31 * 24 * 60 * 60
 
 def normalize(alert):
     source = alert.get("source") or {}
-    context = {item["key"]: item.get("value", "") for item in alert.get("meta", [])}
+    if not isinstance(source, dict):
+        source = {}
+    metadata = alert.get("meta") or []
+    if not isinstance(metadata, list):
+        metadata = []
+    context = {
+        item["key"]: item.get("value", "")
+        for item in metadata
+        if isinstance(item, dict) and isinstance(item.get("key"), str)
+    }
     result = {
         "event": "crowdsec_alert",
         "kind": {
@@ -43,7 +52,11 @@ def normalize(alert):
         pass
     if not isinstance(paths, list):
         paths = [paths]
-    result["target_uri"] = [urlsplit(str(path)).path for path in paths][:50]
+    result["target_uri"] = [
+        path.split("?", 1)[0].split("#", 1)[0]
+        for path in paths[:50]
+        if isinstance(path, str)
+    ]
     return result
 
 
@@ -51,7 +64,7 @@ def duration(seconds):
     return f"{max(1, int(seconds + 0.999))}s"
 
 
-def query_arguments(binary, config, since_seconds):
+def query_arguments(binary, config, since_seconds, until_seconds=0, limit=None):
     return [
         binary,
         "-c=" + config,
@@ -59,25 +72,45 @@ def query_arguments(binary, config, since_seconds):
         "list",
         "--since",
         duration(since_seconds),
+        "--until",
+        f"{max(0, int(until_seconds))}s",
         "--limit",
-        str(MAX_ALERTS_PER_QUERY + 1),
+        str(MAX_ALERTS_PER_QUERY + 1 if limit is None else limit),
         "-o",
         "json",
     ]
 
 
-def fetch_alerts(binary, config, since_seconds):
+def fetch_alerts(binary, config, start, end):
+    # cscli has relative time filters, but no offset/ID pagination. Pad the
+    # lower bound by the subprocess timeout, then filter the fixed interval
+    # locally so CLI/LAPI latency cannot leave gaps between adjacent windows.
+    now = time.time()
+    dense = end - start <= 1
     output = subprocess.check_output(
-        query_arguments(binary, config, since_seconds),
+        query_arguments(
+            binary,
+            config,
+            now - start + 45,
+            now - end,
+            limit=0 if dense else None,
+        ),
         timeout=45,
     )
     alerts = json.loads(output) or []
-    if len(alerts) > MAX_ALERTS_PER_QUERY:
-        raise RuntimeError(
-            "CrowdSec alert query exceeded the bounded page; "
-            "reduce the polling gap or add time-window pagination"
-        )
-    return alerts
+    if not dense and len(alerts) > MAX_ALERTS_PER_QUERY:
+        middle = (start + end) / 2
+        yield from fetch_alerts(binary, config, start, middle)
+        yield from fetch_alerts(binary, config, middle, end)
+        return
+    # Time filters use start_at, not created_at. Overlapping boundaries are
+    # deliberate; the durable identity ledger removes duplicates.
+    page = []
+    for alert in alerts:
+        timestamp = datetime.fromisoformat(alert["start_at"].replace("Z", "+00:00"))
+        if start <= timestamp.timestamp() <= end:
+            page.append(alert)
+    yield end, page
 
 
 def ensure_schema(db):
@@ -103,7 +136,7 @@ def save_cursor(db, cursor):
 def main():
     database, binary, config = sys.argv[1:]
     now = time.time()
-    with sqlite3.connect(database) as db:
+    with closing(sqlite3.connect(database)) as db, db:
         ensure_schema(db)
         cursor = last_cursor(db)
         if cursor is None:
@@ -113,22 +146,36 @@ def main():
                 MAX_LOOKBACK_SECONDS,
                 max(1, now - cursor + OVERLAP_SECONDS),
             )
-        alerts = fetch_alerts(binary, config, since_seconds)
-        for alert in alerts:
-            identity = alert.get("uuid") or str(alert["id"])
-            if db.execute("SELECT 1 FROM seen WHERE id=?", (identity,)).fetchone():
-                continue
-            print(json.dumps(normalize(alert)), flush=True)
+        pending = db.execute("SELECT value FROM state WHERE key='pending'").fetchone()
+        start, end = json.loads(pending[0]) if pending else (now - since_seconds, now)
+        db.execute(
+            "INSERT OR REPLACE INTO state (key, value) VALUES ('pending', ?)",
+            (json.dumps([start, end]),),
+        )
+        db.commit()
+        for completed, page in fetch_alerts(binary, config, start, end):
+            for alert in page:
+                identity = alert.get("uuid") or str(alert["id"])
+                if db.execute("SELECT 1 FROM seen WHERE id=?", (identity,)).fetchone():
+                    continue
+                print(json.dumps(normalize(alert)), flush=True)
+                db.execute(
+                    "INSERT OR REPLACE INTO seen (id, seen_at) VALUES (?, ?)",
+                    (identity, int(now)),
+                )
+            # Preserve completed windows even when a later query fails. Resume
+            # the pending interval before opening another overlapping sweep.
+            save_cursor(db, completed)
             db.execute(
-                "INSERT OR REPLACE INTO seen (id, seen_at) VALUES (?, ?)",
-                (identity, int(now)),
+                "UPDATE state SET value=? WHERE key='pending'",
+                (json.dumps([completed, end]),),
             )
+            db.commit()
         db.execute(
             "DELETE FROM seen WHERE COALESCE(seen_at, 0) < ?",
             (int(now) - SEEN_RETENTION_SECONDS,),
         )
-        # Advance only after the bounded query and all projections succeeded.
-        save_cursor(db, now)
+        db.execute("DELETE FROM state WHERE key='pending'")
 
 
 if __name__ == "__main__":
