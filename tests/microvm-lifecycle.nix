@@ -19,6 +19,8 @@ let
             cpu = "qemu64";
             # Keep TCG fallback without building emulators for unrelated CPUs.
             qemu.package = pkgs.qemu_kvm;
+            # Use the PC platform for reliable nested-guest boot and ACPI shutdown.
+            qemu.machine = "q35";
             mem = 512;
             storeOnDisk = true;
             shares = [
