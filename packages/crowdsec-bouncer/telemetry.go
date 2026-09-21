@@ -105,42 +105,53 @@ func queueRemediationEvent(event string) {
 			}
 		}()
 	})
-	select {
-	case eventLogQueue <- event:
-	default:
+	if !enqueueLogEvent(eventLogQueue, event) {
 		// Never let a blocked journal pipe stall a request goroutine. The next
 		// successfully queued event reports that telemetry was dropped.
 		atomic.AddUint64(&droppedLogEvents, 1)
 	}
 }
 
-func takeDroppedLogEvents() uint64 {
-	return atomic.SwapUint64(&droppedLogEvents, 0)
+func enqueueLogEvent(queue chan string, event string) bool {
+	select {
+	case queue <- event:
+		return true
+	default:
+		return false
+	}
 }
 
 func queueDroppedLogEvent() {
-	if dropped := takeDroppedLogEvents(); dropped > 0 {
+	reportDroppedLogEvents(eventLogQueue, &droppedLogEvents)
+}
+
+func reportDroppedLogEvents(queue chan string, counter *uint64) {
+	if dropped := atomic.SwapUint64(counter, 0); dropped > 0 {
 		data, _ := json.Marshal(map[string]interface{}{
 			"event": "crowdsec_remediation_log_drop",
 			"count": dropped,
 		})
-		queueRemediationEvent(string(data))
+		if !enqueueLogEvent(queue, string(data)) {
+			// A failed report is not another lost security event. Restore the
+			// whole count while retaining losses recorded by concurrent requests.
+			atomic.AddUint64(counter, dropped)
+		}
 	}
 }
 
 func safeAppsecHeaders(headers http.Header) http.Header {
 	allowed := map[string]struct{}{
-		"accept":          {},
-		"accept-encoding": {},
-		"accept-language": {},
-		"cache-control":   {},
-		"content-type":    {},
-		"range":           {},
-		"sec-fetch-dest":  {},
-		"sec-fetch-mode":  {},
-		"sec-fetch-site":  {},
-		"sec-fetch-user":  {},
-		"user-agent":      {},
+		"accept":           {},
+		"accept-encoding":  {},
+		"accept-language":  {},
+		"cache-control":    {},
+		"content-type":     {},
+		"range":            {},
+		"sec-fetch-dest":   {},
+		"sec-fetch-mode":   {},
+		"sec-fetch-site":   {},
+		"sec-fetch-user":   {},
+		"user-agent":       {},
 		"x-requested-with": {},
 	}
 	result := make(http.Header)
