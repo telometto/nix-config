@@ -158,7 +158,14 @@ def main():
             def request(ip, data=None):
                 req = urllib.request.Request(
                     f"http://127.0.0.1:{port}/probe?token=SECRET",
-                    headers={"X-Forwarded-For": ip, "User-Agent": "fixture-agent"},
+                    headers={
+                        "X-Forwarded-For": ip,
+                        "User-Agent": "fixture-agent",
+                        "Authorization": "Bearer fixture-secret",
+                        "Cookie": "session=fixture-secret",
+                        "Cf-Access-Jwt-Assertion": "fixture-secret",
+                        "X-Private-Secret": "fixture-secret",
+                    },
                     data=data,
                 )
                 try:
@@ -187,6 +194,16 @@ def main():
                 assert appsec_requests, "No requests reached AppSec"
                 headers = {k.lower(): v for k, v in appsec_requests[-1].items()}
                 assert headers["x-crowdsec-appsec-ip"] == "198.51.100.43", headers
+                assert headers["x-crowdsec-appsec-user-agent"] == "fixture-agent", (
+                    headers
+                )
+                for sensitive in (
+                    "authorization",
+                    "cookie",
+                    "cf-access-jwt-assertion",
+                    "x-private-secret",
+                ):
+                    assert sensitive not in headers, (sensitive, headers)
                 appsec_failure.set()
                 assert request("198.51.100.43") == 200, (
                     "Observation outage blocked traffic"
