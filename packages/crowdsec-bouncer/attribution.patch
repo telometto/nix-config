@@ -104,6 +104,9 @@
  		}
  	}
  	for _, decision := range stream.Deleted {
+@@ -643,1 +643,1 @@
+-	for key, headers := range httpReq.Header {
++	for key, headers := range safeAppsecHeaders(httpReq.Header) {
 @@ -721,37 +727,30 @@
  }
  
