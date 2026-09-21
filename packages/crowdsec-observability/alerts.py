@@ -1,10 +1,17 @@
-"""Archive allowlisted local alert metadata; never forward raw event payloads."""
+"""Archive bounded, allowlisted local alert metadata."""
 
 import json
 import sqlite3
 import subprocess
 import sys
+import time
 from urllib.parse import urlsplit
+
+
+MAX_ALERTS_PER_QUERY = 500
+MAX_LOOKBACK_SECONDS = 24 * 60 * 60
+OVERLAP_SECONDS = 5 * 60
+SEEN_RETENTION_SECONDS = 31 * 24 * 60 * 60
 
 
 def normalize(alert):
@@ -40,29 +47,88 @@ def normalize(alert):
     return result
 
 
-def main():
-    database, binary, config = sys.argv[1:]
-    # Fetch all retained alerts; a default limit could silently lose busy bursts.
+def duration(seconds):
+    return f"{max(1, int(seconds + 0.999))}s"
+
+
+def query_arguments(binary, config, since_seconds):
+    return [
+        binary,
+        "-c=" + config,
+        "alerts",
+        "list",
+        "--since",
+        duration(since_seconds),
+        "--limit",
+        str(MAX_ALERTS_PER_QUERY + 1),
+        "-o",
+        "json",
+    ]
+
+
+def fetch_alerts(binary, config, since_seconds):
     output = subprocess.check_output(
-        [binary, "-c=" + config, "alerts", "list", "--limit", "0", "-o", "json"],
+        query_arguments(binary, config, since_seconds),
         timeout=45,
     )
     alerts = json.loads(output) or []
+    if len(alerts) > MAX_ALERTS_PER_QUERY:
+        raise RuntimeError(
+            "CrowdSec alert query exceeded the bounded page; "
+            "reduce the polling gap or add time-window pagination"
+        )
+    return alerts
+
+
+def ensure_schema(db):
+    db.execute("CREATE TABLE IF NOT EXISTS seen (id TEXT PRIMARY KEY, seen_at INTEGER)")
+    columns = {row[1] for row in db.execute("PRAGMA table_info(seen)")}
+    if "seen_at" not in columns:
+        db.execute("ALTER TABLE seen ADD COLUMN seen_at INTEGER")
+    db.execute("CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT)")
+
+
+def last_cursor(db):
+    row = db.execute("SELECT value FROM state WHERE key='cursor'").fetchone()
+    return float(row[0]) if row else None
+
+
+def save_cursor(db, cursor):
+    db.execute(
+        "INSERT OR REPLACE INTO state (key, value) VALUES ('cursor', ?)",
+        (str(cursor),),
+    )
+
+
+def main():
+    database, binary, config = sys.argv[1:]
+    now = time.time()
     with sqlite3.connect(database) as db:
-        db.execute("CREATE TABLE IF NOT EXISTS seen (id TEXT PRIMARY KEY)")
+        ensure_schema(db)
+        cursor = last_cursor(db)
+        if cursor is None:
+            since_seconds = MAX_LOOKBACK_SECONDS
+        else:
+            since_seconds = min(
+                MAX_LOOKBACK_SECONDS,
+                max(1, now - cursor + OVERLAP_SECONDS),
+            )
+        alerts = fetch_alerts(binary, config, since_seconds)
         for alert in alerts:
             identity = alert.get("uuid") or str(alert["id"])
             if db.execute("SELECT 1 FROM seen WHERE id=?", (identity,)).fetchone():
                 continue
             print(json.dumps(normalize(alert)), flush=True)
-            db.execute("INSERT INTO seen VALUES (?)", (identity,))
-        # Keep the dedup ledger bounded by the engine's retained alert set.
-        db.execute("CREATE TEMP TABLE current (id TEXT PRIMARY KEY)")
-        db.executemany(
-            "INSERT OR IGNORE INTO current VALUES (?)",
-            [(a.get("uuid") or str(a["id"]),) for a in alerts],
+            db.execute(
+                "INSERT OR REPLACE INTO seen (id, seen_at) VALUES (?, ?)",
+                (identity, int(now)),
+            )
+        db.execute(
+            "DELETE FROM seen WHERE COALESCE(seen_at, 0) < ?",
+            (int(now) - SEEN_RETENTION_SECONDS,),
         )
-        db.execute("DELETE FROM seen WHERE id NOT IN (SELECT id FROM current)")
+        # Advance only after the bounded query and all projections succeeded.
+        save_cursor(db, now)
 
 
 if __name__ == "__main__":
