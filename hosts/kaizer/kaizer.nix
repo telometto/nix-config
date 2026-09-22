@@ -167,5 +167,30 @@
     # prismlauncher
   ];
 
+  systemd = {
+    services.kaizer-flatpak-update-system = {
+      description = "Update system Flatpak applications and runtimes";
+
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.flatpak}/bin/flatpak --system update -y --noninteractive";
+      };
+    };
+
+    timers.kaizer-flatpak-update-system = {
+      description = "Daily update of system Flatpak applications and runtimes";
+      wantedBy = [ "timers.target" ];
+
+      timerConfig = {
+        OnCalendar = "daily";
+        Persistent = true;
+        RandomizedDelaySec = "1h";
+      };
+    };
+  };
+
   system.stateVersion = "24.11";
 }
