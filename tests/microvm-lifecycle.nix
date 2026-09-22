@@ -17,16 +17,18 @@ let
           microvm = {
             hypervisor = "qemu";
             cpu = "qemu64";
-            # Include software emulation without building unrelated CPU targets.
-            qemu.package = pkgs.qemu_kvm;
-            # Use the PC platform for guest devices and ACPI shutdown.
-            qemu.machine = "q35";
-            # Avoid nested KVM stalls on hosted CI; the outer test VM still uses KVM.
-            # machineOpts replaces upstream defaults, so retain ACPI and memory merging.
-            qemu.machineOpts = {
-              accel = "tcg";
-              acpi = "on";
-              mem-merge = "on";
+            qemu = {
+              # Include software emulation without building unrelated CPU targets.
+              package = pkgs.qemu_kvm;
+              # Use the PC platform for guest devices and ACPI shutdown.
+              machine = "q35";
+              # Avoid nested KVM stalls on hosted CI; the outer test VM still uses KVM.
+              # machineOpts replaces upstream defaults, so retain ACPI and memory merging.
+              machineOpts = {
+                accel = "tcg";
+                acpi = "on";
+                mem-merge = "on";
+              };
             };
             mem = 512;
             storeOnDisk = true;
