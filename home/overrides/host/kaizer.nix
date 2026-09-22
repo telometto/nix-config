@@ -10,6 +10,35 @@
     pkgs.rendercv
   ];
 
+  systemd.user = {
+    services.kaizer-flatpak-update-user = {
+      Unit = {
+        Description = "Update user Flatpak applications and runtimes";
+      };
+
+      Service = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.flatpak}/bin/flatpak --user update -y --noninteractive";
+      };
+    };
+
+    timers.kaizer-flatpak-update-user = {
+      Unit = {
+        Description = "Daily update of user Flatpak applications and runtimes";
+      };
+
+      Timer = {
+        OnCalendar = "daily";
+        Persistent = true;
+        RandomizedDelaySec = "1h";
+      };
+
+      Install = {
+        WantedBy = [ "timers.target" ];
+      };
+    };
+  };
+
   hm.programs = {
     media = {
       enable = true;
