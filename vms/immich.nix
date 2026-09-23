@@ -70,6 +70,7 @@ in
     };
 
     ml.enable = false;
+    newVersionCheck = false;
 
     settings = {
       machineLearning = {
@@ -100,8 +101,14 @@ in
       };
       # Pocket ID is the sole interactive login authority.
       passwordLogin.enabled = false;
-      server.externalDomain = "https://photos.${VARS.domains.public}";
-      storageTemplate.enabled = true;
+      server = {
+        externalDomain = "https://photos.${VARS.domains.public}";
+        publicUsers = true;
+      };
+      storageTemplate = {
+        enabled = true;
+        hashVerificationEnabled = true;
+      };
     };
   };
 
