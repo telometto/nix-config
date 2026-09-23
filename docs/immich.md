@@ -17,7 +17,7 @@ ______________________________________________________________________
 
 ## Identity and admission model
 
-The pinned Immich 2.7.5 release first looks up an OAuth identity by its stable
+The Immich release selected by this flake first looks up an OAuth identity by its stable
 OIDC `sub`. If no identity is linked, it can match an existing Immich account
 by email and link it before applying the `autoRegister` setting. It does not
 require the OIDC `email_verified` claim for that match.
