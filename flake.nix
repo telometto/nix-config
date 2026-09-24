@@ -230,6 +230,11 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        libvirt-firmware = import ./tests/libvirt-firmware.nix {
+          inherit (self.nixosConfigurations) snowfall;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         sandfly-target = import ./tests/sandfly-target.nix {
           inherit (self.nixosConfigurations) snowfall;
           pkgs = nixpkgs.legacyPackages.${system};
