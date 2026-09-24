@@ -76,7 +76,7 @@ in
     # Earlier filenames win firmware autoselection. Keep RAW descriptors
     # available for existing VMs whose firmware paths are already recorded.
     environment.etc = {
-      # Stable paths also keep VM definitions valid across store garbage collection.
+      # Avoid store-hash paths; upstream basenames and firmware versions can change.
       "qemu/firmware-images".source = "${snapshotFirmware}/images";
     }
     // lib.genAttrs (map (name: "qemu/firmware/10-${name}") firmwareDescriptors) (path: {
