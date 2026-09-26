@@ -79,6 +79,21 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
+### Libvirt GUI snapshots
+
+`sys.virtualisation.libvirtd.enable` provides preferred QCOW2 UEFI firmware
+and NVRAM templates for new x86 VMs. Create VMs normally in virt-manager with
+UEFI firmware and QCOW2 disks; no declarative per-VM configuration is required.
+The templates preserve QEMU's upstream machine matching and Secure Boot features.
+Firmware paths under `/etc/qemu/firmware-images/` avoid Nix store-hash changes.
+Upstream image basenames can still change; the alias does not pin firmware versions.
+
+Existing VMs retain their recorded firmware and NVRAM configuration. VMs with
+RAW NVRAM still require a [one-time migration](../docs/libvirt-firmware.md)
+before internal snapshots work. The runbook includes rollback and runtime
+acceptance checks; the build-level `libvirt-firmware` check validates artifacts.
+Other devices, such as passthrough devices, may impose snapshot restrictions.
+
 ### Related documentation
 
 - [services/README.md](services/README.md) — Full service catalog
