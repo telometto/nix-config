@@ -37,7 +37,7 @@ ______________________________________________________________________
 | [ombi.nix](ombi.nix) | `sys.services.ombi` | MicroVM | Media request portal (legacy) |
 | [overseerr.nix](overseerr.nix) | `sys.services.overseerr` | MicroVM | Media request portal |
 | [tautulli.nix](tautulli.nix) | `sys.services.tautulli` | MicroVM | Plex statistics |
-| [jellyfin.nix](jellyfin.nix) | `sys.services.jellyfin` | Host (blizzard) | Open-source media server |
+| [jellyfin.nix](jellyfin.nix) | `sys.services.jellyfin` | Host (blizzard) | Media server; VPS/Tailscale rollout in [Jellyfin operations](../../docs/jellyfin-vps.md) |
 | [plex.nix](plex.nix) | `sys.services.plex` | Host (blizzard) | Plex media server |
 
 #### Finance and Productivity
