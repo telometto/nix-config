@@ -89,6 +89,10 @@ jobs:
 
             - name: Run MicroVM lifecycle tests
               run: nix build .#checks.x86_64-linux.microvm-lifecycle --no-link --print-build-logs
+
+            - name: Run Jellyfin firewall tests
+              run: nix build .#checks.x86_64-linux.jellyfin-firewall --no-link --print-build-logs
+
             - name: CrowdSec observability checks
               run: nix build .#checks.x86_64-linux.crowdsec-observability --no-link --print-build-logs
 
