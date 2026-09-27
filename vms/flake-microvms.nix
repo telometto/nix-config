@@ -56,6 +56,7 @@ let
       specialArgs = {
         inherit inputs system VARS;
         inherit consts;
+        jellyfinSettings = import ./jellyfin-settings.nix;
       };
     };
 in
@@ -181,6 +182,11 @@ in
     microvmModule
     sopsModule
     ./immich.nix
+  ];
+
+  jellyfin-vm = mkMicrovm [
+    microvmModule
+    ./jellyfin.nix
   ];
 
   mealie-vm = mkMicrovm [
