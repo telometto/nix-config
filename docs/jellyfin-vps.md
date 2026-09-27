@@ -11,18 +11,18 @@ Cloudflare Tunnel. When publishing the route, point the Jellyfin DNS
 record at the VPS without Cloudflare's proxy. Do not forward Jellyfin ports on
 the home router.
 
-The first Blizzard configuration starts `jellyfin-vm` with Jellyfin **stopped**
-and a read-only view of the host's Jellyfin state. Host Jellyfin and Plex keep
-running. After the stopped-state copy, set `vmServiceReady = true` in
-[`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix) to move Jellyfin
-into the VM. The Jellyfin tailnet ingress remains **closed**. After private
-setup and load checks, set `vpsIPv4` in
+The current configuration enables Jellyfin in `jellyfin-vm` and disables host
+Jellyfin when applied. It does not import the old host state;
+`/var/lib/jellyfin` on Blizzard remains untouched. Plex stays enabled. With
+`vpsIPv4 = null` in [`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix),
+the Jellyfin tailnet ingress remains **closed**. After private setup and load
+checks, set `vpsIPv4` in
 [`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix)
 to the dedicated proxy VPS's Tailscale IPv4 address and run the public
 acceptance checks below. Do not use the existing Sandfly VPS address
 `100.116.146.113`;
 Sandfly publishes TCP 80 and 443 and advises against other software on its
-host. This migration leaves Plex and its dependent services running. The VPS,
+host. This setup leaves Plex and its dependent services running. The VPS,
 public DNS, and tailnet policy are managed outside this repository.
 
 On a fresh Jellyfin data directory, finish the first-run wizard and create the
@@ -46,7 +46,7 @@ until the private Jellyfin administrator setup and playback checks pass.
 Keep the dedicated VPS Tailscale identity stable. Record its IPv4 address with
 `tailscale ip -4` and use it in the Blizzard firewall guard and tailnet
 policy. The VM sees Blizzard's TCP relay as `10.100.0.1`, so set **Dashboard →
-Networking → Known Proxies** to **only `10.100.0.1`** after migration. The VPS
+Networking → Known Proxies** to **only `10.100.0.1`** after the VM cutover. The VPS
 address is no longer the direct Jellyfin peer. If the VPS address changes,
 update the Blizzard guard and tailnet policy; verify the proxy headers again.
 The current `vpsIPv4` value in `vms/jellyfin-settings.nix` is `null`
@@ -90,6 +90,35 @@ chain accepts tailnet traffic, but the tailnet policy should enforce the same
 identity boundary.
 
 ## Jellyfin setup
+
+### Fresh VM setup (current configuration)
+
+1. Before applying the configuration, check whether the guest state volume
+   already contains Jellyfin data from an earlier import or setup attempt.
+   This repository does not erase that volume. A first-time setup requires an
+   empty guest state volume; if it is populated, inspect it before resetting
+   that VM volume.
+
+1. Apply the Blizzard configuration with `vmServiceReady = true` and
+   `vpsIPv4 = null`. Confirm host `jellyfin.service` is stopped,
+   `microvm@jellyfin-vm.service` is active, and guest `jellyfin.service` is
+   active. Keep the public Caddy route disabled.
+
+1. From an administrator workstation, forward a private local port through
+   Blizzard to the guest:
+
+   ```bash
+   ssh -N -L 127.0.0.1:8097:10.100.0.72:8096 <admin>@<blizzard-ssh-host>
+   ```
+
+   Open `http://127.0.0.1:8097`, complete the first-run administrator wizard,
+   and verify the new account and libraries before opening VPS ingress.
+
+### Existing-state migration (alternative)
+
+If the old Blizzard Jellyfin state should be retained in the VM instead,
+start with `vmServiceReady = false` and complete this stopped-state copy
+before enabling the guest service:
 
 1. On Blizzard, check the host's Jellyfin version, state size, library paths,
    free space on `flash/enc/vms`, and read access to
@@ -148,6 +177,8 @@ identity boundary.
    Open `http://127.0.0.1:8097`. Verify the migrated administrator, users,
    libraries, and playback. If the source state was empty, complete the
    first-run wizard privately before opening the VPS route.
+
+### Private validation for either setup
 
 1. In Jellyfin, set **Known Proxies** to only `10.100.0.1` and keep **Base
    URL** empty. Check **Remote Access Settings**, **Local Networks**, and each
@@ -256,7 +287,7 @@ reload the firewall again. The direct DROP remains until a successful rebuild.
   `/var/lib/jellyfin` and the stopped-VM snapshot are the rollback sources.
   To return to host Jellyfin, close the VPS route, set
   `vmServiceReady = false`, apply the host configuration, and verify the
-  original host administrator login. VM changes made after migration will not
+  original host administrator login. VM changes made after cutover will not
   be in the preserved host state.
 
 ## References
