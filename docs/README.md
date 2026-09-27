@@ -48,6 +48,9 @@ flowchart LR
 
 #### How-To Guides
 
+- [libvirt-firmware.md](libvirt-firmware.md) —
+  Preserve existing NVRAM when migrating to QCOW2 and validate snapshots
+
 - [how-to-add-host-and-users.md](how-to-add-host-and-users.md) —
   Add new hosts and users to the configuration
 
