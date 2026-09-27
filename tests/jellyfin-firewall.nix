@@ -9,7 +9,9 @@ let
     inherit lib;
     VARS = { };
     config = { };
-    consts = { };
+    consts = import ../lib/constants.nix;
+    jellyfinSettings = import ../vms/jellyfin-settings.nix;
+    inherit pkgs;
   };
   script = name: contents: pkgs.writeText name contents;
 in
