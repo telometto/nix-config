@@ -89,6 +89,10 @@ jobs:
 
             - name: Run MicroVM lifecycle tests
               run: nix build .#checks.x86_64-linux.microvm-lifecycle --no-link --print-build-logs
+
+            - name: Run Jellyfin firewall tests
+              run: nix build .#checks.x86_64-linux.jellyfin-firewall --no-link --print-build-logs
+
             - name: CrowdSec observability checks
               run: nix build .#checks.x86_64-linux.crowdsec-observability --no-link --print-build-logs
 
@@ -96,7 +100,7 @@ jobs:
               id: crowdsec-fixtures
               run: |
                   echo "traefik=$(nix build .#nixosConfigurations.blizzard.config.services.traefik.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
-                  echo "bouncer=$(nix eval --raw .#checks.x86_64-linux.crowdsec-observability.bouncer)" >> "$GITHUB_OUTPUT"
+                  echo "bouncer=$(nix build .#checks.x86_64-linux.crowdsec-observability.bouncer --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
                   echo "alloy=$(nix build .#nixosConfigurations.blizzard.config.services.alloy.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
                   echo "vlogs=$(nix build .#nixosConfigurations.blizzard.config.services.victorialogs.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
                   echo "crowdsec=$(nix build .#nixosConfigurations.blizzard.config.services.crowdsec.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
