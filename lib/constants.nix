@@ -35,6 +35,7 @@
 
     vm = {
       adguard = 11010;
+      jellyfin = 8096;
       actual = 11051;
       searx = 11012;
       ombi = 11041;
