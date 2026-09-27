@@ -230,6 +230,10 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        jellyfin-firewall = import ./tests/jellyfin-firewall.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         sandfly-target = import ./tests/sandfly-target.nix {
           inherit (self.nixosConfigurations) snowfall;
           pkgs = nixpkgs.legacyPackages.${system};
