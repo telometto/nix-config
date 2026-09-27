@@ -111,6 +111,8 @@ flowchart LR
 - [immich.md](immich.md) — Provision, migrate, rotate, and recover Immich OAuth
 - [sandfly.md](sandfly.md) — Restrict Tailscale SSH, enable Sandfly targets,
   verify, and roll back
+- [jellyfin-vps.md](jellyfin-vps.md) — Stage Jellyfin through a Tailscale VPS and verify Plex cutover
+- [how-to-jellyfin-vps-ubuntu-2404.md](how-to-jellyfin-vps-ubuntu-2404.md) — Set up the Jellyfin proxy on an Ubuntu 24.04 VPS
 - [troubleshooting-trigger-vm.md](troubleshooting-trigger-vm.md) — Troubleshooting the trigger MicroVM
 
 ### Quick Links
@@ -140,6 +142,7 @@ flowchart LR
 | Operate Pocket ID | [Pocket ID Operations](pocket-id.md) |
 | Operate Immich OAuth | [Immich OAuth Operations](immich.md) |
 | Operate Sandfly targets | [Sandfly Target Operations](sandfly.md) |
+| Stage Jellyfin through a VPS | [Jellyfin VPS Operations](jellyfin-vps.md) |
 | Review security findings | [Security Audit](security-audit-2026-06-27.md) |
 | Learn why things work this way | [Explanation: Design](explanation-design.md) |
 

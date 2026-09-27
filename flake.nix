@@ -230,6 +230,10 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        jellyfin-firewall = import ./tests/jellyfin-firewall.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         libvirt-firmware = import ./tests/libvirt-firmware.nix {
           inherit (self.nixosConfigurations) snowfall;
           pkgs = nixpkgs.legacyPackages.${system};

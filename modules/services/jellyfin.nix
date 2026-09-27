@@ -45,38 +45,6 @@ in
       default = "/var/cache/jellyfin";
       description = "Directory where Jellyfin stores cache and transcoding data.";
     };
-
-    reverseProxy = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Enable Traefik reverse proxy configuration for Jellyfin.";
-      };
-
-      pathPrefix = lib.mkOption {
-        type = lib.types.str;
-        default = "/jellyfin";
-        description = "URL path prefix for Jellyfin.";
-      };
-
-      port = lib.mkOption {
-        type = lib.types.port;
-        default = 8096;
-        description = "Port where Jellyfin listens.";
-      };
-
-      stripPrefix = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to strip the path prefix before forwarding to Jellyfin.";
-      };
-
-      extraMiddlewares = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Additional Traefik middlewares to apply.";
-      };
-    };
   };
 
   config = lib.mkIf cfg.enable {
