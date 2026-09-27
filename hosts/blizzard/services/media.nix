@@ -14,6 +14,7 @@ let
   jellyfinIngressReady = jellyfinSettings.vmServiceReady && jellyfinVpsIPv4 != null;
   jellyfinFirewall = import ../../../lib/jellyfin-vps-firewall.nix {
     inherit lib;
+    guestIPv4 = jellyfinReg.ip;
     vpsIPv4 = if jellyfinIngressReady then jellyfinVpsIPv4 else null;
   };
 in
@@ -88,8 +89,9 @@ in
 
   # Tailscale normally accepts packets arriving on tailscale0 before the
   # NixOS input chain. Raw PREROUTING runs first; dst-type LOCAL excludes
-  # traffic Blizzard forwards as a subnet router. Keep the guard in place even
-  # while VPS ingress is off, so a firewall reload cannot expose a stale listener.
+  # traffic Blizzard forwards as a subnet router. A separate raw rule drops
+  # routed access to the guest before Tailscale's subnet SNAT. Keep both guards
+  # in place even while VPS ingress is off.
   networking.firewall = {
     interfaces.tailscale0.allowedTCPPorts = lib.optionals jellyfinIngressReady [
       jellyfinReg.port
@@ -97,17 +99,15 @@ in
     inherit (jellyfinFirewall) extraCommands extraStopCommands;
   };
 
-  # The VPS keeps using Blizzard's Tailscale IPv4 and TCP 8096. A bound TCP
+  # The VPS keeps using Blizzard's Tailscale IPv4 and TCP 8096. An IP-bound TCP
   # relay passes Caddy's HTTP/WebSocket stream to the guest without creating
   # an all-interface NAT port-forward. It starts only after private setup.
   systemd.sockets.jellyfin-vps-relay = lib.mkIf jellyfinIngressReady {
     description = "Jellyfin VPS ingress on Blizzard's Tailscale interface";
     wantedBy = [ "sockets.target" ];
     listenStreams = [ "${consts.tailscale.hosts.blizzard.ipv4}:${toString jellyfinReg.port}" ];
-    socketConfig = {
-      BindToDevice = "tailscale0";
-      FreeBind = true;
-    };
+    # FreeBind lets the early socket start before tailscaled creates its IP.
+    socketConfig.FreeBind = true;
   };
 
   systemd.services.jellyfin-vps-relay = lib.mkIf jellyfinIngressReady {
