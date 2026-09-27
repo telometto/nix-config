@@ -1,12 +1,20 @@
 {
+  guestIPv4,
   lib,
   vpsIPv4,
 }:
 let
   ingress = "-i tailscale0 -m addrtype --dst-type LOCAL -p tcp --dport 8096";
+  guestIngress = "-i tailscale0 -d ${guestIPv4}/32 -p tcp --dport 8096";
 in
 {
   extraCommands = ''
+    # Subnet routing can SNAT any tailnet peer to the bridge gateway. Block
+    # direct guest access before forwarding, even when the VPS relay is off.
+    if ! iptables -w -t raw -C PREROUTING ${guestIngress} -j DROP 2>/dev/null; then
+      iptables -w -t raw -I PREROUTING 1 ${guestIngress} -j DROP
+    fi
+
     # This chain is owned entirely by the Jellyfin VPS guard. A temporary
     # PREROUTING DROP keeps it closed while we rebuild it on every reload.
     iptables -w -t raw -I PREROUTING 1 ${ingress} -j DROP
@@ -55,6 +63,9 @@ in
 
   extraStopCommands = ''
     # A failed firewall reload must leave the raw ingress guard closed.
+    if ! iptables -w -t raw -C PREROUTING ${guestIngress} -j DROP 2>/dev/null; then
+      iptables -w -t raw -I PREROUTING 1 ${guestIngress} -j DROP
+    fi
     iptables -w -t raw -I PREROUTING 1 ${ingress} -j DROP 2>/dev/null || true
   '';
 }
