@@ -2,16 +2,20 @@
 
 ## Topology and rollout
 
-Viewers use `https://jellyfin.<public-domain>` on a Hetzner VPS. The VPS
+Viewers use `https://jellyfin.<public-domain>` on a dedicated Hetzner VPS. The VPS
 terminates TLS and proxies to Blizzard's Tailscale IPv4 address
 (`100.85.254.99:8096`). Blizzard does not publish Jellyfin through its local
 Traefik or Cloudflare Tunnel. Keep the Jellyfin DNS record pointed at the VPS
 without Cloudflare's proxy, and do not forward Jellyfin ports on the home router.
 
-The Blizzard configuration starts Jellyfin alongside Plex for migration checks
-and limits its tailnet ingress to VPS peer `100.116.146.113`. Plex and its
-dependent services can be removed after the acceptance checks below. The VPS,
-public DNS, and tailnet policy are managed outside this repository.
+The Blizzard configuration starts Jellyfin alongside Plex for migration checks.
+Its current tailnet source guard permits `100.116.146.113`, which belongs to the
+existing Sandfly VPS. Sandfly publishes TCP 80 and 443 and advises against
+running other software on its host. Provision a separate Jellyfin proxy VPS and
+replace that source guard with its Tailscale IPv4 address before using this
+route. Plex and its dependent services can be removed after the acceptance
+checks below. The VPS, public DNS, and tailnet policy are managed outside this
+repository.
 
 This route keeps the home IP out of the ordinary viewer connection path when
 clients use only the VPS hostname. Other services or DNS records can still
@@ -20,11 +24,15 @@ All media traffic traverses the VPS.
 
 ## VPS and tailnet
 
-Keep the VPS Tailscale identity stable. Its IPv4 address is
-`100.116.146.113`; add exactly this address in Jellyfin's **Dashboard →
+For Ubuntu 24.04 VPS commands, follow the [step-by-step setup guide](how-to-jellyfin-vps-ubuntu-2404.md).
+
+Keep the dedicated VPS Tailscale identity stable. Record its IPv4 address with
+`tailscale ip -4` and add exactly that address in Jellyfin's **Dashboard →
 Networking → Known Proxies**. If it changes, update both the Blizzard firewall
 rule and Known Proxies before serving clients. Do not add other tailnet
-addresses or CIDR ranges to Known Proxies.
+addresses or CIDR ranges to Known Proxies. The current address in
+[`hosts/blizzard/services/media.nix`](../hosts/blizzard/services/media.nix)
+must be changed from the Sandfly VPS address before activation for this route.
 
 A Caddy site on the VPS can use this shape (replace the hostname):
 
@@ -47,7 +55,7 @@ is shaped like this:
 
 ```json
 {
-  "src": ["100.116.146.113"],
+  "src": ["<DEDICATED_VPS_TAILSCALE_IPV4>"],
   "dst": ["100.85.254.99"],
   "ip": ["tcp:8096"]
 }
@@ -64,8 +72,9 @@ identity boundary.
 1. Confirm `/var/lib/jellyfin` is backed up before importing users and libraries.
    The NixOS module creates persistent data and cache directories; this repo's
    existing offsite jobs do not include Jellyfin state.
-1. Set **Known Proxies** to `100.116.146.113`. Keep **Base URL**
-   empty; the public site uses a dedicated hostname rather than `/jellyfin`.
+1. Set **Known Proxies** to the dedicated VPS Tailscale IPv4 address. Keep
+   **Base URL** empty; the public site uses a dedicated hostname rather than
+   `/jellyfin`.
 1. Check **Remote Access Settings**, **Local Networks**, and each user's
    **Allow remote connections** permission. Verify that public clients are
    recorded with their actual client IP, not the VPS address or a spoofed
@@ -115,3 +124,4 @@ sudo ss -ltn '( sport = :8096 )'
 - [Caddy: reverse proxy defaults](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)
 - [Tailscale: grants syntax and additive permissions](https://tailscale.com/docs/reference/syntax/grants)
 - [Tailscale: netfilter modes](https://tailscale.com/docs/reference/netfilter-modes)
+- [Sandfly: running on non-default ports and host isolation](https://docs.sandflysecurity.com/docs/run-sandfly-on-non-default-ports)
