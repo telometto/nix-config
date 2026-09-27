@@ -1,7 +1,12 @@
 { pkgs }:
 let
   inherit (pkgs) lib;
-  firewall = vpsIPv4: import ../lib/jellyfin-vps-firewall.nix { inherit lib vpsIPv4; };
+  firewall =
+    vpsIPv4:
+    import ../lib/jellyfin-vps-firewall.nix {
+      inherit lib vpsIPv4;
+      guestIPv4 = "10.100.0.72";
+    };
   current = firewall "100.116.146.113";
   next = firewall "100.99.88.77";
   disabled = firewall null;
@@ -10,7 +15,10 @@ let
     VARS = { };
     config = { };
     consts = import ../lib/constants.nix;
-    jellyfinSettings = import ../vms/jellyfin-settings.nix;
+    jellyfinSettings = {
+      vmServiceReady = false;
+      vpsIPv4 = null;
+    };
     inherit pkgs;
   };
   script = name: contents: pkgs.writeText name contents;
