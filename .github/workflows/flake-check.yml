@@ -131,6 +131,9 @@ jobs:
             - name: Run MicroVM network policy tests
               run: nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs
 
+            - name: Run Libvirt firmware contract tests
+              run: nix build .#checks.x86_64-linux.libvirt-firmware --no-link --print-build-logs
+
             - name: Run Sandfly target tests
               run: nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs
 
