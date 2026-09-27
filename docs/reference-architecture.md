@@ -38,7 +38,7 @@ Every physical host built with `mkHost` automatically receives:
 - `quadlet-nix` NixOS module
 - `disko` NixOS module (used by Avalanche; see [Disko and Btrfs](explanation-design.md#disko-and-btrfs))
 
-`specialArgs` available in every module: `inputs`, `system`, `VARS`, `consts`, `self`, `hostname`.
+`specialArgs` available in every host module: `inputs`, `system`, `VARS`, `consts`, `self`, `hostname`, `jellyfinSettings`.
 
 ______________________________________________________________________
 
