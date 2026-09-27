@@ -111,8 +111,7 @@ flowchart LR
 - [immich.md](immich.md) — Provision, migrate, rotate, and recover Immich OAuth
 - [sandfly.md](sandfly.md) — Restrict Tailscale SSH, enable Sandfly targets,
   verify, and roll back
-- [jellyfin-vps.md](jellyfin-vps.md) — Stage Jellyfin through a Tailscale VPS and verify Plex cutover
-- [how-to-jellyfin-vps-ubuntu-2404.md](how-to-jellyfin-vps-ubuntu-2404.md) — Set up the Jellyfin proxy on an Ubuntu 24.04 VPS
+- [jellyfin-vps.md](jellyfin-vps.md) — Stage Jellyfin through a Tailscale VPS while Plex remains active
 - [troubleshooting-trigger-vm.md](troubleshooting-trigger-vm.md) — Troubleshooting the trigger MicroVM
 
 ### Quick Links
