@@ -305,4 +305,14 @@ validate {
     mem = 1024;
     vcpu = 1;
   };
+
+  jellyfin = {
+    name = "jellyfin";
+    cid = 128;
+    mac = "02:00:00:00:00:1D";
+    ip = "10.100.0.72";
+    port = consts.ports.vm.jellyfin;
+    mem = 16384;
+    vcpu = 8;
+  };
 }
