@@ -4,7 +4,7 @@
 
 Viewers use `https://jellyfin.<public-domain>` on a dedicated Hetzner VPS. The VPS
 terminates TLS and proxies to Blizzard's Tailscale IPv4 address
-(`100.85.254.99:8096`). A TCP relay bound to `tailscale0` sends the stream
+(`100.85.254.99:8096`). A TCP relay bound to that IP sends the stream
 to `jellyfin-vm` at `10.100.0.72:8096`; it does not create a host NAT
 port-forward. Blizzard does not publish Jellyfin through its local Traefik or
 Cloudflare Tunnel. When publishing the route, point the Jellyfin DNS
@@ -39,7 +39,9 @@ All media traffic traverses the VPS.
 
 ## VPS and tailnet
 
-For Ubuntu 24.04 VPS commands, follow the [step-by-step setup guide](how-to-jellyfin-vps-ubuntu-2404.md).
+On the dedicated VPS, install Caddy, set the Jellyfin hostname to DNS-only,
+open public TCP 80/443, and preserve SSH access. Keep the Caddy site disabled
+until the private Jellyfin administrator setup and playback checks pass.
 
 Keep the dedicated VPS Tailscale identity stable. Record its IPv4 address with
 `tailscale ip -4` and use it in the Blizzard firewall guard and tailnet
@@ -108,9 +110,8 @@ identity boundary.
    VM. The VM receives the host state at `/mnt/host-jellyfin` through a
    **temporary read-only** virtiofs share. Keep the public Caddy route disabled.
 
-1. Stop host Jellyfin for the final copy, then run this **inside the VM** as
-   `admin`; `sudo` will prompt for the administrator password. First make a
-   separate protected copy of the stopped host state on Blizzard:
+1. On **Blizzard**, stop host Jellyfin and make a separate protected copy of
+   its stopped state:
 
    ```bash
    sudo systemctl stop jellyfin.service
@@ -118,16 +119,18 @@ identity boundary.
    sudo cp -a /var/lib/jellyfin /flash/enc/jellyfin-host-rollback/
    ```
 
-   Inside the VM, copy from the temporary read-only share:
+1. From **Blizzard**, connect to the VM as `admin` and run the staged import
+   command inside the VM. The command is the only passwordless sudo action
+   granted to this account; it checks both mounts, copies the read-only host
+   state, assigns guest Jellyfin ownership, and checks the copied contents.
+   It is removed when `vmServiceReady = true`.
 
    ```bash
-   sudo rsync -aH --delete /mnt/host-jellyfin/ /var/lib/jellyfin/
-   sudo chown -R jellyfin:jellyfin /var/lib/jellyfin
-   sudo rsync -aHn --no-owner --no-group --delete \
-     /mnt/host-jellyfin/ /var/lib/jellyfin/
+   ssh admin@10.100.0.72
+   sudo /run/current-system/sw/bin/jellyfin-import-state
    ```
 
-   Resolve any differences and verify the copied state and owner before
+   Resolve any reported differences and verify the copied state and owner before
    continuing. Do not remove `/var/lib/jellyfin` on Blizzard; it is the
    rollback source. If the copy fails, restart host Jellyfin and leave
    `vmServiceReady = false`.
@@ -190,6 +193,25 @@ identity boundary.
    `flash` policy is creating local snapshots of `flash/enc/vms`; this
    rollout adds no offsite Jellyfin backup.
 
+   For a later maintenance snapshot **after VPS ingress is enabled**, first
+   stop `jellyfin-vps-relay.socket` and `jellyfin-vps-relay.service` on Blizzard
+   and verify both are inactive. A connection to an active socket can start
+   the relay service and its required VM. Stop the VM only after closing that
+   path; restart the VM and socket after the snapshot:
+
+   ```bash
+   sudo systemctl stop jellyfin-vps-relay.socket jellyfin-vps-relay.service
+   ! systemctl is-active --quiet jellyfin-vps-relay.socket jellyfin-vps-relay.service
+   sudo systemctl stop microvm@jellyfin-vm.service
+   sudo zfs snapshot flash/enc/vms@jellyfin-maint-YYYYMMDD
+   sudo systemctl start microvm@jellyfin-vm.service
+   sudo systemctl start jellyfin-vps-relay.socket
+   ```
+
+   Replace `YYYYMMDD` with a unique snapshot suffix. The negated
+   `systemctl is-active` check must succeed before stopping the VM. Check the
+   socket and public route again after restarting.
+
 ## Acceptance before VPS publication
 
 After applying the Blizzard configuration, check the host rules and their
@@ -197,6 +219,7 @@ packet counters on Blizzard:
 
 ```bash
 sudo iptables -t raw -C PREROUTING -i tailscale0 -m addrtype --dst-type LOCAL -p tcp --dport 8096 -j JELLYFIN_VPS
+sudo iptables -t raw -C PREROUTING -i tailscale0 -d 10.100.0.72/32 -p tcp --dport 8096 -j DROP
 sudo iptables -t raw -vnL JELLYFIN_VPS
 sudo ip6tables -t raw -C PREROUTING -i tailscale0 -m addrtype --dst-type LOCAL -p tcp --dport 8096 -j DROP
 sudo ss -ltn '( sport = :8096 )'
@@ -209,8 +232,10 @@ inspect `sudo iptables -t raw -S JELLYFIN_VPS`, resolve the unexpected rule, and
 reload the firewall again. The direct DROP remains until a successful rebuild.
 
 - From the VPS, reach `http://100.85.254.99:8096` over Tailscale. From a
-  different tailnet peer, port 8096 must be denied. Check both IPv4 and IPv6.
-- Confirm the relay is bound only to `tailscale0`, the guest accepts port
+  different tailnet peer, both `100.85.254.99:8096` and the routed guest
+  address `10.100.0.72:8096` must be denied. The VPS must also be denied
+  direct access to the guest address. Check both IPv4 and IPv6.
+- Confirm the relay listens only on Blizzard's Tailscale IPv4, the guest accepts port
   `8096` only from `10.100.0.1`, and an attempted write to the media share
   fails. Check the guest cannot open undeclared connections to other MicroVMs.
 - From outside the home network, confirm `https://jellyfin.<public-domain>`
