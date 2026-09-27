@@ -9,6 +9,27 @@ let
   reg = (import ./vm-registry.nix { inherit consts; }).jellyfin;
   gpu = jellyfinSettings.gpuPassthrough;
   libraryPath = "/rpool/unenc/media/data/media";
+  migrationScript = pkgs.writeShellScriptBin "jellyfin-import-state" ''
+    set -euo pipefail
+    umask 077
+
+    if ${pkgs.systemd}/bin/systemctl is-active --quiet jellyfin.service; then
+      echo "Stop guest Jellyfin before importing state" >&2
+      exit 1
+    fi
+    ${pkgs.util-linux}/bin/findmnt --mountpoint /mnt/host-jellyfin >/dev/null
+    ${pkgs.util-linux}/bin/findmnt --mountpoint /var/lib/jellyfin >/dev/null
+
+    ${pkgs.rsync}/bin/rsync -aH --delete --chown=jellyfin:jellyfin \
+      /mnt/host-jellyfin/ /var/lib/jellyfin/
+    differences=$(${pkgs.rsync}/bin/rsync -aHnc --no-owner --no-group --delete \
+      --out-format='%i %n' /mnt/host-jellyfin/ /var/lib/jellyfin/)
+    if [ -n "$differences" ]; then
+      echo "Jellyfin state differs after import:" >&2
+      echo "$differences" >&2
+      exit 1
+    fi
+  '';
 in
 {
   imports = [
@@ -80,7 +101,21 @@ in
     group = "jellyfin";
   };
   users.groups.jellyfin = { };
-  environment.systemPackages = lib.optionals (!jellyfinSettings.vmServiceReady) [ pkgs.rsync ];
+  environment.systemPackages = lib.optionals (!jellyfinSettings.vmServiceReady) [ migrationScript ];
+
+  # The base VM admin has SSH-key login but no password for ordinary sudo.
+  # Expose one fixed import command only during the stopped-service stage.
+  security.sudo.extraRules = lib.optionals (!jellyfinSettings.vmServiceReady) [
+    {
+      users = [ "admin" ];
+      commands = [
+        {
+          command = "/run/current-system/sw/bin/jellyfin-import-state";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
 
   sys.services.jellyfin = {
     enable = jellyfinSettings.vmServiceReady;
