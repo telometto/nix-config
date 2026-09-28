@@ -20,6 +20,9 @@ let
         "firefly-iii-data-importer"
         "pocket-id"
         "seerr"
+        "jellyfin"
+        "jellyfin-web"
+        "jellyfin-ffmpeg"
       ];
 
       nixpkgs-master = [
