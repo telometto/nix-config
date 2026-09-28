@@ -61,7 +61,7 @@ def target(rule):
     return rule[rule.index("-j") + 1]
 
 
-def verdict(state, family, source, *, local=True):
+def verdict(state, family, source, *, local=True, destination="100.85.254.99"):
     def walk(chain):
         for rule in state[family][chain]:
             if "-i" in rule and rule[rule.index("-i") + 1] != "tailscale0":
@@ -73,12 +73,14 @@ def verdict(state, family, source, *, local=True):
                 continue
             if "-s" in rule and rule[rule.index("-s") + 1] != f"{source}/32":
                 continue
-            destination = target(rule)
-            if destination == "DROP":
+            if "-d" in rule and rule[rule.index("-d") + 1] != f"{destination}/32":
+                continue
+            jump_target = target(rule)
+            if jump_target == "DROP":
                 return "DROP"
-            if destination == "RETURN":
+            if jump_target == "RETURN":
                 return "RETURN"
-            result = walk(destination)
+            result = walk(jump_target)
             if result == "DROP":
                 return result
         return "RETURN"
@@ -91,6 +93,13 @@ def verify(state, allowed=None):
         expected = "ACCEPT" if peer == allowed else "DROP"
         assert verdict(state, "ip4", peer) == expected, (peer, state)
         assert verdict(state, "ip6", peer) == "DROP", (peer, state)
+    # Tailscale's subnet SNAT makes every routed peer appear as 10.100.0.1
+    # at the guest, so the host must reject this path before forwarding.
+    for peer in ("100.116.146.113", "100.99.88.77", "100.100.100.100"):
+        assert (
+            verdict(state, "ip4", peer, local=False, destination="10.100.0.72")
+            == "DROP"
+        ), (peer, state)
     assert verdict(state, "ip4", "100.100.100.100", local=False) == "ACCEPT"
 
 
@@ -134,7 +143,7 @@ def main(paths):
         run(current, env)
         verify(state(), "100.116.146.113")  # repeated reload is idempotent
         assert len(state()["ip4"]["JELLYFIN_VPS"]) == 2
-        assert len(state()["ip4"]["PREROUTING"]) == 1
+        assert len(state()["ip4"]["PREROUTING"]) == 2
 
         run(next_peer, env)
         verify(state(), "100.99.88.77")  # old peer loses access
@@ -174,7 +183,7 @@ def main(paths):
         state_path.write_text(json.dumps(modified))
         run(current, env)
         verify(state(), "100.116.146.113")  # recovery clears stale DROP guards
-        assert len(state()["ip4"]["PREROUTING"]) == 1
+        assert len(state()["ip4"]["PREROUTING"]) == 2
 
 
 if __name__ == "__main__":

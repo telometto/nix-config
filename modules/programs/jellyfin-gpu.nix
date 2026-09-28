@@ -60,8 +60,6 @@ in
         extraPackages =
           with pkgs;
           [
-            intel-ocl
-
             intel-media-driver
             (intel-vaapi-driver.override { enableHybridCodec = true; })
             libva-vdpau-driver
