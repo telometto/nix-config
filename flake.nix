@@ -138,6 +138,7 @@
               self
               hostname
               ;
+            jellyfinSettings = import ./vms/jellyfin-settings.nix;
           };
         };
     in
@@ -231,6 +232,12 @@
         };
 
         jellyfin-firewall = import ./tests/jellyfin-firewall.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        jellyfin-microvm = import ./tests/jellyfin-microvm.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          jellyfinVm = self.nixosConfigurations.jellyfin-vm;
           pkgs = nixpkgs.legacyPackages.${system};
         };
 

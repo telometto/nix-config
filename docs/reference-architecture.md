@@ -11,7 +11,7 @@ Information reference for this repo's moving parts, options, and commands.
 | Output | Description |
 |--------|-------------|
 | `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}` | The four physical hosts |
-| `nixosConfigurations.<vm-name>` (×26) | MicroVM guests defined in `vms/` |
+| `nixosConfigurations.<vm-name>` (×27) | MicroVM guests defined in `vms/` |
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
@@ -38,7 +38,7 @@ Every physical host built with `mkHost` automatically receives:
 - `quadlet-nix` NixOS module
 - `disko` NixOS module (used by Avalanche; see [Disko and Btrfs](explanation-design.md#disko-and-btrfs))
 
-`specialArgs` available in every module: `inputs`, `system`, `VARS`, `consts`, `self`, `hostname`.
+`specialArgs` available in every host module: `inputs`, `system`, `VARS`, `consts`, `self`, `hostname`, `jellyfinSettings`.
 
 ______________________________________________________________________
 

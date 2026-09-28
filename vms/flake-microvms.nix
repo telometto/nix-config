@@ -20,6 +20,9 @@ let
         "firefly-iii-data-importer"
         "pocket-id"
         "seerr"
+        "jellyfin"
+        "jellyfin-web"
+        "jellyfin-ffmpeg"
       ];
 
       nixpkgs-master = [
@@ -56,6 +59,7 @@ let
       specialArgs = {
         inherit inputs system VARS;
         inherit consts;
+        jellyfinSettings = import ./jellyfin-settings.nix;
       };
     };
 in
@@ -181,6 +185,11 @@ in
     microvmModule
     sopsModule
     ./immich.nix
+  ];
+
+  jellyfin-vm = mkMicrovm [
+    microvmModule
+    ./jellyfin.nix
   ];
 
   mealie-vm = mkMicrovm [

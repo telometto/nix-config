@@ -1,7 +1,7 @@
 ## MicroVM Configurations
 
 Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
-for lightweight virtualization. The flake currently defines 26 MicroVM
+for lightweight virtualization. The flake currently defines 27 MicroVM
 configurations for the `blizzard` host. Most use the shared `10.100.0.0/24`
 tap bridge behind a host-owned identity and lateral-access policy; Pocket ID
 uses a dedicated `10.100.1.0/30` host-to-VM bridge.
@@ -41,7 +41,7 @@ flowchart TB
     wg["wireguard-vm\n10.100.0.11\n(VPN gateway)"]
 
     subgraph direct["Direct-routed VMs (via bridge)"]
-        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli · trigger"]
+        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · jellyfin · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli · trigger"]
     end
 
     subgraph wgrouted["WG-routed VMs (traffic via wireguard-vm)"]
@@ -78,6 +78,7 @@ ______________________________________________________________________
 | firefox | 10.100.0.52 | 11052 | 4 GB | 4 | Via WG | Containerized Firefox browser |
 | gitea | 10.100.0.50 | 11050 | 2 GB | 2 | Direct | Self-hosted git forge; public `git.<canonical-domain>` via Cloudflare Tunnel/Traefik |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Direct | Photo library |
+| jellyfin | 10.100.0.72 | 8096 | 16 GB | 8 | Direct | Media server; staged host-state migration and VPS/Tailscale ingress |
 | lidarr | 10.100.0.26 | 11028 | 1 GB | 1 | Direct | Music PVR |
 | matrix-synapse | 10.100.0.60 | 11060 | 4 GB | 4 | Gateway only | Matrix homeserver |
 | mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Direct | Recipe manager and meal planner |

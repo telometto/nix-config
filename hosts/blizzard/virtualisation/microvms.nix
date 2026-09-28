@@ -1,6 +1,7 @@
 {
   self,
   VARS,
+  jellyfinSettings,
   lib,
   pkgs,
   consts,
@@ -276,6 +277,12 @@ let
       };
     };
 
+    jellyfin = {
+      # Prepare the VM and its volumes before the stopped-state migration.
+      # Jellyfin itself stays on the host until vmServiceReady is set.
+      enable = true;
+    };
+
     mealie = {
       enable = false;
       portForwards = [ (mkPortForward "tcp" consts.ports.vm.mealie null) ];
@@ -301,6 +308,8 @@ let
   };
 in
 {
+  boot.kernelParams = lib.optionals jellyfinSettings.gpuPassthrough.enable [ "intel_iommu=on" ];
+
   networking.firewall.interfaces."microvm-br0".allowedTCPPorts = [
     consts.ports.secondary.immichMachineLearning.hostPort
   ];
