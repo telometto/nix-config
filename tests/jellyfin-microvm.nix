@@ -86,6 +86,7 @@ let
     cfg: lib.any (package: package.name == "jellyfin-import-state") cfg.environment.systemPackages;
 in
 assert reg.ip == "10.100.0.72" && reg.cid == 128 && reg.port == 8096;
+assert jellyfinVm.pkgs.jellyfin.version == jellyfinVm.pkgs.jellyfin-web.version;
 assert guest.microvm.mem == 16384 && guest.microvm.vcpu == 8;
 assert stateVolume != null && stateVolume.size == 131072;
 assert cacheVolume != null && cacheVolume.size == 131072;
@@ -93,7 +94,7 @@ assert mediaShare != null && mediaShare.proto == "virtiofs" && mediaShare.readOn
 assert importShare != null && importShare.readOnly;
 assert host.sys.virtualisation.microvm.instances.jellyfin.enable;
 assert !host.services.jellyfin.enable && guest.services.jellyfin.enable;
-assert !builtins.hasAttr "jellyfin-vps-relay" host.systemd.sockets;
+assert builtins.hasAttr "jellyfin-vps-relay" host.systemd.sockets;
 assert !(lib.any (share: share.mountPoint == "/mnt/host-jellyfin") guest.microvm.shares);
 assert stagedHost.sys.services.jellyfin.enable && stagedHost.sys.services.plex.enable;
 assert !stagedGuest.services.jellyfin.enable;
@@ -129,7 +130,7 @@ assert
     }
   ];
 assert !(lib.elem 8096 host.networking.firewall.allowedTCPPorts);
-assert !(lib.elem 8096 host.networking.firewall.interfaces.tailscale0.allowedTCPPorts);
+assert lib.elem 8096 host.networking.firewall.interfaces.tailscale0.allowedTCPPorts;
 assert host.sys.services.plex.enable;
 assert !(lib.elem 8096 guest.networking.firewall.allowedTCPPorts);
 assert lib.hasInfix "-i microvm0 -s 10.100.0.1/32 -p tcp --dport 8096 -j ACCEPT"
