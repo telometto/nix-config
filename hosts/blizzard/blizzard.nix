@@ -21,6 +21,9 @@
     };
   };
 
+  # Services with SOPS credentials require sops-install-secrets.service.
+  sops.useSystemdActivation = true;
+
   sys = {
     role.server.enable = true;
 
