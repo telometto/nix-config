@@ -13,26 +13,14 @@
 
       fastfetch = {
         enable = true;
+
+        package = pkgs.fastfetch.override { zfsSupport = true; };
+
         extraModules = [
           {
-            "type" = "disk";
-            "folders" = "/";
-            "key" = "root";
-          }
-          {
-            "type" = "zpool";
-            "folders" = "/flash";
-            "key" = "flash";
-          }
-          {
-            "type" = "zpool";
-            "folders" = "/rpool";
-            "key" = "rpool";
-          }
-          {
-            "type" = "zpool";
-            "folders" = "/tank";
-            "key" = "tank";
+            type = "zpool";
+            key = "Disk (/{name})";
+            format = "{size-used} / {size-total} ({allocated-percentage} allocated, {frag-percentage} frag) - {state}";
           }
         ];
       };
