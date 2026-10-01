@@ -209,13 +209,16 @@ Relevant workflows in `.github/workflows/`:
 
 | Workflow | Trigger | Purpose |
 | -------- | ------- | ------- |
-| `flake-check.yml` | PR/push on `**.nix`, `flake.lock`, `treefmt.nix` | Runs `.github/scripts/evaluate-flake-outputs.sh` for isolated output evaluation, then builds the executable checks |
-| `validate-config.yml` | Same paths | Evaluates each host in `nixosConfigurations` in a matrix (hosts discovered by grepping `mkHost` in `flake.nix`) |
+| `flake-check.yml` | Every PR / push to `main` / manual / nightly 02:17 UTC | Classifies the complete diff, retains global output evaluation for Nix/shared changes, builds selected checks with lifecycle on a separate runner, and requires selected jobs to pass the stable `flake-check` gate; manual/nightly runs evaluate all outputs and build every declared check |
+| `validate-config.yml` | PR to / push to `main` on `**.nix`, `flake.lock`, `treefmt.nix` / manual | Evaluates each host in `nixosConfigurations` in a matrix (hosts discovered by grepping `mkHost` in `flake.nix`) |
 | `auto-format.yml` | PR / push to `main`/`testing` | Runs `nix fmt` and pushes a formatting commit |
 | `compliance-check.yml`, `security-audit.yml`, `health-check.yml`, `change-impact-analysis.yml`, `doc-drift.yml`, `flake-freshness.yml` | Various | Repository hygiene checks |
 | `update-nix-lock.yml` | Schedule (every 3 h) + manual | Incremental `nix flake lock --update-input …` PRs |
 | `update-nix-lock-recreate.yml` | Schedule (monthly) + manual | `nix flake update --recreate-lock-file` |
 | `update-dashboards.yml` | Manual / schedule | Refresh Grafana dashboards under `dashboards/` |
+
+See [Conditional Flake Check](../docs/reference-ci.md#conditional-flake-check)
+for the dependency map, selective coverage, and gate behavior.
 
 Auto-merge for lockfile PRs is gated on `Flake Check` and
 `Configuration Validation` passing.
