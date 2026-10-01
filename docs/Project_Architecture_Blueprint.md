@@ -667,13 +667,18 @@ ______________________________________________________________________
 | Test without switching | `sudo nixos-rebuild test --flake .#<hostname>` |
 | Dry run (show what changes) | `nixos-rebuild dry-run --flake .#<hostname>` |
 
-The `flake-check.yml` CI workflow uses
-`.github/scripts/evaluate-flake-outputs.sh` to evaluate configurations,
-formatters, checks, and development shells in separate Nix processes, then
-explicitly builds the Cloudflare metrics, MicroVM publication, Matrix baseline,
-Matrix–WhatsApp bridge, blackbox observability, network-policy, Sandfly target,
-Scrutiny service, user-accounts, and VictoriaMetrics checks so their tests
-execute. Host evaluations run separately in `validate-config.yml`.
+The `flake-check.yml` CI workflow runs on every PR and push to main.
+`.github/scripts/flake_ci.py` classifies the complete diff and selects checks.
+Every Nix change retains global output evaluation through
+`.github/scripts/evaluate-flake-outputs.sh`; shared or unmapped runtime inputs
+select full coverage. Documentation and mapped non-Nix inputs select formatting
+and relevant checks without global output evaluation. Selected checks build
+sequentially in the grouped job, with `microvm-lifecycle` on a separate runner.
+Manual and nightly runs evaluate all outputs and discover and build every
+declared check. The stable `flake-check` gate requires every selected job to
+succeed. See [Conditional Flake Check](reference-ci.md#conditional-flake-check)
+for the dependency map and coverage limits. Host and Home Manager evaluations
+run separately in `validate-config.yml`.
 
 Hosts: `snowfall`, `blizzard`, `avalanche`, `kaizer`.
 

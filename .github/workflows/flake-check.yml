@@ -2,53 +2,48 @@ name: Flake Check
 on:
     workflow_dispatch:
     pull_request:
-        paths:
-            - "**.nix"
-            - "flake.lock"
-            - "treefmt.nix"
-            - ".github/workflows/flake-check.yml"
-            - ".github/scripts/evaluate-flake-outputs.sh"
-            - ".github/scripts/redact-secrets.sh"
-            - "modules/services/scripts/cloudflare_metrics.py"
-            - "tests/cloudflare_metrics/**"
-            - "tests/crowdsec_*.py"
-            - "packages/crowdsec-*/**"
-            - "dashboards/host/blizzard/crowdsec.json"
-            - "dashboards/host/blizzard/cloudflare-overview.json"
-            - "vms/README.md"
-            - "docs/**"
-            - "tests/matrix-whatsapp-bridge.nix"
-            - "docs/adr/**"
     push:
         branches: [main]
-        paths:
-            - "**.nix"
-            - "flake.lock"
-            - "treefmt.nix"
-            - ".github/workflows/flake-check.yml"
-            - ".github/scripts/evaluate-flake-outputs.sh"
-            - ".github/scripts/redact-secrets.sh"
-            - "modules/services/scripts/cloudflare_metrics.py"
-            - "tests/cloudflare_metrics/**"
-            - "tests/crowdsec_*.py"
-            - "packages/crowdsec-*/**"
-            - "dashboards/host/blizzard/crowdsec.json"
-            - "dashboards/host/blizzard/cloudflare-overview.json"
-            - "vms/README.md"
-            - "docs/**"
-            - "tests/matrix-whatsapp-bridge.nix"
-            - "docs/adr/**"
+    schedule:
+        - cron: "17 2 * * *"
 
 concurrency:
-    group: flake-check-${{ github.ref }}
-    cancel-in-progress: true
+    group: flake-check-${{ github.event_name }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
 
 permissions:
     contents: read
 
 jobs:
-    flake-check:
+    classify:
         runs-on: ubuntu-latest
+        outputs:
+            plan: ${{ steps.select.outputs.plan }}
+            grouped: ${{ steps.select.outputs.grouped }}
+            lifecycle: ${{ steps.select.outputs.lifecycle }}
+            evaluate: ${{ steps.select.outputs.evaluate }}
+            crowdsec: ${{ steps.select.outputs.crowdsec }}
+        steps:
+            - name: Checkout complete history
+              uses: actions/checkout@v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Test classifier and final gate
+              run: python3 -B -m unittest discover -s .github/tests -v
+
+            - name: Select requirements from the complete diff
+              id: select
+              run: python3 -B .github/scripts/flake_ci.py classify
+
+    grouped:
+        needs: classify
+        if: needs.classify.outputs.grouped == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 90
+        env:
+            PLAN: ${{ needs.classify.outputs.plan }}
         steps:
             - name: Access private repository
               uses: webfactory/ssh-agent@v0.10.0
@@ -56,58 +51,34 @@ jobs:
                   ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
             - name: Checkout repository
-              uses: actions/checkout@v6.0.2
+              uses: actions/checkout@v7.0.1
+              with:
+                  persist-credentials: false
 
             - name: Install Nix
-              uses: DeterminateSystems/nix-installer-action@v22
+              uses: DeterminateSystems/nix-installer-action@v23
 
             - name: Setup Nix cache
-              uses: DeterminateSystems/magic-nix-cache-action@v14
+              uses: DeterminateSystems/magic-nix-cache-action@v15
               with:
-                use-flakehub: false
+                  use-flakehub: false
 
             - name: Evaluate flake outputs sequentially
+              if: needs.classify.outputs.evaluate == 'true'
               run: bash .github/scripts/evaluate-flake-outputs.sh
 
-            - name: Run Cloudflare metrics tests
-              run: nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs
+            - name: Build selected checks sequentially
+              run: python3 -B .github/scripts/flake_ci.py build
 
-            - name: Run MicroVM publication tests
-              run: nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
-
-            - name: Run Matrix baseline tests
-              run: nix build .#checks.x86_64-linux.matrix-baseline --no-link --print-build-logs
-
-            - name: Run Matrix WhatsApp bridge tests
-              run: nix build .#checks.x86_64-linux.matrix-whatsapp-bridge --no-link --print-build-logs
-
-            - name: Run Blackbox observability tests
-              run: nix build .#checks.x86_64-linux.blackbox-observability --no-link --print-build-logs
-
-            - name: Run CrowdSec HTTP tests
-              run: nix build .#checks.x86_64-linux.crowdsec-http --no-link --print-build-logs
-
-            - name: Run MicroVM lifecycle tests
-              run: nix build .#checks.x86_64-linux.microvm-lifecycle --no-link --print-build-logs
-
-            - name: Run Jellyfin firewall tests
-              run: nix build .#checks.x86_64-linux.jellyfin-firewall --no-link --print-build-logs
-
-            - name: CrowdSec observability checks
-              run: nix build .#checks.x86_64-linux.crowdsec-observability --no-link --print-build-logs
-
+            # All Nix work finishes before credentials are removed. These paths
+            # and generated settings are prepared while SSH is still available.
             - name: Prepare CrowdSec integration fixture paths
+              if: needs.classify.outputs.crowdsec == 'true'
               id: crowdsec-fixtures
-              run: |
-                  echo "traefik=$(nix build .#nixosConfigurations.blizzard.config.services.traefik.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
-                  echo "bouncer=$(nix build .#checks.x86_64-linux.crowdsec-observability.bouncer --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
-                  echo "alloy=$(nix build .#nixosConfigurations.blizzard.config.services.alloy.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
-                  echo "vlogs=$(nix build .#nixosConfigurations.blizzard.config.services.victorialogs.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
-                  echo "crowdsec=$(nix build .#nixosConfigurations.blizzard.config.services.crowdsec.package --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
-                  echo "settings=$(nix build .#checks.x86_64-linux.crowdsec-observability.runtimeSettings --no-link --print-out-paths)" >> "$GITHUB_OUTPUT"
-                  nix eval --raw '.#nixosConfigurations.blizzard.config.environment.etc."alloy/crowdsec.alloy".text' > "$RUNNER_TEMP/crowdsec.alloy"
+              run: python3 -B .github/scripts/flake_ci.py prepare-crowdsec
 
             - name: Remove private repository credentials
+              if: needs.classify.outputs.crowdsec == 'true'
               run: |
                   if [ -n "${SSH_AGENT_PID:-}" ]; then
                       kill "$SSH_AGENT_PID" || true
@@ -115,6 +86,7 @@ jobs:
                   printf 'SSH_AUTH_SOCK=\nSSH_AGENT_PID=\n' >> "$GITHUB_ENV"
 
             - name: Run CrowdSec integration fixtures
+              if: needs.classify.outputs.crowdsec == 'true'
               env:
                   TRAEFIK: ${{ steps.crowdsec-fixtures.outputs.traefik }}
                   BOUNCER: ${{ steps.crowdsec-fixtures.outputs.bouncer }}
@@ -127,25 +99,46 @@ jobs:
                   env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_logs_runtime.py --alloy "$ALLOY/bin/alloy" --victorialogs "$VICTORIALOGS/bin/victoria-logs" --config "$RUNNER_TEMP/crowdsec.alloy" --settings "$SETTINGS"
                   env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_appsec_runtime.py --package "$CROWDSEC" --settings "$SETTINGS"
 
-            - name: Restore private repository credentials for remaining Nix checks
+    lifecycle:
+        needs: classify
+        if: needs.classify.outputs.lifecycle == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 90
+        steps:
+            - name: Access private repository
               uses: webfactory/ssh-agent@v0.10.0
               with:
                   ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
-            - name: Run MicroVM network policy tests
-              run: nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs
+            - name: Checkout repository
+              uses: actions/checkout@v7.0.1
+              with:
+                  persist-credentials: false
 
-            - name: Run Libvirt firmware contract tests
-              run: nix build .#checks.x86_64-linux.libvirt-firmware --no-link --print-build-logs
+            - name: Install Nix
+              uses: DeterminateSystems/nix-installer-action@v23
 
-            - name: Run Sandfly target tests
-              run: nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs
+            - name: Setup Nix cache
+              uses: DeterminateSystems/magic-nix-cache-action@v15
+              with:
+                  use-flakehub: false
 
-            - name: Run Scrutiny tests
-              run: nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs
+            - name: Build MicroVM lifecycle check
+              run: python3 -B .github/scripts/flake_ci.py lifecycle
 
-            - name: Run user accounts tests
-              run: nix build .#checks.x86_64-linux.user-accounts --no-link --print-build-logs
+    # Keep the name exactly: update-nix-lock waits for it on the PR head SHA.
+    flake-check:
+        name: flake-check
+        needs: [classify, grouped, lifecycle]
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout gate
+              uses: actions/checkout@v7.0.1
+              with:
+                  persist-credentials: false
 
-            - name: Run VictoriaMetrics tests
-              run: nix build .#checks.x86_64-linux.victoriametrics --no-link --print-build-logs
+            - name: Require every selected job to succeed
+              env:
+                  NEEDS: ${{ toJSON(needs) }}
+              run: python3 -B .github/scripts/flake_ci.py gate
