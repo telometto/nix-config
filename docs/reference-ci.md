@@ -74,7 +74,7 @@ ______________________________________________________________________
 | Workflow | Trigger | Purpose | Auto-commits? |
 |----------|---------|---------|--------------|
 | `auto-format.yml` | PR / push to main / manual | Runs `nix fmt`, commits formatted changes back to the branch, comments on PR, enables auto-merge | Yes — formats in-place |
-| `flake-check.yml` | PR / push to main / manual (filtered to its workflow file, Nix/flake inputs, docs, Cloudflare collector/tests/dashboard, CrowdSec packages/tests/dashboard, the VM README, and ADRs) | Runs `.github/scripts/evaluate-flake-outputs.sh` to evaluate each flake output sequentially, redacts secrets in failure output, and builds the Cloudflare metrics, MicroVM publication, Matrix baseline, Matrix–WhatsApp bridge, blackbox observability, CrowdSec HTTP/observability, MicroVM lifecycle, MicroVM network-policy, Libvirt firmware, Jellyfin firewall, Sandfly target, Scrutiny service, user-accounts, and VictoriaMetrics contract checks, followed by three secretless CrowdSec runtime fixtures | No |
+| `flake-check.yml` | Every PR / push to main / manual / nightly 02:17 UTC | Classifies the complete diff, evaluates all flake outputs for Nix/shared changes, builds selected checks with lifecycle on a separate runner, and preserves the stable `flake-check` gate; full runs discover and build every declared check | No |
 | `validate-config.yml` | PR / push to main / manual | Discovers hosts via `mkHost` grep, evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix, and evaluates the Home Manager users attrset | No |
 | `change-impact-analysis.yml` | PR | Diffs changed files under `hosts/`, `modules/`, `home/`, `vms/`, `lib/`, `flake.*`, posts impact report as a PR comment | No |
 | `compliance-check.yml` | PR / push / cron Mon 09:00 | Runs `deadnix` and other Nix linters, comments results | No |
@@ -89,11 +89,96 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
+### Conditional Flake Check
+
+Every PR and push to main creates the required `flake-check` gate; there are
+no workflow-level path filters. The classifier uses the PR merge-base to head
+diff, or the complete push before-to-after range. Rename detection is disabled
+so both old and new paths contribute requirements, including deleted inputs.
+Mixed changes select the union. Missing commits, invalid endpoints, or unavailable
+history select the full suite. Manual dispatch and the nightly 02:17 UTC run
+always select full coverage.
+
+The dependency map lives in `.github/scripts/flake_ci.py`. It deliberately uses
+exact filenames for configuration modules: new auto-loaded files default to
+full coverage until their dependencies are reviewed. The executable contracts
+under `.github/tests/` run before classification on every invocation.
+
+| Changed inputs | Selected work |
+|----------------|---------------|
+| Markdown documentation | Formatting; no global output evaluation |
+| Cloudflare collector, fixtures, dashboard, service module, or alerts | Cloudflare metrics and formatting |
+| CrowdSec packages, Python fixtures, dashboard, monitoring, or contract definitions | CrowdSec HTTP/observability, three runtime fixtures, and formatting where applicable |
+| CrowdSec service/security configuration | CrowdSec checks and fixtures, Matrix, publication, blackbox, network-policy, and formatting |
+| Matrix service modules and VM/storage files | Matrix baseline/WhatsApp, publication, blackbox, network-policy, and formatting |
+| Jellyfin service/GPU/web modules and VM/settings files | Jellyfin firewall and MicroVM contracts, and formatting |
+| Blackbox module, target configuration, or availability dashboard | Blackbox observability and formatting |
+| Other existing check definitions | Their check and formatting |
+| Lockfile, flake, treefmt, CI control scripts/tests/workflow, shared helpers/loaders/core/VM infrastructure, or any unmapped runtime file | Full suite |
+
+Every Nix file change retains global output evaluation, even when its check
+builds are targeted. Documentation and mapped Python/fixture changes avoid that
+global evaluation; building their selected checks still evaluates those checks'
+dependencies. Unmapped non-Nix runtime changes also select full evaluation.
+Formatting selection follows the current treefmt extensions and excludes
+workflow YAML and lockfiles; a full run always builds formatting.
+
+The `grouped` job first runs `evaluate-flake-outputs.sh` when selected. It keeps
+each output evaluation in a separate Nix process to bound memory. It then builds
+short checks sequentially on that runner for cache reuse. The
+`microvm-lifecycle` check runs concurrently on its own runner whenever selected.
+Its QEMU configuration and lifecycle coverage are unchanged.
+
+Full runs discover the current `checks.x86_64-linux` attribute names from Nix
+and build every declaration, including future checks, formatting, and
+`jellyfin-microvm`. Lifecycle is excluded from the grouped loop because its
+separate job builds it. The Jellyfin MicroVM check evaluates assertions and
+builds a marker; it does not boot a guest.
+
+For CrowdSec selections, all grouped Nix builds and fixture preparation finish
+with private-input SSH available. The workflow then stops the agent, clears its
+credential environment, and runs all three Python runtime fixtures explicitly
+without `SSH_AUTH_SOCK` or `SSH_AGENT_PID`. No later Nix work requires an agent
+restart. Evaluation and Nix build failures pass diagnostics through
+`redact-secrets.sh`; fixture preparation failures also propagate to the gate.
+
+The final job is named exactly `flake-check` and uses `always()`. It requires
+classifier success, a valid selection plan, and success for each selected
+worker. Only unselected workers may be skipped; selected skips, failures,
+cancellations, missing results, and inconsistent plans fail the gate. The
+lock-update workflow continues to require this check on the exact PR head SHA.
+
+The separate host and Home Manager validation workflow remains in place.
+Daily health-check host builds supplement the nightly explicit check builds.
+Auto-format's Python filter omission, tolerated formatter failures, and bot
+commits that do not trigger another CI run make it insufficient as a strict
+formatting gate. Conditional Flake Check therefore builds the formatting check
+when relevant changes select it.
+
+For local classifier and gate validation without Nix or the private input:
+
+```bash
+python3 -B -m unittest discover -s .github/tests -v
+git diff --check
+```
+
+These tests cover real multi-commit Git histories, divergent PR bases, renames,
+deletions, missing history, conservative selection, future check discovery, and
+final-gate success/failure behavior. They do not validate Linux Nix evaluation,
+builds, credentials, or runner behavior; use current CI for that evidence.
+Parallelism may reduce wall time but can increase runner minutes. No timing
+improvement has been measured for this workflow.
+
+______________________________________________________________________
+
 ### Scheduled Workflows
 
-These run on a cron schedule without a PR trigger:
+These scheduled runs supplement event and manual triggers:
 
 **Daily**
+
+- **`flake-check.yml`** (02:17 UTC) — Full output evaluation and every declared
+  check, with lifecycle on a separate runner and all three CrowdSec fixtures.
 
 - **`health-check.yml`** (06:00) — Full host build to catch regressions that
   slipped through PR checks. On failure, opens an `infrastructure` / `urgent`
@@ -132,7 +217,7 @@ These run on every pull request:
 | Workflow | What it checks |
 |----------|---------------|
 | `auto-format.yml` | Formats all files and commits back; if this commits, the PR diff is automatically clean |
-| `flake-check.yml` | Evaluates the flake for Nix errors and runs the Cloudflare metrics, MicroVM publication, Matrix baseline, Matrix–WhatsApp bridge, blackbox observability, CrowdSec HTTP/observability, MicroVM lifecycle, MicroVM network-policy, Libvirt firmware, Sandfly target, Scrutiny service, and VictoriaMetrics contract checks when Nix/flake inputs or their scoped docs, test, dashboard, VM README, or ADR contracts change; then runs three CrowdSec runtime fixtures after private-input credentials are removed |
+| `flake-check.yml` | Selects checks from the complete PR diff, retains global evaluation for Nix changes, runs relevant CrowdSec fixtures without SSH credentials, and always creates the required final gate |
 | `validate-config.yml` | Evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix (does not perform a full build) |
 | `change-impact-analysis.yml` | Posts a comment summarising which layer (hosts, modules, home, vms, lib, flake) is affected |
 | `compliance-check.yml` | Dead-code linting and other Nix hygiene checks |
