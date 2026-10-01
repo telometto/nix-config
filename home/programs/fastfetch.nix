@@ -1,10 +1,21 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.hm.programs.fastfetch;
 in
 {
   options.hm.programs.fastfetch = {
     enable = lib.mkEnableOption "Fastfetch system information utility";
+
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.fastfetch;
+      description = "Fastfetch package to use.";
+    };
 
     extraModules = lib.mkOption {
       type = lib.types.listOf (lib.types.either lib.types.str lib.types.attrs);
@@ -22,6 +33,9 @@ in
   config = lib.mkIf cfg.enable {
     programs.fastfetch = {
       enable = lib.mkDefault true;
+
+      inherit (cfg) package;
+
       settings = lib.mkMerge [
         {
           modules = [
@@ -52,7 +66,13 @@ in
             }
             "memory"
             "swap"
-            "disk"
+            {
+              "type" = "disk";
+              "hideFS" = "zfs";
+            }
+          ]
+          ++ cfg.extraModules
+          ++ [
             # To be added/overridden on laptop only
             # {
             #   "type" = "battery";
@@ -64,8 +84,7 @@ in
               "timeout" = 1000;
             }
             "break"
-          ]
-          ++ cfg.extraModules;
+          ];
         }
         cfg.extraSettings
       ];
