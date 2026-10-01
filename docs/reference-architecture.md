@@ -176,15 +176,18 @@ Operational tools used across the repo.
 | disko | Declarative Avalanche GPT/Btrfs layout | `hosts/avalanche/disko.nix` |
 | auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
 
-Locally, `nix flake check` evaluates and builds the formatting, Cloudflare
-metrics, Matrix baseline, Matrix–WhatsApp bridge, MicroVM publication, blackbox
-observability, MicroVM network-policy, Sandfly target, Scrutiny service,
-user-accounts, and VictoriaMetrics checks. The
-`flake-check.yml` CI workflow first runs
-`.github/scripts/evaluate-flake-outputs.sh`, which evaluates configurations,
-formatters, checks, and development shells in separate Nix processes, then
-explicitly builds all ten executable test checks. Full host evaluation is
-handled separately by the `validate-config.yml` CI workflow.
+Locally, `nix flake check` evaluates the flake and builds all declared
+checks. The `flake-check.yml` CI workflow runs on every PR and push to main
+and classifies the complete diff with `.github/scripts/flake_ci.py`. Nix changes
+retain global output evaluation through `evaluate-flake-outputs.sh`; shared or
+unmapped runtime inputs select full coverage. Documentation and mapped non-Nix
+inputs select formatting and relevant checks without global output evaluation.
+Selected checks build sequentially in the grouped job, while `microvm-lifecycle`
+runs on a separate runner. Manual and nightly runs evaluate all outputs and
+build every declared check. The stable `flake-check` gate requires every selected
+job to succeed. See [Conditional Flake Check](reference-ci.md#conditional-flake-check)
+for the dependency map and coverage limits. Host and Home Manager validation
+runs separately in `validate-config.yml`.
 
 ______________________________________________________________________
 
