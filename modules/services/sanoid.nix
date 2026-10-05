@@ -11,7 +11,7 @@ in
       default = {
         production = {
           autosnap = true;
-          autoprune = false;
+          autoprune = true;
           yearly = 2;
           monthly = 6;
           weekly = 4;
