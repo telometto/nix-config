@@ -40,7 +40,10 @@ places.
 | Key | Value | Purpose |
 |-----|-------|---------|
 | `tailscale.suffix` | `"mole-delta.ts.net"` | Tailscale network domain suffix for building service FQDNs |
-| `tailscale.hosts.blizzard.ipv4` | `"100.86.227.97"` | Shared Blizzard Tailscale endpoint |
+| `tailscale.hosts.blizzard.ipv4` | `"100.85.254.99"` | Shared Blizzard Tailscale endpoint |
+| `tailscale.hosts.snowfall.ipv4` | `"100.67.190.43"` | Snowfall Tailscale endpoint |
+| `tailscale.hosts.sandfly.ipv4` | `"100.116.146.113"` | Sandfly scanner source address |
+| `ports.host.sandflySsh` | `2222` | Dedicated host scanner SSH listener |
 | `ports.host.<service>` | service-specific integer | Physical-host service ports |
 | `ports.vm.<service>` | service-specific integer | MicroVM primary service ports |
 | `ports.secondary.<service>` | service-specific integer or `{ hostPort, containerPort }` | Secondary service endpoints and container contracts |
