@@ -105,6 +105,7 @@ Build from this checkout without applying the configuration:
 ```bash
 git diff --check
 nix build --no-link 'path:.#checks.x86_64-linux.sandfly-target'
+nix build --no-link 'path:.#checks.x86_64-linux.sandfly-runtime'
 nix build --no-link 'path:.#nixosConfigurations.snowfall.config.system.build.toplevel'
 nix build --no-link 'path:.#nixosConfigurations.blizzard.config.system.build.toplevel'
 ```
@@ -113,8 +114,16 @@ These commands require the private flake input. `path:.` includes new files
 before they are staged. The focused check evaluates both hosts, rejects invalid
 configuration combinations, parses effective listener settings with OpenSSH,
 validates the public keys, and exercises firewall reload, source rotation, and
-failure behavior through a command/packet model. It does not boot a host or
-prove live Tailscale policy, authentication, or Sandfly scans.
+failure behavior through a command/packet model. It also covers temporary
+two-key rotation overlap and a custom listener port.
+
+The separate `sandfly-runtime` check boots a disposable NixOS VM and exercises
+the generated socket and per-connection daemon, public-key/PAM authentication,
+source and username denial, SFTP, passwordless sudo, credential rotation, and
+firewall reload/restart on a custom port. Its private keys are generated only
+inside the VM. A synthetic `tailscale0` link delivers real kernel traffic; the
+test does not run tailscaled or verify live tailnet policy. Neither check proves
+deployed host behavior, trusted host keys, or successful Sandfly scans.
 
 ## Verification after staged activation
 
