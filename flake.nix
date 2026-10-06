@@ -252,6 +252,11 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        sandfly-runtime = import ./tests/sandfly-runtime.nix {
+          inherit consts;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         scrutiny = import ./tests/scrutiny.nix {
           inherit (self.nixosConfigurations) blizzard;
           pkgs = nixpkgs.legacyPackages.${system};
