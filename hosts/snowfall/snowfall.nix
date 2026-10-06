@@ -35,6 +35,10 @@ in
     security.sandflyTarget = {
       enable = true;
       tailscalePolicyReady = true;
+      listenAddress = consts.tailscale.hosts.snowfall.ipv4;
+      authorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMZyLM+KB77uiVvCwMNetNam1Qmf4jxcD7IP9z2hJ7qd sandfly-generated-key-20261005142820"
+      ];
     };
 
     desktop.flavor = "kde";

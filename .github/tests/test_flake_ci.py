@@ -115,6 +115,22 @@ class SelectionTests(unittest.TestCase):
         self.assertTrue(plan["evaluate"])
         self.assertEqual(set(plan["checks"]), {"formatting", ci.LIFECYCLE})
 
+    def test_sandfly_checks_select_their_consumers(self):
+        for path in (
+            "tests/sandfly-ssh-test.py",
+            "tests/sandfly-ssh-validator-test.py",
+            "tests/sandfly-firewall-test.py",
+        ):
+            with self.subTest(path=path):
+                plan = self.selected(path)
+                self.assertEqual(set(plan["checks"]), {"formatting", "sandfly-target"})
+                self.assertFalse(plan["evaluate"])
+                self.assertFalse(plan["full"])
+        plan = self.selected("tests/sandfly-runtime.nix")
+        self.assertEqual(set(plan["checks"]), {"formatting", "sandfly-runtime"})
+        self.assertTrue(plan["evaluate"])
+        self.assertFalse(plan["full"])
+
     def test_full_run_discovers_future_checks(self):
         with patch.object(
             ci,
