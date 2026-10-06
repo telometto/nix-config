@@ -109,8 +109,8 @@ flowchart LR
 - [matrix-backup.md](matrix-backup.md) — Provision, operate, and restore the Matrix offsite backup
 - [pocket-id.md](pocket-id.md) — Deploy, bootstrap, operate, and recover the Pocket ID provider
 - [immich.md](immich.md) — Provision, migrate, rotate, and recover Immich OAuth
-- [sandfly.md](sandfly.md) — Restrict Tailscale SSH, enable Sandfly targets,
-  verify, and roll back
+- [sandfly.md](sandfly.md) — Prepare dedicated Sandfly OpenSSH listeners,
+  restrict sources and credentials, verify scans, and roll back
 - [jellyfin-vps.md](jellyfin-vps.md) — Stage Jellyfin through a Tailscale VPS while Plex remains active
 - [troubleshooting-trigger-vm.md](troubleshooting-trigger-vm.md) — Troubleshooting the trigger MicroVM
 
