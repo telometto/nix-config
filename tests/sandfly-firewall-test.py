@@ -19,9 +19,12 @@ def verdict(
     source="100.116.146.113",
     interface="tailscale0",
     destination="100.67.190.43",
-    port=2222,
+    port=None,
     local=True,
 ):
+    if port is None:
+        port = int(os.environ["SANDFLY_PORT"])
+
     def walk(chain):
         for rule in state[family][chain]:
             matches = {
@@ -87,7 +90,8 @@ def command(family, args):
     return 0
 
 
-def main(current, stop, rotated):
+def main(current, stop, rotated, port):
+    os.environ["SANDFLY_PORT"] = str(port)
     with TemporaryDirectory() as directory:
         root = Path(directory)
         state_path = root / "state.json"
