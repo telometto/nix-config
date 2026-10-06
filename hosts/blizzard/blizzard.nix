@@ -30,6 +30,10 @@
     security.sandflyTarget = {
       enable = true;
       tailscalePolicyReady = true;
+      listenAddress = consts.tailscale.hosts.blizzard.ipv4;
+      authorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHYUErzwbGg210rOrtMctyFGps8QvKoV0+5iDhGg0t2l sandfly-generated-key-20261005142842"
+      ];
     };
 
     users.zeno.enable = true;
