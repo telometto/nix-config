@@ -247,7 +247,8 @@
         };
 
         sandfly-target = import ./tests/sandfly-target.nix {
-          inherit (self.nixosConfigurations) snowfall;
+          inherit (self.nixosConfigurations) snowfall blizzard;
+          inherit consts;
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
