@@ -36,6 +36,7 @@ CHECKS = {
     "jellyfin-microvm",
     "libvirt-firmware",
     "sandfly-target",
+    "sandfly-runtime",
     "scrutiny",
     "user-accounts",
     "victoriametrics",
@@ -67,6 +68,9 @@ DEPENDENCIES = {
     "vms/jellyfin.nix": JELLYFIN,
     "vms/jellyfin-settings.nix": JELLYFIN,
     "tests/jellyfin-firewall-test.py": {"jellyfin-firewall"},
+    "tests/sandfly-ssh-test.py": {"sandfly-target"},
+    "tests/sandfly-ssh-validator-test.py": {"sandfly-target"},
+    "tests/sandfly-firewall-test.py": {"sandfly-target"},
 }
 # A check definition is consumed only by that check. CrowdSec definitions and
 # Python fixtures select both contracts plus all three external runtime fixtures.

@@ -4,13 +4,18 @@
   tailscale = {
     suffix = "mole-delta.ts.net";
     # Shared endpoint consumed by multiple hosts and the Blizzard services.
-    hosts.blizzard.ipv4 = "100.85.254.99";
+    hosts = {
+      blizzard.ipv4 = "100.85.254.99";
+      snowfall.ipv4 = "100.67.190.43";
+      sandfly.ipv4 = "100.116.146.113";
+    };
   };
 
   # Keep host, MicroVM, secondary-service, and network ports in separate
   # namespaces so service ownership is explicit at call sites.
   ports = {
     host = {
+      sandflySsh = 2222;
       scrutiny = 11001;
       ombi = 11003;
       tautulli = 11004;

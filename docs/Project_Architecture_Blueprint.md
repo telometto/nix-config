@@ -596,11 +596,14 @@ ______________________________________________________________________
 ### Sandfly targets
 
 - `modules/security/sandfly-target.nix` defines the policy-gated
-  `sys.security.sandflyTarget.*` interface for agentless scans over Tailscale
-  SSH.
+  `sys.security.sandflyTarget.*` interface for agentless scans through dedicated
+  OpenSSH listeners on TCP 2222 over Tailscale, with per-host scanner keys and
+  an early firewall guard restricted to the scanner's exact source address.
 - The `sandfly` account is root-equivalent through unrestricted passwordless
-  sudo, so hosts remain disabled until a tag-scoped tailnet SSH policy is
-  verified.
+  sudo. Snowfall and Blizzard declare the target enabled and
+  `tailscalePolicyReady = true`; this operator assertion does not verify the
+  live policy. Human Tailscale SSH must independently deny `sandfly` and `root`,
+  including through broader additive rules.
 - [The Sandfly operations runbook](sandfly.md) owns policy setup, enablement,
   verification, and rollback.
 
