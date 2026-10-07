@@ -32,6 +32,7 @@
     pkgs.codex
     pkgs.nodejs
     pkgs.annotation-mono
+    pkgs.jellyfin-desktop
   ]
   ++ (with pkgs.sweethome3d; [
     application
