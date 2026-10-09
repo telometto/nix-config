@@ -175,10 +175,19 @@ in
           # --- MAS compatibility layer ---
           # Route Synapse login/logout/refresh to MAS so legacy and OIDC
           # clients both work through the same endpoints.
-          # Keep Synapse administration on the local SSH/loopback path. The
-          # client rendezvous endpoint remains in the Synapse catch-all below.
+          # Keep Synapse administration on the local SSH/loopback path.
           "~ ^/_synapse/admin(?:/|$)" = {
             return = "403";
+          };
+
+          # QR login uses strong ETags for conditional writes. Gzip weakens
+          # those tags, causing Synapse to reject the subsequent If-Match.
+          "^~ /_synapse/client/rendezvous/" = {
+            proxyPass = "http://127.0.0.1:8008";
+            extraConfig = ''
+              gzip off;
+              proxy_set_header X-Forwarded-Proto https;
+            '';
           };
 
           # --- Synapse (everything else) ---
