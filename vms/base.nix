@@ -167,6 +167,7 @@
       vim
       htop
       curl
+      jq
     ];
   };
 
