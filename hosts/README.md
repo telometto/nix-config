@@ -9,13 +9,33 @@ Per-machine NixOS configurations defining hardware, roles, users, and services.
 | [snowfall/](snowfall/) | Desktop | KDE | AMD GPU, distributed builds server, openrazer (RGB), Prometheus+Grafana+Traefik+Cloudflare tunnel, RAPL + electricity-price exporters |
 | [blizzard/](blizzard/) | Server | None | ZFS+NFS+Samba, full observability stack, MicroVM host, Tailscale subnet router (192.168.2.0/24 + 10.100.0.0/24), CrowdSec, VictoriaMetrics |
 | [avalanche/](avalanche/) | Desktop | GNOME | ThinkPad P51, nixos-hardware module, iwlwifi+BT coexistence workaround, VictoriaMetrics remote-write to blizzard |
-| [kaizer/](kaizer/) | Desktop | KDE | Two users (gianluca+luke; frankie disabled), Lanzaboote disabled, NVIDIA GPU (legacy open=false), Java Temurin 8/17/21 for Minecraft, per-user localization |
+| [kaizer/](kaizer/) | Desktop | KDE | Two users (gianluca+luke; frankie disabled), Lanzaboote disabled, CachyOS kernel, NVIDIA GPU (open kernel modules), Java Temurin 8/17/21 for Minecraft, per-user localization |
 
 Snowfall and Blizzard enable dedicated Sandfly OpenSSH listeners on their
 Tailscale IPv4 addresses at TCP 2222. Review
 [the Sandfly operations prerequisite](../docs/sandfly.md#policy-prerequisite)
 before activating these configurations; human Tailscale SSH must deny the
 privileged scanner account.
+
+### CachyOS kernel cache
+
+Snowfall and Kaizer use the `nix-cachyos-kernel/release` input and its `pinned`
+overlay with the [upstream binary cache](https://github.com/xddxdd/nix-cachyos-kernel#binary-cache).
+Their Nix settings add the cache URL and signing key alongside the default
+NixOS cache. Cache misses and external kernel modules can still require builds.
+
+The declared settings take effect after activation. To use the cache for the
+first build, pass its settings explicitly (replace `snowfall` with `kaizer`
+where appropriate):
+
+```bash
+nix build .#nixosConfigurations.snowfall.config.system.build.toplevel \
+  --option extra-substituters https://attic.xuyh0120.win/lantian \
+  --option extra-trusted-public-keys 'lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc='
+```
+
+This builds without activating the configuration. Once the host is updated,
+subsequent rebuilds use its configured cache automatically.
 
 ### Host Structure
 
