@@ -40,6 +40,13 @@ Store it as the repository Actions secret `PAT_TOKEN`, and rotate the secret
 before the token expires. The workflow validates the token before installing
 Nix and reports whether it is missing, invalid, or lacks push access.
 
+`auto-format.yml` also uses `PAT_TOKEN` for checkout and formatting pushes so
+validation runs automatically on the corrected commit. Formatting commits do
+not include a CI skip marker. The formatter runs when supported source files
+or `flake.lock` change, since lock updates can change formatter versions even
+when no source files change. A follow-up run stops without committing when
+the files are already formatted.
+
 ______________________________________________________________________
 
 ### Auto-Merge Chain
