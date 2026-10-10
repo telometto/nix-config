@@ -25,6 +25,7 @@
     pkgs.podman-desktop
     pkgs.zola
     pkgs.rendercv
+    pkgs.claude-code
     pkgs.uv
     pkgs.filen-desktop
     pkgs.filen-cli
@@ -32,7 +33,6 @@
     pkgs.nodejs
     pkgs.annotation-mono
     pkgs.jellyfin-desktop
-    pkgs.chatgpt
   ]
   ++ (with pkgs.sweethome3d; [
     application
