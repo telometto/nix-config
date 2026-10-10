@@ -25,7 +25,6 @@
     pkgs.podman-desktop
     pkgs.zola
     pkgs.rendercv
-    pkgs.claude-code
     pkgs.uv
     pkgs.filen-desktop
     pkgs.filen-cli
