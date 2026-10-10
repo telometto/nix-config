@@ -62,6 +62,8 @@ in
     ./matrix-whatsapp.nix
   ];
 
+  security.sudo.wheelNeedsPassword = lib.mkForce false;
+
   # After first boot, get the VM's age key with:
   #   ssh admin@10.100.0.60 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then add it to .sops.yaml and re-encrypt secrets
