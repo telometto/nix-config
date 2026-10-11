@@ -291,7 +291,10 @@ pkgs.runCommand "matrix-baseline-tests"
       case "$expected" in
         mas|synapse)
           body="$(${pkgs.curl}/bin/curl --fail --silent --show-error "http://127.0.0.1:18080''${path}")"
-          test "$body" = "$expected"
+          if test "$body" != "$expected"; then
+            printf 'route %s: expected %s, got %q\n' "$path" "$expected" "$body" >&2
+            return 1
+          fi
           ;;
         deny)
           status="$(${pkgs.curl}/bin/curl --silent --show-error --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:18080''${path}")"
