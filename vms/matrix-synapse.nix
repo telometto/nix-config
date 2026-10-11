@@ -182,6 +182,15 @@ in
 
           # QR login uses strong ETags for conditional writes. Gzip weakens
           # those tags, causing Synapse to reject the subsequent If-Match.
+          # An exact match prevents Nginx from redirecting the bare endpoint
+          # to the trailing-slash location below.
+          "= /_synapse/client/rendezvous" = {
+            proxyPass = "http://127.0.0.1:8008";
+            extraConfig = ''
+              gzip off;
+              proxy_set_header X-Forwarded-Proto https;
+            '';
+          };
           "^~ /_synapse/client/rendezvous/" = {
             proxyPass = "http://127.0.0.1:8008";
             extraConfig = ''
