@@ -247,15 +247,18 @@ pkgs.runCommand "matrix-baseline-tests"
     }
     trap cleanup EXIT
 
-    ${pkgs.python3}/bin/python -c 'import sys; from http.server import BaseHTTPRequestHandler, HTTPServer; Handler = type("Handler", (BaseHTTPRequestHandler,), {"do_GET": lambda self: (self.send_response(200), self.end_headers(), self.wfile.write(sys.argv[2].encode())), "log_message": lambda self, *args: None}); HTTPServer(("127.0.0.1", int(sys.argv[1])), Handler).serve_forever()' 18081 mas &
-    masPid=$!
     ${pkgs.python3}/bin/python - <<'PY' &
     from http.server import BaseHTTPRequestHandler, HTTPServer
+    from threading import Thread
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             rendezvous = self.path == "/_synapse/client/rendezvous/test-session"
-            body = b"rendezvous payload " * 256 if rendezvous else b"synapse"
+            target = b"mas" if self.server.server_port == 18081 else b"synapse"
+            body = b"rendezvous payload " * 256 if rendezvous else target
+            if "client-ip-check=1" in self.path:
+                body = "|".join(",".join(self.headers.get_all(h, [])) for h in
+                                ("X-Forwarded-For", "X-Real-IP")).encode()
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")
             self.send_header("Content-Length", str(len(body)))
@@ -272,6 +275,8 @@ pkgs.runCommand "matrix-baseline-tests"
         def log_message(self, *args):
             pass
 
+    mas = HTTPServer(("127.0.0.1", 18081), Handler)
+    Thread(target=mas.serve_forever, daemon=True).start()
     HTTPServer(("127.0.0.1", 18008), Handler).serve_forever()
     PY
     synapsePid=$!
@@ -316,6 +321,33 @@ pkgs.runCommand "matrix-baseline-tests"
 
     ${routeProbeCommands}
     ${wellKnownProbeCommands}
+
+    # Exercise every backend route, including both rendezvous locations.
+    # Loopback models the trusted host proxy; 127.0.0.2 is an untrusted peer.
+    check_client_ip() {
+      local path="$1" source="$2" chain="$3" expected="$4"
+      body="$(${pkgs.curl}/bin/curl --fail --silent --show-error \
+        --interface "$source" -H "X-Forwarded-For: $chain" \
+        -H 'X-Real-IP: 198.51.100.9' \
+        "http://127.0.0.1:18080$path?client-ip-check=1")"
+      test "$body" = "$expected|$expected"
+    }
+    for path in ${
+      lib.concatMapStringsSep " " (route: lib.concatMapStringsSep " " lib.escapeShellArg route.matches) (
+        lib.filter (route: route.target != "deny") matrixRoutes.routeContracts
+      )
+    }; do
+      check_client_ip "$path" 127.0.0.1 '84.234.219.121, ::1' 84.234.219.121
+      check_client_ip "$path" 127.0.0.1 '203.0.113.9, 84.234.219.121, ::1, ${matrixGateway}' 84.234.219.121
+      check_client_ip "$path" 127.0.0.1 '203.0.113.9, 2a01:799::123, ::1' 2a01:799::123
+      check_client_ip "$path" 127.0.0.2 '203.0.113.9, ::1' 127.0.0.2
+      check_client_ip "$path" 127.0.0.1 "" 127.0.0.1
+      body="$(${pkgs.curl}/bin/curl --fail --silent --show-error \
+        -H 'X-Forwarded-For: 203.0.113.9' \
+        -H 'X-Forwarded-For: 84.234.219.121, ::1' \
+        "http://127.0.0.1:18080$path?client-ip-check=1")"
+      test "$body" = '84.234.219.121|84.234.219.121'
+    done
 
     # Request compression as a browser would, then reuse the received ETag.
     # A gzip-weakened ETag makes the conditional PUT fail with HTTP 412.
