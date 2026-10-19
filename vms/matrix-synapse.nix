@@ -14,26 +14,6 @@ let
   matrixGateway = reg.gateway or networkDefaults.defaultGateway;
   traefikLib = import ../lib/traefik.nix { inherit lib; };
   inherit (traefikLib) matrixRoutes;
-  # Apply the same client-IP boundary to every proxied MAS/Synapse route.
-  canonicalClientIp = lib.mapAttrs (
-    _: location:
-    if location ? proxyPass then
-      location
-      // {
-        # The recommended include appends the original, untrusted chain.
-        # Replace it rather than adding a second header of the same name.
-        recommendedProxySettings = false;
-        extraConfig = (location.extraConfig or "") + ''
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $remote_addr;
-          proxy_set_header X-Forwarded-Host $host;
-          proxy_set_header X-Forwarded-Server $hostname;
-        '';
-      }
-    else
-      location
-  );
   configuredMasRuntimeConfigFile =
     config.sys.services.matrix-authentication-service.runtimeConfigFile;
   masRuntimeConfigFile =
@@ -182,16 +162,6 @@ in
       '';
 
       virtualHosts."matrix" = {
-        # Cloudflare appends the real caller to an existing X-Forwarded-For
-        # prefix. Walk backwards through only our host proxy hops, then send
-        # one canonical address to both backends (Synapse uses the first one).
-        extraConfig = ''
-          set_real_ip_from ${matrixGateway};
-          set_real_ip_from 127.0.0.1;
-          set_real_ip_from ::1;
-          real_ip_header X-Forwarded-For;
-          real_ip_recursive on;
-        '';
         listen = [
           {
             addr = "0.0.0.0";
@@ -199,76 +169,55 @@ in
           }
         ];
 
-        locations = canonicalClientIp (
-          matrixRoutes.locations
-          // {
-            # --- MAS compatibility layer ---
-            # Route Synapse login/logout/refresh to MAS so legacy and OIDC
-            # clients both work through the same endpoints.
-            # Keep Synapse administration on the local SSH/loopback path.
-            "~ ^/_synapse/admin(?:/|$)" = {
-              return = "403";
-            };
+        locations = matrixRoutes.locations // {
+          # --- MAS compatibility layer ---
+          # Route Synapse login/logout/refresh to MAS so legacy and OIDC
+          # clients both work through the same endpoints.
+          # Keep Synapse administration on the local SSH/loopback path. The
+          # client rendezvous endpoint remains in the Synapse catch-all below.
+          "~ ^/_synapse/admin(?:/|$)" = {
+            return = "403";
+          };
 
-            # QR login uses strong ETags for conditional writes. Gzip weakens
-            # those tags, causing Synapse to reject the subsequent If-Match.
-            # An exact match prevents Nginx from redirecting the bare endpoint
-            # to the trailing-slash location below.
-            "= /_synapse/client/rendezvous" = {
-              proxyPass = "http://127.0.0.1:8008";
-              extraConfig = ''
-                gzip off;
-                proxy_set_header X-Forwarded-Proto https;
-              '';
-            };
-            "^~ /_synapse/client/rendezvous/" = {
-              proxyPass = "http://127.0.0.1:8008";
-              extraConfig = ''
-                gzip off;
-                proxy_set_header X-Forwarded-Proto https;
-              '';
-            };
+          # --- Synapse (everything else) ---
+          "/" = {
+            proxyPass = "http://127.0.0.1:8008";
+            proxyWebsockets = true;
+            extraConfig = ''
+              proxy_set_header X-Forwarded-Proto https;
+              proxy_read_timeout 600s;
+              client_max_body_size 90M;
+            '';
+          };
 
-            # --- Synapse (everything else) ---
-            "/" = {
-              proxyPass = "http://127.0.0.1:8008";
-              proxyWebsockets = true;
-              extraConfig = ''
-                proxy_set_header X-Forwarded-Proto https;
-                proxy_read_timeout 600s;
-                client_max_body_size 90M;
-              '';
-            };
+          # --- Well-known ---
+          "= /.well-known/matrix/server" = {
+            return = "200 '{\"m.server\":\"matrix.${VARS.domains.public}:443\"}'";
+            extraConfig = ''
+              default_type application/json;
+              add_header Access-Control-Allow-Origin *;
+            '';
+          };
 
-            # --- Well-known ---
-            "= /.well-known/matrix/server" = {
-              return = "200 '{\"m.server\":\"matrix.${VARS.domains.public}:443\"}'";
-              extraConfig = ''
-                default_type application/json;
-                add_header Access-Control-Allow-Origin *;
-              '';
-            };
+          # Includes m.authentication (stable) and org.matrix.msc2965.authentication
+          # (unstable) so OIDC-native clients (Element X) discover MAS.
+          "= /.well-known/matrix/client" = {
+            return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"},\"m.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"},\"org.matrix.msc2965.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"}}'";
+            extraConfig = ''
+              default_type application/json;
+              add_header Access-Control-Allow-Origin *;
+            '';
+          };
 
-            # Includes m.authentication (stable) and org.matrix.msc2965.authentication
-            # (unstable) so OIDC-native clients (Element X) discover MAS.
-            "= /.well-known/matrix/client" = {
-              return = "200 '{\"m.homeserver\":{\"base_url\":\"https://matrix.${VARS.domains.public}\"},\"m.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"},\"org.matrix.msc2965.authentication\":{\"issuer\":\"https://matrix.${VARS.domains.public}/\",\"account\":\"https://matrix.${VARS.domains.public}/account/\"}}'";
-              extraConfig = ''
-                default_type application/json;
-                add_header Access-Control-Allow-Origin *;
-              '';
-            };
-
-            # MSC1929: admin contact info for homeserver discovery
-            "= /.well-known/matrix/support" = {
-              return = "200 '{\"contacts\":[{\"role\":\"admin\",\"email_address\":\"matrix@${VARS.domains.public}\"}]}'";
-              extraConfig = ''
-                default_type application/json;
-                add_header Access-Control-Allow-Origin *;
-              '';
-            };
-          }
-        );
+          # MSC1929: admin contact info for homeserver discovery
+          "= /.well-known/matrix/support" = {
+            return = "200 '{\"contacts\":[{\"role\":\"admin\",\"email_address\":\"matrix@${VARS.domains.public}\"}]}'";
+            extraConfig = ''
+              default_type application/json;
+              add_header Access-Control-Allow-Origin *;
+            '';
+          };
+        };
       };
     };
   };
