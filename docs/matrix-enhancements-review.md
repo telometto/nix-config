@@ -4,9 +4,11 @@ Updated on 2026-10-19 for `patch/2026-10-18-matrix-enhancements`.
 
 Matrix login, rendezvous, and client-IP enhancements were originally committed
 on `main`. This branch retains that published history and adds an explicit
-rollback/reapplication pair for review. The final production Nix files match
-current `main`; the additional rendezvous session-path test is the only net
-Nix change. This document records the extraction and its acceptance boundary.
+rollback/reapplication pair for review. At reviewed head
+`9b4804aa032f215564a7020d4e88b0bd7cadb42e`, production Nix files match the
+upstream base below; the additional rendezvous session-path test is the only
+net Nix change at that revision. This document records the extraction and its
+acceptance boundary. The later local follow-up is described separately below.
 
 ## Commit boundaries
 
@@ -46,7 +48,24 @@ The `pr-review-expert` review found no blocking source defect in this scope.
 | Code quality | The canonical-header transformation covers every proxied location and preserves explicit HTTPS forwarding, WebSocket settings, and return-only locations. |
 | Races and lifecycle | The fixture binds MAS before starting Synapse readiness and tracks their shared process. Production service and secret-generator lifecycle are unchanged. |
 | Maintainability and tests | The client-IP loop now includes `/_synapse/client/rendezvous/test-session`. The existing ETag test remains. A session-only header mutation escaped the old loop and failed the updated one. |
-| Documentation | Original unfinished Matrix documentation remains in the user's stash for separate review. This record distinguishes source/test evidence from production acceptance. |
+| Documentation | The original extraction preserved unfinished Matrix documentation in a stash. The user subsequently restored that work; the historical extraction evidence below does not describe the current worktree. |
+
+### Local review follow-up
+
+The subsequent six-axis review reproduced a fixture weakness: MAS and Synapse
+returned the same session payload and ETag, so routing the session to MAS still
+passed. The local follow-up makes MAS reject Synapse-only rendezvous traffic
+and checks the responding backend. Exact and prefix rendezvous contracts now
+drive route and client-IP probes, with coverage required for every proxied
+location. The fixture also covers creation at the MSC4108 Matrix endpoint,
+strong/weak conditional writes, bounded startup/requests, and dynamic ports.
+The production Nginx configuration is unchanged by this follow-up.
+
+The extraction validation below applies to its pinned revision. Validation of
+later local changes must be reported separately; earlier CI does not validate
+an uncommitted worktree. These mocks do not prove real login, QR linking, or
+live backend attribution. Current roadmap status and historical operator
+acceptance remain in the [Matrix hardening plan](matrix-hardening-plan.md).
 
 ## Validation
 
@@ -87,10 +106,12 @@ acceptance. No host/VM activation or deployment is part of this change.
 
 ## Preserved local work
 
-All 23 prior changed paths, including six untracked files, remain in stash
-`ebea433edb2f83db62eb9200e83d4de33d29253e`. Byte and executable-mode comparisons
-passed, and all earlier stash entries are preserved. The original
-`docs/matrix-extraction-checklist.md` is in that stash's untracked-files parent:
+At extraction, all 23 prior changed paths, including six untracked files, were
+preserved in stash `ebea433edb2f83db62eb9200e83d4de33d29253e`. Byte and
+executable-mode comparisons passed at that time. The user subsequently
+restored all 23 paths to the worktree; preserve that work and do not repeat
+restoration. The original `docs/matrix-extraction-checklist.md` can also be
+located in that stash's untracked-files parent if the stash is retained:
 
 ```bash
 git show ebea433edb2f83db62eb9200e83d4de33d29253e^3:docs/matrix-extraction-checklist.md
@@ -105,11 +126,13 @@ above remains reproducible from Git history.
 
 ## Integration requirement
 
-A PR targeting unchanged `main` shows the net test fix and this record because
-the inverse pair cancels in that comparison. Review the full three-file change
-against the rollback commit shown above.
+At the reviewed head, a PR targeting the upstream base above shows the net test
+fix and this record because the inverse pair cancels in that comparison.
+Review the full three-file change against the rollback commit shown above,
+and review any subsequent follow-up changes separately.
 
 Retain both commits and integrate the completed branch using an explicit merge
 commit after the user's final approval and passing CI. Do not deploy or leave
-shared `main` at the intermediate rollback state. Keep the user's stash until
-they request restoration. No merge or deployment is authorized by this record.
+shared `main` at the intermediate rollback state. The user's local work has
+already been restored; this record does not authorize any further stash action,
+merge, or deployment.
