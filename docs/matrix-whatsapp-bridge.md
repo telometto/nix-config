@@ -1,11 +1,11 @@
 # Matrix–WhatsApp bridge
 
 > Status: declarative pre-login wiring is implemented but disabled by default.
-> Enabling it requires the private SOPS values, backup/restore evidence, and
-> explicit runtime acceptance. This does not authorize a deployment, a
+> Enabling it requires the private SOPS values and explicit runtime acceptance.
+> Matrix backup/restore is optional under R-04. This does not authorize a deployment, a
 > WhatsApp login, or a change to `nix-secrets`.
 >
-> Last reviewed: 2026-09-01
+> Last reviewed: 2026-10-12
 
 This document describes the planned and opt-in addition of
 [`mautrix-whatsapp`](https://github.com/mautrix/whatsapp) to the Matrix
@@ -142,9 +142,10 @@ database password is SOPS-backed and is not embedded in the generated bridge
 configuration; the remaining upstream hardening and new memory/task limits
 remain in force.
 
-The bridge state and its database must be added to the Matrix MicroVM backup
-inventory before WhatsApp login. A restore must preserve the linked-device
-session or explicitly document the re-login procedure.
+Matrix offsite backup/restore is optional by operator decision on 2026-10-12
+and is not a prerequisite for WhatsApp login. If enabled, include the bridge
+state and database in the backup inventory and verify restore behavior.
+Document how to re-login when linked-device state is lost.
 
 ### Network and media dependencies
 
@@ -224,8 +225,9 @@ an important account.
 
 ## Implementation sequence
 
-1. **Blocked prerequisite:** finish the Matrix baseline acceptance and clean
-   observation gates recorded in [`matrix-hardening-plan.md`](matrix-hardening-plan.md).
+1. **Completed prerequisite:** R-03 was closed by operator approval on
+   2026-10-12, with the remaining baseline observation waived; see
+   [`matrix-hardening-plan.md`](matrix-hardening-plan.md#baseline-closure-decision).
    This bridge remains a new Matrix runtime change, not part of the existing
    baseline or OIDC work.
 1. **Complete by source inspection:** evaluate the locked
@@ -233,20 +235,22 @@ an important account.
    its registration path, data directory, service user, database behavior,
    ffmpeg/LottieConverter closure, and hardening compatibility exception.
 1. **Complete declaratively, not activated:** keep the bridge disabled by
-   default. An explicit VM override may enable it after the Matrix and backup
-   gates, with a `127.0.0.1:29318` listener and a separate
+   default. An explicitly approved VM override may enable it after private
+   secret provisioning and the relevant live checks, with a `127.0.0.1:29318`
+   listener and a separate
    `/var/lib/mautrix-whatsapp` state image. The port is absent from the host
    registry, MicroVM port forwards, Nginx, Traefik, and Cloudflare routes.
 1. **Complete by source wiring:** register the appservice with Synapse through
    the generated guest-local file, provision only the declared SOPS paths, and
    create a distinct PostgreSQL database through a guest-local initializer.
    Private secret values remain outside this repository.
-1. **Source-complete, live gate outstanding:** the host now declares an
+1. **Optional recovery follow-up:** the host now declares an
    encrypted offsite Matrix backup for the stopped-VM image set and the
    [Matrix backup runbook](matrix-backup.md). Verify the repository's forced
-   command, run the first backup, and complete the isolated restore before
-   logging in. Also verify service ordering, permissions, listener scope,
-   outbound connectivity, and clean restart.
+   command, run the first backup, and complete the isolated restore if this
+   recovery work is pursued under R-04.
+1. **Live gate outstanding:** verify service ordering, permissions, listener
+   scope, outbound connectivity, and clean restart before interactive login.
 1. **Not complete:** after the prior gates, configure double puppeting if
    approved, then perform the interactive QR/pairing login and validate portal
    creation, media, reconnect, logout, and re-login behavior.
@@ -318,18 +322,18 @@ validation.
   `microvm0` interface contract, and the network checks pass.
 - Matrix's existing federation, client, MAS, media-retention, and raw-port
   acceptance checks still pass.
-- The [Matrix backup runbook](matrix-backup.md) has been provisioned and an
-  isolated restore preserves or deliberately re-establishes the WhatsApp
-  linked-device state.
+- If optional Matrix backup is pursued, the [runbook](matrix-backup.md) and an
+  isolated restore establish recovery of linked-device state. This is not an
+  activation gate under the operator's 2026-10-12 decision.
 - The operator has documented phone-offline, WhatsApp logout, account-ban, and
   re-login recovery procedures.
 
 Current status: the declarative listener, optional state/database wiring,
 registration gate, least-privilege secret paths, permission policy, static
 contract test, Matrix backup job, and backup runbook are present. The bridge is
-disabled by default. The baseline acceptance/observation prerequisite, private
-secret provisioning, repository/restore evidence, live service checks, and
-interactive login remain intentionally incomplete.
+disabled by default. The R-03 prerequisite is complete. Private secret
+provisioning, live service checks, and interactive login remain incomplete;
+repository/restore evidence is an optional R-04 follow-up.
 
 ## Upstream references
 

@@ -13,6 +13,13 @@ plus the path probes used by its focused baseline check. Keep route boundaries
 and near-miss cases in this helper so the generated configuration and its
 runtime-selection tests share one contract.
 
+The exact rendezvous endpoint and its session prefix have separate contracts.
+The baseline check requires a representative probe for every proxied location,
+derives its route and client-IP probes from those contracts, and checks backend
+identity independently using two mock backends. MAS rejects Synapse-only
+rendezvous traffic. The mocks use dynamic loopback ports, bounded requests,
+and explicit readiness checks; they do not establish live MAS/Synapse behavior.
+
 ______________________________________________________________________
 
 ### constants.nix

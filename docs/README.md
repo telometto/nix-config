@@ -76,6 +76,8 @@ flowchart LR
   Branch, pull-request, merge-gate, and implementation order for the current security roadmap
 - [matrix-hardening-plan.md](matrix-hardening-plan.md) —
   Staged Matrix baseline, backup, observability, and OIDC implementation handoff
+- [matrix-enhancements-review.md](matrix-enhancements-review.md) —
+  Matrix login, rendezvous, and client-IP review boundaries and integration requirements
 - [matrix-whatsapp-bridge.md](matrix-whatsapp-bridge.md) —
   `mautrix-whatsapp` placement decision, pre-login wiring, and rollout gates
 - [service-mail-architecture.md](service-mail-architecture.md) —

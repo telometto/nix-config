@@ -168,11 +168,23 @@ let
           rejects = [ "/_synapse/adminXYZ" ];
         }
         {
+          location = "= /_synapse/client/rendezvous";
+          target = "synapse";
+          matches = [ "/_synapse/client/rendezvous" ];
+          rejects = [ "/_synapse/client/rendezvousXYZ" ];
+        }
+        {
+          location = "^~ /_synapse/client/rendezvous/";
+          target = "synapse";
+          matches = [ "/_synapse/client/rendezvous/test-session" ];
+          rejects = [ ];
+        }
+        {
           location = "/";
           target = "synapse";
           matches = [
             "/_matrix/client/v3/versions"
-            "/_synapse/client/rendezvous"
+            "/_matrix/client/unstable/org.matrix.msc4108/rendezvous"
             "/federation/v1/version"
             "/not-a-mas-route"
           ];
