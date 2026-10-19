@@ -13,6 +13,7 @@ import shutil
 import sqlite3
 import tempfile
 import time
+from enum import Enum
 from pathlib import Path
 
 VERSION = 1
@@ -44,6 +45,73 @@ JOURNAL_MATCHES = [
     "+",
     "_TRANSPORT=kernel",
 ]
+
+
+class ErrorReason(Enum):
+    """Only these constant messages and codes may enter failure diagnostics."""
+
+    CURSOR_INVALID = "journal record has no valid cursor"
+    SPOOL_ENTRY_INVALID = "unexpected entry in archive spool"
+    CHECKPOINT_MISMATCH = "orphaned archive segment does not follow durable checkpoint"
+    SEGMENT_INTEGRITY = "archive segment integrity check failed"
+    SEGMENT_TOO_LARGE = "archive segment exceeds size limit"
+    SNAPSHOT_ID_INVALID = "invalid restic snapshot ID"
+    ACKNOWLEDGEMENT_MISMATCH = "archive acknowledgement does not match pending batch"
+    ACKNOWLEDGED_NAME_INVALID = "invalid acknowledged archive filename"
+    TIMESTAMP_TIMEZONE_MISSING = "timestamps must include a timezone"
+    JOURNAL_LINE_TOO_LARGE = "journal line exceeds the bounded reader limit"
+    REPOSITORY_ID_MISMATCH = (
+        "archive repository ID differs from the provisioned repository"
+    )
+    SEALED_METADATA_CHANGED = "sealed archive metadata changed"
+    HEARTBEAT_URL_INVALID = "invalid Healthchecks success URL"
+    UPLOAD_SNAPSHOT_UNVERIFIED = "uploaded snapshot could not be verified"
+    UPLOAD_MANIFEST_MISMATCH = "uploaded archive manifest differs from the sealed batch"
+    SNAPSHOT_PROFILE_INVALID = (
+        "unexpected snapshot profile in dedicated archive repository"
+    )
+    SNAPSHOT_TIME_FUTURE = "future snapshot timestamp requires manual investigation"
+    ARCHIVE_SNAPSHOT_ID_INVALID = "invalid archive snapshot ID"
+    RESTORE_MANIFEST_MISSING = "restored snapshot has no archive manifest"
+    RESTORE_MANIFEST_NOT_REGULAR = "restored manifest must be a regular file"
+    RESTORE_MANIFEST_UNSUPPORTED = "unsupported archive manifest"
+    RESTORE_SEGMENTS_NOT_DIRECTORY = (
+        "restored segment directory must be a real directory"
+    )
+    RESTORE_SEGMENT_NAME_INVALID = "invalid restored segment name"
+    RESTORE_SEGMENT_NOT_REGULAR = "restored segment must be a regular file"
+    RESTORE_SEGMENT_MISMATCH = "restored manifest and segment differ"
+    RESTORE_RECORD_CONFLICT = (
+        "conflicting records share an event ID; recover known-good snapshot IDs"
+    )
+    RECOVERY_TARGET_NOT_EMPTY = "recovery target must be empty"
+    RECOVERY_INTERVAL_REVERSED = "recovery interval is reversed"
+    RECOVERY_SNAPSHOT_ID_INVALID = "recovery snapshot IDs must be full hexadecimal IDs"
+    RECOVERY_SNAPSHOT_MISSING = "requested recovery snapshot was not found"
+    SNAPSHOT_RANGE_MISSING = "snapshot is missing the archive event-range contract"
+    RECOVERY_ID_INVALID = "invalid recovery snapshot ID"
+    RETENTION_UPLOADS_ACTIVE = (
+        "pause uploads and wait for active uploads before applying retention"
+    )
+    RETENTION_PLAN_STALE = (
+        "retention preview is stale or does not match this repository"
+    )
+    RETENTION_SNAPSHOT_PROTECTED = "retention preview contains a protected snapshot"
+    RETENTION_WOULD_EMPTY = "refusing to remove every archive snapshot"
+    BACKEND_FAILED = "archive backend returned a failure status"
+    BACKEND_TIMEOUT = "archive backend exceeded its operation timeout"
+    BACKEND_UNAVAILABLE = "archive backend could not be started"
+    BACKEND_RESPONSE_INVALID = "archive backend returned invalid JSON"
+
+
+class ArchiveError(ValueError):
+    def __init__(self, reason, operation=None, exit_status=None):
+        if not isinstance(reason, ErrorReason):
+            raise TypeError("unsupported archive failure reason")
+        super().__init__(reason.value)
+        self.reason = reason
+        self.operation = operation
+        self.exit_status = exit_status
 
 
 def encoded(value):
@@ -86,21 +154,40 @@ def normalize(entry, host):
     """Unknown messages retain metadata only, never an unfiltered MESSAGE."""
     cursor = entry.get("__CURSOR")
     if not isinstance(cursor, str) or not cursor or len(cursor) > 4096:
-        raise ValueError("journal record has no valid cursor")
+        raise ArchiveError(ErrorReason.CURSOR_INVALID)
     record = {
         "version": VERSION,
         "host": host,
         "cursor": cursor,
         "id": digest(encoded([host, cursor])),
-        "boot_id": str(entry.get("_BOOT_ID", ""))[:128],
-        "journal_time_us": str(entry.get("__REALTIME_TIMESTAMP", ""))[:32],
-        "uid": str(entry.get("_UID", ""))[:16],
-        "pid": str(entry.get("_PID", ""))[:16],
-        "unit": str(entry.get("_SYSTEMD_UNIT", ""))[:256],
         "source": "unparsed",
         "event": "unparsed",
         "data": {},
     }
+    unsupported = False
+    for key, field, limit in (
+        ("boot_id", "_BOOT_ID", 128),
+        ("journal_time_us", "__REALTIME_TIMESTAMP", 32),
+        ("uid", "_UID", 16),
+        ("pid", "_PID", 16),
+        ("unit", "_SYSTEMD_UNIT", 256),
+    ):
+        value = entry.get(field, "")
+        if isinstance(value, str):
+            record[key] = value[:limit]
+        else:
+            record[key] = ""
+            unsupported = True
+
+    message = entry.get("MESSAGE", "")
+    identifier = entry.get("SYSLOG_IDENTIFIER", "")
+    transport = entry.get("_TRANSPORT", "")
+    # journalctl JSON can represent repeated/binary fields as arrays. Keep
+    # selected unsupported shapes visible without interpreting or copying them.
+    if unsupported or not all(
+        isinstance(value, str) for value in (message, identifier, transport)
+    ):
+        return record
     data, truncated = record["data"], []
 
     def text(key, value, limit=4096, uri=False):
@@ -124,17 +211,15 @@ def normalize(entry, host):
             ):
                 data[key] = value
 
-    message = entry.get("MESSAGE", "")
-    if not isinstance(message, str):
-        return record
     unit = record["unit"]
-    identifier = entry.get("SYSLOG_IDENTIFIER", "")
     if unit in {"traefik.service", "crowdsec-alert-archive.service"}:
         try:
             event = json.loads(message)
         except (ValueError, RecursionError):
             return record
         if not isinstance(event, dict):
+            return record
+        if "event" in event and not isinstance(event["event"], str):
             return record
         if event.get("event") in SECURITY_EVENTS:
             record.update(source="crowdsec", event=event["event"])
@@ -152,10 +237,15 @@ def normalize(entry, host):
                     "time",
                     "http_method",
                     "http_status",
+                    "remediation",
                     "user_agent",
                 ],
                 ["alert_id", "decision_id", "events_count", "dropped", "count"],
             )
+            # The alert archiver emits a string; the bouncer emits an integer.
+            status = event.get("http_status")
+            if isinstance(status, int) and not isinstance(status, bool):
+                data["http_status"] = status
             if isinstance(event.get("simulated"), bool):
                 data["simulated"] = event["simulated"]
             paths = event.get("target_uri", [])
@@ -231,7 +321,7 @@ def normalize(entry, host):
         record.update(source="ssh", event="tailscale_ssh")
         # Tailscale's free-form logs are not a stable authentication schema.
         # Preserve trusted journal metadata; never archive URLs or raw messages.
-    elif entry.get("_TRANSPORT") == "kernel":
+    elif transport == "kernel":
         if 'apparmor="DENIED"' in message:
             record.update(source="kernel", event="apparmor_denied")
             allowed = {
@@ -339,15 +429,13 @@ class Spool:
                 path.unlink()
                 continue
             if not NAME.fullmatch(path.name) or path.is_symlink() or not path.is_file():
-                raise ValueError("unexpected entry in archive spool")
+                raise ArchiveError(ErrorReason.SPOOL_ENTRY_INVALID)
             if path.name not in known:
                 header = self.read_segment(path)[0]
                 if header["sequence"] != self.get(db, "sequence", 0) + 1 or header[
                     "previous_cursor"
                 ] != self.get(db, "cursor"):
-                    raise ValueError(
-                        "orphaned archive segment does not follow durable checkpoint"
-                    )
+                    raise ArchiveError(ErrorReason.CHECKPOINT_MISMATCH)
                 self.register(db, path.name, header)
                 db.commit()
         self.gc(db)
@@ -360,7 +448,7 @@ class Spool:
         if len(payload) > MAX_SEGMENT or header.get("payload_sha256") != digest(
             payload
         ):
-            raise ValueError("archive segment integrity check failed")
+            raise ArchiveError(ErrorReason.SEGMENT_INTEGRITY)
         return header, payload
 
     def register(self, db, name, header):
@@ -378,7 +466,7 @@ class Spool:
         now = time.time() if now is None else now
         payload = b"".join(encoded(r) + b"\n" for r in records)
         if len(payload) > MAX_SEGMENT:
-            raise ValueError("archive segment exceeds size limit")
+            raise ArchiveError(ErrorReason.SEGMENT_TOO_LARGE)
         with self.locked() as db:
             self.recover(db)
             size = sum(p.stat().st_size for p in self.ready.iterdir())
@@ -442,16 +530,14 @@ class Spool:
 
     def acknowledge(self, batches, snapshot, now=None):
         if not re.fullmatch(r"[0-9a-f]{64}", snapshot):
-            raise ValueError("invalid restic snapshot ID")
+            raise ArchiveError(ErrorReason.SNAPSHOT_ID_INVALID)
         with self.locked() as db:
             for name, header in batches:
                 row = db.execute(
                     "SELECT header FROM batches WHERE name=? AND ack IS NULL", (name,)
                 ).fetchone()
                 if row is None or json.loads(row[0]) != header:
-                    raise ValueError(
-                        "archive acknowledgement does not match pending batch"
-                    )
+                    raise ArchiveError(ErrorReason.ACKNOWLEDGEMENT_MISMATCH)
                 db.execute("UPDATE batches SET ack=? WHERE name=?", (snapshot, name))
             self.put(db, "last_upload", time.time() if now is None else now)
             self.put(
@@ -465,7 +551,7 @@ class Spool:
         rows = db.execute("SELECT name FROM batches WHERE ack IS NOT NULL").fetchall()
         for (name,) in rows:
             if not NAME.fullmatch(name):
-                raise ValueError("invalid acknowledged archive filename")
+                raise ArchiveError(ErrorReason.ACKNOWLEDGED_NAME_INVALID)
             (self.ready / name).unlink(missing_ok=True)
         sync_dir(self.ready)
         db.execute("DELETE FROM batches WHERE ack IS NOT NULL")
