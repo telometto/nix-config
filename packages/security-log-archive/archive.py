@@ -21,7 +21,9 @@ from model import (
     MAX_SEGMENT,
     NAME,
     VERSION,
+    ArchiveError,
     BufferFull,
+    ErrorReason,
     Spool,
     atomic_write,
     digest,
@@ -31,12 +33,23 @@ from model import (
 
 PROFILE = "security-log-archive-v1"
 YEAR = 365 * 86400
+RESTIC_OPERATIONS = {
+    "cat",
+    "backup",
+    "snapshots",
+    "dump",
+    "restore",
+    "stats",
+    "check",
+    "forget",
+    "prune",
+}
 
 
 def timestamp(value):
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
-        raise ValueError("timestamps must include a timezone")
+        raise ArchiveError(ErrorReason.TIMESTAMP_TIMEZONE_MISSING)
     return parsed.timestamp()
 
 
@@ -55,11 +68,15 @@ def spool_for(cfg):
 
 def write_metrics(cfg, spool):
     if cfg.get("metrics_file"):
-        data = "".join(
-            f"security_log_archive_{key} {value}\n"
-            for key, value in spool.metric_values().items()
-        )
-        atomic_write(cfg["metrics_file"], data.encode(), 0o644)
+        # Serialize sampling and publication across collector/uploader processes.
+        # This lock is distinct from the spool lock acquired by metric_values.
+        with (spool.root / "metrics.lock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            data = "".join(
+                f"security_log_archive_{key} {value}\n"
+                for key, value in spool.metric_values().items()
+            )
+            atomic_write(cfg["metrics_file"], data.encode(), 0o644)
 
 
 def stop(process):
@@ -135,9 +152,7 @@ def collect(cfg):
                             raise RuntimeError("journal reader stopped")
                     pending += chunk
                     if len(pending) > 32 * 1024**2:
-                        raise ValueError(
-                            "journal line exceeds the bounded reader limit"
-                        )
+                        raise ArchiveError(ErrorReason.JOURNAL_LINE_TOO_LARGE)
                     while b"\n" in pending:
                         line, pending = pending.split(b"\n", 1)
                         entry = json.loads(line)
@@ -208,21 +223,34 @@ class Restic:
             self.base += ["-o", key + "=" + value]
 
     def run(self, *args, json_result=False, timeout=None):
-        result = subprocess.run(
-            [*self.base, *args],
-            check=True,
-            capture_output=True,
-            stdin=subprocess.DEVNULL,
-            timeout=timeout,
-        )
-        return json.loads(result.stdout) if json_result else result.stdout
+        operation = args[0] if args and args[0] in RESTIC_OPERATIONS else "unknown"
+        try:
+            result = subprocess.run(
+                [*self.base, *args],
+                check=True,
+                capture_output=True,
+                stdin=subprocess.DEVNULL,
+                timeout=timeout,
+            )
+        except subprocess.CalledProcessError as error:
+            raise ArchiveError(
+                ErrorReason.BACKEND_FAILED, operation, error.returncode
+            ) from error
+        except subprocess.TimeoutExpired as error:
+            raise ArchiveError(ErrorReason.BACKEND_TIMEOUT, operation) from error
+        except OSError as error:
+            raise ArchiveError(ErrorReason.BACKEND_UNAVAILABLE, operation) from error
+        try:
+            return json.loads(result.stdout) if json_result else result.stdout
+        except (ValueError, UnicodeError) as error:
+            raise ArchiveError(
+                ErrorReason.BACKEND_RESPONSE_INVALID, operation
+            ) from error
 
     def identity(self):
         repository = self.run("cat", "config", json_result=True)
         if repository.get("id") != self.cfg["repository_id"]:
-            raise ValueError(
-                "archive repository ID differs from the provisioned repository"
-            )
+            raise ArchiveError(ErrorReason.REPOSITORY_ID_MISMATCH, "cat")
 
 
 def event_time(record):
@@ -241,7 +269,7 @@ def stage_batch(spool, batches, target, cfg):
     for name, expected in batches:
         header, payload = spool.read_segment(spool.ready / name)
         if header != expected:
-            raise ValueError("sealed archive metadata changed")
+            raise ArchiveError(ErrorReason.SEALED_METADATA_CHANGED)
         for line in payload.splitlines():
             value = event_time(json.loads(line))
             if value > 0:
@@ -264,7 +292,7 @@ def stage_batch(spool, batches, target, cfg):
 def heartbeat(cfg):
     url = Path(credential(cfg, "heartbeat-url")).read_text().strip()
     if not re.fullmatch(r"https://hc-ping\.com/[0-9a-f-]{36}", url):
-        raise ValueError("invalid Healthchecks success URL")
+        raise ArchiveError(ErrorReason.HEARTBEAT_URL_INVALID)
     request = urllib.request.Request(url, data=b"", method="POST")
     with urllib.request.urlopen(request, timeout=10) as response:
         # Healthchecks can return HTTP 200 for unknown or rate-limited UUIDs.
@@ -321,14 +349,12 @@ def upload(cfg, restic=None):
                 "snapshots", "--json", snapshot, json_result=True, timeout=10
             )
             if len(snapshots) != 1 or snapshots[0]["id"] != snapshot:
-                raise ValueError("uploaded snapshot could not be verified")
+                raise ArchiveError(ErrorReason.UPLOAD_SNAPSHOT_UNVERIFIED)
             remote_manifest = client.run(
                 "dump", snapshot, str(staging / "manifest.json"), timeout=10
             )
             if json.loads(remote_manifest) != manifest:
-                raise ValueError(
-                    "uploaded archive manifest differs from the sealed batch"
-                )
+                raise ArchiveError(ErrorReason.UPLOAD_MANIFEST_MISMATCH)
             spool.acknowledge(batches, snapshot)
         except Exception:
             spool.count("upload_failures")
@@ -356,15 +382,13 @@ def retention_candidates(snapshots, host, now):
     result = []
     for snapshot in snapshots:
         if snapshot.get("hostname") != host or PROFILE not in snapshot.get("tags", []):
-            raise ValueError(
-                "unexpected snapshot profile in dedicated archive repository"
-            )
+            raise ArchiveError(ErrorReason.SNAPSHOT_PROFILE_INVALID)
         created = timestamp(snapshot["time"])
         if created > now + 300:
-            raise ValueError("future snapshot timestamp requires manual investigation")
+            raise ArchiveError(ErrorReason.SNAPSHOT_TIME_FUTURE)
         identity = snapshot["id"]
         if not re.fullmatch(r"[0-9a-f]{64}", identity):
-            raise ValueError("invalid archive snapshot ID")
+            raise ArchiveError(ErrorReason.ARCHIVE_SNAPSHOT_ID_INVALID)
         if created < now - YEAR:
             result.append(identity)
     return sorted(result)
@@ -381,26 +405,26 @@ def verify_tree(root, output, since=0, until=float("inf"), seen=None):
     try:
         manifests = list(Path(root).rglob("manifest.json"))
         if not manifests:
-            raise ValueError("restored snapshot has no archive manifest")
+            raise ArchiveError(ErrorReason.RESTORE_MANIFEST_MISSING)
         for path in manifests:
             if path.is_symlink() or not path.is_file():
-                raise ValueError("restored manifest must be a regular file")
+                raise ArchiveError(ErrorReason.RESTORE_MANIFEST_NOT_REGULAR)
             manifest = json.loads(path.read_bytes())
             if manifest.get("version") != VERSION or manifest.get("profile") != PROFILE:
-                raise ValueError("unsupported archive manifest")
+                raise ArchiveError(ErrorReason.RESTORE_MANIFEST_UNSUPPORTED)
             segments = path.parent / "segments"
             if segments.is_symlink() or not segments.is_dir():
-                raise ValueError("restored segment directory must be a real directory")
+                raise ArchiveError(ErrorReason.RESTORE_SEGMENTS_NOT_DIRECTORY)
             for segment in manifest["segments"]:
                 name = segment["name"]
                 if not NAME.fullmatch(name):
-                    raise ValueError("invalid restored segment name")
+                    raise ArchiveError(ErrorReason.RESTORE_SEGMENT_NAME_INVALID)
                 file = segments / name
                 if file.is_symlink() or not file.is_file():
-                    raise ValueError("restored segment must be a regular file")
+                    raise ArchiveError(ErrorReason.RESTORE_SEGMENT_NOT_REGULAR)
                 header, payload = Spool.read_segment(file)
                 if header != segment["header"]:
-                    raise ValueError("restored manifest and segment differ")
+                    raise ArchiveError(ErrorReason.RESTORE_SEGMENT_MISMATCH)
                 for line in payload.splitlines():
                     record = json.loads(line)
                     if since <= event_time(record) <= until:
@@ -410,9 +434,7 @@ def verify_tree(root, output, since=0, until=float("inf"), seen=None):
                             "SELECT sha256 FROM records WHERE id=?", (record["id"],)
                         ).fetchone()
                         if previous and previous[0] != checksum:
-                            raise ValueError(
-                                "conflicting records share an event ID; recover known-good snapshot IDs"
-                            )
+                            raise ArchiveError(ErrorReason.RESTORE_RECORD_CONFLICT)
                         if previous is None:
                             database.execute(
                                 "INSERT INTO records VALUES (?,?)",
@@ -427,17 +449,17 @@ def verify_tree(root, output, since=0, until=float("inf"), seen=None):
 def restore(cfg, client, args):
     target = Path(args.target).resolve()
     if target.exists() and any(target.iterdir()):
-        raise ValueError("recovery target must be empty")
+        raise ArchiveError(ErrorReason.RECOVERY_TARGET_NOT_EMPTY)
     target.mkdir(mode=0o700, parents=True, exist_ok=True)
     since, until = timestamp(args.since), timestamp(args.until)
     if since > until:
-        raise ValueError("recovery interval is reversed")
+        raise ArchiveError(ErrorReason.RECOVERY_INTERVAL_REVERSED)
     snapshots = client.run("snapshots", "--json", json_result=True)
     selected = set(getattr(args, "snapshot", None) or [])
     if any(not re.fullmatch(r"[0-9a-f]{64}", item) for item in selected):
-        raise ValueError("recovery snapshot IDs must be full hexadecimal IDs")
+        raise ArchiveError(ErrorReason.RECOVERY_SNAPSHOT_ID_INVALID)
     if selected - {snapshot["id"] for snapshot in snapshots}:
-        raise ValueError("requested recovery snapshot was not found")
+        raise ArchiveError(ErrorReason.RECOVERY_SNAPSHOT_MISSING)
     with (target / "events.jsonl.partial").open("wb") as output:
         for snapshot in snapshots:
             if selected and snapshot["id"] not in selected:
@@ -455,12 +477,12 @@ def restore(cfg, client, args):
                 or snapshot.get("hostname") != cfg["host"]
                 or PROFILE not in tags
             ):
-                raise ValueError("snapshot is missing the archive event-range contract")
+                raise ArchiveError(ErrorReason.SNAPSHOT_RANGE_MISSING)
             if start > until or end < since:
                 continue
             identity = snapshot["id"]
             if not re.fullmatch(r"[0-9a-f]{64}", identity):
-                raise ValueError("invalid recovery snapshot ID")
+                raise ArchiveError(ErrorReason.RECOVERY_ID_INVALID)
             directory = target / identity
             client.run("restore", identity, "--verify", "--target", str(directory))
             verify_tree(directory, output, since, until, target / "seen.sqlite")
@@ -493,9 +515,7 @@ def admin(cfg, args):
         )
     elif args.action == "retention-apply":
         if not args.uploads_paused:
-            raise ValueError(
-                "pause uploads and wait for active uploads before applying retention"
-            )
+            raise ArchiveError(ErrorReason.RETENTION_UPLOADS_ACTIVE)
         plan = json.loads(Path(args.plan).read_bytes())
         now = time.time()
         if (
@@ -504,20 +524,18 @@ def admin(cfg, args):
             or not 0 <= now - plan["generated_at"] <= 900
             or plan["cutoff"] > now - YEAR
         ):
-            raise ValueError(
-                "retention preview is stale or does not match this repository"
-            )
+            raise ArchiveError(ErrorReason.RETENTION_PLAN_STALE)
         snapshots = client.run("snapshots", "--json", json_result=True)
         eligible = set(
             retention_candidates(snapshots, cfg["host"], plan["generated_at"])
         )
         identities = plan["snapshot_ids"]
         if not set(identities) <= eligible:
-            raise ValueError("retention preview contains a protected snapshot")
+            raise ArchiveError(ErrorReason.RETENTION_SNAPSHOT_PROTECTED)
         client.run("check", "--read-data")
         remaining = [s for s in snapshots if s["id"] not in identities]
         if not remaining:
-            raise ValueError("refusing to remove every archive snapshot")
+            raise ArchiveError(ErrorReason.RETENTION_WOULD_EMPTY)
         # Exercise an independent restore before any destructive command.
         with tempfile.TemporaryDirectory(
             prefix="security-archive-restore-"
@@ -595,8 +613,10 @@ def main():
         if action == "retention-apply":
             maintenance.add_argument("--uploads-paused", action="store_true")
     args = parser.parse_args()
-    cfg = json.loads(Path(args.config).read_bytes())
+    phase = "configuration"
     try:
+        cfg = json.loads(Path(args.config).read_bytes())
+        phase = args.action
         if args.action == "collect":
             collect(cfg)
         elif args.action == "upload":
@@ -608,8 +628,29 @@ def main():
     except Exception as error:  # noqa: BLE001 - Never log raw command or credential errors.
         # Command stderr can contain private paths, URLs, or server responses.
         # Keep payloads and credential values out of the service journal.
+        if isinstance(error, ArchiveError):
+            details = f"reason={error.reason.name.lower()}"
+            if (
+                isinstance(error.operation, str)
+                and error.operation in RESTIC_OPERATIONS
+            ):
+                details += f" operation={error.operation}"
+            if isinstance(error.exit_status, int) and not isinstance(
+                error.exit_status, bool
+            ):
+                details += f" exit_status={error.exit_status}"
+            message = error.reason.value
+        else:
+            reason = "unexpected_error"
+            if isinstance(error, json.JSONDecodeError):
+                reason = "invalid_json"
+            elif isinstance(error, OSError):
+                reason = "io_error"
+            elif isinstance(error, (ValueError, KeyError, TypeError)):
+                reason = "invalid_data"
+            details, message = f"reason={reason}", "inspect state and the runbook"
         print(
-            f"Security-log archive failed ({type(error).__name__}); inspect state and the runbook",
+            f"Security-log archive failed: phase={phase} {details}; {message}",
             file=sys.stderr,
         )
         return 1
