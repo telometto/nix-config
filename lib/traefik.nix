@@ -32,7 +32,7 @@ let
         "= /.well-known/jwks.json" = proxyLocation masProxy;
         "= /graphql" = proxyLocation masProxy;
 
-        "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/|$)" =
+        "~ ^/(login|logout|consent|recover|change-password|link|device|complete-compat-sso)(/|$)" =
           proxyLocation masProxy;
         "~ ^/upstream(?:/|$)" = proxyLocation masProxy;
       };
@@ -135,15 +135,17 @@ let
           ];
         }
         {
-          location = "~ ^/(login|logout|consent|recover|change-password|link|complete-compat-sso)(/|$)";
+          location = "~ ^/(login|logout|consent|recover|change-password|link|device|complete-compat-sso)(/|$)";
           target = "mas";
           matches = [
             "/login"
             "/login/sso/redirect"
             "/recover/reset"
+            "/device/01M4HGV343XH7S3VD91N8G3V44"
           ];
           rejects = [
             "/loginXYZ"
+            "/deviceXYZ"
             "/complete-compat-ssoXYZ"
           ];
         }
