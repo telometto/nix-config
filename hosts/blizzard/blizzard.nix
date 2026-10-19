@@ -109,6 +109,8 @@
     programs = {
       mtr.enable = true;
       gnupg.enable = false;
+      nix-ld.enable = true;
+      python-venv.enable = true;
     };
   };
 
