@@ -54,6 +54,13 @@ explicit approval, and separate deployment.
   recovery, backups, and the declarative rollback were exercised rather than
   merely documented.
 
+Matrix baseline R-03 was closed by explicit operator approval on 2026-10-12,
+with its remaining baseline observation waived. Matrix offsite backup/restore
+under R-04 is optional and does not block the Pocket ID foundation or Matrix
+OIDC migration. The Matrix backup part of the recovery gate is optional; Pocket
+ID's own backup/recovery gates and other services' recovery requirements still
+apply, as do the future OIDC observation periods below.
+
 `Operator confirmed` records a live-use statement, not completion of every
 negative, recovery, or rollback test. `Historical record` means an existing
 operation document reports prior success; revalidate it before treating it as
@@ -398,7 +405,9 @@ Preparation:
   a Matrix-safe username before assigning `oidc-matrix`, retain the confirmation
   step, and never derive the localpart from email. A later Pocket ID username
   change does not rename the Matrix ID.
-- [ ] Back up MAS, Synapse, Pocket ID, encryption keys, and signing keys.
+- [ ] Verify Pocket ID's own backup, keys, and recovery evidence.
+- Optionally back up MAS, Synapse, and Matrix encryption/signing keys under
+  R-04; this is not a Matrix OIDC prerequisite.
 
 Coexistence:
 
