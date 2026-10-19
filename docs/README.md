@@ -70,6 +70,8 @@ flowchart LR
   Source/decision investigation, local security-event retention, bouncer reporting and health alerts
 - [crowdsec-http-detection.md](crowdsec-http-detection.md) —
   Blizzard HTTP log acquisition, client-IP trust contract, regression tests, and R-02 acceptance gates
+- [security-log-archive.md](security-log-archive.md) —
+  Disabled R-02 off-host archive, append-only credentials, capacity gates, independent recovery and retention
 - [2026-08-14-blizzard-paranoid-nixos-handoff.md](2026-08-14-blizzard-paranoid-nixos-handoff.md) —
   Gated Blizzard paranoid-NixOS deployment, host/VM hardening, and recovery-state handoff
 - [security-roadmap-implementation-order.md](security-roadmap-implementation-order.md) —
