@@ -11,19 +11,24 @@ Cloudflare Tunnel. When publishing the route, point the Jellyfin DNS
 record at the VPS without Cloudflare's proxy. Do not forward Jellyfin ports on
 the home router.
 
-The current configuration enables Jellyfin in `jellyfin-vm` and disables host
-Jellyfin when applied. It does not import the old host state;
-`/var/lib/jellyfin` on Blizzard remains untouched. Plex stays enabled. With
-`vpsIPv4 = null` in [`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix),
-the Jellyfin tailnet ingress remains **closed**. After private setup and load
-checks, set `vpsIPv4` in
-[`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix)
-to the dedicated proxy VPS's Tailscale IPv4 address and run the public
-acceptance checks below. Do not use the existing Sandfly VPS address
+The migration is complete. The current configuration enables Jellyfin in
+`jellyfin-vm`, disables host Jellyfin, and leaves the old
+`/var/lib/jellyfin` on Blizzard untouched. Plex is disabled and remains an
+independent choice in
+[`hosts/blizzard/services/media.nix`](../hosts/blizzard/services/media.nix).
+The Jellyfin checks exercise explicit staging and ready configurations; they
+do not require the deployed media services to stay enabled.
+
+[`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix) currently sets
+`vmServiceReady = true` and `vpsIPv4 = "100.98.54.14"`, enabling the host relay
+and its guarded Tailscale ingress. Set `vpsIPv4 = null` to close that ingress
+while retaining the guest service. For a new setup, keep ingress closed until
+private setup and load checks pass, then configure the dedicated proxy VPS's
+Tailscale IPv4 address and run the public acceptance checks below.
+Do not use the existing Sandfly VPS address
 `100.116.146.113`;
 Sandfly publishes TCP 80 and 443 and advises against other software on its
-host. This setup leaves Plex and its dependent services running. The VPS,
-public DNS, and tailnet policy are managed outside this repository.
+host. The VPS, public DNS, and tailnet policy are managed outside this repository.
 
 On a fresh Jellyfin data directory, finish the first-run wizard and create the
 administrator **privately before opening the VPS ingress or enabling the public
@@ -49,8 +54,8 @@ policy. The VM sees Blizzard's TCP relay as `10.100.0.1`, so set **Dashboard →
 Networking → Known Proxies** to **only `10.100.0.1`** after the VM cutover. The VPS
 address is no longer the direct Jellyfin peer. If the VPS address changes,
 update the Blizzard guard and tailnet policy; verify the proxy headers again.
-The current `vpsIPv4` value in `vms/jellyfin-settings.nix` is `null`
-until private setup is complete; set it to the dedicated VPS address
+For a new instance, keep `vpsIPv4 = null` in `vms/jellyfin-settings.nix`
+until private setup is complete, then set it to the dedicated VPS address
 before activating this route.
 
 After private administrator setup, a Caddy site on the VPS can use this shape
@@ -91,7 +96,10 @@ identity boundary.
 
 ## Jellyfin setup
 
-### Fresh VM setup (current configuration)
+### Fresh VM setup (for a new instance)
+
+The current instance has completed setup. The following procedures are for
+a new instance or a future migration.
 
 1. Before applying the configuration, check whether the guest state volume
    already contains Jellyfin data from an earlier import or setup attempt.
@@ -134,8 +142,8 @@ before enabling the guest service:
    ```
 
 1. Apply the first Blizzard configuration with `vmServiceReady = false` and
-   `vpsIPv4 = null`. Confirm the host Jellyfin and Plex services remain
-   active, `microvm@jellyfin-vm.service` starts, and Jellyfin is stopped in the
+   `vpsIPv4 = null`. Confirm host Jellyfin remains active,
+   `microvm@jellyfin-vm.service` starts, and Jellyfin is stopped in the
    VM. The VM receives the host state at `/mnt/host-jellyfin` through a
    **temporary read-only** virtiofs share. Keep the public Caddy route disabled.
 
@@ -274,17 +282,16 @@ reload the firewall again. The direct DROP remains until a successful rebuild.
   and two simultaneous real 1080p software transcodes. Confirm the VPS can
   sustain the required throughput and transfer volume.
 - Confirm home public IPv4 and IPv6 do not accept Jellyfin on 8096/8920 or
-  discovery traffic on UDP 1900/7359. Plex remains enabled with
-  `openFirewall = true`, which opens UDP 1900 on Blizzard's host firewall.
-  Denial of public UDP 1900 therefore depends on the router and IPv6 edge;
-  verify both externally or close Plex discovery separately. Review router
-  forwarding and DNS records.
+  discovery traffic on UDP 1900/7359. If Plex is re-enabled with
+  `openFirewall = true`, review its discovery ports separately. Review
+  router forwarding and DNS records.
 - Verify Jellyfin sees the client IP and enforces remote-access and user
   permissions through the proxy. Send a spoofed `X-Forwarded-For` header from
   a test client and verify it cannot change the recorded client IP. Check that
   proxy logs do not include API keys.
-- Leave Plex, Overseerr, Tautulli, and Subgen running. The host's original
-  `/var/lib/jellyfin` and the stopped-VM snapshot are the rollback sources.
+- Keep other media services enabled or disabled independently of Jellyfin.
+  The host's original `/var/lib/jellyfin` and the stopped-VM snapshot are the
+  rollback sources for an existing-state migration.
   To return to host Jellyfin, close the VPS route, set
   `vmServiceReady = false`, apply the host configuration, and verify the
   original host administrator login. VM changes made after cutover will not
