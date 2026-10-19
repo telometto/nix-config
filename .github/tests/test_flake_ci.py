@@ -31,6 +31,29 @@ class SelectionTests(unittest.TestCase):
         self.assertFalse(plan["evaluate"])
         self.assertFalse(plan["lifecycle"])
 
+    def test_archive_paths_select_both_durability_and_runtime_checks(self):
+        for path in (
+            "packages/security-log-archive/model.py",
+            "tests/security_log_archive_test.py",
+            "modules/services/security-log-archive.nix",
+            "hosts/snowfall/security-log-archive.nix",
+            "lib/security-log-archive-alerts.nix",
+        ):
+            with self.subTest(path=path):
+                plan = self.selected(path)
+                self.assertTrue(ci.ARCHIVE.issubset(plan["checks"]))
+                self.assertFalse(plan["full"])
+                self.assertEqual(plan["evaluate"], path.endswith(".nix"))
+
+    def test_crowdsec_producer_changes_retain_archive_contracts(self):
+        for path in (
+            "packages/crowdsec-bouncer/telemetry.go",
+            "packages/crowdsec-observability/alerts.py",
+            "hosts/blizzard/security/crowdsec.nix",
+        ):
+            with self.subTest(path=path):
+                self.assertTrue(ci.ARCHIVE.issubset(self.selected(path)["checks"]))
+
     def test_mapped_python_and_fixtures_avoid_global_evaluation(self):
         for path in (
             "modules/services/scripts/cloudflare_metrics.py",
