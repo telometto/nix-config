@@ -11,25 +11,25 @@ secret change, or merge.
 | Field | Value |
 |---|---|
 | Current implementation branch | `main` (PRs #6499, #6577, #6581, and #6582 are merged) |
-| Current runtime priority | Run the merged Matrix baseline's live acceptance matrix and seven-day observation gate; deployment and activation still require their explicit gates |
-| Next runtime branch | Create a separate branch from current `main` only for an approved Matrix follow-up or the reusable offsite-backup work after the baseline gate |
+| Current runtime priority | R-03 is Done by explicit operator approval on 2026-10-12, with the remaining baseline observation waived; proceed only with separately approved follow-up work |
+| Next runtime branch | Create a separate branch from current `main` for the selected approved follow-up; optional Matrix backup work is not a prerequisite |
 | Open-PR snapshot | 2026-08-13, live GitHub metadata |
-| Planning status | Matrix baseline source implementation is merged; Matrix backup source wiring is present, while live acceptance, observation, restore, and OIDC work remain |
+| Planning status | Matrix baseline closed on operator evidence and explicit observation waiver. Matrix backup/restore is optional under R-04; bridge and OIDC retain their own acceptance and activation requirements |
 
 R-02's [HTTP detection and client-attribution source work](crowdsec-http-detection.md)
-can proceed independently of these Matrix runtime gates. Message-only
+can proceed independently of the closed Matrix baseline. Message-only
 acquisition, tunnel-only proxy trust, and a focused flake regression check are
 implemented; live acceptance and the rest of R-02's retention/audit work remain.
 Because Traefik/CrowdSec is shared with Matrix, coordinate any eventual edge
-deployment with Matrix acceptance and restart its observation after a material
-change. This does not advance the backup, bridge, or OIDC activation gates.
+deployment and rerun affected Matrix checks after a material change.
 
-Do not activate the Matrix backup or bridge, or claim the backup/restore gate is
-complete, before the Matrix baseline's live acceptance and observation gates
-pass. The source-side backup declaration may land as a safety prerequisite, but
-its repository provisioning and restore rehearsal remain gated. Every runtime
-branch starts from `main` after its required predecessor has passed its live
-gate and merged.
+R-03 closure removes its baseline wait. Matrix backup/restore is a nice-to-have
+under R-04 and does not block the bridge, Pocket ID foundation, or Matrix OIDC.
+If backup work is pursued, provision and verify the repository and complete an
+isolated restore before claiming recovery is proven. Bridge/OIDC activation,
+provider changes, and secret changes still require their own authorization and
+acceptance. Every runtime branch starts from `main` after its required
+predecessor has passed its applicable gate and merged.
 
 ## How to use the planning documents
 
@@ -38,9 +38,9 @@ two supply contracts and compatibility evidence:
 
 | Document | Role |
 |---|---|
-| [Matrix hardening plan](matrix-hardening-plan.md) | Primary execution plan after the network-policy rollout; complete work packages A and B before starting OIDC |
+| [Matrix hardening plan](matrix-hardening-plan.md) | Accepted baseline and R-03 closure record; work package B is optional and work package C follows Pocket ID's own gates |
 | [Service mail architecture](service-mail-architecture.md) | Cross-cutting mail and provider contract used by the Matrix baseline, Pocket ID foundation, and any later Paperless activation |
-| [Pocket ID migration plan](pocket-id-migration-plan.md) | Primary execution plan after the Matrix baseline and offsite-backup gates pass |
+| [Pocket ID migration plan](pocket-id-migration-plan.md) | Primary execution plan after the closed Matrix baseline; retain Pocket ID recovery gates and the service order |
 | [Pocket ID service support](pocket-id-service-support.md) | Compatibility and scope reference; refresh it before OIDC implementation rather than treating it as a deployment checklist |
 
 ## Runtime implementation sequence
@@ -57,7 +57,7 @@ The finalized post-enforce observation and root-counter snapshot are recorded
 in the [Blizzard MicroVM enforce-mode audit](2026-08-18-blizzard-microvm-enforce-audit.md).
 The older deployment audit remains the historical rollout and approval record.
 
-### 2. Complete the Matrix baseline gates
+### 2. Retain the completed Matrix baseline
 
 The source implementation is merged through PRs
 [#6577](https://github.com/telometto/nix-config/pull/6577),
@@ -87,17 +87,20 @@ require a central SMTP relay VM: each sending service submits directly to
 Proton with a service-specific token.
 
 The PR merges establish source and evaluation evidence, not deployment
-acceptance. Pass the complete live acceptance matrix, including runtime secret
-rotation and service restart behavior, then observe seven consecutive clean
-days. Do not deploy another Matrix runtime change before the observation gate
-and explicit approval are complete.
+acceptance. The operator completed the live baseline acceptance, including
+runtime secret rotation, the client-IP correction retest, and SMTP-loss/restoration,
+by 2026-10-12. The operator then explicitly approved R-03 closure and waived
+the remaining seven-day baseline observation, citing longstanding stable
+operation and Matrix's low priority. See the
+[closure decision](matrix-hardening-plan.md#baseline-closure-decision).
+The planned interval was not completed. Later runtime changes retain their
+own acceptance and authorization requirements.
 
-### 3. Implement reusable MicroVM offsite backup
+### 3. Optional reusable MicroVM offsite backup
 
-After the Matrix baseline's live acceptance and observation gates, complete the
-remaining reusable-backup work and create
-`security/microvm-offsite-backup` from the updated `main` branch. Follow work
-package B in the
+R-04 is Someday / Candidate by operator decision on 2026-10-12. If it becomes
+a priority, create a separate backup branch from updated `main` and follow
+work package B in the
 [Matrix hardening plan](matrix-hardening-plan.md#work-package-b-reusable-microvm-offsite-backup).
 
 As currently designed, this is one cohesive PR that:
@@ -116,9 +119,9 @@ completion gate.
 
 ### 4. Establish the Pocket ID foundation
 
-After the offsite-backup gate and merge, create
-`security/pocket-id-foundation` from the updated `main` branch. Before adding a
-new relying service:
+R-03 is closed and optional Matrix backup work does not block this foundation.
+Create `security/pocket-id-foundation` from updated `main` when implementation
+is selected. Before adding a new relying service:
 
 1. Refresh both Pocket ID documents, their repository anchors, pinned-version
    evidence, and support-report digest.
@@ -207,7 +210,6 @@ The completed Matrix baseline PR series is:
 
 The remaining planned sequence is:
 
-1. `security/microvm-offsite-backup`.
 1. `security/pocket-id-foundation`.
 1. `security/oidc-grafana-blizzard`.
 1. `security/oidc-grafana-snowfall`.
@@ -217,6 +219,8 @@ The remaining planned sequence is:
 
 The following remain outside the critical path:
 
+- Optional `security/microvm-offsite-backup` work under R-04, including Matrix
+  offsite backup and an isolated restore rehearsal.
 - A Paperless activation gets its own PR with a co-located, split-mode Proton
   Bridge, local-only listeners, default-deny ingestion rules, and manual review.
   There is no shared Bridge or SMTP VM.
@@ -232,8 +236,9 @@ The following remain outside the critical path:
 
 The planning files and documentation-index changes are independent of the
 runtime PRs and may merge from a documentation branch based on current `main`.
-They change no runtime state and must not be used as evidence that the live
-Matrix acceptance or observation gates have passed.
+They change no runtime state and must not be used as evidence of new live
+tests. The R-03 closure record distinguishes accepted runtime checks from the
+explicitly waived baseline observation.
 
 Documentation may merge independently because it changes no runtime state.
 Runtime implementation must retain the dependency and observation order above.
