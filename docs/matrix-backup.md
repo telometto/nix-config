@@ -2,7 +2,9 @@
 
 > Status: the backup job and this runbook are declarative source wiring. Private
 > key/passphrase provisioning, repository verification, and the isolated restore
-> gate must pass before relying on the timer or enabling the bridge.
+> gate must pass before relying on the timer. Matrix backup/restore is optional
+> under R-04 by operator decision on 2026-10-12; it does not block bridge or
+> OIDC activation.
 
 This runbook covers the `blizzard-matrix` Borg job in
 [`hosts/blizzard/services/backup.nix`](../hosts/blizzard/services/backup.nix).
