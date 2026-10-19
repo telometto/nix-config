@@ -21,7 +21,7 @@ in
 {
   sys.services = {
     plex = {
-      enable = true;
+      enable = false;
       openFirewall = true;
     };
 
