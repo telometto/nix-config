@@ -10,11 +10,13 @@ baseline observation waived. This work can proceed independently. Deploying a
 shared edge change still requires coordination and affected Matrix rechecks
 under [the security sequence](security-roadmap-implementation-order.md).
 
-R-02 remains **In progress**. This implementation now retains an allowlisted
-local security-event projection in VictoriaLogs for 90 days, but raw access
-logs, an off-host retention destination with independent recovery access,
-auditd execution telemetry, and live detection/remediation evidence remain
-outstanding. It adds no provider changes, secrets, or deployment. The older
+R-02 remains **In progress**. The local security-event projection retains
+allowlisted events in VictoriaLogs for 90 days. A separate
+[off-host archive implementation](security-log-archive.md) now covers sanitized
+HTTP records, security events and selected host messages, but is disabled pending
+capacity, provider restrictions, recovery and notification acceptance. Auditd
+execution telemetry and live detection/remediation evidence also remain
+outstanding. Source implementation does not establish delivery or deployment. The older
 `2026-08-13-blizzard-intrusion-audit.md` referenced by the roadmap is absent
 from this checkout and is not used as acceptance evidence.
 
