@@ -5,9 +5,10 @@
 The first source implementation for R-02 restores message-only Traefik journal
 acquisition and narrows forwarded-header trust to the local Cloudflare Tunnel.
 It also retains the User-Agent header needed by the configured HTTP scenarios.
-This work can proceed while R-03 waits for Matrix live acceptance. Deploying
-this shared edge change still requires the Matrix coordination and observation
-gates in [the security sequence](security-roadmap-implementation-order.md).
+R-03 was closed by explicit operator approval on 2026-10-12, with its remaining
+baseline observation waived. This work can proceed independently. Deploying a
+shared edge change still requires coordination and affected Matrix rechecks
+under [the security sequence](security-roadmap-implementation-order.md).
 
 R-02 remains **In progress**. This implementation now retains an allowlisted
 local security-event projection in VictoriaLogs for 90 days, but raw access
