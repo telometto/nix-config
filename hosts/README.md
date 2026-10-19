@@ -20,13 +20,13 @@ privileged scanner account.
 ### CachyOS kernel cache
 
 Snowfall and Kaizer use the `nix-cachyos-kernel/release` input and its `pinned`
-overlay with the [upstream binary cache](https://github.com/xddxdd/nix-cachyos-kernel#binary-cache).
-Their Nix settings add the cache URL and signing key alongside the default
-NixOS cache. Cache misses and external kernel modules can still require builds.
+overlay. Their host-local declarations for the
+[upstream binary cache](https://github.com/xddxdd/nix-cachyos-kernel#binary-cache)
+are currently commented out, so those blocks do not enable the cache. Cache
+misses and external kernel modules can still require builds.
 
-The declared settings take effect after activation. To use the cache for the
-first build, pass its settings explicitly (replace `snowfall` with `kaizer`
-where appropriate):
+To use the cache for one build, pass its settings explicitly (replace
+`snowfall` with `kaizer` where appropriate):
 
 ```bash
 nix build .#nixosConfigurations.snowfall.config.system.build.toplevel \
@@ -34,8 +34,10 @@ nix build .#nixosConfigurations.snowfall.config.system.build.toplevel \
   --option extra-trusted-public-keys 'lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc='
 ```
 
-This builds without activating the configuration. Once the host is updated,
-subsequent rebuilds use its configured cache automatically.
+This builds without activating the configuration or persisting those options.
+For repeated use, enable the declarations and activate the host configuration.
+The source does not establish the active daemon settings; inspect
+`nix config show substituters` and `/etc/nix/nix.conf` on the host to check them.
 
 ### Host Structure
 

@@ -4,6 +4,9 @@ Status: approved design; planning artifact only
 
 Last reviewed: 2026-08-03
 
+Matrix acceptance status updated: 2026-10-12; the provider/source inventory below
+retains its original review date.
+
 This document defines how self-hosted services send and receive email without
 turning one mail credential or one daemon into an infrastructure-wide trust
 boundary. It records the provider split, service contracts, security controls,
@@ -392,9 +395,11 @@ Runtime work follows the roadmap:
 1. Retain the merged MicroVM network-policy audit, enforcement, and follow-up
    evidence; any later network change needs its own review.
 1. Prepare this mail architecture and provider inventory independently.
-1. Complete the merged Matrix baseline's remaining mail, recovery, client,
-   secret-rotation, live-acceptance, and seven-day observation gates before
-   another Matrix runtime change.
+1. Retain the Matrix baseline's operator-confirmed mail/recovery, client,
+   secret-rotation, and SMTP-loss/restoration acceptance evidence recorded by
+   2026-10-12 in the [Matrix plan](matrix-hardening-plan.md). R-03 was explicitly
+   closed by the operator on that date with the remaining baseline observation
+   waived; future runtime changes retain their own acceptance and approval.
 1. Implement Pocket ID SMTP and recovery gates before activating additional
    OIDC clients.
 1. Migrate Matrix to Pocket ID last, retaining Matrix passwords until account
