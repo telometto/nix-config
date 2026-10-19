@@ -10,6 +10,7 @@ import time
 import unittest
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -17,6 +18,89 @@ from security_log_archive_test import archive, record
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_successful_retention_preserves_full_year_boundary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            password = root / "password"
+            password.write_text("disposable-fixture-password")
+            cfg = {
+                "host": "blizzard",
+                "state_dir": str(root / "source"),
+                "staging_dir": str(root / "staging"),
+                "buffer_bytes": 1024**3,
+                "min_free_bytes": 0,
+                "repository": str(root / "repository"),
+                "admin_repository": str(root / "repository"),
+                "credentials": {"password": str(password)},
+            }
+            client = archive.Restic(cfg, admin=True)
+            client.run("init")
+            cfg["repository_id"] = client.run("cat", "config", json_result=True)["id"]
+            spool = archive.spool_for(cfg)
+            spool.append([record()], "cursor-1")
+            staging = root / "batch"
+            archive.stage_batch(spool, spool.pending(), staging, cfg)
+            now = 1800000000
+            identities = []
+            # --time is interpreted in the restic process's local timezone.
+            for age in (archive.YEAR + 1, archive.YEAR, archive.YEAR - 1):
+                created = datetime.fromtimestamp(now - age, timezone.utc).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+                with patch.dict("os.environ", {"TZ": "UTC"}):
+                    output = client.run(
+                        "backup",
+                        "--json",
+                        "--force",
+                        "--host",
+                        cfg["host"],
+                        "--tag",
+                        archive.PROFILE,
+                        "--time",
+                        created,
+                        str(staging),
+                    )
+                summary = json.loads(output.splitlines()[-1])
+                identities.append(summary["snapshot_id"])
+            plan = root / "plan.json"
+            args = argparse.Namespace(
+                action="retention-preview", plan=str(plan), uploads_paused=True
+            )
+            operations = []
+            original = archive.Restic.run
+
+            def run(instance, *command, **kwargs):
+                operations.append(command)
+                return original(instance, *command, **kwargs)
+
+            with (
+                patch("archive.time.time", return_value=now),
+                patch.object(archive.Restic, "run", run),
+            ):
+                archive.admin(cfg, args)
+                self.assertEqual(
+                    json.loads(plan.read_bytes())["snapshot_ids"], [identities[0]]
+                )
+                self.assertEqual(
+                    len(client.run("snapshots", "--json", json_result=True)), 3
+                )
+                operations.clear()
+                args.action = "retention-apply"
+                archive.admin(cfg, args)
+            commands = [command[0] for command in operations]
+            self.assertLess(commands.index("check"), commands.index("restore"))
+            self.assertLess(commands.index("restore"), commands.index("forget"))
+            self.assertLess(commands.index("forget"), commands.index("prune"))
+            self.assertEqual(
+                next(command for command in operations if command[0] == "forget"),
+                ("forget", identities[0]),
+            )
+            remaining = client.run("snapshots", "--json", json_result=True)
+            self.assertEqual(
+                {snapshot["id"] for snapshot in remaining}, set(identities[1:])
+            )
+            client.run("check", "--read-data")
+
     def test_append_only_protocol_and_source_independent_restore(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
