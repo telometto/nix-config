@@ -36,6 +36,10 @@ Query strings, fragments, authorization headers, cookies, bodies, arbitrary
 producer fields and raw-message passthrough are excluded. Paths, User-Agent,
 addresses and usernames still contain personal or sensitive text. Unknown
 selected messages retain metadata only and are counted for schema review.
+Repeated or binary values in consumed journal fields retain only supported
+scalar metadata and a valid cursor. Unsupported structured event selectors use
+the same fallback. These records count toward the schema signal and allow
+collection to advance.
 No new kernel logging or firewall policy is enabled.
 
 `security-log-reader` can read the entire system journal through
@@ -79,13 +83,23 @@ records or heartbeat signals from an attacker controlling Blizzard.
 Before activation, run a representative read-only sizing pass on Blizzard:
 
 ```bash
-nix build .#packages.x86_64-linux.security-log-archive --no-link
-# Use the built CLI and the evaluated clientConfigFile; output is counts/bytes only.
-security-log-archive --config /path/to/public-client-config.json size --since '7 days ago'
+archive_package=$(nix build .#packages.x86_64-linux.security-log-archive --no-link --print-out-paths)
+archive_config=$(nix build .#nixosConfigurations.blizzard.config.sys.services.securityLogArchive.clientConfigFile --no-link --print-out-paths)
+sudo "$archive_package/bin/security-log-archive" --config "$archive_config" size --since '7 days ago'
 journalctl --disk-usage
 systemd-analyze cat-config systemd/journald.conf
-df -B1 /var/lib/security-log-archive
+archive_filesystem=$(nix eval --raw .#nixosConfigurations.blizzard.config.sys.services.securityLogArchive.stateDir)
+# Before enablement the spool may not exist. Inspect its nearest existing ancestor.
+while [ ! -e "$archive_filesystem" ]; do
+  archive_filesystem=$(dirname "$archive_filesystem")
+done
+df -B1 "$archive_filesystem"
 ```
+
+These build/evaluation commands require the private flake input but do not enable
+the service. Output from `size` contains counts and byte totals only. If the
+spool will use a separate filesystem that is not mounted yet, mount it before
+measuring free space.
 
 Confirm that the journal interval actually exists. Include normal traffic and
 bursts. Normalize/compress representative data and account for **262,800
@@ -110,6 +124,14 @@ year-count performance remains a pre-activation acceptance requirement.
 Restic's private index cache under the upload directory is additional disposable
 disk usage; include its measured growth in filesystem sizing and the free-space
 reserve. It contains no independent recovery credential.
+
+CLI failures report an allowlisted `phase` and `reason`, for example
+`phase=upload reason=repository_id_mismatch operation=cat`. Backend failures also
+report the operation and numeric exit status when available, for example
+`reason=backend_failed operation=backup exit_status=3`; timeouts use
+`reason=backend_timeout`. Known validation failures include a fixed explanation.
+Unexpected failures use a generic reason. Raw command arguments, server stderr,
+URLs, credentials and record payloads remain excluded from failure diagnostics.
 
 ## Provision independently, then enable
 
