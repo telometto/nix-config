@@ -8,7 +8,9 @@ import sys
 import tempfile
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Event
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -68,27 +70,119 @@ class NormalizationTests(unittest.TestCase):
         self.assertEqual(result["data"]["ClientHost"], "192.0.2.1, 2001:db8::1")
         self.assertEqual(result["data"]["User-Agent"], "test-agent")
 
-    def test_crowdsec_event_types_and_uri_arrays(self):
-        for event in (
-            "crowdsec_alert",
-            "crowdsec_remediation",
-            "crowdsec_remediation_log_drop",
-        ):
-            result = normalize(
-                journal(
+    def test_crowdsec_producer_contracts(self):
+        # alerts.py emits context status strings; telemetry.go emits integer
+        # remediation statuses and a separate numeric loss-report count.
+        cases = [
+            (
+                "crowdsec-alert-archive.service",
+                {
+                    "event": "crowdsec_alert",
+                    "kind": "local_detection",
+                    "alert_id": 7,
+                    "scenario": "http-probing",
+                    "source_ip": "2001:db8::1",
+                    "country": "NO",
+                    "asn": "64500",
+                    "as_name": "Example",
+                    "time": "2026-10-19T12:00:00Z",
+                    "events_count": 12,
+                    "simulated": False,
+                    "target_host": "example.test",
+                    "http_method": "GET",
+                    "http_status": "404",
+                    "user_agent": "test-agent",
+                    "target_uri": ["/one?SECRET", "/two#SECRET"],
+                },
+            ),
+            *(
+                (
+                    "traefik.service",
                     {
-                        "event": event,
-                        "source_ip": "2001:db8::1",
-                        "target_uri": ["/one?SECRET", "/two#SECRET"],
-                        "raw": "SECRET",
-                        "simulated": False,
-                    }
-                ),
+                        "event": "crowdsec_remediation",
+                        "kind": "decision",
+                        "source_ip": "198.51.100.1",
+                        "target_host": "example.test",
+                        "target_uri": "/one?SECRET",
+                        "http_method": "GET",
+                        "user_agent": "test-agent",
+                        "http_status": status,
+                        "origin": "crowdsec",
+                        "scenario": "http-probing",
+                        "decision_id": 42,
+                        "remediation": remediation,
+                        "time": "2026-10-19T12:00:00Z",
+                    },
+                )
+                for status, remediation in ((403, "ban"), (200, "captcha"))
+            ),
+            (
+                "traefik.service",
+                {"event": "crowdsec_remediation_log_drop", "count": 12},
+            ),
+        ]
+        for unit, event in cases:
+            result = normalize(
+                journal({**event, "raw": "SECRET"}, unit=unit),
                 "blizzard",
             )
-            self.assertEqual(result["event"], event)
-            self.assertNotIn("SECRET", json.dumps(result))
-            self.assertEqual(result["data"]["target_uri"], ["/one", "/two"])
+            with self.subTest(event=event["event"], status=event.get("http_status")):
+                self.assertEqual(result["event"], event["event"])
+                self.assertNotIn("SECRET", json.dumps(result))
+                for key, value in event.items():
+                    if key == "target_uri":
+                        paths = [value] if isinstance(value, str) else value
+                        value = [p.split("?", 1)[0].split("#", 1)[0] for p in paths]
+                    if key != "event":
+                        self.assertEqual(result["data"][key], value)
+                if "http_status" in event:
+                    self.assertIs(
+                        type(result["data"]["http_status"]), type(event["http_status"])
+                    )
+
+    def test_non_scalar_journal_fields_retain_only_scalar_metadata(self):
+        for key in (
+            "SYSLOG_IDENTIFIER",
+            "_SYSTEMD_UNIT",
+            "_TRANSPORT",
+            "MESSAGE",
+            "_BOOT_ID",
+            "__REALTIME_TIMESTAMP",
+            "_UID",
+            "_PID",
+        ):
+            for value in (
+                ["sudo", "SECRET"],
+                [115, 117, 100, 111, 0],
+                {"bad": "SECRET"},
+                None,
+            ):
+                with self.subTest(field=key, value=value):
+                    entry = journal(
+                        "zeno : USER=root ; COMMAND=/bin/tool SECRET",
+                        unit="user@1000.service",
+                        SYSLOG_IDENTIFIER="sudo",
+                    )
+                    entry[key] = value
+                    result = normalize(entry, "blizzard")
+                    self.assertEqual(result["source"], "unparsed")
+                    self.assertEqual(result["event"], "unparsed")
+                    self.assertEqual(result["data"], {})
+                    self.assertEqual(result["cursor"], "cursor-1")
+                    self.assertNotIn("SECRET", json.dumps(result))
+                    self.assertLess(len(encoded(result)), 8192)
+
+    def test_non_scalar_event_selector_retains_metadata(self):
+        for event in ([], ["crowdsec_alert"], {"bad": "SECRET"}):
+            for unit in ("traefik.service", "crowdsec-alert-archive.service"):
+                with self.subTest(event=event, unit=unit):
+                    result = normalize(
+                        journal({"event": event, "ClientHost": "SECRET"}, unit=unit),
+                        "blizzard",
+                    )
+                    self.assertEqual(result["source"], "unparsed")
+                    self.assertEqual(result["data"], {})
+                    self.assertNotIn("SECRET", json.dumps(result))
 
     def test_authentication_and_sudo_arguments(self):
         for address in ("198.51.100.1", "2001:db8::1"):
@@ -292,6 +386,46 @@ class SpoolTests(unittest.TestCase):
         self.assertEqual(target.stat().st_mode & 0o777, 0o644)
         self.assertNotIn("source_ip", target.read_text())
 
+    def test_concurrent_metrics_publication_cannot_overwrite_newer_state(self):
+        target = self.root / "metrics.prom"
+        cfg = {"metrics_file": str(target)}
+        self.spool.append([{"source": "unparsed"}], "cursor-1")
+        newer_spool = Spool(self.spool.root, GIB, 0)
+        old_sampled, release_old, newer_started, newer_published = (
+            Event() for _ in range(4)
+        )
+        atomic_write = archive.atomic_write
+
+        def publish(path, data, mode):
+            if b"security_log_archive_unparsed_total 1\n" in data:
+                old_sampled.set()
+                if not release_old.wait(5):
+                    raise AssertionError("older metrics writer was not released")
+            else:
+                newer_published.set()
+            atomic_write(path, data, mode)
+
+        def publish_newer():
+            newer_started.set()
+            archive.write_metrics(cfg, newer_spool)
+
+        with (
+            patch("archive.atomic_write", side_effect=publish),
+            ThreadPoolExecutor(max_workers=2) as pool,
+        ):
+            old = pool.submit(archive.write_metrics, cfg, self.spool)
+            try:
+                self.assertTrue(old_sampled.wait(5))
+                self.spool.append([{"source": "unparsed"}], "cursor-2")
+                newer = pool.submit(publish_newer)
+                self.assertTrue(newer_started.wait(5))
+                self.assertFalse(newer_published.wait(0.2))
+            finally:
+                release_old.set()
+            old.result(timeout=5)
+            newer.result(timeout=5)
+        self.assertIn("security_log_archive_unparsed_total 2\n", target.read_text())
+
     def test_conflicting_replays_cannot_silently_replace_original_evidence(self):
         original = record()
         forged = json.loads(json.dumps(original))
@@ -431,13 +565,125 @@ class HeartbeatTests(unittest.TestCase):
                         self.assertEqual(sent.method, "POST")
                         self.assertEqual(sent.data, b"")
                 secret.write_text("https://unrelated.example/private-token")
-                with patch("archive.urllib.request.urlopen") as request:
-                    with self.assertRaises(ValueError):
-                        archive.heartbeat(cfg)
+                with (
+                    patch("archive.urllib.request.urlopen") as request,
+                    self.assertRaises(ValueError),
+                ):
+                    archive.heartbeat(cfg)
                 request.assert_not_called()
 
 
 class CollectionTests(unittest.TestCase):
+    def test_unsupported_records_seal_and_resume_without_replaying_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cfg = {
+                "state_dir": directory,
+                "buffer_bytes": GIB,
+                "min_free_bytes": 0,
+                "host": "blizzard",
+                "seal_seconds": 0,
+            }
+            entries = [
+                journal(
+                    "SECRET",
+                    cursor="cursor-repeated",
+                    unit="user@1000.service",
+                    SYSLOG_IDENTIFIER=["sudo", "other"],
+                ),
+                journal(
+                    "SECRET",
+                    cursor="cursor-binary",
+                    unit="user@1000.service",
+                    SYSLOG_IDENTIFIER=[115, 117, 100, 111, 0],
+                ),
+                journal(
+                    {"event": ["crowdsec_alert"], "raw": "SECRET"},
+                    cursor="cursor-event",
+                ),
+                journal(
+                    "Accepted publickey for zeno from 198.51.100.1 port 1234 ssh2",
+                    cursor="cursor-good",
+                    unit="sshd.service",
+                ),
+            ]
+
+            def collect_once(batch):
+                spool = archive.spool_for(cfg)
+                handlers = []
+                append = spool.append
+
+                def seal(*args, **kwargs):
+                    result = append(*args, **kwargs)
+                    handlers[0]()
+                    return result
+
+                process = MagicMock()
+                process.poll.return_value = None
+                with (
+                    patch("archive.spool_for", return_value=spool),
+                    patch(
+                        "archive.signal.signal",
+                        side_effect=lambda _, handler: handlers.append(handler),
+                    ),
+                    patch("archive.subprocess.Popen", return_value=process) as reader,
+                    patch(
+                        "archive.select.select", return_value=([process.stdout], [], [])
+                    ),
+                    patch(
+                        "archive.os.read",
+                        return_value=b"".join(
+                            encoded(entry) + b"\n" for entry in batch
+                        ),
+                    ),
+                    patch.object(spool, "append", side_effect=seal),
+                ):
+                    archive.collect(cfg)
+                return spool, reader.call_args.args[0]
+
+            spool, _ = collect_once(entries)
+            self.assertEqual(spool.state()["cursor"], "cursor-good")
+            self.assertEqual(spool.metric_values()["unparsed_total"], 3)
+            name, _ = spool.pending()[0]
+            payload = spool.read_segment(spool.ready / name)[1]
+            events = [json.loads(line) for line in payload.splitlines()]
+            self.assertEqual(
+                [event["source"] for event in events],
+                ["unparsed"] * 3 + ["ssh", "archive"],
+            )
+            self.assertNotIn(b"SECRET", payload)
+            next_entry = {**entries[-1], "__CURSOR": "cursor-after-restart"}
+            resumed, command = collect_once([entries[-1], next_entry])
+            self.assertIn("--cursor=cursor-good", command)
+            self.assertEqual(resumed.state()["cursor"], "cursor-after-restart")
+            self.assertEqual(resumed.metric_values()["unparsed_total"], 3)
+
+    def test_sizing_continues_after_unsupported_selectors(self):
+        entries = [
+            journal(
+                "SECRET", unit="user@1000.service", SYSLOG_IDENTIFIER=["sudo", "other"]
+            ),
+            journal({"event": {"unknown": "SECRET"}}),
+            journal(
+                "zeno : USER=root ; COMMAND=/bin/tool SECRET",
+                unit="user@1000.service",
+                SYSLOG_IDENTIFIER="sudo",
+            ),
+        ]
+        process = MagicMock()
+        process.stdout = io.BytesIO(
+            b"".join(encoded(entry) + b"\n" for entry in entries)
+        )
+        process.wait.return_value = 0
+        output = io.StringIO()
+        with (
+            patch("archive.subprocess.Popen", return_value=process),
+            patch("archive.sys.stdout", output),
+        ):
+            archive.size({"host": "blizzard"}, SimpleNamespace(since="7 days ago"))
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["records"], {"unparsed": 2, "sudo": 1})
+        self.assertNotIn("SECRET", output.getvalue())
+
     def test_unseekable_saved_cursor_emits_a_durable_gap(self):
         with tempfile.TemporaryDirectory() as directory:
             cfg = {
@@ -476,6 +722,125 @@ class CollectionTests(unittest.TestCase):
             name, _ = spool.pending()[-1]
             payload = spool.read_segment(spool.ready / name)[1]
             self.assertEqual(json.loads(payload)["event"], "archive_gap")
+
+
+class DiagnosticsTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.cfg = {
+            "host": "blizzard",
+            "repository_id": "a" * 64,
+            "repository": "SECRET-repository",
+            "admin_repository": "SECRET-admin-repository",
+            "staging_dir": str(self.root / "staging"),
+            "credentials": {"password": "SECRET-password-file"},
+        }
+        self.config = self.root / "config.json"
+        self.config.write_bytes(encoded(self.cfg))
+
+    def invoke(self, *args):
+        stderr = io.StringIO()
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch(
+                "archive.sys.argv",
+                ["security-log-archive", "--config", str(self.config), *args],
+            ),
+            patch("archive.sys.stderr", stderr),
+        ):
+            status = archive.main()
+        self.assertEqual(status, 1)
+        diagnostic = stderr.getvalue()
+        self.assertNotIn("SECRET", diagnostic)
+        self.assertNotIn(str(self.root), diagnostic)
+        return diagnostic
+
+    def test_identity_interval_and_stale_plan_have_distinct_safe_reasons(self):
+        with patch(
+            "archive.subprocess.run",
+            return_value=SimpleNamespace(stdout=encoded({"id": "b" * 64})),
+        ):
+            mismatch = self.invoke("inspect")
+        self.assertIn(
+            "phase=inspect reason=repository_id_mismatch operation=cat", mismatch
+        )
+        valid_identity = SimpleNamespace(stdout=encoded({"id": "a" * 64}))
+        with patch("archive.subprocess.run", return_value=valid_identity):
+            reversed_interval = self.invoke(
+                "restore",
+                "--since",
+                "2026-10-19T00:00:00Z",
+                "--until",
+                "2026-10-18T00:00:00Z",
+                "--target",
+                str(self.root / "recovery"),
+            )
+        self.assertIn(
+            "phase=restore reason=recovery_interval_reversed", reversed_interval
+        )
+        plan = self.root / "plan.json"
+        plan.write_bytes(
+            encoded(
+                {
+                    "version": archive.VERSION,
+                    "repository_id": "a" * 64,
+                    "generated_at": 0,
+                    "cutoff": 0,
+                }
+            )
+        )
+        with patch("archive.subprocess.run", return_value=valid_identity):
+            stale = self.invoke(
+                "retention-apply", "--plan", str(plan), "--uploads-paused"
+            )
+        self.assertIn("phase=retention-apply reason=retention_plan_stale", stale)
+
+    def test_backend_failures_expose_only_operation_reason_and_exit_status(self):
+        for error, reason, status in (
+            (
+                subprocess.CalledProcessError(
+                    3,
+                    ["SECRET-command"],
+                    output=b"SECRET-output",
+                    stderr=b"SECRET-stderr",
+                ),
+                "backend_failed",
+                " exit_status=3",
+            ),
+            (
+                subprocess.TimeoutExpired(
+                    ["SECRET-command"],
+                    10,
+                    output=b"SECRET-output",
+                    stderr=b"SECRET-stderr",
+                ),
+                "backend_timeout",
+                "",
+            ),
+            (FileNotFoundError("SECRET-path"), "backend_unavailable", ""),
+        ):
+            with self.subTest(reason=reason):
+                with patch(
+                    "archive.subprocess.run",
+                    side_effect=[
+                        SimpleNamespace(stdout=encoded({"id": "a" * 64})),
+                        error,
+                    ],
+                ):
+                    diagnostic = self.invoke("inspect")
+                self.assertIn(
+                    f"phase=inspect reason={reason} operation=stats{status}", diagnostic
+                )
+
+    def test_unexpected_errors_and_malformed_configs_do_not_leak_details(self):
+        for error in (ValueError("SECRET-payload"), RuntimeError("SECRET-url")):
+            with patch("archive.admin", side_effect=error):
+                diagnostic = self.invoke("inspect")
+            self.assertNotIn("SECRET", diagnostic)
+        self.config.write_text('{"SECRET":')
+        self.assertIn("phase=configuration reason=invalid_json", self.invoke("inspect"))
 
 
 class RetentionTests(unittest.TestCase):
@@ -546,9 +911,9 @@ class RetentionTests(unittest.TestCase):
                 patch("archive.Restic", return_value=client),
                 patch("archive.time.time", return_value=self.now),
                 patch("archive.verify_tree"),
+                self.assertRaises(RuntimeError),
             ):
-                with self.assertRaises(RuntimeError):
-                    archive.admin(cfg, args)
+                archive.admin(cfg, args)
         operations = [call.args[0] for call in client.run.call_args_list]
         self.assertIn("forget", operations)
         self.assertNotIn("prune", operations)
