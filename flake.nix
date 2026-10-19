@@ -152,8 +152,19 @@
       // microvmConfigurations;
 
       formatter.${system} = treefmtEval.config.build.wrapper;
+      packages.${system}.security-log-archive =
+        nixpkgs.legacyPackages.${system}.callPackage ./packages/security-log-archive
+          { };
       checks.${system} = {
         formatting = treefmtEval.config.build.check inputs.self;
+
+        security-log-archive = import ./tests/security-log-archive.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        security-log-archive-runtime = import ./tests/security-log-archive-runtime.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
 
         cloudflare-metrics =
           nixpkgs.legacyPackages.${system}.runCommand "cloudflare-metrics-tests"

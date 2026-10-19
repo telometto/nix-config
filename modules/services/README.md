@@ -107,6 +107,7 @@ ______________________________________________________________________
 | Module file | Option prefix | Typical location | Purpose |
 |-------------|--------------|-----------------|---------|
 | [borgbackup.nix](borgbackup.nix) | `sys.services.borgbackup` | Host + VMs | Deduplicating off-site backup |
+| [security-log-archive.nix](security-log-archive.nix) | `sys.services.securityLogArchive` | Blizzard + Snowfall administration | Disabled append-only security-log archive and independent recovery |
 | [ups.nix](ups.nix) | `sys.services.ups` | Host (blizzard) | UPS monitoring (NUT) |
 
 #### System

@@ -78,7 +78,7 @@ ______________________________________________________________________
 | firefox | 10.100.0.52 | 11052 | 4 GB | 4 | Via WG | Containerized Firefox browser |
 | gitea | 10.100.0.50 | 11050 | 2 GB | 2 | Direct | Self-hosted git forge; public `git.<canonical-domain>` via Cloudflare Tunnel/Traefik |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Direct | Photo library |
-| jellyfin | 10.100.0.72 | 8096 | 16 GB | 8 | Direct | Media server; staged host-state migration and VPS/Tailscale ingress |
+| jellyfin | 10.100.0.72 | 8096 | 16 GB | 8 | Direct | Media server; VPS/Tailscale ingress |
 | lidarr | 10.100.0.26 | 11028 | 1 GB | 1 | Direct | Music PVR |
 | matrix-synapse | 10.100.0.60 | 11060 | 4 GB | 4 | Gateway only | Matrix homeserver |
 | mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Direct | Recipe manager and meal planner |

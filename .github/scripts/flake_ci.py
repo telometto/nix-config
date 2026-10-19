@@ -12,6 +12,7 @@ from pathlib import Path
 SYSTEM = "x86_64-linux"
 LIFECYCLE = "microvm-lifecycle"
 CROWDSEC = {"crowdsec-http", "crowdsec-observability"}
+ARCHIVE = {"security-log-archive", "security-log-archive-runtime"}
 MATRIX = {
     "matrix-baseline",
     "matrix-whatsapp-bridge",
@@ -40,6 +41,7 @@ CHECKS = {
     "scrutiny",
     "user-accounts",
     "victoriametrics",
+    *ARCHIVE,
 }
 # Exact file mappings only: new files under auto-loaded trees default to full.
 # Shared Traefik, Cloudflared, Prometheus, Grafana, loaders, lib helpers, and
@@ -50,7 +52,7 @@ DEPENDENCIES = {
     "hosts/blizzard/monitoring/cloudflare-alerts.nix": {"cloudflare-metrics"},
     "dashboards/host/blizzard/cloudflare-overview.json": {"cloudflare-metrics"},
     "modules/services/crowdsec.nix": CROWDSEC | MATRIX,
-    "hosts/blizzard/security/crowdsec.nix": CROWDSEC | MATRIX,
+    "hosts/blizzard/security/crowdsec.nix": CROWDSEC | MATRIX | ARCHIVE,
     "hosts/blizzard/monitoring/crowdsec.nix": CROWDSEC,
     "hosts/blizzard/monitoring/crowdsec-alerts.nix": CROWDSEC,
     "dashboards/host/blizzard/crowdsec.json": CROWDSEC,
@@ -71,6 +73,13 @@ DEPENDENCIES = {
     "tests/sandfly-ssh-test.py": {"sandfly-target"},
     "tests/sandfly-ssh-validator-test.py": {"sandfly-target"},
     "tests/sandfly-firewall-test.py": {"sandfly-target"},
+    "modules/services/security-log-archive.nix": ARCHIVE,
+    "hosts/blizzard/monitoring/security-log-archive.nix": ARCHIVE | CROWDSEC,
+    "hosts/snowfall/security-log-archive.nix": ARCHIVE,
+    "lib/security-log-archive-alerts.nix": ARCHIVE,
+    "tests/security_log_archive_test.py": ARCHIVE,
+    "tests/security_log_archive_integration.py": ARCHIVE,
+    "tests/security_log_archive_scale.py": ARCHIVE,
 }
 # A check definition is consumed only by that check. CrowdSec definitions and
 # Python fixtures select both contracts plus all three external runtime fixtures.
@@ -87,8 +96,9 @@ for fixture in (
 
 PREFIX_DEPENDENCIES = {
     "tests/cloudflare_metrics/": {"cloudflare-metrics"},
-    "packages/crowdsec-bouncer/": CROWDSEC,
-    "packages/crowdsec-observability/": CROWDSEC,
+    "packages/crowdsec-bouncer/": CROWDSEC | ARCHIVE,
+    "packages/crowdsec-observability/": CROWDSEC | ARCHIVE,
+    "packages/security-log-archive/": ARCHIVE,
 }
 # CI control changes are full even if a file extension looks like documentation.
 CI_CONTROL = (
