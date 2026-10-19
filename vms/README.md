@@ -129,7 +129,10 @@ well as the Nix-generated base config and writes durable state only to
 `/var/lib/mas`; the base config contains no decrypted secret values. The
 generator units, `mas-db-init.service`, and MAS itself use systemd sandboxing
 with explicit read-only and writable paths. See the [Matrix hardening plan](../docs/matrix-hardening-plan.md)
-for the remaining runtime compatibility and rotation gates.
+for the accepted runtime compatibility, rotation, client-IP, and SMTP-outage
+evidence. R-03 was closed by explicit operator approval on 2026-10-12, with
+the remaining seven-day baseline observation waived. Matrix offsite
+backup/restore is optional under R-04.
 
 The generators are `Type=oneshot` units with `RemainAfterExit=true`. Treat a
 SOPS rotation as an explicit generator-and-consumer restart operation and verify
@@ -146,9 +149,10 @@ calls Synapse over `127.0.0.1:8008`, listens for appservice transactions only
 on `127.0.0.1:29318`, and has no public publication or host port-forward. When
 enabled, its linked-device state is stored in `mautrix-whatsapp-state.img` and
 its separate PostgreSQL database remains distinct from Synapse and MAS. Both
-must be added to the approved Matrix backup/restore inventory before login;
-the registration file is generated under `/run` and is not an independent
-backup artifact.
+must be included if the optional Matrix backup is used; offsite backup/restore
+is not a login prerequisite. Document re-login recovery if linked-device state
+is lost. The registration file is generated under `/run` and is not an
+independent backup artifact.
 
 The bridge implementation is composed in
 [`matrix-whatsapp.nix`](matrix-whatsapp.nix). Its VM-owned registration gate
