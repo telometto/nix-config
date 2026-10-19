@@ -117,6 +117,7 @@ under `.github/tests/` run before classification on every invocation.
 | Cloudflare collector, fixtures, dashboard, service module, or alerts | Cloudflare metrics and formatting |
 | CrowdSec packages, Python fixtures, dashboard, monitoring, or contract definitions | CrowdSec HTTP/observability, three runtime fixtures, and formatting where applicable |
 | CrowdSec service/security configuration | CrowdSec checks and fixtures, Matrix, publication, blackbox, network-policy, and formatting |
+| Security-log archive module, package, host wiring, alerts, or fixtures | Archive sanitization/durability/protocol and alert checks, the two-VM archive runtime check, and formatting; CrowdSec producers also select archive checks |
 | Matrix service modules and VM/storage files | Matrix baseline/WhatsApp, publication, blackbox, network-policy, and formatting |
 | Jellyfin service/GPU/web modules and VM/settings files | Jellyfin firewall and MicroVM contracts, and formatting |
 | Blackbox module, target configuration, or availability dashboard | Blackbox observability and formatting |
