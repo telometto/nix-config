@@ -1,22 +1,6 @@
 { pkgs }:
 let
   package = pkgs.callPackage ../packages/security-log-archive { };
-  diagnostic = pkgs.writeText "archive-fixture-diagnostic.py" ''
-    import subprocess
-    import sys
-    sys.path.insert(0, "${package}/libexec/security-log-archive")
-    import archive
-    original = archive.Restic.run
-    def run(self, *args, **kwargs):
-        try:
-            return original(self, *args, **kwargs)
-        except subprocess.CalledProcessError as error:
-            # Only disposable fixture data may appear in these diagnostics.
-            print("Fixture backend failure:", args[0], error.returncode, error.stderr.decode(), flush=True)
-            raise
-    archive.Restic.run = run
-    sys.exit(archive.main())
-  '';
 in
 pkgs.testers.runNixOSTest {
   name = "security-log-archive-runtime";
@@ -65,7 +49,7 @@ pkgs.testers.runNixOSTest {
           pkgs.openssh
           pkgs.systemd
         ];
-        serviceConfig.ExecStart = lib.mkForce "${pkgs.python3}/bin/python3 ${diagnostic} --config /etc/archive-runtime.json upload";
+        serviceConfig.ExecStart = lib.mkForce "${package}/bin/security-log-archive --config /etc/archive-runtime.json upload";
       };
       systemd.timers.security-log-archive-upload.wantedBy = lib.mkForce [ ];
       environment.etc."archive-template.json".source =
