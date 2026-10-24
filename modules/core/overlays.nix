@@ -90,6 +90,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # Cover both Tunnel services and the cloudflared CLI installed on every host.
+    # Remove with the flake input once locked nixpkgs provides cloudflared >= 2026.10.2.
+    sys.overlays.fromInputs.nixpkgs-cloudflared = [ "cloudflared" ];
+
     nixpkgs.overlays = generatedOverlays ++ cfg.custom;
   };
 }
