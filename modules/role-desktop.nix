@@ -87,6 +87,11 @@ in
         ## Add custom overlays
         custom = [
           (final: prev: {
+            # Avoid loading incompatible Qt plugins from the desktop session.
+            brave-origin = prev.brave-origin.override {
+              commandLineArgs = "--ui-toolkit=gtk";
+            };
+
             # Replace regular Brave for all desktop-role consumers with Brave Origin.
             brave = final.brave-origin;
 
