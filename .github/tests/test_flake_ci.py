@@ -193,6 +193,18 @@ class SelectionTests(unittest.TestCase):
         self.assertFalse(plan["grouped"])
         self.assertFalse(plan["lifecycle"])
 
+    def test_codex_paths_select_the_adapter_check(self):
+        for path in (
+            "home/programs/codex.nix",
+            "lib/codex-generators.nix",
+            "tests/codex-adapter.nix",
+            "tests/codex-check.nix",
+            "tests/codex_activation.py",
+            "tests/fixtures/codex-plugin/.codex-plugin/plugin.json",
+        ):
+            with self.subTest(path=path):
+                self.assertIn("codex-adapter", self.selected(path)["checks"])
+
     def test_exact_mappings_exist_and_reference_declared_checks(self):
         for path, checks in ci.DEPENDENCIES.items():
             with self.subTest(path=path):
