@@ -54,9 +54,9 @@ policy. The VM sees Blizzard's TCP relay as `10.100.0.1`, so set **Dashboard →
 Networking → Known Proxies** to **only `10.100.0.1`** after the VM cutover. The VPS
 address is no longer the direct Jellyfin peer. If the VPS address changes,
 update the Blizzard guard and tailnet policy; verify the proxy headers again.
-For a new instance, keep `vpsIPv4 = null` in `vms/jellyfin-settings.nix`
-until private setup is complete, then set it to the dedicated VPS address
-before activating this route.
+Inspect `vpsIPv4` in `vms/jellyfin-settings.nix`; explicitly set it to `null`
+and apply that configuration for private setup. After private setup is
+complete, set it to the dedicated VPS address before activating this route.
 
 After private administrator setup, a Caddy site on the VPS can use this shape
 (replace the hostname):
