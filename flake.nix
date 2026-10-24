@@ -17,6 +17,10 @@
     # Bleeding-edge forward-pin: use sys.overlays.fromInputs to pull individual packages from here
     nixpkgs-unstable-small.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
+    # Temporary cloudflared 2026.10.3 pin for the eMudhra certificate compromise.
+    # https://github.com/NixOS/nixpkgs/pull/576762
+    nixpkgs-cloudflared.url = "github:NixOS/nixpkgs/6ed958b166ece07c2ef51894610b876cbcda6a93";
+
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
     nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
