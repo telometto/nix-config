@@ -699,6 +699,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-cloudflared": {
+      "locked": {
+        "lastModified": 1792634919,
+        "narHash": "sha256-TOMakAbgXNlgxQEdfBt1WpDh94+75j8KzwHTklSX/DA=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "6ed958b166ece07c2ef51894610b876cbcda6a93",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "6ed958b166ece07c2ef51894610b876cbcda6a93",
+        "type": "github"
+      }
+    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1788057806,
@@ -972,6 +988,7 @@
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_4",
         "nixpkgs-beta": "nixpkgs-beta",
+        "nixpkgs-cloudflared": "nixpkgs-cloudflared",
         "nixpkgs-master": "nixpkgs-master",
         "nixpkgs-rustdesk": "nixpkgs-rustdesk",
         "nixpkgs-stable-small": "nixpkgs-stable-small",
