@@ -26,7 +26,11 @@ in
           _: prev: {
             hm = prev.hm // {
               generators = prev.hm.generators // {
-                inherit (import "${inputs.hm-master}/modules/lib/generators.nix" { lib = prev; })
+                inherit
+                  (import ../../lib/codex-generators.nix {
+                    lib = prev;
+                    hmMaster = inputs.hm-master;
+                  })
                   mkImpureConfigMerger
                   mkImpureConfigCleanup
                   ;
@@ -60,6 +64,26 @@ in
         "skills"
         "rules"
       ];
+
+  # Wrap the final block so static and build-time-derived plugins share the
+  # same dry-run guard without duplicating upstream plugin identity logic.
+  options.home.activation = lib.mkOption {
+    apply =
+      activation:
+      activation
+      // lib.optionalAttrs (activation ? cleanCodexPluginCache) {
+        cleanCodexPluginCache = activation.cleanCodexPluginCache // {
+          after = lib.unique (activation.cleanCodexPluginCache.after ++ [ "writeBoundary" ]);
+          data = ''
+            if [[ -v DRY_RUN ]]; then
+              echo "Would clean Codex plugin cache before linking the generation"
+            else
+              ${activation.cleanCodexPluginCache.data}
+            fi
+          '';
+        };
+      };
+  };
 
   options.hm.programs.codex = {
     enable = lib.mkEnableOption "Declarative Codex configuration";
