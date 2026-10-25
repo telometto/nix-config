@@ -162,6 +162,12 @@
       checks.${system} = {
         formatting = treefmtEval.config.build.check inputs.self;
 
+        codex-adapter = import ./tests/codex-check.nix {
+          inherit nixpkgs system;
+          hmStable = inputs.hm-stable;
+          hmMaster = inputs.hm-master;
+        };
+
         security-log-archive = import ./tests/security-log-archive.nix {
           pkgs = nixpkgs.legacyPackages.${system};
         };
