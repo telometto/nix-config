@@ -16,7 +16,7 @@ NixOS module, building user configurations automatically for enabled users.
 | [accounts/](accounts/) | PIM account definitions | `hm.accounts.email.enable`, `hm.accounts.calendar.enable` |
 | [desktop/](desktop/) | Desktop environment integration | `hm.desktop.gnome.enable`, `hm.desktop.kde.enable` |
 | [files/](files/) | Managed dotfiles and themes | File management, Vesktop themes |
-| [programs/](programs/) | User applications | `hm.programs.terminal.enable`, `hm.programs.browsers.enable`, opt-in `hm.programs.gitea.enable` |
+| [programs/](programs/) | User applications | `hm.programs.terminal.enable`, `hm.programs.browsers.enable`, opt-in `hm.programs.gitea.enable` and `hm.programs.codex.enable` |
 | [security/](security/) | User-level SOPS secrets | `hm.security.sops.*` |
 | [services/](services/) | User services | `hm.services.gpgAgent.enable`, `hm.services.sshAgent.enable` |
 | [overrides/](overrides/) | Per-role, per-host, and per-user overrides | Not auto-loaded — see Override System |
@@ -31,6 +31,62 @@ actual runtime UID instead of an evaluation-time UID.
 Rendered templates use the user's XDG config directory by default, at
 `$XDG_CONFIG_HOME/sops-nix/secrets/rendered/<name>`. Consumers should use the
 template option's `path` value rather than reconstructing this path.
+
+### Codex
+
+[programs/codex.nix](programs/codex.nix) provides opt-in
+`hm.programs.codex.enable`. Its settings, package, profiles, context,
+contextOverride, hooks, plugins, marketplaces, skills, rules, mutableSettings,
+and enableMcpIntegration options alias the corresponding
+[`programs.codex` options](https://github.com/nix-community/home-manager/blob/master/modules/programs/codex/options.nix).
+
+The module replaces only the stable Codex module with the locked `hm-master`
+version and supplies its two configuration merge/cleanup helpers locally.
+The [scoped merger repair](../lib/codex-generators.nix) preserves existing
+ownership and access ACLs during mutable replacement. The adapter guards both
+plugin cleanup paths during dry runs and places them after the write boundary.
+Preserving access controls must succeed before a replacement is installed;
+otherwise activation stops without replacing the original configuration.
+Other Home Manager modules continue using `hm-stable`. The Codex package
+comes from the host's `pkgs`, including any configured package overlay.
+
+Codex is enabled for `zeno` on `snowfall` in the user-and-host override.
+`hm.programs.codex.preferXdgDirectories = false` retains `~/.codex` for
+configuration, authentication, sessions, and installed skills/plugins while
+other programs keep the shared XDG preference. New installations default to
+`home.preferXdgDirectories`; when enabled, Home Manager sets `CODEX_HOME` to
+`$XDG_CONFIG_HOME/codex`.
+
+`mutableSettings = true` merges declared preferences into the existing writable
+`config.toml` during activation. Close Codex and editors that can write this
+file, and pause any configuration-writing automation before activation. The
+pinned merger checks for conflicts but does not lock out other writers:
+concurrent changes can abort activation or be lost between its final check
+and file replacement. With writers quiesced, declared values win and
+undeclared MCP credentials, project trust, and plugin/skill choices remain.
+Declaring an MCP transport intentionally removes incompatible fields for that
+server: a stdio `command` removes HTTP credentials and URL fields, while a
+`url` removes stdio command, argument, working-directory, and environment fields.
+Removing a declared setting does not remove it from that file; clear it locally
+if needed. Keep tokens and
+other secret values out of `settings` and all repository files. Authentication
+and existing MCP credentials remain local runtime state.
+
+The public-only compatibility fixture at
+[tests/codex-adapter.nix](../tests/codex-adapter.nix) checks the stable/master
+module boundary, directory choices, optional aliases, and disabled behavior
+without opening a user's configuration. Re-evaluate it after updating either
+Home Manager input; its header documents the command.
+The `codex-adapter` flake check evaluates all six cases and runs generated
+activation blocks against temporary fixtures for merge permissions, transport
+changes, symlinks, error handling, and static/derived plugin dry runs. ACL tests
+require a filesystem with POSIX ACL support; the secondary-group test requires
+a supplementary group and can be rerun outside the Nix build sandbox:
+
+```bash
+fixture=$(nix build --no-link --print-out-paths .#checks.x86_64-linux.codex-adapter.manifest)
+nix shell nixpkgs#acl nixpkgs#bash nixpkgs#python3 --command python3 tests/codex_activation.py "$fixture"
+```
 
 ### Base Configuration
 

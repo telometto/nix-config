@@ -24,6 +24,7 @@ JELLYFIN = {"jellyfin-firewall", "jellyfin-microvm"}
 # This inventory supports selective mappings. Full builds discover Nix attributes.
 CHECKS = {
     "formatting",
+    "codex-adapter",
     "cloudflare-metrics",
     "microvm-publication",
     "matrix-baseline",
@@ -47,6 +48,10 @@ CHECKS = {
 # Shared Traefik, Cloudflared, Prometheus, Grafana, loaders, lib helpers, and
 # common VM infrastructure deliberately remain unmapped.
 DEPENDENCIES = {
+    "home/programs/codex.nix": {"codex-adapter"},
+    "lib/codex-generators.nix": {"codex-adapter"},
+    "tests/codex-check.nix": {"codex-adapter"},
+    "tests/codex_activation.py": {"codex-adapter"},
     "modules/services/scripts/cloudflare_metrics.py": {"cloudflare-metrics"},
     "modules/services/cloudflare-metrics.nix": {"cloudflare-metrics"},
     "hosts/blizzard/monitoring/cloudflare-alerts.nix": {"cloudflare-metrics"},
@@ -95,6 +100,7 @@ for fixture in (
     DEPENDENCIES[f"tests/crowdsec_{fixture}.py"] = CROWDSEC
 
 PREFIX_DEPENDENCIES = {
+    "tests/fixtures/codex-plugin/": {"codex-adapter"},
     "tests/cloudflare_metrics/": {"cloudflare-metrics"},
     "packages/crowdsec-bouncer/": CROWDSEC | ARCHIVE,
     "packages/crowdsec-observability/": CROWDSEC | ARCHIVE,

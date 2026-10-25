@@ -93,7 +93,7 @@ All Home Manager options are defined under the `hm.*` namespace in `home/`.
 |-----------|-----------|---------|
 | `hm.langs` | `home/base.nix` | Regional formatting locale; does not set UI language |
 | `hm.desktop.{gnome,kde,hyprland,xdg}.enable` | `home/desktop/` | Desktop environment integration |
-| `hm.programs.{browsers,development,terminal,media,social,gaming,gpg,tools,beets,fastfetch,packages,gitea}.enable` | `home/programs/` | User program bundles; `gitea` is an opt-in Git credential integration |
+| `hm.programs.{browsers,development,terminal,media,social,gaming,gpg,tools,beets,fastfetch,packages,gitea,codex}.enable` | `home/programs/` | User program bundles; `gitea` and `codex` are opt-in integrations |
 | `hm.services.{gpgAgent,sshAgent}.enable` | `home/services/` | User-level background services |
 | `hm.security.sops.*` | `home/security/sops.nix` | User-level SOPS secret decryption |
 | `hm.accounts.{email,calendar,contact}.enable` | `home/accounts/` | PIM accounts (email, calendar, contacts) |

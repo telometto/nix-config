@@ -28,10 +28,10 @@
     pkgs.uv
     pkgs.filen-desktop
     pkgs.filen-cli
-    pkgs.codex
     pkgs.nodejs
     pkgs.annotation-mono
     pkgs.jellyfin-desktop
+    pkgs.bubblewrap
   ]
   ++ (with pkgs.sweethome3d; [
     application
@@ -41,6 +41,47 @@
 
   hm = {
     programs = {
+      codex = {
+        enable = true;
+        preferXdgDirectories = false;
+        mutableSettings = true;
+
+        # Merge these preferences into ~/.codex/config.toml while preserving
+        # local MCP credentials, project trust, and plugin/skill state.
+        settings = {
+          model = "gpt-6.1-sol";
+          model_reasoning_effort = "max";
+          plan_mode_reasoning_effort = "max";
+          personality = "pragmatic";
+          approvals_reviewer = "auto_review";
+          service_tier = "default";
+
+          features = {
+            terminal_resize_reflow = true;
+            memories = true;
+            network_proxy = true;
+            mentions_v2 = true;
+            prevent_idle_sleep = true;
+            worktrees = true;
+            analytics_plan_history = true;
+            daemon_auto_start = true;
+            login_shell_package_path = true;
+          };
+
+          tui = {
+            theme = "gruvbox-dark";
+            status_line = [
+              "model-with-reasoning"
+              "context-used"
+              "five-hour-limit"
+              "weekly-limit"
+            ];
+            status_line_use_colors = true;
+            session_picker_view = "comfortable";
+          };
+        };
+      };
+
       development = {
         extraPackages = [
           pkgs.vscode
