@@ -2,7 +2,8 @@
 # nix eval --offline --impure --json --expr '
 #   let
 #     lock = builtins.fromJSON (builtins.readFile ./flake.lock);
-#     source = name: builtins.fetchTree lock.nodes.${name}.locked;
+#     source = name:
+#       builtins.fetchTree lock.nodes.${lock.nodes.${lock.root}.inputs.${name}}.locked;
 #   in import ./tests/codex-adapter.nix {
 #     nixpkgs = source "nixpkgs";
 #     hmStable = source "hm-stable";
@@ -103,6 +104,9 @@ let
           "rules/fixture.rules"
           "plugins/cache/home-manager/fixture/1.0.0"
         ];
+        cleanupOrdering =
+          lib.elem "writeBoundary" cfg.home.activation.cleanCodexPluginCache.after
+          && lib.elem "linkGeneration" cfg.home.activation.cleanCodexPluginCache.before;
         assertions = lib.all (entry: entry.assertion) cfg.assertions;
       };
     in
