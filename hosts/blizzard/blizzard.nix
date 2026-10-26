@@ -60,13 +60,16 @@
 
     ## Pull specific packages from different nixpkgs inputs
     overlays = {
-      # fromInputs = {
-      #   nixpkgs-small = [
-      #     "pipx"
-      #     "openrazer"
-      #   ];
-      fromInputs.nixpkgs-unstable = [ "tailscale" ];
-      # };
+      fromInputs = {
+        #   nixpkgs-small = [
+        #     "pipx"
+        #     "openrazer"
+        #   ];
+        nixpkgs-unstable = [
+          "tailscale"
+          "atuin"
+        ];
+      };
 
       ## Add custom overlays
       custom = [
