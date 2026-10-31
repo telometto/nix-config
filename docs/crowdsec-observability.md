@@ -136,7 +136,10 @@ For a reviewed upgrade on Blizzard:
 1. In a maintenance window, run `sudo cscli hub upgrade` without `--force`.
    Find the generated configuration path in `systemctl show crowdsec -p ExecStart`
    and validate it with the running package's `crowdsec -c <path> -t` as the
-   `crowdsec` user before restarting. Do not restart after a failed validation;
+   `crowdsec` user before restarting. Run validation from `/` or another
+   directory readable by that user; the AppSec loader must be able to stat its
+   working directory, which a private SSH home directory prevents.
+   Do not restart after a failed validation;
    restore the saved rule state and validate again.
 1. Restart CrowdSec only after validation, then verify acquisitions, both bouncer
    pulls, AppSec observations and application availability. Re-run

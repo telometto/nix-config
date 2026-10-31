@@ -69,7 +69,7 @@ The shared defaults are:
 - scrape interval: 30 seconds
 - probe timeout: 10 seconds
 - scrape timeout: 15 seconds
-- alert duration: five minutes
+- alert duration: ten minutes
 
 ## Blizzard's Matrix probes
 
@@ -90,7 +90,8 @@ The reusable option and hardening contract are at
 ## Alert semantics
 
 The `public-service-availability` Grafana group contains three related
-contracts. Each alert uses a five-minute `for` window.
+contracts. Each alert uses the shared `blackbox.failureWindow` from
+`lib/constants.nix`, currently ten minutes.
 
 | Alert | Trigger | No-data behavior |
 |-------|---------|------------------|
@@ -102,6 +103,13 @@ The first alert identifies an endpoint failure. The second identifies the
 Prometheus-to-exporter pipeline. The third detects one target disappearing
 while other targets continue to report, which a single aggregate over present
 series cannot detect.
+
+The endpoint and exporter-scrape expressions use boolean comparisons so
+Grafana receives `0` for healthy results and `1` for failures. A filtering
+comparison would remove healthy series (triggering `NoData`) and preserve a
+failed probe's `0` value (a non-firing condition). Keep the boolean results
+and the no-data policy together: healthy metrics must remain present, while
+genuine loss of all probe data still alerts.
 
 ## Build and deploy
 
@@ -146,7 +154,8 @@ missing target must not be treated as a healthy empty result.
 
 The repository contract check also renders the exporter JSON, systemd
 hardening, Prometheus relabeling, alert rules, exact Matrix JSON expectations,
-and dashboard registration:
+and dashboard registration. It also runs the provisioned alert expressions
+through `promtool` with healthy, failed, and missing metric fixtures:
 
 ```console
 nix build --no-link .#checks.x86_64-linux.blackbox-observability --print-build-logs

@@ -139,8 +139,10 @@ let
     };
   };
 
-  probeFailureExpr = ''min by (service, probe) (probe_success{job="${blackboxConstants.jobName}"}) < 1'';
-  exporterScrapeFailureExpr = ''min(up{job="${blackboxConstants.jobName}"}) < 1 or absent(up{job="${blackboxConstants.jobName}"})'';
+  # Grafana evaluates the returned numbers as booleans. Filtering comparisons
+  # would drop healthy series and return 0 for a failed probe or scrape.
+  probeFailureExpr = ''min by (service, probe) (probe_success{job="${blackboxConstants.jobName}"}) < bool 1'';
+  exporterScrapeFailureExpr = ''min(up{job="${blackboxConstants.jobName}"}) < bool 1 or absent(up{job="${blackboxConstants.jobName}"})'';
   targetMissingExpr = lib.concatStringsSep " or " (
     map (
       target:
@@ -159,7 +161,7 @@ let
     data = [ (ruleData probeFailureExpr) ];
     annotations = {
       summary = "Public {{ $labels.service }} probe failed: {{ $labels.probe }}";
-      description = "The public probe has failed continuously for five minutes. Check the public route, Cloudflare Tunnel, Traefik/CrowdSec, and the target service.";
+      description = "The public probe has failed continuously for ${blackboxConstants.failureWindow}. Check the public route, Cloudflare Tunnel, Traefik/CrowdSec, and the target service.";
     };
     labels = {
       alert_group = "public-service-availability";
