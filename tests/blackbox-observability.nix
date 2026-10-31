@@ -42,6 +42,86 @@ let
   expectedJsonPattern =
     field: value: ''"${lib.escapeRegex field}"[[:space:]]*:[[:space:]]*"${lib.escapeRegex value}"'';
   moduleNames = map (target: "http_${target.service}_${target.name}") blackbox.targets;
+  queryTest = expr: exp_samples: {
+    inherit expr exp_samples;
+    eval_time = "0m";
+  };
+  probeFailureExpr = (builtins.head availabilityRule.data).model.expr;
+  exporterScrapeFailureExpr = (builtins.head exporterScrapeRule.data).model.expr;
+  # Grafana consumes these values as conditions. Healthy series must remain
+  # present with value 0; a failing probe/scrape must return value 1.
+  expressionTests = pkgs.writeText "blackbox-alert-expressions.json" (
+    builtins.toJSON {
+      rule_files = [ ];
+      tests = [
+        {
+          name = "healthy and failing endpoints retain their own condition values";
+          input_series = [
+            {
+              series = ''probe_success{job="blackbox",service="matrix",probe="client-api"}'';
+              values = "1";
+            }
+            {
+              series = ''probe_success{job="blackbox",service="matrix",probe="federation-endpoint"}'';
+              values = "0";
+            }
+            {
+              series = ''up{job="blackbox",instance="exporter"}'';
+              values = "1";
+            }
+          ];
+          promql_expr_test = [
+            (queryTest probeFailureExpr [
+              {
+                labels = ''{service="matrix",probe="client-api"}'';
+                value = 0;
+              }
+              {
+                labels = ''{service="matrix",probe="federation-endpoint"}'';
+                value = 1;
+              }
+            ])
+            (queryTest exporterScrapeFailureExpr [
+              {
+                labels = "{}";
+                value = 0;
+              }
+            ])
+          ];
+        }
+        {
+          name = "a failed exporter scrape returns a firing condition";
+          input_series = [
+            {
+              series = ''up{job="blackbox",instance="exporter"}'';
+              values = "0";
+            }
+          ];
+          promql_expr_test = [
+            (queryTest exporterScrapeFailureExpr [
+              {
+                labels = "{}";
+                value = 1;
+              }
+            ])
+          ];
+        }
+        {
+          name = "missing metrics preserve the no-data and absent-scrape alarms";
+          input_series = [ ];
+          promql_expr_test = [
+            (queryTest probeFailureExpr [ ])
+            (queryTest exporterScrapeFailureExpr [
+              {
+                labels = ''{job="blackbox"}'';
+                value = 1;
+              }
+            ])
+          ];
+        }
+      ];
+    }
+  );
 in
 assert blackbox.enable;
 assert blackbox.targets != [ ];
@@ -93,7 +173,7 @@ assert availabilityRule.noDataState == "Alerting";
 assert lib.hasInfix "probe_success" (builtins.head availabilityRule.data).model.expr;
 assert lib.hasInfix ''job="${blackboxConstants.jobName}"''
   (builtins.head availabilityRule.data).model.expr;
-assert lib.hasInfix "five minutes" availabilityRule.annotations.description;
+assert lib.hasInfix blackboxConstants.failureWindow availabilityRule.annotations.description;
 assert exporterScrapeRule != null;
 assert exporterScrapeRule.noDataState == "Alerting";
 assert lib.hasInfix "up" (builtins.head exporterScrapeRule.data).model.expr;
@@ -116,4 +196,7 @@ assert lib.any (
     panel.targets or [ ]
   )
 ) dashboard.panels;
-pkgs.runCommand "blackbox-observability-tests" { } "touch $out"
+pkgs.runCommand "blackbox-observability-tests" { nativeBuildInputs = [ pkgs.prometheus.cli ]; } ''
+  promtool test rules ${expressionTests}
+  touch $out
+''
