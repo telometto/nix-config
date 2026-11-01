@@ -286,6 +286,7 @@
         cross-seed = import ./tests/cross-seed.nix {
           inherit (self.nixosConfigurations) blizzard;
           crossSeedVm = self.nixosConfigurations.cross-seed-vm;
+          qbittorrentVm = self.nixosConfigurations.qbittorrent-vm;
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
