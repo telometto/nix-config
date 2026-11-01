@@ -135,6 +135,11 @@ in
     ./qbittorrent.nix
   ];
 
+  cross-seed-vm = mkMicrovm [
+    microvmModule
+    ./cross-seed.nix
+  ];
+
   sabnzbd-vm = mkMicrovm [
     microvmModule
     ./sabnzbd.nix
