@@ -28,6 +28,18 @@ let
       { sys.secrets.crossSeedSettingsFile = lib.mkForce null; }
     ];
   };
+  customDataDir =
+    enable:
+    (crossSeedVm.extendModules {
+      modules = [
+        {
+          sys.services.cross-seed = {
+            enable = lib.mkForce enable;
+            dataDir = lib.mkForce "/var/lib/cross-seed-custom";
+          };
+        }
+      ];
+    }).config;
   host = blizzard.extendModules {
     modules = [
       { sys.virtualisation.microvm.instances.cross-seed.enable = lib.mkForce true; }
@@ -48,6 +60,27 @@ assert lib.any (
   assertion: !assertion.assertion && lib.hasInfix "crossSeedSettingsFile" assertion.message
 ) missingSecret.config.assertions;
 assert lib.versionAtLeast cfg.services.cross-seed.package.version "6.13.9";
+
+# Reject state outside the fixed persistent image, including during bootstrap.
+assert lib.all
+  (
+    enable:
+    lib.any (
+      assertion: !assertion.assertion && lib.hasInfix "cross-seed.dataDir" assertion.message
+    ) (customDataDir enable).assertions
+  )
+  [
+    false
+    true
+  ];
+assert lib.all (phase: phase.users.users.cross-seed.home == "/var/lib/cross-seed") [
+  staged
+  cfg
+];
+assert cfg.services.cross-seed.configDir == "/var/lib/cross-seed";
+assert lib.any (
+  volume: volume.image == "cross-seed-state.img" && volume.mountPoint == "/var/lib/cross-seed"
+) cfg.microvm.volumes;
 
 # The emitted configuration must recheck and stop candidates with missing bytes.
 assert settings.action == "inject";
