@@ -33,6 +33,7 @@ ______________________________________________________________________
 | [readarr.nix](readarr.nix) | `sys.services.readarr` | MicroVM | Books PVR |
 | [lidarr.nix](lidarr.nix) | `sys.services.lidarr` | MicroVM | Music PVR |
 | [qbittorrent.nix](qbittorrent.nix) | `sys.services.qbittorrent` | MicroVM (WG-routed) | Torrent client |
+| [cross-seed.nix](cross-seed.nix) | `sys.services.cross-seed` | MicroVM | Automatic complete-content cross-seeding; [provisioning](../../docs/cross-seed.md) |
 | [sabnzbd.nix](sabnzbd.nix) | `sys.services.sabnzbd` | MicroVM (WG-routed) | Usenet client |
 | [ombi.nix](ombi.nix) | `sys.services.ombi` | MicroVM | Media request portal (legacy) |
 | [overseerr.nix](overseerr.nix) | `sys.services.overseerr` | MicroVM | Media request portal |
