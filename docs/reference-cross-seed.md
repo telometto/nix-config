@@ -10,6 +10,15 @@ The primary `nixos-26.05` nixpkgs revision `fa1373130d5a21c040a47c5dbe1913d59ed9
 packages cross-seed **6.13.7** with Node.js 22.
 ([Package source](https://github.com/NixOS/nixpkgs/blob/fa1373130d5a21c040a47c5dbe1913d59ed91808/pkgs/by-name/cr/cross-seed/package.nix))
 
+The repository's [service module](../modules/services/cross-seed.nix) overrides
+older packages with **6.13.9**, using fixed source and npm dependency hashes.
+The scoped overlay covers both the daemon and generated defaults; it preserves
+newer upstream packages. Remove it once the primary input supplies 6.13.9 or
+later. This security release rejects unsafe torrent names and paths, including
+UTF-8 overrides, before constructing filesystem paths.
+([Release](https://github.com/cross-seed/cross-seed/releases/tag/v6.13.9),
+[parser](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/parseTorrent.ts))
+
 The pinned NixOS module and the checked `nixos-unstable` module have identical
 content, blob `2bf7da6233704a8bc3e781c807fd1d167972ab65`. The module:
 
@@ -51,10 +60,10 @@ the ordinary Arr import queue. Never configure the output directory as a torrent
 client watch directory.
 ([Direct client injection](https://www.cross-seed.org/docs/tutorials/injection))
 
-The 6.13.7 template uses `linkCategory="cross-seed-link"`,
+The 6.13.9 template uses `linkCategory="cross-seed-link"`,
 `flatLinking=false`, `useClientTorrents=true`, `action="inject"`,
 `includeSingleEpisodes=false`, and `includeNonVideos=false`.
-([Versioned template](https://github.com/cross-seed/cross-seed/blob/v6.13.7/src/config.template.cjs))
+([Versioned template](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/config.template.cjs))
 
 Select eligible private torrent indexers explicitly. Upstream advises against
 public trackers as Torznab destinations and does not support magnet-only
@@ -105,12 +114,12 @@ autoResumeMaxDownload = 0;
 ignoreNonRelevantFilesToResume = false;
 ```
 
-The 6.13.7 qBittorrent integration adds these torrents stopped, rechecks their
+The 6.13.9 qBittorrent integration adds these torrents stopped, rechecks their
 data, and refuses to resume with any bytes missing. A mismatch may remain in
 the client stopped for review. `strict` adds filename restrictions; the recheck
 provides content verification for either mode.
-([qBittorrent integration](https://github.com/cross-seed/cross-seed/blob/v6.13.7/src/clients/QBittorrent.ts),
-[resume policy](https://github.com/cross-seed/cross-seed/blob/v6.13.7/src/clients/TorrentClient.ts))
+([qBittorrent integration](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/clients/QBittorrent.ts),
+[resume policy](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/clients/TorrentClient.ts))
 
 ## Scheduling, completion triggers, and API
 
@@ -120,13 +129,13 @@ per indexer. Starting the service therefore has external effects; there is no
 separate automatic first-run review stage.
 ([Getting started](https://www.cross-seed.org/docs/basics/getting-started#4-run-the-daemon))
 
-In 6.13.7, jobs without a previous run recorded in the database are eligible
+In 6.13.9, jobs without a previous run recorded in the database are eligible
 immediately. `searchCadence=null` and `rssCadence=null` omit those jobs;
 `action="inject"` still creates an hourly saved-injection retry job. A service
 readiness gate therefore provides a clearer initial staging boundary than
 changing the search schedule.
-([Scheduler source](https://github.com/cross-seed/cross-seed/blob/v6.13.7/src/jobs.ts),
-[search batching source](https://github.com/cross-seed/cross-seed/blob/v6.13.7/src/pipeline.ts))
+([Scheduler source](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/jobs.ts),
+[search batching source](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/pipeline.ts))
 
 Download completion webhooks accelerate searching and retry pending injections.
 qBittorrent's completion command can POST `infoHash=%I` and
@@ -151,15 +160,15 @@ to their media directories.
 
 ## Runtime preflight without searching
 
-There is no dedicated config-validation command in 6.13.7. The existing
+There is no dedicated config-validation command in 6.13.9. The existing
 `cross-seed test-notification` command performs full startup validation, then
 sends only its notification; it does not start catalog indexing, searches,
 RSS, or scheduled jobs. With `notificationWebhookUrls=[]`, no notification is
 sent. This is a source-verified use of the command rather than a separately
 documented validation interface.
-([Command source](https://github.com/cross-seed/cross-seed/blob/v6.13.7/src/cmd.ts),
-[startup validation](https://github.com/cross-seed/cross-seed/blob/v6.13.7/src/startup.ts),
-[notification sender](https://github.com/cross-seed/cross-seed/blob/v6.13.7/src/pushNotifier.ts))
+([Command source](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/cmd.ts),
+[startup validation](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/startup.ts),
+[notification sender](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/pushNotifier.ts))
 
 Run it with the daemon stopped and the same service user, groups, config,
 filesystem access, and systemd credential loading. The NixOS module installs
@@ -169,8 +178,8 @@ queries Torznab capabilities, and logs into qBittorrent; qBittorrent validation
 also creates the cross-seed tag. It does not prove that every catalog source
 path is readable or that every hardlink can be created. Validate a representative
 source-to-link path separately before enabling the daemon.
-([Startup source](https://github.com/cross-seed/cross-seed/blob/v6.13.7/src/startup.ts),
-[qBittorrent validation](https://github.com/cross-seed/cross-seed/blob/v6.13.7/src/clients/QBittorrent.ts))
+([Startup source](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/startup.ts),
+[qBittorrent validation](https://github.com/cross-seed/cross-seed/blob/v6.13.9/src/clients/QBittorrent.ts))
 
 ## Decisions before enabling
 
