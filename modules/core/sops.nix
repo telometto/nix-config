@@ -31,6 +31,7 @@ let
   hasBrave = config.sys.services.brave.enable or false;
   hasPushover = config.sys.services.grafanaPushover.enable or false;
   hasScrutiny = config.sys.services.scrutiny.enable or false;
+  hasCrossSeed = config.sys.services.cross-seed.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -182,6 +183,14 @@ in
           mode = "0440";
         };
       }
+      // whenEnabled hasCrossSeed {
+        "cross-seed/settings" = {
+          owner = "root";
+          group = "root";
+          mode = "0400";
+          restartUnits = [ "cross-seed.service" ];
+        };
+      }
       // whenEnabled hasScrutiny {
         "scrutiny/token" = {
           owner = "root";
@@ -307,6 +316,9 @@ in
     // whenEnabled hasPushover {
       pushoverApiTokenFile = toString config.sops.secrets."pushover/api_token".path;
       pushoverUserKeyFile = toString config.sops.secrets."pushover/user_key".path;
+    }
+    // whenEnabled hasCrossSeed {
+      crossSeedSettingsFile = toString config.sops.secrets."cross-seed/settings".path;
     }
     // whenEnabled hasScrutiny {
       scrutinyTokenFile = toString config.sops.secrets."scrutiny/token".path;
