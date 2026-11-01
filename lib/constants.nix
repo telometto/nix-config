@@ -53,6 +53,7 @@
       readarr = 11024;
       lidarr = 11028;
       qbittorrent = 11030;
+      crossSeed = 11032;
       overseerr = 11040;
       firefox = 11052;
       wireguard = 56943;
