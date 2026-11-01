@@ -73,7 +73,7 @@ ______________________________________________________________________
 | actual | 10.100.0.51 | 11051 | 1 GB | 1 | Direct | Actual Budget (personal finance) |
 | bazarr | 10.100.0.23 | 11023 | 1 GB | 1 | Direct | Subtitle management |
 | brave | 10.100.0.54 | 11054 | 4 GB | 4 | Via WG | Containerized Brave browser |
-| cross-seed | 10.100.0.32 | 11032 (loopback) | 1 GB | 1 | Direct | Cross-seeding; daemon staged pending [provisioning](../docs/cross-seed.md) |
+| cross-seed | 10.100.0.32 | 11032 (loopback) | 1 GB | 1 | Direct | Cross-seeding; daemon enabled in source; [fresh provisioning](../docs/cross-seed.md#provision-the-guest-and-credentials) starts disabled |
 | firefly | 10.100.0.62 | 11062 | 2 GB | 2 | Direct | Firefly III finance |
 | firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Direct | Firefly data importer |
 | firefox | 10.100.0.52 | 11052 | 4 GB | 4 | Via WG | Containerized Firefox browser |
