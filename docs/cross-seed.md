@@ -44,11 +44,16 @@ activate Blizzard or register secrets.
    update is required for the VM identity, bridge policy, and installation.
    Confirm the guest boots and `cross-seed.service` is absent.
 
-1. Log into the guest as `admin`. Derive its public age recipient from the
-   persistent SSH host key:
+1. From Snowfall, establish a trusted SSH connection using the guest's Ed25519
+   host key. Then derive the age recipient from that verified public key in
+   your local known-hosts file; guest sudo is not needed:
 
    ```bash
-   sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key | nix run nixpkgs#ssh-to-age --
+   ssh -F /dev/null -J zeno@192.168.2.100 \
+     -o HostKeyAlgorithms=ssh-ed25519 admin@10.100.0.32 true
+   ssh-keygen -F 10.100.0.32 | \
+     awk '$2 == "ssh-ed25519" { print $2, $3 }' | \
+     sort -u | nix run nixpkgs#ssh-to-age --
    ```
 
    Add that recipient in the private `nix-secrets` repository and re-encrypt
@@ -95,44 +100,93 @@ activate Blizzard or register secrets.
    with mode `0400`. Systemd delivers a private copy through `LoadCredential`.
    Guest startup is ordered after secret installation.
 
-## Check the shared filesystem before enabling
+## Shared filesystem policy and one-time repair
 
 Source data and `/data/cross-seed` must be on the same filesystem, under the
 same `/data` mount in both guests. Cross-seed does not remap client paths.
-Do not add a separate mount for the link directory. Both services belong to
-the `users` group; the link directory is setgid and group writable, and newly
-created links/directories use umask `0002`.
+The persistent policy is:
 
-Existing files need inspection as well. A read-only Blizzard sample on
-2026-11-01 found a movie file with mode `0664` whose group was not `users`;
-that sample is a provisioning concern, not proof of access from the new guest.
-Linux's protected-hardlink policy generally requires source ownership or both
-read and write access. Readability alone is insufficient. Review ownership and
-ACLs across the intended source directories and arrange compatible access
-before starting searches; do not recursively change the media tree blindly.
+- Blizzard's qBittorrent VM explicitly runs with primary group `users` (GID 100),
+  private supplementary group `qbittorrent`, and umask `0002`, matching
+  SABnzbd's existing pattern. Its account and private state directory retain
+  the `qbittorrent` group. The reusable service module uses its configured
+  `group` as the default runtime group; the shared-media override is VM-local.
+- Blizzard manages the torrent root with group `users` and mode `2775`;
+  the setgid bit passes that group to new directories. Existing directory
+  inheritance is established by the one-time repair below.
+- Cross-seed and the Arr services already have supplementary `users` access
+  and group-writable creation masks. The cross-seed link directory is setgid
+  and group writable.
 
-The staged guest creates the service account and link directory even with the
-daemon disabled. Before enabling it, test a representative existing file from
-each source directory as `cross-seed`:
+Keep cross-seed disabled while running the following **once on Blizzard**, as
+`zeno`. After it passes, enable and deploy the service together with this policy.
+The repair needs host sudo only, not guest sudo.
+It records the old ownership, permissions, and ACLs before updating regular
+files and directories on the torrent filesystem. Permission changes also
+apply to other hardlinks to the same inodes.
+
+The 2026-11-01 host inventory found only GIDs 100 and 998, no named ACLs, and
+no setgid directories in this tree. The repair is scoped to that inspected
+tree, including `temp` and the existing category directories.
 
 ```bash
-sudo -u cross-seed test -r /data/torrents/REPLACE_WITH_EXISTING_FILE
-sudo -u cross-seed test -w /data/torrents/REPLACE_WITH_EXISTING_FILE
-sudo -u cross-seed ln /data/torrents/REPLACE_WITH_EXISTING_FILE /data/cross-seed/.permission-check
-stat -c '%d:%i %h %n' /data/torrents/REPLACE_WITH_EXISTING_FILE /data/cross-seed/.permission-check
+sudo bash <<'BASH'
+set -euo pipefail
+umask 077
+torrents=/rpool/unenc/media/data/torrents
+test -d "$torrents"
+test "$(getent group users | cut -d: -f3)" = 100
+backup=$(mktemp -d /var/lib/cross-seed-permissions.XXXXXXXX)
+getfacl -R -P --one-file-system -p -n -- "$torrents" > "$backup/before.acl"
+printf 'Permission backup: %s/before.acl\n' "$backup"
+
+find "$torrents" -xdev \( -type d -o -type f \) ! -gid 100 \
+  -exec chgrp users -- {} +
+find "$torrents" -xdev -type d -exec chmod g+rwx,g+s -- {} +
+find "$torrents" -xdev -type f ! -perm -0060 \
+  -exec chmod g+rw -- {} +
+
+cd /rpool/unenc/media/data
+setpriv --reuid=65534 --regid=100 --clear-groups \
+  find torrents -xdev -type f \( ! -readable -o ! -writable \) \
+  -print > "$backup/inaccessible.paths"
+if test -s "$backup/inaccessible.paths"; then
+  printf 'FAIL: inspect %s/inaccessible.paths\n' "$backup" >&2
+  exit 1
+fi
+printf 'PASS: torrent files are readable and writable through GID 100.\n'
+BASH
 ```
 
-The device and inode must match. Confirm qBittorrent can read the link at the
-same path, then remove only this temporary link. This preserves the original
-file. A single probe does not prove access to every existing torrent.
+Keep the printed backup path. An operator can restore the saved metadata
+with `sudo setfacl --restore=/var/lib/cross-seed-permissions.XXXXXXXX/before.acl`
+after reviewing later changes; restoration also restores saved group ownership.
+
+The successful guest hardlink probe established that the VirtioFS source and
+link paths share a filesystem. After deployment, verify the qBittorrent unit
+uses `Group=users` and observe that subsequent downloads keep
+GID 100 with group-write access. Repository checks cover the rendered service
+group and persistent directory policy; they do not prove live activation.
 
 ## Enable and verify
 
 Set `sys.services.cross-seed.enable = true` in
 [`vms/cross-seed.nix`](../vms/cross-seed.nix) after the recipient, secret, and
-filesystem prerequisites are ready. Build and deploy the guest through the
-normal [VM update workflow](../vms/README.md#vm-only-updates). A VM-only update
-is sufficient after the initial Blizzard host wiring is deployed.
+filesystem prerequisites are ready. The initial permissions-policy rollout
+requires a **Blizzard host deployment**: it installs the host directory rule
+and updates qBittorrent's VM as well as cross-seed. From Snowfall, deploy the
+current checkout, including the new host module:
+
+```bash
+cd "$HOME/.versioncontrol/github/projects/personal/nix-config"
+NIX_SSHOPTS='-F /dev/null' nixos-rebuild switch \
+  --flake "path:$PWD#blizzard" \
+  --target-host zeno@192.168.2.100 \
+  --ask-sudo-password
+```
+
+Later cross-seed-only changes can use the normal
+[VM update workflow](../vms/README.md#vm-only-updates).
 
 Inside the guest, verify:
 
