@@ -1,9 +1,11 @@
 # cross-seed on Blizzard
 
 cross-seed runs in a dedicated MicroVM, `cross-seed-vm` at `10.100.0.32`.
-The VM is enabled on Blizzard, while `sys.services.cross-seed.enable` in
-[`vms/cross-seed.nix`](../vms/cross-seed.nix) initially remains `false` so its
-persistent SSH identity can be enrolled before it needs credentials.
+The checked-in Blizzard configuration enables both the VM and the daemon through
+`sys.services.cross-seed.enable = true` in
+[`vms/cross-seed.nix`](../vms/cross-seed.nix). This describes the source configuration;
+it does not establish live guest readiness. Fresh or replacement guests need the
+explicit disabled bootstrap below before their first deployment.
 
 The [upstream reference](reference-cross-seed.md) records the checked module,
 version, matching behavior, and documentation sources.
@@ -39,7 +41,15 @@ and reverse network-policy change; enabling the daemon does not install one.
 These are operator rollout steps; implementing this configuration does not
 activate Blizzard or register secrets.
 
-1. Build and review the Blizzard configuration and the staged guest, then apply
+1. **Before deploying a fresh or replacement guest**, set
+   `sys.services.cross-seed.enable = false` in
+   [`vms/cross-seed.nix`](../vms/cross-seed.nix). Keep the VM instance enabled.
+   This omits both `cross-seed.service` and its SOPS secret while the guest's
+   persistent SSH identity is being enrolled. Do not deploy the checked-in
+   enabled daemon to an unenrolled guest: it requires the secret and can begin
+   searches and injections as soon as its credentials work.
+
+1. Build and review the Blizzard configuration and the disabled guest, then apply
    the host change through the normal deployment workflow. The initial host
    update is required for the VM identity, bridge policy, and installation.
    Confirm the guest boots and `cross-seed.service` is absent.
@@ -119,7 +129,28 @@ The persistent policy is:
   and group writable.
 
 Keep cross-seed disabled while running the following **once on Blizzard**, as
-`zeno`. After it passes, enable and deploy the service together with this policy.
+`zeno`. Reserve a maintenance window and quiesce **every process that can write
+or rename entries in the torrent tree**, including host jobs, interactive
+sessions, containers, and any writable NFS/SMB clients. Inspect the running
+system for additional writers; the VM list below covers the repository's
+writable VirtioFS shares, not every possible live export or host process.
+
+Record which of these VMs are running and any pre-existing masks, then stop and runtime-mask the whole
+guests from the host. Stopping only their normal application services leaves
+other guest processes able to replace pathnames during the root repair.
+Lidarr is included even though its instance is currently disabled.
+
+```bash
+systemctl list-units --all 'microvm@*-vm.service'
+sudo systemctl mask --runtime --now \
+  microvm@{cross-seed,qbittorrent,sonarr,radarr,readarr,lidarr,bazarr,sabnzbd}-vm.service
+```
+
+Keep all writers stopped from **before the metadata backup through repair,
+verification, and installation of the new host/guest group policy**. Do not
+reboot during this window: runtime masks disappear on reboot. Leave masks in
+place if any step fails. Resume only through the deployment sequence below;
+repeating traversals while writers are active cannot establish a stable result.
 The repair needs host sudo only, not guest sudo.
 It records the old ownership, permissions, and ACLs before updating regular
 files and directories on the torrent filesystem. Permission changes also
@@ -133,6 +164,15 @@ tree, including `temp` and the existing category directories.
 sudo bash <<'BASH'
 set -euo pipefail
 umask 077
+export PATH=/run/current-system/sw/bin
+for name in cross-seed qbittorrent sonarr radarr readarr lidarr bazarr sabnzbd; do
+  unit="microvm@${name}-vm.service"
+  test "$(systemctl show --property=LoadState --value "$unit")" = masked
+  case "$(systemctl show --property=ActiveState --value "$unit")" in
+    inactive|failed) ;;
+    *) printf 'FAIL: writer guest %s is not stopped.\n' "$unit" >&2; exit 1 ;;
+  esac
+done
 torrents=/rpool/unenc/media/data/torrents
 test -d "$torrents"
 test "$(getent group users | cut -d: -f3)" = 100
@@ -141,26 +181,45 @@ getfacl -R -P --one-file-system -p -n -- "$torrents" > "$backup/before.acl"
 printf 'Permission backup: %s/before.acl\n' "$backup"
 
 find "$torrents" -xdev \( -type d -o -type f \) ! -gid 100 \
-  -exec chgrp users -- {} +
-find "$torrents" -xdev -type d -exec chmod g+rwx,g+s -- {} +
+  -execdir chgrp --no-dereference users -- {} +
+find "$torrents" -xdev -type d -execdir chmod --no-dereference g+rwx,g+s -- {} +
 find "$torrents" -xdev -type f ! -perm -0060 \
-  -exec chmod g+rw -- {} +
+  -execdir chmod --no-dereference g+rw -- {} +
+
+find "$torrents" -xdev \
+  \( -type d \( ! -gid 100 -o ! -perm -2070 \) \
+  -o -type f \( ! -gid 100 -o ! -perm -0060 \) \) \
+  -print > "$backup/incorrect-metadata.paths"
+if test -s "$backup/incorrect-metadata.paths"; then
+  printf 'FAIL: inspect %s/incorrect-metadata.paths\n' "$backup" >&2
+  exit 1
+fi
 
 cd /rpool/unenc/media/data
 setpriv --reuid=65534 --regid=100 --clear-groups \
-  find torrents -xdev -type f \( ! -readable -o ! -writable \) \
+  find torrents -xdev \
+  \( -type d \( ! -readable -o ! -writable -o ! -executable \) \
+  -o -type f \( ! -readable -o ! -writable \) \) \
   -print > "$backup/inaccessible.paths"
 if test -s "$backup/inaccessible.paths"; then
   printf 'FAIL: inspect %s/inaccessible.paths\n' "$backup" >&2
   exit 1
 fi
-printf 'PASS: torrent files are readable and writable through GID 100.\n'
+printf 'PASS: directory inheritance and file access satisfy the GID 100 policy.\n'
 BASH
 ```
 
+The fixed absolute `PATH`, `-execdir`, and non-dereferencing commands add path
+protection; they do not replace the all-writers-stopped prerequisite. The
+verification checks directory group, group access, and setgid inheritance as
+well as file group/access, including traversal by a non-owner GID-100 process.
+
 Keep the printed backup path. An operator can restore the saved metadata
 with `sudo setfacl --restore=/var/lib/cross-seed-permissions.XXXXXXXX/before.acl`
-after reviewing later changes; restoration also restores saved group ownership.
+after reviewing later changes. Restoration also resolves saved pathnames and
+restores group ownership: quiesce all writers for the entire restore and
+verification, too. Keep the writer guests masked until the restored state and
+the intended runtime group policy have been reconciled.
 
 The successful guest hardlink probe established that the VirtioFS source and
 link paths share a filesystem. After deployment, verify the qBittorrent unit
@@ -170,20 +229,73 @@ group and persistent directory policy; they do not prove live activation.
 
 ## Enable and verify
 
-Set `sys.services.cross-seed.enable = true` in
+After fresh provisioning, or the one-time permission repair, set
+`sys.services.cross-seed.enable = true` in
 [`vms/cross-seed.nix`](../vms/cross-seed.nix) after the recipient, secret, and
 filesystem prerequisites are ready. The initial permissions-policy rollout
 requires a **Blizzard host deployment**: it installs the host directory rule
 and updates qBittorrent's VM as well as cross-seed. From Snowfall, deploy the
-current checkout, including the new host module:
+current checkout, including the new host module. If performing the permission
+repair, keep every writer stopped and the VM runtime masks in place during
+this deployment. Record the expected runner paths from this exact checkout
+before deploying:
 
 ```bash
 cd "$HOME/.versioncontrol/github/projects/personal/nix-config"
+nix eval --raw .#nixosConfigurations.qbittorrent-vm.config.microvm.declaredRunner.outPath
+nix eval --raw .#nixosConfigurations.cross-seed-vm.config.microvm.declaredRunner.outPath
 NIX_SSHOPTS='-F /dev/null' nixos-rebuild switch \
   --flake "path:$PWD#blizzard" \
   --target-host zeno@192.168.2.100 \
   --ask-sudo-password
 ```
+
+With runtime-masked guests, activation can report failed attempts to start those
+units. Keep the masks and inspect any deployment errors before resuming; a masked
+guest must not cause the old qBittorrent runner to be restarted. Confirm the
+new host configuration and updated guest runners have been installed, then
+follow the maintenance restart checks below before unmasking writers.
+
+For the permission maintenance, run these checks **on Blizzard**, with every
+writer still quiesced. Restarting these installer units installs the new
+host-declared runners without starting the masked VMs:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart \
+  install-microvm-qbittorrent-vm.service \
+  install-microvm-cross-seed-vm.service
+systemctl show -p ActiveState -p SubState -p Result \
+  install-microvm-qbittorrent-vm.service \
+  install-microvm-cross-seed-vm.service
+readlink -f /flash/enc/vms/qbittorrent-vm/current
+readlink -f /flash/enc/vms/cross-seed-vm/current
+
+qb_runner=$(readlink -f /flash/enc/vms/qbittorrent-vm/current)
+qb_unit="$qb_runner/share/microvm/system/etc/systemd/system/qbittorrent.service"
+grep -Fx 'Group=users' "$qb_unit"
+grep -Fx 'SupplementaryGroups=qbittorrent' "$qb_unit"
+grep -Fx 'UMask=002' "$qb_unit"
+```
+
+Require both installers to report `active` / `exited` / `success`, both installed
+runner paths to equal the recorded paths, and all three unit checks to pass.
+If any check fails, leave the masks in place and resolve it before resuming.
+Only then remove this maintenance's qBittorrent mask and start its new runner:
+
+```bash
+sudo systemctl unmask --runtime microvm@qbittorrent-vm.service
+sudo systemctl start microvm@qbittorrent-vm.service
+```
+
+Inside qBittorrent's guest, confirm `systemctl show qbittorrent.service -p Group`
+reports `users` and representative new files/directories retain GID 100,
+group-write access, and directory setgid inheritance. Then remove the remaining
+masks created for this maintenance, restart only the other previously running
+writer VMs, and resume the quiesced host jobs/clients. Preserve any pre-existing
+masks and leave disabled instances stopped. Finally unmask/start
+`microvm@cross-seed-vm.service` when its credentials and storage are ready;
+do not enable searches before that gate.
 
 Later cross-seed-only changes can use the normal
 [VM update workflow](../vms/README.md#vm-only-updates).
