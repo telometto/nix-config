@@ -315,4 +315,14 @@ validate {
     mem = 16384;
     vcpu = 8;
   };
+
+  cross-seed = {
+    name = "cross-seed";
+    cid = 129;
+    mac = "02:00:00:00:00:1E";
+    ip = "10.100.0.32";
+    port = consts.ports.vm.crossSeed;
+    mem = 1024;
+    vcpu = 1;
+  };
 }

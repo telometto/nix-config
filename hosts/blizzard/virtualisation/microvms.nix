@@ -189,6 +189,14 @@ let
       portForwards = [ (mkPortForward "tcp" consts.ports.vm.qbittorrent null) ];
     };
 
+    cross-seed = {
+      enable = true;
+      networkPolicy.allowedPeers = {
+        prowlarr = mkPrimaryPeer "Find cross-seed matches through selected Prowlarr indexers";
+        qbittorrent = mkPrimaryPeer "Read existing torrents and inject verified cross-seed matches";
+      };
+    };
+
     sabnzbd = {
       enable = true;
       portForwards = [ (mkPortForward "tcp" consts.ports.vm.sabnzbd null) ];
