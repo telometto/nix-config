@@ -18,6 +18,8 @@ version, matching behavior, and documentation sources.
   hardlinks under `/data/cross-seed`, with tracker subdirectories and the
   separate `cross-seed-link` client category. Its database and output torrents
   live in the persistent `cross-seed-state.img`, mounted at `/var/lib/cross-seed`.
+  This guest rejects `sys.services.cross-seed.dataDir` overrides: changing the
+  state path requires an explicit migration of the persistent image layout.
 - Flexible matching permits renamed files. Injected matches are stopped and
   fully rechecked; automatic resume permits **zero missing bytes**, including
   support files. A failed match can remain stopped in qBittorrent for review.
