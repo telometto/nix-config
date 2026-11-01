@@ -8,6 +8,7 @@
 let
   reg = (import ./vm-registry.nix { inherit consts; }).cross-seed;
   cfg = config.sys.services.cross-seed;
+  stateDir = "/var/lib/cross-seed";
 in
 {
   imports = [
@@ -19,7 +20,7 @@ in
       // {
         volumes = [
           {
-            mountPoint = "/var/lib/cross-seed";
+            mountPoint = stateDir;
             image = "cross-seed-state.img";
             size = 2048;
           }
@@ -34,6 +35,13 @@ in
         ];
       }
     ))
+  ];
+
+  assertions = [
+    {
+      assertion = cfg.dataDir == stateDir;
+      message = "cross-seed-vm: sys.services.cross-seed.dataDir must remain ${stateDir}, where cross-seed-state.img is mounted. Moving state requires an explicit migration.";
+    }
   ];
 
   # security.sudo.wheelNeedsPassword = lib.mkForce false;
