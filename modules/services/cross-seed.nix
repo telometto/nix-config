@@ -26,6 +26,35 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # The pinned nixpkgs package predates upstream's unsafe-metadata fixes.
+    # Overlay both the daemon and the NixOS module's generated defaults.
+    # Remove once the primary input provides cross-seed >= 6.13.9.
+    nixpkgs.overlays = [
+      (_final: prev: {
+        cross-seed =
+          if lib.versionAtLeast prev.cross-seed.version "6.13.9" then
+            prev.cross-seed
+          else
+            prev.cross-seed.overrideAttrs (
+              finalAttrs: _previousAttrs: {
+                version = "6.13.9";
+                src = prev.fetchFromGitHub {
+                  owner = "cross-seed";
+                  repo = "cross-seed";
+                  tag = "v${finalAttrs.version}";
+                  hash = "sha256-8WdSolN/AbW7C7HKrQpA3S+yndYJSq6eQ0/ahqHvHpc=";
+                };
+                npmDepsHash = "sha256-60YMls10w+PxgNLq2Bl3DXBUt3EWtQL5Zotn/ft+U5E=";
+                npmDeps = prev.fetchNpmDeps {
+                  name = "cross-seed-${finalAttrs.version}-npm-deps";
+                  inherit (finalAttrs) src;
+                  hash = finalAttrs.npmDepsHash;
+                };
+              }
+            );
+      })
+    ];
+
     assertions = [
       {
         assertion = config.sys.secrets.crossSeedSettingsFile != null;
