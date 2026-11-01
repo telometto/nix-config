@@ -2,6 +2,7 @@
   pkgs,
   blizzard,
   crossSeedVm,
+  qbittorrentVm,
 }:
 let
   inherit (pkgs) lib;
@@ -19,6 +20,7 @@ let
     ];
   };
   cfg = ready.config;
+  qbittorrent = qbittorrentVm.config;
   service = cfg.systemd.services.cross-seed;
   settings = cfg.services.cross-seed.settings;
   missingSecret = ready.extendModules {
@@ -32,6 +34,8 @@ let
     ];
   };
   instance = host.config.sys.virtualisation.microvm.instances.cross-seed;
+  torrentDirectory =
+    host.config.systemd.tmpfiles.settings."10-torrent-permissions"."/rpool/unenc/media/data/torrents".d;
   mediaShare = lib.findFirst (share: share.mountPoint == "/data") null cfg.microvm.shares;
 in
 # Bootstrap must not require a secret that cannot yet be encrypted for this guest.
@@ -62,6 +66,14 @@ assert lib.elem "sops-install-secrets.service" service.requires;
 assert lib.elem "sops-install-secrets.service" service.after;
 
 # Both applications see the same filesystem and can access group-writable links.
+assert qbittorrent.systemd.services.qbittorrent.serviceConfig.Group == "users";
+assert qbittorrent.users.users.qbittorrent.group == "qbittorrent";
+assert lib.elem "qbittorrent"
+  qbittorrent.systemd.services.qbittorrent.serviceConfig.SupplementaryGroups;
+assert qbittorrent.systemd.services.qbittorrent.serviceConfig.UMask == "002";
+assert torrentDirectory.mode == "2775";
+assert torrentDirectory.user == "-";
+assert torrentDirectory.group == "users";
 assert mediaShare != null && mediaShare.source == "/rpool/unenc/media/data";
 assert !mediaShare.readOnly;
 assert lib.elem "users" service.serviceConfig.SupplementaryGroups;
