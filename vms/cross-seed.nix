@@ -38,9 +38,10 @@ in
 
   # security.sudo.wheelNeedsPassword = lib.mkForce false;
 
-  # First boot creates /persist/ssh/ssh_host_ed25519_key. Enroll its public
-  # age recipient and provision cross-seed/settings in nix-secrets before
-  # enabling the daemon; it begins searching/injecting on startup.
+  # Enabled operation is checked in. For a fresh/replacement guest, first set
+  # enable = false: boot creates /persist/ssh/ssh_host_ed25519_key. Enroll its
+  # public age recipient, provision cross-seed/settings in nix-secrets, and
+  # complete storage maintenance before re-enabling searches/injections.
   # See docs/cross-seed.md for the complete provisioning sequence.
   sys.services.cross-seed = {
     enable = true;
