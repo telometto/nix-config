@@ -1,7 +1,7 @@
 ## MicroVM Configurations
 
 Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
-for lightweight virtualization. The flake currently defines 27 MicroVM
+for lightweight virtualization. The flake currently defines 28 MicroVM
 configurations for the `blizzard` host. Most use the shared `10.100.0.0/24`
 tap bridge behind a host-owned identity and lateral-access policy; Pocket ID
 uses a dedicated `10.100.1.0/30` host-to-VM bridge.
@@ -41,7 +41,7 @@ flowchart TB
     wg["wireguard-vm\n10.100.0.11\n(VPN gateway)"]
 
     subgraph direct["Direct-routed VMs (via bridge)"]
-        d1["actual · bazarr · firefly · firefly-importer\ngitea · immich · jellyfin · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli · trigger"]
+        d1["actual · bazarr · cross-seed · firefly · firefly-importer\ngitea · immich · jellyfin · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli · trigger"]
     end
 
     subgraph wgrouted["WG-routed VMs (traffic via wireguard-vm)"]
@@ -73,6 +73,7 @@ ______________________________________________________________________
 | actual | 10.100.0.51 | 11051 | 1 GB | 1 | Direct | Actual Budget (personal finance) |
 | bazarr | 10.100.0.23 | 11023 | 1 GB | 1 | Direct | Subtitle management |
 | brave | 10.100.0.54 | 11054 | 4 GB | 4 | Via WG | Containerized Brave browser |
+| cross-seed | 10.100.0.32 | 11032 (loopback) | 1 GB | 1 | Direct | Cross-seeding; daemon staged pending [provisioning](../docs/cross-seed.md) |
 | firefly | 10.100.0.62 | 11062 | 2 GB | 2 | Direct | Firefly III finance |
 | firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Direct | Firefly data importer |
 | firefox | 10.100.0.52 | 11052 | 4 GB | 4 | Via WG | Containerized Firefox browser |

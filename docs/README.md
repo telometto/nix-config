@@ -62,6 +62,8 @@ flowchart LR
   Canonical infrastructure domain language
 - [reference-ci.md](reference-ci.md) —
   CI workflows, checks, and automation
+- [reference-cross-seed.md](reference-cross-seed.md) —
+  Checked upstream cross-seed module, matching, scheduling, and runtime behavior
 - [credential-lifecycle.md](credential-lifecycle.md) —
   Password, SSH key, SOPS recipient, and service secret lifecycle policy
 - [roadmap.md](roadmap.md) —
@@ -107,6 +109,7 @@ flowchart LR
 
 - [sops-setup-guide.md](sops-setup-guide.md) — How to set up SOPS secrets and age keys
 - [scrutiny.md](scrutiny.md) — Provision, verify, and rotate the Scrutiny InfluxDB token
+- [cross-seed.md](cross-seed.md) — Provision and operate Blizzard's staged cross-seeding MicroVM
 - [blackbox-monitoring.md](blackbox-monitoring.md) — Configure, verify, and recover public HTTP/TLS availability probes
 - [gitea.md](gitea.md) — Operate and verify the public Gitea publication
 - [immich-backup.md](immich-backup.md) — Provision, operate, and restore the Immich offsite backup

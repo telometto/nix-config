@@ -1,6 +1,12 @@
 { lib, ... }:
 {
   options.sys.secrets = {
+    crossSeedSettingsFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Runtime JSON containing cross-seed API credentials and selected Torznab URLs.";
+    };
+
     tsKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string (do not coerce into store)
       default = null;

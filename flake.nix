@@ -283,6 +283,13 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        cross-seed = import ./tests/cross-seed.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          crossSeedVm = self.nixosConfigurations.cross-seed-vm;
+          qbittorrentVm = self.nixosConfigurations.qbittorrent-vm;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         user-accounts = import ./tests/user-accounts.nix {
           inherit (self.nixosConfigurations) kaizer snowfall;
           inherit VARS;

@@ -1,4 +1,10 @@
-{ pkgs, consts, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  consts,
+  ...
+}:
 let
   reg = (import ./vm-registry.nix { inherit consts; }).qbittorrent;
   mediaShare = {
@@ -44,6 +50,12 @@ in
       consts.ports.network.qbittorrentTorrent
     ];
     allowedUDPPorts = [ consts.ports.network.qbittorrentTorrent ];
+  };
+
+  # New downloads use the shared media group; account/state ownership stays private.
+  systemd.services.qbittorrent.serviceConfig = {
+    Group = lib.mkForce "users";
+    SupplementaryGroups = lib.mkForce [ config.sys.services.qbittorrent.group ];
   };
 
   sys.services.qbittorrent = {
