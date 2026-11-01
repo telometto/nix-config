@@ -47,6 +47,7 @@ assert lib.elem "users" staged.users.users.cross-seed.extraGroups;
 assert lib.any (
   assertion: !assertion.assertion && lib.hasInfix "crossSeedSettingsFile" assertion.message
 ) missingSecret.config.assertions;
+assert lib.versionAtLeast cfg.services.cross-seed.package.version "6.13.9";
 
 # The emitted configuration must recheck and stop candidates with missing bytes.
 assert settings.action == "inject";
@@ -92,4 +93,9 @@ assert lib.all (peer: peer.primaryService && peer.tcpPorts == [ ] && peer.udpPor
 );
 assert !(lib.elem cfg.sys.services.cross-seed.port cfg.networking.firewall.allowedTCPPorts);
 assert cfg.systemd.network.networks."20-lan".networkConfig.Gateway == "10.100.0.1";
-pkgs.runCommand "cross-seed-contract" { } "touch $out"
+pkgs.runCommand "cross-seed-contract" { nativeBuildInputs = [ pkgs.nodejs_22 ]; } ''
+  export CONFIG_DIR="$TMPDIR/config"
+  mkdir -p "$CONFIG_DIR"
+  node ${./cross-seed-paths.mjs} ${cfg.services.cross-seed.package}/lib/node_modules/cross-seed
+  touch $out
+''
