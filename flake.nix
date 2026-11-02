@@ -50,6 +50,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    autotidy = {
+      url = "github:prettymuchbryce/autotidy";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        home-manager.follows = "hm-stable";
+      };
+    };
+
     lanzaboote = {
       url = "github:nix-community/lanzaboote/v1.0.0";
       inputs = {
