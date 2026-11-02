@@ -88,6 +88,33 @@ fixture=$(nix build --no-link --print-out-paths .#checks.x86_64-linux.codex-adap
 nix shell nixpkgs#acl nixpkgs#bash nixpkgs#python3 --command python3 tests/codex_activation.py "$fixture"
 ```
 
+### Autotidy
+
+[services/autotidy.nix](services/autotidy.nix) wraps the upstream
+[autotidy Home Manager module](https://github.com/prettymuchbryce/autotidy/blob/master/flake.nix).
+It provides opt-in `hm.services.autotidy.enable`, `package`, and `settings`
+options. The service is enabled only for `zeno` on `snowfall`, with empty rules.
+It will not organize any files until rules are added.
+
+Settings are generated as `~/.config/autotidy/config.yaml`, the path upstream
+uses even when `XDG_CONFIG_HOME` is customized. Edit
+`hm.services.autotidy.settings` in the user override instead of editing this
+generated file. Home Manager restarts the service when the settings change.
+
+After rebuilding, inspect the user service and preview the configured rules:
+
+```bash
+systemctl --user status autotidy.service
+autotidy status
+autotidy run --dry-run
+journalctl --user -u autotidy.service
+```
+
+Preview proposed rules before enabling them by writing a separate YAML file
+and running `autotidy run --config /path/to/proposed-rules.yaml --dry-run`.
+See the upstream [configuration reference](https://prettymuchbryce.github.io/autotidy/configuration.html)
+for rule syntax and available filters and actions.
+
 ### Base Configuration
 
 [base.nix](base.nix) provides shared defaults for all users:
