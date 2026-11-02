@@ -96,6 +96,7 @@ in
     ## Pull specific packages from different nixpkgs inputs
     overlays = {
       fromInputs = {
+        # nixpkgs-gnupg = [ "gnupg" ];
         # nixpkgs = [
         #   "pipx"
         #   "openrazer"
@@ -104,6 +105,8 @@ in
         nixpkgs-unstable = [
           "vscode"
           "codex"
+          "chatgpt"
+          "podman-desktop"
         ];
         # nixpkgs-stable-small = [ "openblas" ];
       };
@@ -285,7 +288,7 @@ in
 
   services = {
     stirling-pdf = {
-      enable = true;
+      enable = false;
       environment.SERVER_PORT = 50000;
     };
 
