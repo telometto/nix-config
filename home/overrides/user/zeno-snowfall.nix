@@ -32,6 +32,7 @@
     pkgs.annotation-mono
     pkgs.jellyfin-desktop
     pkgs.bubblewrap
+    pkgs.chatgpt
   ]
   ++ (with pkgs.sweethome3d; [
     application
@@ -99,6 +100,10 @@
     ];
 
     services = {
+      autotidy = {
+        enable = true;
+        settings.rules = [ ];
+      };
       sshAgent.enable = true;
       gpgAgent = {
         enable = true;
