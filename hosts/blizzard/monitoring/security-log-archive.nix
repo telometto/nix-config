@@ -1,6 +1,7 @@
 { config, lib, ... }:
 let
   cfg = config.sys.services.securityLogArchive;
+  grafanaAlerts = import ../../../lib/grafana-alerts.nix;
   specifications = import ../../../lib/security-log-archive-alerts.nix;
   rule = spec: {
     inherit (spec) uid title;
@@ -18,55 +19,8 @@ let
       inherit (spec) description;
     };
     data = [
-      {
-        refId = "A";
-        datasourceUid = "prometheus";
-        relativeTimeRange = {
-          from = 600;
-          to = 0;
-        };
-        model = {
-          datasource = {
-            type = "prometheus";
-            uid = "prometheus";
-          };
-          refId = "A";
-          expr = "count(${spec.expr}) or vector(0)";
-          instant = true;
-          range = false;
-          editorMode = "code";
-          intervalMs = 60000;
-          maxDataPoints = 43200;
-        };
-      }
-      {
-        refId = "B";
-        datasourceUid = "__expr__";
-        relativeTimeRange = {
-          from = 0;
-          to = 0;
-        };
-        model = {
-          refId = "B";
-          type = "threshold";
-          expression = "A";
-          conditions = [
-            {
-              evaluator = {
-                type = "gt";
-                params = [ 0 ];
-              };
-              operator.type = "and";
-              query.params = [ "B" ];
-              reducer = {
-                type = "last";
-                params = [ ];
-              };
-              type = "query";
-            }
-          ];
-        };
-      }
+      (grafanaAlerts.prometheusQuery { expr = "count(${spec.expr}) or vector(0)"; })
+      grafanaAlerts.threshold
     ];
   };
 in
