@@ -26,6 +26,22 @@ flowchart TD
     E --> F
 ```
 
+The six Arr VM entry files compose [`mkArrVm.nix`](mkArrVm.nix), which owns
+their shared state-volume, firewall and exporter assembly. Prowlarr keeps
+FlareSolverr local and opts out of the media share; additional exporter metrics
+remain explicit in Sonarr, Bazarr and Prowlarr. Blizzard's scrape targets use
+registry IPs and the effective exporter ports from the guest configurations,
+including disabled instances in the existing inventory.
+
+[`media-storage.nix`](media-storage.nix) owns the shared media host/guest paths
+and virtiofs share data. Consumers opt in explicitly; Jellyfin's restricted
+library share remains separate. [`sops-base.nix`](sops-base.nix) is also opt-in:
+it imports SOPS and sets its file/format, persisted SSH key path and systemd
+activation mode. Secret declarations and consumer/rotation ordering stay local.
+The existing flake constructor adds the common MicroVM module to every output.
+Only the four VPN-routed guests select `vpnReturnRoutes` from
+[`microvm-network-defaults.nix`](microvm-network-defaults.nix).
+
 ______________________________________________________________________
 
 ### Network topology
