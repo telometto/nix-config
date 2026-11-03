@@ -8,7 +8,6 @@
 let
   inherit (inputs) nixpkgs;
   microvmModule = inputs.microvm.nixosModules.microvm;
-  sopsModule = inputs.sops-nix.nixosModules.sops;
 
   fromInputsOverlays = {
     imports = [ ../modules/core/overlays.nix ];
@@ -53,6 +52,7 @@ let
       modules = [
         fromInputsOverlays
         # ../modules/core/nixpkgs-module-overrides.nix
+        microvmModule
       ]
       ++ modules;
 
@@ -65,153 +65,116 @@ let
 in
 {
   adguard-vm = mkMicrovm [
-    microvmModule
     ./adguard.nix
-    sopsModule
   ];
 
   actual-vm = mkMicrovm [
-    microvmModule
     ./actual.nix
   ];
 
   searx-vm = mkMicrovm [
-    microvmModule
     ./searx.nix
   ];
 
   overseerr-vm = mkMicrovm [
-    microvmModule
     ./overseerr.nix
   ];
 
   ombi-vm = mkMicrovm [
-    microvmModule
     ./ombi.nix
   ];
 
   tautulli-vm = mkMicrovm [
-    microvmModule
     ./tautulli.nix
   ];
 
   gitea-vm = mkMicrovm [
-    microvmModule
     ./gitea.nix
   ];
 
   sonarr-vm = mkMicrovm [
-    microvmModule
     ./sonarr.nix
   ];
 
   radarr-vm = mkMicrovm [
-    microvmModule
     ./radarr.nix
   ];
 
   prowlarr-vm = mkMicrovm [
-    microvmModule
     ./prowlarr.nix
   ];
 
   bazarr-vm = mkMicrovm [
-    microvmModule
     ./bazarr.nix
   ];
 
   readarr-vm = mkMicrovm [
-    microvmModule
     ./readarr.nix
   ];
 
   lidarr-vm = mkMicrovm [
-    microvmModule
     ./lidarr.nix
   ];
 
   qbittorrent-vm = mkMicrovm [
-    microvmModule
     ./qbittorrent.nix
   ];
 
   cross-seed-vm = mkMicrovm [
-    microvmModule
     ./cross-seed.nix
   ];
 
   sabnzbd-vm = mkMicrovm [
-    microvmModule
     ./sabnzbd.nix
   ];
 
   firefox-vm = mkMicrovm [
-    microvmModule
     ./firefox.nix
   ];
 
   brave-vm = mkMicrovm [
-    microvmModule
     ./brave.nix
   ];
 
   wireguard-vm = mkMicrovm [
-    microvmModule
     ./wireguard.nix
   ];
 
   matrix-synapse-vm = mkMicrovm [
-    microvmModule
-    sopsModule
     ./matrix-synapse.nix
     { services.mautrix-whatsapp.enable = true; }
   ];
 
   paperless-vm = mkMicrovm [
-    microvmModule
-    sopsModule
     # paperlessBuildWorkaround
     ./paperless.nix
   ];
 
   firefly-vm = mkMicrovm [
-    microvmModule
-    sopsModule
     ./firefly.nix
   ];
 
   firefly-importer-vm = mkMicrovm [
-    microvmModule
-    sopsModule
     ./firefly-importer.nix
   ];
 
   immich-vm = mkMicrovm [
-    microvmModule
-    sopsModule
     ./immich.nix
   ];
 
   jellyfin-vm = mkMicrovm [
-    microvmModule
     ./jellyfin.nix
   ];
 
   mealie-vm = mkMicrovm [
-    microvmModule
-    sopsModule
     ./mealie.nix
   ];
 
   trigger-vm = mkMicrovm [
-    microvmModule
-    sopsModule
     ./trigger.nix
   ];
 
   pocket-id-vm = mkMicrovm [
-    microvmModule
-    sopsModule
     ./pocket-id.nix
   ];
 }
