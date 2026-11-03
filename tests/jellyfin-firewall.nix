@@ -21,6 +21,25 @@ let
     };
     inherit pkgs;
   };
+  guestFirewall =
+    settings:
+    (import ../vms/jellyfin.nix {
+      inherit lib pkgs;
+      consts = import ../lib/constants.nix;
+      jellyfinSettings = settings;
+    }).networking.firewall.extraCommands;
+  guestLan = guestFirewall {
+    vmServiceReady = true;
+    lanIPv4Subnet = "192.168.2.0/24";
+  };
+  guestPrivate = guestFirewall {
+    vmServiceReady = true;
+    lanIPv4Subnet = null;
+  };
+  guestStaged = guestFirewall {
+    vmServiceReady = false;
+    lanIPv4Subnet = "192.168.2.0/24";
+  };
   script = name: contents: pkgs.writeText name contents;
 in
 assert media.sys.services.jellyfin.enable;
@@ -39,6 +58,9 @@ pkgs.runCommand "jellyfin-firewall-tests"
       ${script "jellyfin-current-start" current.extraCommands} \
       ${script "jellyfin-current-stop" current.extraStopCommands} \
       ${script "jellyfin-next-start" next.extraCommands} \
-      ${script "jellyfin-disabled-start" disabled.extraCommands}
+      ${script "jellyfin-disabled-start" disabled.extraCommands} \
+      ${script "jellyfin-guest-lan" guestLan} \
+      ${script "jellyfin-guest-private" guestPrivate} \
+      ${script "jellyfin-guest-staged" guestStaged}
     touch "$out"
   ''
