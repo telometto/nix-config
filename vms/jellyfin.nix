@@ -7,6 +7,14 @@
 }:
 let
   reg = (import ./vm-registry.nix { inherit consts; }).jellyfin;
+  networkDefaults = import ./microvm-network-defaults.nix;
+  ipv4 = import ./ipv4.nix;
+  inherit (jellyfinSettings) lanIPv4Subnet;
+  lanSubnetParts =
+    if builtins.isString lanIPv4Subnet then
+      builtins.match "([^/]+)/(0|[1-9]|[12][0-9]|3[0-2])" lanIPv4Subnet
+    else
+      null;
   gpu = jellyfinSettings.gpuPassthrough;
   libraryPath = "/rpool/unenc/media/data/media";
   migrationScript = pkgs.writeShellScriptBin "jellyfin-import-state" ''
@@ -74,6 +82,12 @@ in
 
   assertions = [
     {
+      assertion =
+        lanIPv4Subnet == null
+        || (lanSubnetParts != null && ipv4.parse (builtins.head lanSubnetParts) != null);
+      message = "jellyfin-vm: lanIPv4Subnet must be null or a valid IPv4 CIDR";
+    }
+    {
       assertion = !gpu.enable || gpu.pciFunctions != [ ];
       message = "jellyfin-vm: GPU passthrough needs the card's PCI functions";
     }
@@ -123,10 +137,13 @@ in
   };
   services.jellyfin.hardwareAcceleration.enable = false;
 
-  # The host-owned TCP relay is the only HTTP peer. Other MicroVMs have no
-  # declared lateral permission to reach Jellyfin, and the guest adds its own
-  # source restriction as a second boundary.
+  # VPS traffic arrives through the host relay; the LAN port forward retains
+  # the client's source address. Keep both source restrictions in the chain
+  # NixOS rebuilds on reload so disabling LAN access blocks new connections.
   networking.firewall.extraCommands = ''
-    iptables -w -I INPUT 1 -i microvm0 -s 10.100.0.1/32 -p tcp --dport ${toString reg.port} -j ACCEPT
+    iptables -w -A nixos-fw -i ${networkDefaults.guestInterface} -s ${networkDefaults.defaultGateway}/32 -p tcp --dport ${toString reg.port} -j nixos-fw-accept
+  ''
+  + lib.optionalString (jellyfinSettings.vmServiceReady && lanIPv4Subnet != null) ''
+    iptables -w -A nixos-fw -i ${networkDefaults.guestInterface} -s ${lib.escapeShellArg lanIPv4Subnet} -p tcp --dport ${toString reg.port} -j nixos-fw-accept
   '';
 }

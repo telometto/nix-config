@@ -79,7 +79,7 @@ ______________________________________________________________________
 | firefox | 10.100.0.52 | 11052 | 4 GB | 4 | Via WG | Containerized Firefox browser |
 | gitea | 10.100.0.50 | 11050 | 2 GB | 2 | Direct | Self-hosted git forge; public `git.<canonical-domain>` via Cloudflare Tunnel/Traefik |
 | immich | 10.100.0.70 | 11070 | 8 GB | 4 | Direct | Photo library |
-| jellyfin | 10.100.0.72 | 8096 | 16 GB | 8 | Direct | Media server; VPS/Tailscale ingress |
+| jellyfin | 10.100.0.72 | 8096 | 16 GB | 8 | Direct | Media server; home-LAN and VPS/Tailscale access |
 | lidarr | 10.100.0.26 | 11028 | 1 GB | 1 | Direct | Music PVR |
 | matrix-synapse | 10.100.0.60 | 11060 | 4 GB | 4 | Gateway only | Matrix homeserver |
 | mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Direct | Recipe manager and meal planner |
@@ -372,6 +372,12 @@ message:
 and Traefik. Blizzard also forwards TCP `11070` to the same registry service
 for direct home-LAN access; `10.100.0.70:11070` remains reachable on the
 MicroVM network and through the advertised Tailscale subnet route.
+
+`jellyfin` uses the same port-forwarding helper for direct home-LAN access at
+`http://192.168.2.100:8096`, with a guest firewall restriction to
+`192.168.2.0/24`. Its public route keeps the separate VPS/Tailscale relay, and
+direct tailnet access to the guest remains blocked. Both paths and the private
+setup controls are documented in [Jellyfin networking](../docs/jellyfin-vps.md).
 
 ______________________________________________________________________
 
