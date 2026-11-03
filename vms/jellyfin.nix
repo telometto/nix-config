@@ -7,6 +7,7 @@
 }:
 let
   reg = (import ./vm-registry.nix { inherit consts; }).jellyfin;
+  networkDefaults = import ./microvm-network-defaults.nix;
   gpu = jellyfinSettings.gpuPassthrough;
   libraryPath = "/rpool/unenc/media/data/media";
   migrationScript = pkgs.writeShellScriptBin "jellyfin-import-state" ''
@@ -123,10 +124,13 @@ in
   };
   services.jellyfin.hardwareAcceleration.enable = false;
 
-  # The host-owned TCP relay is the only HTTP peer. Other MicroVMs have no
-  # declared lateral permission to reach Jellyfin, and the guest adds its own
-  # source restriction as a second boundary.
+  # VPS traffic arrives through the host relay; the LAN port forward retains
+  # the client's source address. Keep both source restrictions in the chain
+  # NixOS rebuilds on reload so disabling LAN access removes its permission.
   networking.firewall.extraCommands = ''
-    iptables -w -I INPUT 1 -i microvm0 -s 10.100.0.1/32 -p tcp --dport ${toString reg.port} -j ACCEPT
+    iptables -w -A nixos-fw -i ${networkDefaults.guestInterface} -s ${networkDefaults.defaultGateway}/32 -p tcp --dport ${toString reg.port} -j nixos-fw-accept
+  ''
+  + lib.optionalString (jellyfinSettings.vmServiceReady && jellyfinSettings.lanIPv4Subnet != null) ''
+    iptables -w -A nixos-fw -i ${networkDefaults.guestInterface} -s ${jellyfinSettings.lanIPv4Subnet} -p tcp --dport ${toString reg.port} -j nixos-fw-accept
   '';
 }
