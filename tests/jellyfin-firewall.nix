@@ -21,13 +21,27 @@ let
     };
     inherit pkgs;
   };
-  guestFirewall =
+  guestConfig =
     settings:
-    (import ../vms/jellyfin.nix {
+    import ../vms/jellyfin.nix {
       inherit lib pkgs;
       consts = import ../lib/constants.nix;
-      jellyfinSettings = settings;
-    }).networking.firewall.extraCommands;
+      jellyfinSettings = {
+        gpuPassthrough = {
+          enable = false;
+          pciFunctions = [ ];
+        };
+      }
+      // settings;
+    };
+  guestFirewall = settings: (guestConfig settings).networking.firewall.extraCommands;
+  acceptsLanSubnet =
+    subnet:
+    lib.all (check: check.assertion)
+      (guestConfig {
+        vmServiceReady = true;
+        lanIPv4Subnet = subnet;
+      }).assertions;
   guestLan = guestFirewall {
     vmServiceReady = true;
     lanIPv4Subnet = "192.168.2.0/24";
@@ -46,6 +60,23 @@ assert media.sys.services.jellyfin.enable;
 assert media.networking.firewall.interfaces.tailscale0.allowedTCPPorts == [ ];
 assert media.networking.firewall.extraCommands == disabled.extraCommands;
 assert media.networking.firewall.extraStopCommands == disabled.extraStopCommands;
+assert lib.all acceptsLanSubnet [
+  null
+  "192.168.2.0/24"
+  "0.0.0.0/0"
+  "255.255.255.255/32"
+];
+assert lib.all (subnet: !acceptsLanSubnet subnet) [
+  ""
+  24
+  "192.168.2.0"
+  "256.168.2.0/24"
+  "192.168.2.0/33"
+  "192.168.2.0/-1"
+  "192.168.2.0/24; true"
+  "192.168.2.0/24\ntrue"
+  "fd00::/64"
+];
 pkgs.runCommand "jellyfin-firewall-tests"
   {
     nativeBuildInputs = [
