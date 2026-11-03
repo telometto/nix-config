@@ -8,23 +8,15 @@
 }:
 let
   reg = (import ./vm-registry.nix { inherit consts; }).brave;
-  vpnRoutes = [
-    {
-      Gateway = "10.100.0.1";
-      Destination = "192.168.0.0/16";
-    }
-    {
-      Gateway = "10.100.0.1";
-      Destination = "10.100.0.0/24";
-    }
-  ];
+  mediaStorage = import ./media-storage.nix;
+  networkDefaults = import ./microvm-network-defaults.nix;
 in
 {
   imports = [
     ./base.nix
     ../modules/services/brave.nix
     ../modules/virtualisation/virtualisation.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     inputs.quadlet-nix.nixosModules.quadlet
     (import ./mkMicrovmConfig.nix (
       reg
@@ -41,7 +33,7 @@ in
             size = 4096;
           }
         ];
-        extraRoutes = vpnRoutes;
+        extraRoutes = networkDefaults.vpnReturnRoutes;
       }
     ))
   ];
@@ -51,11 +43,6 @@ in
   #   ssh admin@10.100.0.54 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then add the resulting age public key to your .sops.yaml and re-encrypt secrets
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "brave/user" = { };
       "brave/password" = { };
@@ -76,7 +63,7 @@ in
     };
 
     tmpfiles.rules = [
-      "d /data 0750 root root -"
+      "d ${mediaStorage.guestPath} 0750 root root -"
       "d /var/lib/containers/tmp 0750 root root -"
     ];
 
@@ -97,8 +84,8 @@ in
 
         mounts.media = {
           server = "10.100.0.1";
-          export = "/rpool/unenc/media/data";
-          target = "/data";
+          export = mediaStorage.hostPath;
+          target = mediaStorage.guestPath;
         };
       };
 
