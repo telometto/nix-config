@@ -3,6 +3,7 @@
 # Uses docker.io/mccloud/subgen:cpu by default, docker.io/mccloud/subgen:amd when gpu.enable is true
 { lib, config, ... }:
 let
+  mediaStorage = import ../vms/media-storage.nix;
   cfg = config.services.subgen-container;
   hasPlex = cfg.plexServer != null;
   hasJellyfin = cfg.jellyfinServer != null;
@@ -25,7 +26,7 @@ in
 
     mediaDir = lib.mkOption {
       type = lib.types.str;
-      default = "/rpool/unenc/media/data/media";
+      default = "${mediaStorage.hostPath}/media";
       description = "Base path for media directories (movies/, tv/).";
     };
 

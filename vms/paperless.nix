@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   VARS,
   consts,
   ...
@@ -14,7 +13,7 @@ in
     ./base.nix
     ../modules/services/paperless.nix
     ../modules/services/protonmail-bridge.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -40,11 +39,6 @@ in
   ];
 
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "paperless/admin_password" = {
         mode = "0440";

@@ -298,6 +298,18 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        service-families = import ./tests/service-families.nix {
+          inherit inputs system;
+          configurations = self.nixosConfigurations;
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        grafana-alerts = import ./tests/grafana-alerts.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         user-accounts = import ./tests/user-accounts.nix {
           inherit (self.nixosConfigurations) kaizer snowfall;
           inherit VARS;

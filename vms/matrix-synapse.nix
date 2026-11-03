@@ -2,7 +2,6 @@
   lib,
   config,
   pkgs,
-  inputs,
   VARS,
   consts,
   ...
@@ -71,7 +70,7 @@ in
     ./base.nix
     ../modules/services/matrix-synapse.nix
     ../modules/services/matrix-authentication-service.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -86,13 +85,6 @@ in
   #   ssh admin@10.100.0.60 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then add it to .sops.yaml and re-encrypt secrets
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    # Run sops-install-secrets as a systemd service (after local-fs.target)
-    # instead of activation script, since /persist isn't mounted during activation
-    useSystemdActivation = true;
-
     secrets = {
       "matrix-synapse/registration_shared_secret" = {
         mode = "0440";

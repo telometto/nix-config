@@ -1,49 +1,6 @@
-{ consts, ... }:
-let
-  reg = (import ./vm-registry.nix { inherit consts; }).bazarr;
-  mediaShare = {
-    source = "/rpool/unenc/media/data";
-    mountPoint = "/data";
-    tag = "media-data";
-    proto = "virtiofs";
-  };
-in
+{ ... }:
 {
-  imports = [
-    ./base.nix
-    ../modules/services/bazarr.nix
-    (import ./mkMicrovmConfig.nix (
-      reg
-      // {
-        volumes = [
-          {
-            mountPoint = "/var/lib/bazarr";
-            image = "bazarr-state.img";
-            size = 10240;
-          }
-        ];
-        extraShares = [ mediaShare ];
-      }
-    ))
-  ];
+  imports = [ (import ./mkArrVm.nix { name = "bazarr"; }) ];
 
-  networking.firewall.allowedTCPPorts = [ reg.port ];
-
-  systemd.tmpfiles.rules = [
-    "d /var/lib/bazarr 0700 bazarr bazarr -"
-  ];
-
-  sys.services.bazarr = {
-    enable = true;
-    inherit (reg) port;
-    dataDir = "/var/lib/bazarr";
-    reverseProxy.enable = false;
-  };
-
-  sys.services.arrExporter.bazarr = {
-    enable = true;
-    openFirewall = true;
-    arrPort = reg.port;
-    extraEnvironment.ENABLE_ADDITIONAL_METRICS = "true";
-  };
+  sys.services.arrExporter.bazarr.extraEnvironment.ENABLE_ADDITIONAL_METRICS = "true";
 }

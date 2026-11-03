@@ -3,7 +3,6 @@
   pkgs,
   lib,
   system,
-  inputs,
   VARS,
   consts,
   ...
@@ -16,7 +15,7 @@ in
   imports = [
     ./base.nix
     ../modules/services/gitea.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -48,11 +47,6 @@ in
   #   ssh admin@10.100.0.50 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then add it to your .sops.yaml and re-encrypt secrets
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "gitea/lfs_jwt_secret" = {
         mode = "0440";

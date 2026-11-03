@@ -1,9 +1,13 @@
 {
   config,
   consts,
+  self,
   lib,
   ...
 }:
+let
+  registry = import ../../../vms/vm-registry.nix { inherit consts; };
+in
 {
   sys.services.prometheus = {
     enable = true;
@@ -78,32 +82,24 @@
       }
       {
         job_name = "arr-exporter";
-        static_configs = [
-          {
-            targets = [ "10.100.0.21:9707" ];
-            labels.arr_service = "sonarr";
-          }
-          {
-            targets = [ "10.100.0.22:9708" ];
-            labels.arr_service = "radarr";
-          }
-          {
-            targets = [ "10.100.0.26:9709" ];
-            labels.arr_service = "lidarr";
-          }
-          {
-            targets = [ "10.100.0.24:9710" ];
-            labels.arr_service = "readarr";
-          }
-          {
-            targets = [ "10.100.0.23:9711" ];
-            labels.arr_service = "bazarr";
-          }
-          {
-            targets = [ "10.100.0.20:9712" ];
-            labels.arr_service = "prowlarr";
-          }
-        ];
+        static_configs =
+          map
+            (name: {
+              targets = [
+                "${registry.${name}.ip}:${
+                  toString self.nixosConfigurations."${name}-vm".config.sys.services.arrExporter.${name}.port
+                }"
+              ];
+              labels.arr_service = name;
+            })
+            [
+              "sonarr"
+              "radarr"
+              "lidarr"
+              "readarr"
+              "bazarr"
+              "prowlarr"
+            ];
       }
       {
         job_name = "ups";
