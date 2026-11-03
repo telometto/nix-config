@@ -267,8 +267,6 @@ Blizzard VM registry (which only controls whether the guest exists):
 
 ```nix
 matrix-synapse-vm = mkMicrovm [
-  microvmModule
-  sopsModule
   ./matrix-synapse.nix
   { services.mautrix-whatsapp.enable = true; }
 ];

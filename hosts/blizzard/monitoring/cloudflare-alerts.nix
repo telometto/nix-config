@@ -1,8 +1,5 @@
 let
-  prometheusDatasource = {
-    type = "prometheus";
-    uid = "prometheus";
-  };
+  grafanaAlerts = import ../../../lib/grafana-alerts.nix;
 
   mkPrometheusRule =
     {
@@ -16,6 +13,9 @@ let
       pendingFor ? "0s",
       noDataState ? "OK",
     }:
+    let
+      query = grafanaAlerts.prometheusQuery { inherit expr from; };
+    in
     {
       inherit uid title noDataState;
       condition = "A";
@@ -24,27 +24,16 @@ let
       isPaused = false;
 
       data = [
-        {
-          refId = "A";
-          queryType = "";
-          relativeTimeRange = {
-            inherit from;
-            to = 0;
-          };
-          datasourceUid = prometheusDatasource.uid;
-          model = {
-            datasource = prometheusDatasource;
-            editorMode = "code";
-            inherit expr;
-            instant = true;
-            interval = "";
-            intervalMs = 60000;
-            legendFormat = "__auto";
-            maxDataPoints = 43200;
-            range = false;
-            refId = "A";
-          };
-        }
+        (
+          query
+          // {
+            queryType = "";
+            model = query.model // {
+              interval = "";
+              legendFormat = "__auto";
+            };
+          }
+        )
       ];
 
       annotations = {

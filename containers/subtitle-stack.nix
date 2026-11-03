@@ -2,6 +2,7 @@
 # Home Manager module - containers run rootless via quadlet-nix in a shared pod
 { lib, config, ... }:
 let
+  mediaStorage = import ../vms/media-storage.nix;
   cfgLingarr = config.services.lingarr;
   cfgSubgen = config.services.subgen;
   anyEnabled = cfgLingarr.enable || cfgSubgen.enable;
@@ -15,7 +16,7 @@ in
 
     mediaDir = lib.mkOption {
       type = lib.types.str;
-      default = "/rpool/unenc/media/data/media";
+      default = "${mediaStorage.hostPath}/media";
       description = "Base path for media directories (movies/, tv/).";
     };
 
@@ -43,7 +44,7 @@ in
 
     mediaDir = lib.mkOption {
       type = lib.types.str;
-      default = "/rpool/unenc/media/data/media";
+      default = "${mediaStorage.hostPath}/media";
       description = "Base path for media directories (movies/, tv/).";
     };
 

@@ -18,6 +18,20 @@ let cfg = config.sys.services.<name>; in
 Most modules expose additional options (port, openFirewall, data directory,
 secrets references, etc.) alongside the mandatory `enable` flag.
 
+The six Arr entry files use [`lib/arr-service.nix`](../../lib/arr-service.nix)
+and share upstream port/exporter metadata in
+[`lib/arr-services.nix`](../../lib/arr-services.nix). Deployment ports still
+come from `consts.ports.vm` through the VM registry. Brave and Firefox use
+[`lib/linuxserver-browser.nix`](../../lib/linuxserver-browser.nix); Firefox's
+file-transfer options and identity policy stay in its own entry file.
+[`lib/grafana-alerts.nix`](../../lib/grafana-alerts.nix) shares query models;
+each alert owner retains its expressions, rule IDs, timing and no-data policy.
+
+The `service-families` flake check exercises disabled/overridden Arr modules,
+browser network modes, credential pairing and temporary credential rendering.
+The `grafana-alerts` check validates the rendered alert models, including the
+archive's opt-in configuration, and runs Cloudflare health-query fixtures.
+
 ______________________________________________________________________
 
 ### Service catalog

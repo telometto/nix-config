@@ -7,6 +7,7 @@
   mode,
 }:
 let
+  networkDefaults = import ../vms/microvm-network-defaults.nix;
   escapeNftString = value: lib.replaceStrings [ "\\" "\"" "\n" "\r" ] [ "\\\\" "\\\"" " " " " ] value;
   quote = value: ''"${escapeNftString value}"'';
   quoteList = values: lib.concatStringsSep ", " (map quote values);
@@ -243,7 +244,7 @@ let
       chain forward {
         type filter hook forward priority -300; policy accept;
 
-        iifname "microvm-br0" oifname "microvm-br0" jump deny_routed_lateral
+        iifname ${quote networkDefaults.sharedBridge.name} oifname ${quote networkDefaults.sharedBridge.name} jump deny_routed_lateral
         ${routedIsolationRules}
       }
     }

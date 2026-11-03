@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   VARS,
   lib,
   consts,
@@ -17,7 +16,7 @@ in
   imports = [
     ./base.nix
     ../modules/services/immich.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -34,11 +33,6 @@ in
   #   ssh admin@10.100.0.70 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then add it to your .sops.yaml and re-encrypt secrets
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets."immich/oauth_client_secret" = {
       owner = "immich";
       group = "immich";

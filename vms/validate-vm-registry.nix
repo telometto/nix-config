@@ -3,6 +3,7 @@
 registry:
 let
   ipv4 = import ./ipv4.nix;
+  networkDefaults = import ./microvm-network-defaults.nix;
   unique =
     values:
     builtins.foldl' (
@@ -17,8 +18,8 @@ let
   entries = builtins.attrValues registry;
   entryName = entry: entry.name or "<unnamed>";
   fieldValues = field: map (entry: toString entry.${field}) entries;
-  prefixFor = entry: entry.prefixLength or 24;
-  gatewayFor = entry: entry.gateway or "10.100.0.1";
+  prefixFor = entry: entry.prefixLength or networkDefaults.defaultPrefixLength;
+  gatewayFor = entry: entry.gateway or networkDefaults.defaultGateway;
   tapIdFor = entry: entry.tapId or "vm-${entryName entry}";
   duplicateCids = duplicateValues (fieldValues "cid");
   duplicateMacs = duplicateValues (fieldValues "mac");
@@ -66,22 +67,29 @@ let
   invalidHostBridges = builtins.filter (
     entry: !builtins.isString entry.hostBridge || entry.hostBridge == ""
   ) dedicatedEntries;
-  reservedHostBridges = builtins.filter (entry: entry.hostBridge == "microvm-br0") dedicatedEntries;
+  reservedHostBridges = builtins.filter (
+    entry: entry.hostBridge == networkDefaults.sharedBridge.name
+  ) dedicatedEntries;
   duplicateHostBridges = duplicateValues (map (entry: entry.hostBridge) dedicatedEntries);
   networkInterval = entry: ipv4.networkInterval entry.ip (prefixFor entry);
   networksOverlap = left: right: left.first <= right.last && right.first <= left.last;
-  sharedNetwork = ipv4.networkInterval "10.100.0.0" 24;
+  sharedNetwork = ipv4.networkInterval networkDefaults.sharedBridge.address networkDefaults.sharedBridge.prefixLength;
   invalidSharedNetworks = builtins.filter (
     entry:
     prefixIsValid entry
     && ipv4.parse (entry.ip or null) != null
-    && (prefixFor entry != 24 || (networkInterval entry).first != sharedNetwork.first)
+    && (
+      prefixFor entry != networkDefaults.sharedBridge.prefixLength
+      || (networkInterval entry).first != sharedNetwork.first
+    )
   ) sharedEntries;
   sharedNetworkOverlaps = builtins.concatLists (
     map (
       entry:
       if networksOverlap (networkInterval entry) sharedNetwork then
-        [ "${entryName entry} (${entry.hostBridge}) overlaps shared network 10.100.0.0/24" ]
+        [
+          "${entryName entry} (${entry.hostBridge}) overlaps shared network ${networkDefaults.sharedBridge.network}"
+        ]
       else
         [ ]
     ) dedicatedEntries
@@ -140,7 +148,7 @@ else if unusableGateways != [ ] then
 else if identicalIpGateways != [ ] then
   fail "${firstName identicalIpGateways}.ip and gateway must be different addresses"
 else if invalidSharedNetworks != [ ] then
-  fail "${firstName invalidSharedNetworks} must use shared network 10.100.0.0/24 unless hostBridge is set"
+  fail "${firstName invalidSharedNetworks} must use shared network ${networkDefaults.sharedBridge.network} unless hostBridge is set"
 else if invalidTapIds != [ ] then
   fail "${firstName invalidTapIds} has an empty or non-string effective tap ID"
 else if duplicateTapIds != [ ] then
@@ -148,10 +156,10 @@ else if duplicateTapIds != [ ] then
 else if invalidHostBridges != [ ] then
   fail "${firstName invalidHostBridges}.hostBridge must be a non-empty string"
 else if reservedHostBridges != [ ] then
-  fail "${firstName reservedHostBridges}.hostBridge must not reuse shared bridge microvm-br0"
+  fail "${firstName reservedHostBridges}.hostBridge must not reuse shared bridge ${networkDefaults.sharedBridge.name}"
 else if duplicateHostBridges != [ ] then
   fail "dedicated hostBridge names must be unique; duplicate(s): ${builtins.concatStringsSep ", " duplicateHostBridges}"
 else if overlappingNetworks != [ ] then
-  fail "dedicated hostBridge networks must not overlap another dedicated network or 10.100.0.0/24: ${builtins.concatStringsSep ", " overlappingNetworks}"
+  fail "dedicated hostBridge networks must not overlap another dedicated network or ${networkDefaults.sharedBridge.network}: ${builtins.concatStringsSep ", " overlappingNetworks}"
 else
   registry

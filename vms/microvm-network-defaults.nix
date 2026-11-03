@@ -20,4 +20,14 @@ in
   inherit sharedBridge guestInterface historicalGuestInterfaces;
   defaultGateway = sharedBridge.address;
   defaultPrefixLength = sharedBridge.prefixLength;
+  vpnReturnRoutes = [
+    {
+      Gateway = sharedBridge.address;
+      Destination = "192.168.0.0/16";
+    }
+    {
+      Gateway = sharedBridge.address;
+      Destination = sharedBridge.network;
+    }
+  ];
 }

@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   consts,
   ...
@@ -8,12 +7,13 @@
 let
   reg = (import ./vm-registry.nix { inherit consts; }).cross-seed;
   cfg = config.sys.services.cross-seed;
+  mediaStorage = import ./media-storage.nix;
 in
 {
   imports = [
     ./base.nix
     ../modules/services/cross-seed.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -24,14 +24,7 @@ in
             size = 2048;
           }
         ];
-        extraShares = [
-          {
-            source = "/rpool/unenc/media/data";
-            mountPoint = "/data";
-            tag = "media-data";
-            proto = "virtiofs";
-          }
-        ];
+        extraShares = [ mediaStorage.share ];
       }
     ))
   ];
@@ -64,11 +57,6 @@ in
   ];
 
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = lib.mkIf cfg.enable {
       "cross-seed/settings" = {
         owner = "root";

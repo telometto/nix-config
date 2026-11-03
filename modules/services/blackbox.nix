@@ -114,30 +114,22 @@ let
     ];
   };
 
-  prometheusDatasource = {
-    type = "prometheus";
-    uid = "prometheus";
-  };
-
-  ruleData = expr: {
-    refId = "A";
-    relativeTimeRange = {
-      from = blackboxConstants.lookbackSeconds;
-      to = 0;
+  grafanaAlerts = import ../../lib/grafana-alerts.nix;
+  ruleData =
+    expr:
+    let
+      query = grafanaAlerts.prometheusQuery {
+        inherit expr;
+        from = blackboxConstants.lookbackSeconds;
+        intervalMs = blackboxConstants.scrapeIntervalMs;
+      };
+    in
+    query
+    // {
+      model = query.model // {
+        interval = "";
+      };
     };
-    datasourceUid = prometheusDatasource.uid;
-    model = {
-      datasource = prometheusDatasource;
-      editorMode = "code";
-      inherit expr;
-      instant = true;
-      interval = "";
-      intervalMs = blackboxConstants.scrapeIntervalMs;
-      maxDataPoints = 43200;
-      range = false;
-      refId = "A";
-    };
-  };
 
   # Grafana evaluates the returned numbers as booleans. Filtering comparisons
   # would drop healthy series and return 0 for a failed probe or scrape.
