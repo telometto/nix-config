@@ -1,32 +1,6 @@
 let
-  threshold = {
-    refId = "B";
-    datasourceUid = "__expr__";
-    relativeTimeRange = {
-      from = 0;
-      to = 0;
-    };
-    model = {
-      refId = "B";
-      type = "threshold";
-      expression = "A";
-      conditions = [
-        {
-          evaluator = {
-            type = "gt";
-            params = [ 0 ];
-          };
-          operator.type = "and";
-          query.params = [ "B" ];
-          reducer = {
-            type = "last";
-            params = [ ];
-          };
-          type = "query";
-        }
-      ];
-    };
-  };
+  grafanaAlerts = import ../../../lib/grafana-alerts.nix;
+  inherit (grafanaAlerts) threshold;
   rule = uid: title: expr: description: {
     inherit uid title;
     condition = "B";
@@ -43,28 +17,14 @@ let
       inherit description;
     };
     data = [
-      {
-        refId = "A";
-        queryType = "";
-        relativeTimeRange = {
-          from = 600;
-          to = 0;
-        };
-        datasourceUid = "prometheus";
-        model = {
-          datasource = {
-            type = "prometheus";
-            uid = "prometheus";
-          };
-          refId = "A";
+      (
+        (grafanaAlerts.prometheusQuery {
           expr = "count(${expr}) or vector(0)";
-          instant = true;
-          range = false;
-          editorMode = "code";
-          intervalMs = 60000;
-          maxDataPoints = 43200;
-        };
-      }
+        })
+        // {
+          queryType = "";
+        }
+      )
       threshold
     ];
   };
