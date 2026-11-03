@@ -1,4 +1,4 @@
-# Jellyfin via a Tailscale VPS
+# Jellyfin on the home LAN and via a Tailscale VPS
 
 ## Topology and rollout
 
@@ -40,7 +40,49 @@ see [Jellyfin setup](#jellyfin-setup) below.
 This route keeps the home IP out of the ordinary viewer connection path when
 clients use only the VPS hostname. Other services or DNS records can still
 reveal it, and the VPS may learn Blizzard's public endpoint through Tailscale.
-All media traffic traverses the VPS.
+Traffic to the public hostname traverses the VPS. Direct home-LAN traffic
+uses the separate local path below.
+
+## Direct home-LAN access
+
+At home, use **`http://192.168.2.100:8096`** in the browser or as the server
+address in a Jellyfin client. Blizzard uses the existing MicroVM port-forwarding
+helper, as it does for Immich: TCP `8096` arriving on `enp8s0` is forwarded to
+`10.100.0.72:8096`. This path stays on the LAN and preserves the client's source
+IP; it does not traverse the VPS, Tailscale, Traefik, or Cloudflare.
+
+[`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix) sets
+`lanIPv4Subnet = "192.168.2.0/24"`. Non-null values must be valid IPv4 CIDRs;
+the guest rejects invalid subnets during Nix evaluation. Both the forward and
+the guest firewall's LAN permission require `vmServiceReady = true` and a
+non-null subnet. The guest accepts TCP `8096` from that subnet on `microvm0`,
+alongside the existing host relay permission. The VPS source guard and
+direct-tailnet-to-guest block stay in place. LAN access works independently of
+`vpsIPv4`; set `lanIPv4Subnet = null`
+to disable only the LAN path. Keep **both** `lanIPv4Subnet` and `vpsIPv4` null
+while completing a fresh instance's administrator wizard privately.
+
+After both configurations are applied, disabling LAN access blocks new
+connections. Existing streams may survive a firewall-only reload because
+connection tracking retains established flows. Restart the Jellyfin guest if
+existing streams must also be disconnected.
+
+In **Dashboard → Networking → Local Networks**, include `192.168.2.0/24` if
+Jellyfin should classify these clients as local. Keep **Known Proxies** set to
+only `10.100.0.1`; LAN clients connect with their own IPs and are not trusted
+proxies. Do not add `10.100.0.1` to Local Networks: it is also the VPS relay's
+peer address.
+
+After activating the updated Blizzard host **and** Jellyfin guest configurations,
+test from another device on `192.168.2.0/24`:
+
+```bash
+curl --fail --max-time 10 http://192.168.2.100:8096/health
+```
+
+Then check login, seek, and playback in the client, and confirm the active session
+shows the LAN client's IP. The LAN endpoint is a NAT forward, so it does not
+appear as a listening host socket in `ss`. Do not add a home-router port forward.
 
 ## VPS and tailnet
 
@@ -108,7 +150,7 @@ a new instance or a future migration.
    that VM volume.
 
 1. Apply the Blizzard configuration with `vmServiceReady = true` and
-   `vpsIPv4 = null`. Confirm host `jellyfin.service` is stopped,
+   `vpsIPv4 = null` and `lanIPv4Subnet = null`. Confirm host `jellyfin.service` is stopped,
    `microvm@jellyfin-vm.service` is active, and guest `jellyfin.service` is
    active. Keep the public Caddy route disabled.
 
@@ -125,7 +167,7 @@ a new instance or a future migration.
 ### Existing-state migration (alternative)
 
 If the old Blizzard Jellyfin state should be retained in the VM instead,
-start with `vmServiceReady = false` and complete this stopped-state copy
+start with `vmServiceReady = false` and `lanIPv4Subnet = null`, and complete this stopped-state copy
 before enabling the guest service:
 
 1. On Blizzard, check the host's Jellyfin version, state size, library paths,
@@ -174,7 +216,7 @@ before enabling the guest service:
 
 1. Set `vmServiceReady = true` and apply the Blizzard configuration. This
    disables host Jellyfin, removes the temporary host-state share, and starts
-   Jellyfin in the VM. `vpsIPv4` remains `null`; the public route is
+   Jellyfin in the VM. `vpsIPv4` and `lanIPv4Subnet` remain `null`; the public route is
    still blocked. From an administrator workstation, forward a local port
    through Blizzard to the VM:
 
@@ -275,7 +317,7 @@ reload the firewall again. The direct DROP remains until a successful rebuild.
   address `10.100.0.72:8096` must be denied. The VPS must also be denied
   direct access to the guest address. Check both IPv4 and IPv6.
 - Confirm the relay listens only on Blizzard's Tailscale IPv4, the guest accepts port
-  `8096` only from `10.100.0.1`, and an attempted write to the media share
+  `8096` only from `10.100.0.1` and the enabled home-LAN subnet, and an attempted write to the media share
   fails. Check the guest cannot open undeclared connections to other MicroVMs.
 - From outside the home network, confirm `https://jellyfin.<public-domain>`
   resolves to the VPS only and supports login, WebSockets, seek, direct play,
