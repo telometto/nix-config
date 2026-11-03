@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   VARS,
   consts,
   ...
@@ -12,7 +11,7 @@ in
   imports = [
     ./base.nix
     ../modules/services/trigger.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -31,11 +30,6 @@ in
   #   ssh admin@10.100.0.80 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then re-encrypt nix-secrets.
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "trigger/session_secret".mode = "0400";
       "trigger/magic_link_secret".mode = "0400";
