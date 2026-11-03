@@ -6,6 +6,7 @@ use; unsupported commands fail the test.
 """
 
 import json
+from ipaddress import ip_address, ip_network
 import os
 from pathlib import Path
 import shlex
@@ -15,13 +16,24 @@ from tempfile import TemporaryDirectory
 
 
 def empty_state():
-    return {"ip4": {"PREROUTING": []}, "ip6": {"PREROUTING": []}}
+    return {
+        family: {
+            "PREROUTING": [],
+            "INPUT": [["-j", "nixos-fw"]],
+            "nixos-fw": [],
+            "nixos-fw-accept": [["-j", "ACCEPT"]],
+        }
+        for family in ("ip4", "ip6")
+    }
 
 
 def command(family, args):
-    if args[:3] != ["-w", "-t", "raw"]:
+    if args[:1] != ["-w"]:
         raise ValueError(f"unexpected iptables flags: {args}")
-    action, chain, *rest = args[3:]
+    args = args[1:]
+    if args[:2] == ["-t", "raw"]:
+        args = args[2:]
+    action, chain, *rest = args
     state_path = Path(os.environ["JELLYFIN_TEST_STATE"])
     state = json.loads(state_path.read_text())
     chains = state[family]
@@ -61,31 +73,72 @@ def target(rule):
     return rule[rule.index("-j") + 1]
 
 
-def verdict(state, family, source, *, local=True, destination="100.85.254.99"):
+def verdict(
+    state,
+    family,
+    source,
+    *,
+    local=True,
+    destination="100.85.254.99",
+    interface="tailscale0",
+    port=8096,
+    chain="PREROUTING",
+):
     def walk(chain):
         for rule in state[family][chain]:
-            if "-i" in rule and rule[rule.index("-i") + 1] != "tailscale0":
+            if "-i" in rule and rule[rule.index("-i") + 1] != interface:
+                continue
+            if "--dport" in rule and int(rule[rule.index("--dport") + 1]) != port:
                 continue
             if (
                 "--dst-type" in rule
                 and (rule[rule.index("--dst-type") + 1] == "LOCAL") != local
             ):
                 continue
-            if "-s" in rule and rule[rule.index("-s") + 1] != f"{source}/32":
+            if "-s" in rule and ip_address(source) not in ip_network(
+                rule[rule.index("-s") + 1]
+            ):
                 continue
             if "-d" in rule and rule[rule.index("-d") + 1] != f"{destination}/32":
                 continue
             jump_target = target(rule)
-            if jump_target == "DROP":
-                return "DROP"
-            if jump_target == "RETURN":
-                return "RETURN"
+            if jump_target in ("DROP", "RETURN", "ACCEPT"):
+                return jump_target
             result = walk(jump_target)
-            if result == "DROP":
+            if result in ("DROP", "ACCEPT"):
                 return result
         return "RETURN"
 
-    return "DROP" if walk("PREROUTING") == "DROP" else "ACCEPT"
+    return "DROP" if walk(chain) == "DROP" else "ACCEPT"
+
+
+def verify_guest(state, *, lan):
+    for source, expected in (
+        ("10.100.0.1", "ACCEPT"),
+        ("192.168.2.10", "ACCEPT" if lan else "DROP"),
+        ("192.168.2.254", "ACCEPT" if lan else "DROP"),
+        ("192.168.1.10", "DROP"),
+        ("192.168.3.10", "DROP"),
+        ("10.100.0.71", "DROP"),
+        ("100.99.88.77", "DROP"),
+        ("203.0.113.10", "DROP"),
+    ):
+        assert (
+            verdict(state, "ip4", source, chain="INPUT", interface="microvm0")
+            == expected
+        ), (source, lan, state)
+        assert (
+            verdict(state, "ip4", source, chain="INPUT", interface="other0") == "DROP"
+        )
+        assert (
+            verdict(
+                state, "ip4", source, chain="INPUT", interface="microvm0", port=8097
+            )
+            == "DROP"
+        )
+    assert (
+        verdict(state, "ip6", "fd00::10", chain="INPUT", interface="microvm0") == "DROP"
+    )
 
 
 def verify(state, allowed=None):
@@ -112,7 +165,7 @@ def run(script, env):
 
 
 def main(paths):
-    current, stop, next_peer, disabled = paths
+    current, stop, next_peer, disabled, guest_lan, guest_private, guest_staged = paths
     with TemporaryDirectory() as directory:
         root = Path(directory)
         state_path = root / "state.json"
@@ -184,6 +237,26 @@ def main(paths):
         run(current, env)
         verify(state(), "100.116.146.113")  # recovery clears stale DROP guards
         assert len(state()["ip4"]["PREROUTING"]) == 2
+
+        state_path.write_text(json.dumps(empty_state()))
+        for script, lan in (
+            (guest_lan, True),
+            (guest_private, False),
+            (guest_lan, True),
+            (guest_staged, False),
+        ):
+            # NixOS rebuilds its owned chain on reload. Rules installed
+            # directly in INPUT would survive disabling LAN access.
+            modified = state()
+            for family in ("ip4", "ip6"):
+                modified[family]["nixos-fw"] = []
+            state_path.write_text(json.dumps(modified))
+            run(script, env)
+            modified = state()
+            for family in ("ip4", "ip6"):
+                modified[family]["nixos-fw"].append(["-j", "DROP"])
+            state_path.write_text(json.dumps(modified))
+            verify_guest(state(), lan=lan)
 
 
 if __name__ == "__main__":
