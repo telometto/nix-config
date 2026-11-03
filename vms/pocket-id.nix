@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   VARS,
   lib,
   consts,
@@ -15,7 +14,7 @@ in
 {
   imports = [
     ./base.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -43,11 +42,6 @@ in
   # add that recipient and pocket-id/encryption_key to the private nix-secrets
   # flake before expecting the service to start successfully.
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets."pocket-id/encryption_key" = {
       mode = "0400";
       owner = "pocket-id";
