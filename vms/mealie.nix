@@ -1,7 +1,6 @@
 {
   lib,
   config,
-  inputs,
   VARS,
   consts,
   ...
@@ -13,7 +12,7 @@ in
   imports = [
     ./base.nix
     ../modules/services/mealie.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -37,11 +36,6 @@ in
   #   ssh admin@10.100.0.71 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Add to .sops.yaml, encrypt mealie/credentials, then redeploy.
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets."mealie/credentials" = {
       mode = "0440";
       owner = "mealie";
