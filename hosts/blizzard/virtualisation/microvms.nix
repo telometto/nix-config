@@ -289,6 +289,11 @@ let
       # Prepare the VM and its volumes before the stopped-state migration.
       # Jellyfin itself stays on the host until vmServiceReady is set.
       enable = true;
+      # Preserve LAN client addresses; the guest restricts this forwarded port
+      # to the configured home subnet. VPS ingress keeps its separate relay.
+      portForwards = lib.optionals (
+        jellyfinSettings.vmServiceReady && jellyfinSettings.lanIPv4Subnet != null
+      ) [ (mkPortForward "tcp" consts.ports.vm.jellyfin null) ];
     };
 
     mealie = {
