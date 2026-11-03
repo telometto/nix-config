@@ -81,12 +81,15 @@ def verdict(
     local=True,
     destination="100.85.254.99",
     interface="tailscale0",
+    protocol="tcp",
     port=8096,
     chain="PREROUTING",
 ):
     def walk(chain):
         for rule in state[family][chain]:
             if "-i" in rule and rule[rule.index("-i") + 1] != interface:
+                continue
+            if "-p" in rule and rule[rule.index("-p") + 1] != protocol:
                 continue
             if "--dport" in rule and int(rule[rule.index("--dport") + 1]) != port:
                 continue
@@ -132,13 +135,33 @@ def verify_guest(state, *, lan):
         )
         assert (
             verdict(
+                state,
+                "ip4",
+                source,
+                chain="INPUT",
+                interface="microvm0",
+                protocol="udp",
+            )
+            == "DROP"
+        ), (source, "udp", lan, state)
+        assert (
+            verdict(
                 state, "ip4", source, chain="INPUT", interface="microvm0", port=8097
             )
             == "DROP"
         )
-    assert (
-        verdict(state, "ip6", "fd00::10", chain="INPUT", interface="microvm0") == "DROP"
-    )
+    for protocol in ("tcp", "udp"):
+        assert (
+            verdict(
+                state,
+                "ip6",
+                "fd00::10",
+                chain="INPUT",
+                interface="microvm0",
+                protocol=protocol,
+            )
+            == "DROP"
+        )
 
 
 def verify(state, allowed=None):
