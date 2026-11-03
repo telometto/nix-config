@@ -1,52 +1,20 @@
 { consts, ... }:
 let
-  registry = import ./vm-registry.nix { inherit consts; };
-  reg = registry.prowlarr;
-  flaresolverrPort = registry.flaresolverr.port;
+  flaresolverrPort = (import ./vm-registry.nix { inherit consts; }).flaresolverr.port;
 in
 {
   imports = [
-    ./base.nix
-    ../modules/services/prowlarr.nix
-    (import ./mkMicrovmConfig.nix (
-      reg
-      // {
-        volumes = [
-          {
-            mountPoint = "/var/lib/prowlarr";
-            image = "prowlarr-state.img";
-            size = 10240;
-          }
-        ];
-      }
-    ))
+    (import ./mkArrVm.nix {
+      name = "prowlarr";
+      media = false;
+    })
   ];
 
-  networking.firewall.allowedTCPPorts = [
-    reg.port # prowlarr
-    flaresolverrPort
-  ];
-
-  systemd.tmpfiles.rules = [
-    "d /var/lib/prowlarr 0700 prowlarr prowlarr -"
-  ];
-
-  sys.services.prowlarr = {
-    enable = true;
-    inherit (reg) port;
-    dataDir = "/var/lib/prowlarr";
-    reverseProxy.enable = false;
-  };
-
+  networking.firewall.allowedTCPPorts = [ flaresolverrPort ];
   services.flaresolverr = {
     enable = true;
     port = flaresolverrPort;
   };
 
-  sys.services.arrExporter.prowlarr = {
-    enable = true;
-    openFirewall = true;
-    arrPort = reg.port;
-    extraEnvironment.ENABLE_ADDITIONAL_METRICS = "true";
-  };
+  sys.services.arrExporter.prowlarr.extraEnvironment.ENABLE_ADDITIONAL_METRICS = "true";
 }
