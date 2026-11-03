@@ -1,49 +1,6 @@
-{ consts, ... }:
-let
-  reg = (import ./vm-registry.nix { inherit consts; }).sonarr;
-  mediaShare = {
-    source = "/rpool/unenc/media/data";
-    mountPoint = "/data";
-    tag = "media-data";
-    proto = "virtiofs";
-  };
-in
+{ ... }:
 {
-  imports = [
-    ./base.nix
-    ../modules/services/sonarr.nix
-    (import ./mkMicrovmConfig.nix (
-      reg
-      // {
-        volumes = [
-          {
-            mountPoint = "/var/lib/sonarr";
-            image = "sonarr-state.img";
-            size = 10240;
-          }
-        ];
-        extraShares = [ mediaShare ];
-      }
-    ))
-  ];
+  imports = [ (import ./mkArrVm.nix { name = "sonarr"; }) ];
 
-  networking.firewall.allowedTCPPorts = [ reg.port ];
-
-  systemd.tmpfiles.rules = [
-    "d /var/lib/sonarr 0700 sonarr sonarr -"
-  ];
-
-  sys.services.sonarr = {
-    enable = true;
-    inherit (reg) port;
-    dataDir = "/var/lib/sonarr";
-    reverseProxy.enable = false;
-  };
-
-  sys.services.arrExporter.sonarr = {
-    enable = true;
-    openFirewall = true;
-    arrPort = reg.port;
-    extraEnvironment.ENABLE_ADDITIONAL_METRICS = "true";
-  };
+  sys.services.arrExporter.sonarr.extraEnvironment.ENABLE_ADDITIONAL_METRICS = "true";
 }
