@@ -52,13 +52,20 @@ helper, as it does for Immich: TCP `8096` arriving on `enp8s0` is forwarded to
 IP; it does not traverse the VPS, Tailscale, Traefik, or Cloudflare.
 
 [`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix) sets
-`lanIPv4Subnet = "192.168.2.0/24"`. Both the forward and the guest firewall's
-LAN permission require `vmServiceReady = true` and a non-null subnet. The guest
-accepts TCP `8096` from that subnet on `microvm0`, alongside the existing host
-relay permission. The VPS source guard and direct-tailnet-to-guest block stay
-in place. LAN access works independently of `vpsIPv4`; set `lanIPv4Subnet = null`
+`lanIPv4Subnet = "192.168.2.0/24"`. Non-null values must be valid IPv4 CIDRs;
+the guest rejects invalid subnets during Nix evaluation. Both the forward and
+the guest firewall's LAN permission require `vmServiceReady = true` and a
+non-null subnet. The guest accepts TCP `8096` from that subnet on `microvm0`,
+alongside the existing host relay permission. The VPS source guard and
+direct-tailnet-to-guest block stay in place. LAN access works independently of
+`vpsIPv4`; set `lanIPv4Subnet = null`
 to disable only the LAN path. Keep **both** `lanIPv4Subnet` and `vpsIPv4` null
 while completing a fresh instance's administrator wizard privately.
+
+After both configurations are applied, disabling LAN access blocks new
+connections. Existing streams may survive a firewall-only reload because
+connection tracking retains established flows. Restart the Jellyfin guest if
+existing streams must also be disconnected.
 
 In **Dashboard → Networking → Local Networks**, include `192.168.2.0/24` if
 Jellyfin should classify these clients as local. Keep **Known Proxies** set to
