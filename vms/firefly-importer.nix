@@ -1,7 +1,6 @@
 {
   lib,
   config,
-  inputs,
   pkgs,
   VARS,
   consts,
@@ -18,7 +17,7 @@ in
 {
   imports = [
     ./base.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -34,11 +33,6 @@ in
   ];
 
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "firefly/eb_app_id" = {
         mode = "0400";
