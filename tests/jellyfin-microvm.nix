@@ -104,10 +104,13 @@ let
   hasImportProgram =
     cfg: lib.any (package: package.name == "jellyfin-import-state") cfg.environment.systemPackages;
   jellyfinForwards =
-    cfg: lib.filter (forward: forward.sourcePort == 8096) cfg.networking.nat.forwardPorts;
+    cfg:
+    lib.filter (
+      forward: lib.hasPrefix "10.100.0.72:" forward.destination
+    ) cfg.networking.nat.forwardPorts;
   lanForward = {
     proto = "tcp";
-    sourcePort = 8096;
+    sourcePort = 11072;
     destination = "10.100.0.72:8096";
     loopbackIPs = [ ];
   };
