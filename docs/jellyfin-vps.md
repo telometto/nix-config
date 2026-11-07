@@ -45,11 +45,15 @@ uses the separate local path below.
 
 ## Direct home-LAN access
 
-At home, use **`http://192.168.2.100:8096`** in the browser or as the server
+At home, use **`http://192.168.2.100:11072`** in the browser or as the server
 address in a Jellyfin client. Blizzard uses the existing MicroVM port-forwarding
-helper, as it does for Immich: TCP `8096` arriving on `enp8s0` is forwarded to
+helper, as it does for Immich: TCP `11072` arriving on `enp8s0` is forwarded to
 `10.100.0.72:8096`. This path stays on the LAN and preserves the client's source
 IP; it does not traverse the VPS, Tailscale, Traefik, or Cloudflare.
+
+The LAN host port is `consts.ports.host.jellyfin` (`11072`); Jellyfin keeps its
+standard HTTP port, `consts.ports.vm.jellyfin` (`8096`), inside the VM. This TCP
+forward carries HTTP; it does not add TLS termination.
 
 [`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix) sets
 `lanIPv4Subnet = "192.168.2.0/24"`. Non-null values must be valid IPv4 CIDRs;
@@ -77,7 +81,7 @@ After activating the updated Blizzard host **and** Jellyfin guest configurations
 test from another device on `192.168.2.0/24`:
 
 ```bash
-curl --fail --max-time 10 http://192.168.2.100:8096/health
+curl --fail --max-time 10 http://192.168.2.100:11072/health
 ```
 
 Then check login, seek, and playback in the client, and confirm the active session
