@@ -27,8 +27,8 @@
 
       beets = {
         enable = true;
-        # Uses default plugins: fetchart, embedart, convert, scrub, replaygain, lastgenre, chroma, inline
-        # To customize: plugins = [ "fetchart" "embedart" "lastfm" "lyrics" ];
+        musicDirectory = "/rpool/unenc/media/data/music";
+        guidedImport.enable = true;
         webInterface = {
           enable = true;
           host = "0.0.0.0";
