@@ -176,6 +176,11 @@
           hmMaster = inputs.hm-master;
         };
 
+        beets-import = import ./tests/beets-import.nix {
+          inherit nixpkgs system;
+          hmStable = inputs.hm-stable;
+        };
+
         security-log-archive = import ./tests/security-log-archive.nix {
           pkgs = nixpkgs.legacyPackages.${system};
         };
