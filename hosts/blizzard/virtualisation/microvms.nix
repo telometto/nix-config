@@ -293,7 +293,7 @@ let
       # to the configured home subnet. VPS ingress keeps its separate relay.
       portForwards = lib.optionals (
         jellyfinSettings.vmServiceReady && jellyfinSettings.lanIPv4Subnet != null
-      ) [ (mkPortForward "tcp" consts.ports.vm.jellyfin null) ];
+      ) [ (mkPortForward "tcp" consts.ports.host.jellyfin consts.ports.vm.jellyfin) ];
     };
 
     mealie = {
