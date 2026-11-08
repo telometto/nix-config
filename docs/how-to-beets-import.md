@@ -361,9 +361,16 @@ The helper reserves `.beets-import-retire-*` directories for interrupted
 captures and excludes them from recursive discovery.
 
 Recovery and staging copies are retained initially, so disk usage grows with
-completed work. Their later removal is a separate decision. The helper locks
-its own jobs but cannot coordinate unrelated editors or library writers;
-keep the selected working source and destination quiescent during cleanup.
+completed work. Their later removal is a separate decision. Resume, review,
+and retry use the state directory recorded in the job, even if the caller
+selects another state directory. The helper locks that state directory and
+the catalogue and library paths, so independent jobs using other state
+directories cannot write to the same catalogue or library concurrently.
+The catalogue lock is `<database>.import.lock`; the library lock is
+`.<library-name>.beets-import.lock` beside the library directory. These files
+remain after exit; the operating system releases their locks when the helper
+exits. Unrelated editors and library writers do not use these locks; keep the
+selected working source and destination quiescent during cleanup.
 
 ## Adopt this policy for the existing Blizzard job
 
@@ -463,16 +470,3 @@ The successful earlier pilot remains under
 Before expanding the automatic recording policy, repeat a bounded acceptance
 sample. Similar-recording duplicate resolution, recovery-copy retirement,
 whole-disc recovery, and playback integration remain later work.
-
-See the [design](superpowers/specs/2026-11-05-blizzard-beets-design.md) and
-[implementation plan](superpowers/plans/2026-11-05-blizzard-beets.md) for the
-agreed policies and pilot limits.
-The [bulk extension design](superpowers/specs/2026-11-05-beets-bulk-design.md)
-and [plan](superpowers/plans/2026-11-05-beets-bulk.md) describe resumability
-and the optional automatic policy.
-The [working-source design](superpowers/specs/2026-11-06-beets-working-source-design.md)
-and [plan](superpowers/plans/2026-11-06-beets-working-source.md) cover status,
-bounded invocations, retry and optional source retirement.
-The [recording-only design](superpowers/specs/2026-11-06-beets-singletons-design.md)
-and [plan](superpowers/plans/2026-11-06-beets-singletons.md) describe automatic
-singleton evidence, release-free output and versioned scoped retry.
