@@ -390,8 +390,9 @@ for direct home-LAN access; `10.100.0.70:11070` remains reachable on the
 MicroVM network and through the advertised Tailscale subnet route.
 
 `jellyfin` uses the same port-forwarding helper for direct home-LAN access at
-`http://192.168.2.100:8096`, with a guest firewall restriction to
-`192.168.2.0/24`. Its public route keeps the separate VPS/Tailscale relay, and
+`http://192.168.2.100:11072`, forwarding to the VM's standard TCP `8096` port
+with a guest firewall restriction to `192.168.2.0/24`. Its public route keeps
+the separate VPS/Tailscale relay, and
 direct tailnet access to the guest remains blocked. Both paths and the private
 setup controls are documented in [Jellyfin networking](../docs/jellyfin-vps.md).
 
