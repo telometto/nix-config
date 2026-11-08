@@ -100,7 +100,7 @@ ______________________________________________________________________
 | matrix-synapse | 10.100.0.60 | 11060 | 4 GB | 4 | Gateway only | Matrix homeserver |
 | mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Direct | Recipe manager and meal planner |
 | ombi | 10.100.0.41 | 11041 | 1 GB | 1 | Direct | Media request portal (legacy) |
-| overseerr | 10.100.0.40 | 11040 | 1 GB | 1 | Direct | Media request portal |
+| overseerr | 10.100.0.40 | 11040 | 1 GB | 1 | Direct | Seerr media request portal (legacy VM name) |
 | paperless | 10.100.0.61 | 11061 | 8 GB | 4 | Direct | Document management |
 | pocket-id | 10.100.1.2 | 11081 | 1 GB | 1 | Dedicated | Passkey-based OIDC identity provider |
 | prowlarr | 10.100.0.20 | 11020 | 1 GB | 1 | Direct | Indexer aggregator |
@@ -115,6 +115,14 @@ ______________________________________________________________________
 | wireguard | 10.100.0.11 | 56943 | 512 MB | 1 | Direct | VPN gateway (routes qb/sabnzbd/firefox/brave) |
 
 ______________________________________________________________________
+
+### Seerr migration
+
+Seerr runs in the existing `overseerr-vm`, preserving its registry identity,
+`overseerr-state.img`, and `requests.<canonical-domain>` publication. Its
+`seerr.service` reads `/var/lib/overseerr` and migrates the existing settings
+and database on first start. Follow the [backup, deployment, and rollback
+instructions](../docs/seerr.md) before starting the new generation.
 
 ### Matrix network and authentication boundary
 
