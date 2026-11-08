@@ -113,6 +113,7 @@ flowchart LR
 - [sops-setup-guide.md](sops-setup-guide.md) — How to set up SOPS secrets and age keys
 - [scrutiny.md](scrutiny.md) — Provision, verify, and rotate the Scrutiny InfluxDB token
 - [cross-seed.md](cross-seed.md) — Provision and operate Blizzard's staged cross-seeding MicroVM
+- [seerr.md](seerr.md) — Migrate the existing Overseerr VM to Seerr and recover from a failed migration
 - [blackbox-monitoring.md](blackbox-monitoring.md) — Configure, verify, and recover public HTTP/TLS availability probes
 - [gitea.md](gitea.md) — Operate and verify the public Gitea publication
 - [immich-backup.md](immich-backup.md) — Provision, operate, and restore the Immich offsite backup
