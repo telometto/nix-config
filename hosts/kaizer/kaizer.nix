@@ -23,7 +23,10 @@
     };
   };
 
-  boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
+  boot = {
+    kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
+    kernelParams = [ "usbcore.autosuspend=-1" ];
+  };
 
   # Match the upstream release builds provided by the pinned CachyOS overlay.
   # WARNING! Disabled due to repository having been pwned
