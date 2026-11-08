@@ -76,7 +76,7 @@ in
     };
 
     home.packages = [
-      pkgs.brave
+      # pkgs.brave # temporarily disabled until it gets added to nixpkgs again
     ];
   };
 }
