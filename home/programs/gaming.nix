@@ -99,6 +99,6 @@ in
       };
     };
 
-    home.packages = [ pkgs.bbe ];
+    home.packages = [ pkgs.bbe pkgs.discover-overlay ];
   };
 }
