@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import uuid
 
-from mediafile import MediaFile
+from mediafile import MediaFile, UnreadableFileError
 from mutagen.id3 import Frame, ID3TimeStamp, ID3, ID3NoHeaderError
 
 
@@ -356,17 +356,40 @@ def prepare_candidate(source: SourceRecord, approval: Approval, job: Path) -> Pa
     key = hashlib.sha256(json.dumps(tags, sort_keys=True).encode()).hexdigest()[:20]
     candidate = job / "candidates" / source.sha256 / (key + extension)
     candidate.parent.mkdir(parents=True, exist_ok=True)
+    if candidate.is_symlink():
+        raise ValueError("Candidate must be an independent job-owned file")
     if candidate.exists():
-        verify_candidate(source, candidate, approval)
-        return candidate
-    with source.staged.open("rb") as src, candidate.open("xb") as dst:
-        shutil.copyfileobj(src, dst)
-    id3v23 = media.type == "mp3" and media.mgfile.tags.version[1] == 3
-    output = read_media(candidate, id3v23=id3v23)
-    output.update(tags)
-    output.save()
-    if media.type == "mp3":
-        preserve_id3v1(source.staged, candidate, tags)
+        try:
+            verify_candidate(source, candidate, approval)
+            return candidate
+        except (ValueError, UnreadableFileError, subprocess.CalledProcessError):
+            # Older helpers could leave a partial copy or unfinished tag write.
+            # Never rebuild a candidate already linked into the library.
+            if candidate.stat().st_nlink != 1:
+                raise
+    temporary = candidate.with_name(".candidate-" + uuid.uuid4().hex + extension)
+    # Match ordinary file creation permissions, including the caller's umask.
+    fd = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
+    try:
+        with os.fdopen(fd, "wb") as dst, source.staged.open("rb") as src:
+            shutil.copyfileobj(src, dst)
+        id3v23 = media.type == "mp3" and media.mgfile.tags.version[1] == 3
+        output = read_media(temporary, id3v23=id3v23)
+        output.update(tags)
+        output.save()
+        if media.type == "mp3":
+            preserve_id3v1(source.staged, temporary, tags)
+        verify_candidate(source, temporary, approval)
+        with temporary.open("rb") as stream:
+            os.fsync(stream.fileno())
+        os.replace(temporary, candidate)
+        directory = os.open(candidate.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        temporary.unlink(missing_ok=True)
     return candidate
 
 

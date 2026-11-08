@@ -1,7 +1,7 @@
 """Stage and review music without exposing retained sources to the importer."""
 
 from collections import defaultdict
-from contextlib import contextmanager, redirect_stdout
+from contextlib import ExitStack, contextmanager, redirect_stdout
 from dataclasses import asdict, replace
 import argparse
 import fcntl
@@ -393,10 +393,10 @@ def save_json(path: Path, data: dict):
 
 
 @contextmanager
-def import_lock(state: Path, label: str):
-    state = no_symlinks(state)
-    state.mkdir(mode=0o700, parents=True, exist_ok=True)
-    fd = os.open(state / "import.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+def _lock_file(path: Path, label: str):
+    path = no_symlinks(path)
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    fd = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "r+") as stream:
         try:
             fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -412,6 +412,25 @@ def import_lock(state: Path, label: str):
             yield stream
         finally:
             fcntl.flock(stream, fcntl.LOCK_UN)
+
+
+@contextmanager
+def import_lock(state: Path, label: str, *, database=None, root=None):
+    state_lock = no_symlinks(state) / "import.lock"
+    paths = {state_lock}
+    if database is not None:
+        database = no_symlinks(database)
+        paths.add(database.with_name(database.name + ".import.lock"))
+    if root is not None:
+        root = no_symlinks(root)
+        paths.add(root.with_name("." + root.name + ".beets-import.lock"))
+    # Keep the state lock for retained jobs and older helpers, and coordinate
+    # independent jobs by their shared catalogue and library identities.
+    with ExitStack() as locks:
+        streams = {
+            path: locks.enter_context(_lock_file(path, label)) for path in sorted(paths)
+        }
+        yield streams[state_lock]
 
 
 def check_binding(database: Path, root: Path):
@@ -854,7 +873,7 @@ def publish_verified(
     files: list[VerifiedFile], root: Path, database: Path, job: Path
 ) -> dict:
     state = Path(read_json(job / "job.json").get("state_directory", database.parent))
-    with import_lock(state, str(job)):
+    with import_lock(state, str(job), database=database, root=root):
         return _publish_verified(files, root, database, job)
 
 
@@ -862,7 +881,7 @@ def resume_job(job: Path) -> dict:
     data = load_job(job)
     database = Path(data["database"])
     state = Path(data.get("state_directory", database.parent))
-    with import_lock(state, str(job)):
+    with import_lock(state, str(job), database=database, root=Path(data["root"])):
         return _publish_verified(
             [file_record(e) for e in data["files"]], Path(data["root"]), database, job
         )
@@ -1224,7 +1243,13 @@ def main(argv: list[str] | None = None) -> int:
             or (resumed and resumed.get("kind") == "bulk")
         ):
             return bulk.run_bulk(args)
-        with import_lock(state, str(args.resume or "starting a job")) as lock:
+        if resumed:
+            if resumed["root"] != str(root) or resumed["database"] != str(database):
+                raise ValueError("Resume root/database differs from configured library")
+            state = no_symlinks(Path(resumed.get("state_directory", state)))
+        with import_lock(
+            state, str(args.resume or "starting a job"), database=database, root=root
+        ) as lock:
             check_binding(database, root)
             if args.resume:
                 job = no_symlinks(args.resume)
