@@ -48,6 +48,9 @@ flowchart LR
 
 #### How-To Guides
 
+- [how-to-beets-import.md](how-to-beets-import.md) —
+  Review and verify copied music imports on Blizzard
+
 - [libvirt-firmware.md](libvirt-firmware.md) —
   Preserve existing NVRAM when migrating to QCOW2 and validate snapshots
 
