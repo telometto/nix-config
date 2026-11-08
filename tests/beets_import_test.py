@@ -286,6 +286,88 @@ class ImportTests(unittest.TestCase):
             Path("Unsorted/John Frusciante/Twenty Four Hours.flac"),
         )
 
+    def test_candidate_retains_normal_publication_permissions(self):
+        cli, metadata = self.implementation(), self.metadata_implementation()
+        record = cli.stage_inputs([self.audio()], self.job)[0]
+        previous = os.umask(0o027)
+        try:
+            candidate = metadata.prepare_candidate(
+                record, self.approval(record), self.job
+            )
+        finally:
+            os.umask(previous)
+        self.assertEqual(candidate.stat().st_mode & 0o777, 0o640)
+
+    def test_candidate_preparation_recovers_after_process_death(self):
+        cli, metadata = self.implementation(), self.metadata_implementation()
+        source = self.audio(tags={"artist": "Original", "title": "Original"})
+        original = source.read_bytes()
+        record = cli.stage_inputs([source], self.job)[0]
+        approval = self.approval(record, as_album=False)
+        copy = metadata.shutil.copyfileobj
+        child = os.fork()
+        if child == 0:
+
+            def copy_then_die(src, dst):
+                copy(src, dst)
+                dst.flush()
+                os.fsync(dst.fileno())
+                os._exit(137)
+
+            metadata.shutil.copyfileobj = copy_then_die
+            try:
+                metadata.prepare_candidate(record, approval, self.job)
+            finally:
+                os._exit(99)
+        _, status = os.waitpid(child, 0)
+        self.assertEqual(os.waitstatus_to_exitcode(status), 137)
+        interrupted_paths = set((self.job / "candidates").rglob("*"))
+        try:
+            candidate = metadata.prepare_candidate(record, approval, self.job)
+        except Exception as exc:
+            self.fail(f"Interrupted candidate cannot be retried: {exc}")
+        self.assertNotIn(candidate, interrupted_paths)
+        metadata.verify_candidate(record, candidate, approval)
+        inode = candidate.stat().st_ino
+        self.assertEqual(
+            metadata.prepare_candidate(record, approval, self.job), candidate
+        )
+        self.assertEqual(candidate.stat().st_ino, inode)
+        self.assertEqual(source.read_bytes(), original)
+        self.assertEqual(record.staged.read_bytes(), original)
+
+    def test_rebuilds_legacy_incomplete_unpublished_candidate(self):
+        cli, metadata = self.implementation(), self.metadata_implementation()
+        source = self.audio(tags={"artist": "Original", "title": "Original"})
+        record = cli.stage_inputs([source], self.job)[0]
+        approval = self.approval(record, as_album=False)
+        candidate = metadata.prepare_candidate(record, approval, self.job)
+        for incomplete in (source.read_bytes(), b"fLaC"):
+            with self.subTest(bytes=len(incomplete)):
+                candidate.write_bytes(incomplete)
+                try:
+                    recovered = metadata.prepare_candidate(record, approval, self.job)
+                except Exception as exc:
+                    self.fail(f"Legacy incomplete candidate cannot be retried: {exc}")
+                self.assertEqual(recovered, candidate)
+                metadata.verify_candidate(record, recovered, approval)
+
+    def test_invalid_candidate_linked_to_library_is_not_rebuilt(self):
+        cli, metadata = self.implementation(), self.metadata_implementation()
+        source = self.audio(tags={"artist": "Original", "title": "Original"})
+        record = cli.stage_inputs([source], self.job)[0]
+        approval = self.approval(record, as_album=False)
+        candidate = metadata.prepare_candidate(record, approval, self.job)
+        self.root.mkdir()
+        published = self.root / "published.flac"
+        os.link(candidate, published)
+        incomplete = source.read_bytes()
+        candidate.write_bytes(incomplete)
+        with self.assertRaisesRegex(ValueError, "Approved metadata"):
+            metadata.prepare_candidate(record, approval, self.job)
+        self.assertTrue(candidate.samefile(published))
+        self.assertEqual(published.read_bytes(), incomplete)
+
     def test_unexpected_metadata_or_audio_change_blocks_candidate(self):
         metadata = self.metadata_implementation()
         path = self.audio(tags={"comment": "Keep me"})
@@ -518,6 +600,90 @@ class ImportTests(unittest.TestCase):
                 with cli.import_lock(state, "second-job"):
                     self.fail("second import acquired the lock")
 
+    def test_resume_uses_recorded_state_lock(self):
+        from dataclasses import asdict
+
+        cli = self.publisher()
+        verified = self.verified_file(as_album=False)
+        state, other = self.base / "state", self.base / "different-state"
+        database = state / "library.db"
+        data = cli.load_job(self.job)
+        data.update(
+            database=str(database),
+            state_directory=str(state),
+            files=[{**asdict(verified), "status": "verified"}],
+        )
+        cli.save_json(self.job / "job.json", data)
+        journal = (self.job / "job.json").read_bytes()
+        command = [
+            "--library-root",
+            str(self.root),
+            "--database",
+            str(database),
+            "--state-directory",
+            str(other),
+            "--resume",
+            str(self.job),
+        ]
+        with cli.import_lock(state, str(self.job)):
+            self.assertEqual(cli.main(command), 1)
+        self.assertEqual((self.job / "job.json").read_bytes(), journal)
+        self.assertFalse(self.root.exists())
+        self.assertFalse(database.exists())
+        self.assertFalse(other.exists())
+        self.assertEqual(cli.main(command), 0)
+        self.assertEqual(cli.load_job(self.job)["files"][0]["status"], "registered")
+        self.assertFalse(other.exists())
+
+    def competing_publication(self, *, other_root=False, other_database=False):
+        cli = self.publisher()
+        first = self.verified_file(as_album=False)
+        first_job = self.job
+        state = self.base / "state"
+        database = state / "library.db"
+        data = cli.load_job(first_job)
+        data["state_directory"] = str(state)
+        cli.save_json(first_job / "job.json", data)
+        self.job = self.base / ".beets-import.competing"
+        self.job.mkdir(mode=0o700)
+        target = self.base / "other-library" if other_root else self.root
+        cli.save_json(
+            self.job / "job.json",
+            {
+                "version": 1,
+                "job": str(self.job),
+                "root": str(target),
+                "state_directory": str(self.base / "other-state"),
+            },
+        )
+        second = self.verified_file(
+            "second.flac", as_album=False, title="Second", frequency=880
+        )
+        target_database = self.base / "other.db" if other_database else database
+        register = cli.register_files
+
+        def competing(data):
+            with (
+                patch("cli.register_files", side_effect=register),
+                self.assertRaisesRegex(ValueError, "Another guided import is active"),
+            ):
+                cli.publish_verified([second], target, target_database, self.job)
+            register(data)
+
+        with patch("cli.register_files", side_effect=competing):
+            cli.publish_verified([first], self.root, database, first_job)
+        self.assertFalse((target / second.relative_destination).exists())
+        self.assertEqual(len(self.catalogue_rows()), 1)
+
+    def test_different_state_directories_cannot_publish_to_same_library(self):
+        self.competing_publication()
+
+    def test_catalogue_lock_serializes_different_library_roots(self):
+        self.competing_publication(other_root=True)
+
+    def test_library_lock_serializes_different_catalogues(self):
+        self.competing_publication(other_database=True)
+
     def test_resume_after_publication_before_registration(self):
         cli = self.publisher()
         verified = self.verified_file()
@@ -690,13 +856,26 @@ class ImportTests(unittest.TestCase):
 
     def test_decoder_error_stays_pending(self):
         metadata = self.metadata_implementation()
+        cli = self.implementation()
         source = self.audio(duration=1)
         source.write_bytes(source.read_bytes()[:-10])
-        record = self.implementation().stage_inputs([source], self.job)[0]
+        original = source.read_bytes()
+        record = cli.stage_inputs([source], self.job)[0]
         approval = self.approval(record)
-        candidate = metadata.prepare_candidate(record, approval, self.job)
         with self.assertRaises((ValueError, subprocess.CalledProcessError)):
-            metadata.verify_candidate(record, candidate, approval)
+            metadata.prepare_candidate(record, approval, self.job)
+        self.assertEqual(
+            cli.prepare_approved(self.job, [record], [approval], automatic=True), []
+        )
+        pending = cli.load_job(self.job)["pending"]
+        self.assertEqual(len(pending), 1)
+        self.assertEqual(pending[0]["source"], str(source))
+        self.assertTrue(pending[0]["reason"])
+        self.assertFalse(
+            any(path.is_file() for path in (self.job / "candidates").rglob("*"))
+        )
+        self.assertEqual(source.read_bytes(), original)
+        self.assertFalse(self.root.exists())
 
     def test_id3v1_comments_and_genre_survive(self):
         metadata = self.metadata_implementation()

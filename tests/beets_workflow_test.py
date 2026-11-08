@@ -744,6 +744,58 @@ class WorkflowTests(unittest.TestCase):
     def test_status_recognizes_catalogue_commit_before_child_checkpoint(self):
         self.committed_status("register_files")
 
+    def recover_committed_move(self, operation):
+        args, cleanup = self.moving()
+        source = self.supported_source()
+        original = source.read_bytes()
+        cli, module = self.implementation(), self.bulk()
+        register = cli.register_files
+
+        def committed(*values, **kwargs):
+            register(*values, **kwargs)
+            raise KeyboardInterrupt
+
+        with patch("cli.register_files", side_effect=committed):
+            self.assertEqual(module.run_bulk(args), 130)
+        job = self.latest_job()
+        child = next((job / "batches").iterdir())
+        self.assertEqual(cli.load_job(child)["files"][0]["status"], "published")
+        self.assertEqual(source.read_bytes(), original)
+        if operation == "retry":
+            # Recreate the retained state left by an older helper's failed resume.
+            ledger = module.BulkLedger(job, self.root, args.database)
+            try:
+                index = module.CommittedIndex(args.database, self.root)
+                module.reconcile_committed(ledger, index)
+                with ledger.connection:
+                    ledger.connection.execute("UPDATE units SET status='done'")
+                cleanup.run_cleanups(ledger, index)
+                self.assertEqual(ledger.source_entries()[0]["outcome"], "failed")
+            finally:
+                ledger.close()
+        setattr(args, operation, job)
+        args.sources = []
+        with patch(
+            "cli.run_matcher",
+            side_effect=AssertionError("Must replay without rematching"),
+        ):
+            self.assertEqual(module.run_bulk(args), 0)
+        self.assertEqual(cli.load_job(child)["files"][0]["status"], "registered")
+        self.assertFalse(source.exists())
+        report = self.report(job)
+        self.assertEqual(report["progress"]["moved_files"], 1)
+        self.assertEqual(report["progress"]["cleanup_pending_files"], 0)
+        self.assertEqual(
+            Path(report["sources"][0]["cleanup"]["recovery"]).read_bytes(), original
+        )
+        self.assertEqual(len(self.catalogue_rows()), 1)
+
+    def test_move_resume_replays_catalogue_commit_before_child_checkpoint(self):
+        self.recover_committed_move("resume")
+
+    def test_move_retry_recovers_stranded_child_checkpoint(self):
+        self.recover_committed_move("retry")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -481,6 +481,31 @@ main()
         for path, data in originals.items():
             self.assertEqual(path.read_bytes(), data)
 
+    def test_bulk_operations_use_recorded_state_lock(self):
+        cli, module = self.implementation(), self.bulk()
+        args = self.arguments()
+        self.supported_source()
+        with patch("cli.stage_inputs", side_effect=KeyboardInterrupt):
+            self.assertEqual(module.run_bulk(args), 130)
+        job = self.latest_job()
+        journal = (job / "job.json").read_bytes()
+        ledger = (job / "bulk.sqlite3").read_bytes()
+        state = args.state_directory
+        args.state_directory, args.sources = self.base / "other-state", []
+        for operation in ("resume", "review", "retry"):
+            with self.subTest(operation=operation):
+                setattr(args, operation, job)
+                with cli.import_lock(state, str(job)):
+                    self.assertEqual(module.run_bulk(args), 1)
+                setattr(args, operation, None)
+                self.assertEqual((job / "job.json").read_bytes(), journal)
+                self.assertEqual((job / "bulk.sqlite3").read_bytes(), ledger)
+                self.assertFalse(args.state_directory.exists())
+        args.resume = job
+        self.assertEqual(module.run_bulk(args), 0)
+        self.assertFalse(args.state_directory.exists())
+        self.assertEqual(len(self.catalogue_rows()), 1)
+
     def test_bulk_resume_does_not_repeat_committed_units(self):
         args = self.arguments()
         first = self.supported_source("a.flac", album="First Album")
