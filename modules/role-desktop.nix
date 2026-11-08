@@ -77,11 +77,11 @@ in
           #   "brave-origin"
           #   "tailscale"
           # ];
-          # nixpkgs-unstable-small = [
-          #   "atuin"
-          #   "brave-origin"
-          #   "tailscale"
-          # ];
+          nixpkgs-unstable-small = [
+            #   "atuin"
+            "brave-origin"
+            #   "tailscale"
+          ];
         };
 
         ## Add custom overlays
