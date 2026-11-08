@@ -327,9 +327,9 @@ reload the firewall again. The direct DROP remains until a successful rebuild.
   resolves to the VPS only and supports login, WebSockets, seek, direct play,
   and two simultaneous real 1080p software transcodes. Confirm the VPS can
   sustain the required throughput and transfer volume.
-- Confirm home public IPv4 and IPv6 do not accept Jellyfin on 8096/8920 or
-  discovery traffic on UDP 1900/7359. If Plex is re-enabled with
-  `openFirewall = true`, review its discovery ports separately. Review
+- Confirm home public IPv4 and IPv6 do not accept Jellyfin on TCP ports
+  11072/8096/8920 or discovery traffic on UDP 1900/7359. If Plex is re-enabled
+  with `openFirewall = true`, review its discovery ports separately. Review
   router forwarding and DNS records.
 - Verify Jellyfin sees the client IP and enforces remote-access and user
   permissions through the proxy. Send a spoofed `X-Forwarded-For` header from
