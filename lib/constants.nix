@@ -36,6 +36,7 @@
       seaweedfsS3 = 11021;
       seaweedfsMetrics = 11022;
       glance = 11064;
+      jellyfin = 11072;
     };
 
     vm = {
