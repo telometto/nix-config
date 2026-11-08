@@ -69,8 +69,8 @@ in
           # nixpkgs-beta = [ ];
           nixpkgs-unstable = [
             "atuin"
-            "brave-origin"
             "tailscale"
+            "vesktop"
           ];
           # nixpkgs-stable-small = [
           #   "atuin"
@@ -87,13 +87,13 @@ in
         ## Add custom overlays
         custom = [
           (final: prev: {
-            # Avoid loading incompatible Qt plugins from the desktop session.
-            brave-origin = prev.brave-origin.override {
-              commandLineArgs = "--ui-toolkit=gtk";
-            };
+            #   # Avoid loading incompatible Qt plugins from the desktop session.
+            #   brave-origin = prev.brave-origin.override {
+            #     commandLineArgs = "--ui-toolkit=gtk";
+            # };
 
             # Replace regular Brave for all desktop-role consumers with Brave Origin.
-            brave = final.brave-origin;
+            # brave = final.brave-origin;
 
             # openldap = prev.openldap.overrideAttrs {
             #   doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
