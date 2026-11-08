@@ -99,6 +99,9 @@ in
       };
     };
 
-    home.packages = [ pkgs.bbe pkgs.discover-overlay ];
+    home.packages = [
+      pkgs.bbe
+      pkgs.discover-overlay
+    ];
   };
 }
