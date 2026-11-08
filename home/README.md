@@ -93,8 +93,30 @@ nix shell nixpkgs#acl nixpkgs#bash nixpkgs#python3 --command python3 tests/codex
 [services/autotidy.nix](services/autotidy.nix) wraps the upstream
 [autotidy Home Manager module](https://github.com/prettymuchbryce/autotidy/blob/master/flake.nix).
 It provides opt-in `hm.services.autotidy.enable`, `package`, and `settings`
-options. The service is enabled only for `zeno` on `snowfall`, with empty rules.
-It will not organize any files until rules are added.
+options. The service is enabled only for `zeno` on `snowfall`. Four
+non-recursive rules watch the direct contents of the XDG Documents, Pictures,
+Videos, Downloads, and Music directories and route matching files into their
+category directories:
+
+| Category | Example destination |
+|----------|---------------------|
+| Documents | `~/Documents/ext.pdf/report.pdf` |
+| Pictures | `~/Pictures/ext.jpg/photo.jpg` |
+| Videos | `~/Videos/ext.mp4/clip.mp4` |
+| Music | `~/Music/ext.mp3/song.mp3` |
+
+The move action creates extension folders on demand. Upstream's `${ext}`
+template includes the leading dot; the `ext` prefix keeps these folders
+visible. Extension spelling is preserved, so `.JPG` uses `ext.JPG`.
+Files recognized by content without an extension use the category's `ext`
+folder. Known extensions are matched without regard to case and take
+precedence over content detection; MIME filters also recognize supported
+formats outside the extension lists.
+
+Files that match no category stay where they are, including unmatched files
+in Downloads. Subdirectories, symlinks, common download fragments, editor
+backups, and Office lock files are left alone. Name conflicts add a numeric
+suffix to the incoming filename, preserving existing destination files.
 
 Settings are generated as `~/.config/autotidy/config.yaml`, the path upstream
 uses even when `XDG_CONFIG_HOME` is customized. Edit
