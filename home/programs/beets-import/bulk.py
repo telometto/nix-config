@@ -926,6 +926,30 @@ def retry_sources(ledger, args):
         )
 
 
+def recover_unit_publication(ledger, unit, index):
+    if not unit["job"]:
+        return False
+    child = child_job(ledger, unit)
+    data = cli.load_job(child)
+    if not (
+        data.get("files")
+        and data.get("publication_confirmed")
+        and not data.get("publication_done")
+    ):
+        return False
+    cli._publish_verified(
+        [cli.file_record(entry) for entry in data["files"]],
+        ledger.root,
+        ledger.database,
+        child,
+    )
+    data = cli.load_job(child)
+    data["publication_done"] = True
+    cli.save_json(child / "job.json", data)
+    finish_unit(ledger, unit, child, index)
+    return True
+
+
 def process_unit(
     ledger: BulkLedger, unit: dict, index: CommittedIndex, args, *, reviewing=False
 ):
@@ -1005,22 +1029,6 @@ def process_unit(
             if entry["source_sha256"] not in hashes
         ]
         cli.save_json(child / "job.json", data)
-    if (
-        data.get("files")
-        and data.get("publication_confirmed")
-        and not data.get("publication_done")
-    ):
-        cli._publish_verified(
-            [cli.file_record(entry) for entry in data["files"]],
-            ledger.root,
-            ledger.database,
-            child,
-        )
-        data = cli.load_job(child)
-        data["publication_done"] = True
-        cli.save_json(child / "job.json", data)
-        finish_unit(ledger, unit, child, index)
-        return
     if data.get("publication_done"):
         data.setdefault("publication_history", []).append(data.pop("files", []))
         data.pop("publication_confirmed", None)
@@ -1152,6 +1160,13 @@ def run_bulk(args) -> int:
     )
     job, ledger = None, None
     try:
+        existing_job = args.review or args.resume or getattr(args, "retry", None)
+        if existing_job:
+            job = cli.no_symlinks(existing_job)
+            data = cli.load_job(job)
+            if data["root"] != str(root) or data["database"] != str(database):
+                raise ValueError("Bulk job root/database differs from configuration")
+            state = cli.no_symlinks(Path(data.get("state_directory", state)))
         working = getattr(args, "move_after_verification", None)
         if working:
             working = cli.no_symlinks(working)
@@ -1178,6 +1193,8 @@ def run_bulk(args) -> int:
                 or getattr(args, "retry", None)
                 or "starting bulk inventory"
             ),
+            database=database,
+            root=root,
         ) as lock:
             cli.check_binding(database, root)
             if args.review or args.resume or getattr(args, "retry", None):
@@ -1303,8 +1320,12 @@ def run_bulk(args) -> int:
                     }
                     if cleanup_ids is not None:
                         unit_ids &= cleanup_ids
+                    # Reconciliation may already classify these sources as
+                    # imported. Restore the child checkpoint before cleanup or
+                    # source-status early exits, including older stranded jobs.
+                    recovered = recover_unit_publication(ledger, unit, index)
                     cleanup.run_cleanups(ledger, index, source_ids=unit_ids)
-                    if unit["id"] in work_ids:
+                    if unit["id"] in work_ids and not recovered:
                         process_unit(
                             ledger, unit, index, args, reviewing=bool(args.review)
                         )
