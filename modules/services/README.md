@@ -50,7 +50,7 @@ ______________________________________________________________________
 | [cross-seed.nix](cross-seed.nix) | `sys.services.cross-seed` | MicroVM | Automatic complete-content cross-seeding; [provisioning](../../docs/cross-seed.md) |
 | [sabnzbd.nix](sabnzbd.nix) | `sys.services.sabnzbd` | MicroVM (WG-routed) | Usenet client |
 | [ombi.nix](ombi.nix) | `sys.services.ombi` | MicroVM | Media request portal (legacy) |
-| [overseerr.nix](overseerr.nix) | `sys.services.overseerr` | MicroVM | Media request portal |
+| [seerr.nix](seerr.nix) | `sys.services.seerr` | MicroVM (`overseerr-vm`) | Media request portal; [migration](../../docs/seerr.md) |
 | [tautulli.nix](tautulli.nix) | `sys.services.tautulli` | MicroVM | Plex statistics |
 | [jellyfin.nix](jellyfin.nix) | `sys.services.jellyfin` | Host → MicroVM (blizzard) | Staged media server migration; [Jellyfin operations](../../docs/jellyfin-vps.md) |
 | [plex.nix](plex.nix) | `sys.services.plex` | Host (blizzard) | Plex media server |

@@ -303,6 +303,11 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        seerr = import ./tests/seerr.nix {
+          seerrVm = self.nixosConfigurations.overseerr-vm;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         service-families = import ./tests/service-families.nix {
           inherit inputs system;
           configurations = self.nixosConfigurations;
