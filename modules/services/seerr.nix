@@ -1,16 +1,16 @@
 { lib, config, ... }:
 let
-  cfg = config.sys.services.overseerr or { };
+  cfg = config.sys.services.seerr;
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
 in
 {
-  options.sys.services.overseerr = {
-    enable = lib.mkEnableOption "Overseerr";
+  options.sys.services.seerr = {
+    enable = lib.mkEnableOption "Seerr";
 
     port = lib.mkOption {
       type = lib.types.port;
       default = 5055;
-      description = "Port where Overseerr listens.";
+      description = "Port where Seerr listens.";
     };
 
     openFirewall = lib.mkOption {
@@ -18,24 +18,24 @@ in
       default = false;
     };
 
-    reverseProxy = traefikLib.mkReverseProxyOptions { name = "overseerr"; };
+    reverseProxy = traefikLib.mkReverseProxyOptions { name = "seerr"; };
   };
 
   config = lib.mkIf cfg.enable {
-    services.overseerr = {
+    services.seerr = {
       enable = true;
       inherit (cfg) port openFirewall;
     };
 
-    services.traefik.dynamic.files.overseerr = traefikLib.mkTraefikDynamicConfig {
-      name = "overseerr";
+    services.traefik.dynamic.files.seerr = traefikLib.mkTraefikDynamicConfig {
+      name = "seerr";
       inherit cfg config;
       inherit (cfg) port;
     };
 
     assertions = [
       (traefikLib.mkCfTunnelAssertion {
-        name = "overseerr";
+        name = "seerr";
         inherit cfg;
       })
     ];

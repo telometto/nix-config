@@ -437,7 +437,7 @@ and [ADR 0002](adr/0002-enforce-host-owned-microvm-network-policy.md).
 | lidarr | 10.100.0.26 | 11028 | 1 GB | 1 | Music PVR |
 | qbittorrent | 10.100.0.30 | 11030 | 2 GB | 1 | Torrent — WG-routed |
 | sabnzbd | 10.100.0.31 | 11031 | 1 GB | 1 | Usenet — WG-routed |
-| overseerr | 10.100.0.40 | 11040 | 1 GB | 1 | Media requests |
+| overseerr | 10.100.0.40 | 11040 | 1 GB | 1 | Seerr media requests (legacy VM name; [migration](seerr.md)) |
 | ombi | 10.100.0.41 | 11041 | 1 GB | 1 | Media requests (legacy) |
 | tautulli | 10.100.0.42 | 11042 | 1 GB | 1 | Plex stats |
 | actual | 10.100.0.51 | 11051 | 1 GB | 1 | Actual Budget |
