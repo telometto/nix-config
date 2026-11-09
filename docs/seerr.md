@@ -96,13 +96,18 @@ For an immediate rollback after the host-switch deployment above, with no
 intervening host generations:
 
 ```bash
-sudo systemctl stop microvm@overseerr-vm.service
-sudo cp --sparse=always --preserve=all --reflink=auto \
-  "$backup_dir/overseerr-state.img" /flash/enc/vms/overseerr-vm/overseerr-state.img
-sudo cmp "$backup_dir/overseerr-state.img" /flash/enc/vms/overseerr-vm/overseerr-state.img
-sudo nixos-rebuild switch --rollback
-sudo systemctl start microvm@overseerr-vm.service
+sudo systemctl stop microvm@overseerr-vm.service &&
+  sudo cp --sparse=always --preserve=all --reflink=auto \
+    "$backup_dir/overseerr-state.img" /flash/enc/vms/overseerr-vm/overseerr-state.img &&
+  sudo cmp "$backup_dir/overseerr-state.img" /flash/enc/vms/overseerr-vm/overseerr-state.img &&
+  sudo nixos-rebuild switch --rollback &&
+  sudo systemctl start microvm@overseerr-vm.service
 ```
+
+Run the block as one command chain. The `&&` operators stop the sequence at
+the first failure. If stopping fails, resolve the error before restoring
+state. If the copy or comparison fails, keep the VM stopped and resolve the
+error before retrying; do not roll back the host or start the guest.
 
 If using a later shell, set `backup_dir` to the recorded backup path first.
 If the guest was updated independently, select its pre-migration runner
