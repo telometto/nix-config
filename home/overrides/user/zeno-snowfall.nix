@@ -42,7 +42,7 @@ in
     # TODO: temporary: use stable Tectonic until the unstable AWS-LC build is fixed.
     (pkgs.chatgpt.override {
       inherit codex;
-      tectonic-unwrapped = pkgs.tectonic-unwrapped;
+      inherit (pkgs) tectonic-unwrapped;
     })
   ]
   ++ (with pkgs.sweethome3d; [
