@@ -7,7 +7,7 @@ Per-machine NixOS configurations defining hardware, roles, users, and services.
 | Host | Role | Desktop | Standout Features |
 |------|------|---------|------------------|
 | [snowfall/](snowfall/) | Desktop | KDE | AMD GPU, distributed builds server, openrazer (RGB), Prometheus+Grafana+Traefik+Cloudflare tunnel, RAPL + electricity-price exporters |
-| [blizzard/](blizzard/) | Server | None | ZFS+NFS+Samba, full observability stack, MicroVM host, Tailscale subnet router (192.168.2.0/24 + 10.100.0.0/24), CrowdSec, VictoriaMetrics |
+| [blizzard/](blizzard/) | Server | None | ZFS+NFS+Samba, full observability stack, MicroVM host, Tailscale subnet router (192.168.2.0/24), CrowdSec, VictoriaMetrics |
 | [avalanche/](avalanche/) | Desktop | GNOME | ThinkPad P51, nixos-hardware module, iwlwifi+BT coexistence workaround, VictoriaMetrics remote-write to blizzard |
 | [kaizer/](kaizer/) | Desktop | KDE | Two users (gianluca+luke; frankie disabled), Lanzaboote disabled, CachyOS kernel, NVIDIA GPU (open kernel modules), Java Temurin 8/17/21 for Minecraft, per-user localization |
 
@@ -25,19 +25,12 @@ overlay. Their host-local declarations for the
 are currently commented out, so those blocks do not enable the cache. Cache
 misses and external kernel modules can still require builds.
 
-To use the cache for one build, pass its settings explicitly (replace
-`snowfall` with `kaizer` where appropriate):
-
-```bash
-nix build .#nixosConfigurations.snowfall.config.system.build.toplevel \
-  --option extra-substituters https://attic.xuyh0120.win/lantian \
-  --option extra-trusted-public-keys 'lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc='
-```
-
-This builds without activating the configuration or persisting those options.
-For repeated use, enable the declarations and activate the host configuration.
-The source does not establish the active daemon settings; inspect
-`nix config show substituters` and `/etc/nix/nix.conf` on the host to check them.
+The former cache and signing authority were disabled after a compromise report.
+Do not re-enable those declarations or pass that endpoint and key as build
+options. Use local builds or an already trusted builder/cache. Reintroducing
+an upstream cache requires a reviewed replacement endpoint, key and provenance
+check. Inspect active daemon settings independently; a source change does not
+remove an already configured substituter.
 
 ### Host Structure
 
