@@ -33,7 +33,7 @@ in
   ];
 
   # After first boot, retrieve the VM age key:
-  #   ssh admin@10.100.0.71 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
+  #   ssh admin@10.100.0.71 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Add to .sops.yaml, encrypt mealie/credentials, then redeploy.
   sops = {
     secrets."mealie/credentials" = {
