@@ -66,8 +66,8 @@ let
 
     # Fetch current policy to preserve other settings
     echo "Fetching current policy from: $API_ENDPOINT"
-    POLICY_RESPONSE=$(${pkgs.curl}/bin/curl -sf \
-      -H "Authorization: Bearer $API_TOKEN" \
+    POLICY_RESPONSE=$(printf 'Authorization: Bearer %s\n' "$API_TOKEN" | ${pkgs.curl}/bin/curl -sf \
+      -H @- \
       -H "Content-Type: application/json" \
       "$API_ENDPOINT")
 
@@ -96,6 +96,12 @@ let
       '
         .result as $policy
         | ($policy.include // []) as $include
+        | if $previous_ip == "" and any($include[]; (.ip.ip? // "") != "" and .ip.ip != $ip)
+          then error("Managed-IP history is missing; reconcile existing IP rules before updating this policy")
+          else . end
+        | if $previous_ip != "" and (any($include[]; .ip.ip? == $previous_ip or .ip.ip? == $ip) | not)
+          then error("Managed-IP history disagrees with the policy; reconcile it before updating")
+          else . end
         | ($include | map(
             select(
               (.ip.ip? // "") as $existing_ip
@@ -114,11 +120,11 @@ let
       ')
 
     echo "Updating policy with new IP..."
-    UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -sf \
+    UPDATE_RESPONSE=$(printf 'Authorization: Bearer %s\n' "$API_TOKEN" | ${pkgs.curl}/bin/curl -sf \
       -X PUT \
-      -H "Authorization: Bearer $API_TOKEN" \
+      -H @- \
       -H "Content-Type: application/json" \
-      -d "$UPDATE_PAYLOAD" \
+      --data-binary @<(printf '%s' "$UPDATE_PAYLOAD") \
       "$API_ENDPOINT")
 
     # Check if update was successful
