@@ -95,6 +95,13 @@ in
       virtio-win
     ];
 
-    networking.firewall.trustedInterfaces = [ cfg.networkBridge ];
+    # Guests need DHCP and DNS, rather than blanket access to host listeners.
+    networking.firewall.interfaces.${cfg.networkBridge} = {
+      allowedTCPPorts = [ 53 ];
+      allowedUDPPorts = [
+        53
+        67
+      ];
+    };
   };
 }
