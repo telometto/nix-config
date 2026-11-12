@@ -74,7 +74,13 @@ in
         "general/paperlessKeyFilePath" = { };
       }
       // whenEnabled hasSearx {
-        "general/searxSecretKey" = { };
+        "general/searxSecretKey" = {
+          restartUnits = [
+            "searx-secret-environment.service"
+            "searx-init.service"
+            "searx.service"
+          ];
+        };
       }
       // whenEnabled hasGrafana {
         "grafana/secret_key" = {
