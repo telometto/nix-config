@@ -192,49 +192,40 @@ in
       wantedBy = [ "multi-user.target" ];
 
       preStart = ''
+        umask 077
         mkdir -p ${cfg.master.dataDir}
         mkdir -p ${cfg.volume.dataDir}
-        mkdir -p ${cfg.configDir}
+        install -d -m 0700 ${lib.escapeShellArg (toString cfg.configDir)}
         ${optionalString cfg.filer.enable "mkdir -p ${cfg.filer.dataDir}"}
         ${optionalString cfg.s3.auth.enable ''
-            accessKeyFile="$CREDENTIALS_DIRECTORY/seaweedfs-s3-access-key"
-            secretKeyFile="$CREDENTIALS_DIRECTORY/seaweedfs-s3-secret-key"
+          accessKeyFile="$CREDENTIALS_DIRECTORY/seaweedfs-s3-access-key"
+          secretKeyFile="$CREDENTIALS_DIRECTORY/seaweedfs-s3-secret-key"
 
-            if [ ! -s "$accessKeyFile" ] || [ ! -s "$secretKeyFile" ]; then
-              echo "SeaweedFS S3 credentials missing" >&2
-              exit 1
-            fi
+          if [ ! -s "$accessKeyFile" ] || [ ! -s "$secretKeyFile" ]; then
+            echo "SeaweedFS S3 credentials missing" >&2
+            exit 1
+          fi
 
-            cat > ${cfg.configDir}/s3.config.json << EOF
-          {
-            "identities": [
-              {
-                "name": "admin",
-                "credentials": [
-                  {
-                    "accessKey": "$(cat "$accessKeyFile")",
-                    "secretKey": "$(cat "$secretKeyFile")"
-                  }
-                ],
-                "actions": [
-                  "Admin",
-                  "Read",
-                  "Write",
-                  "List",
-                  "Tagging"
-                ]
-              }
-            ]
-          }
-          EOF
+          s3_tmp=$(mktemp ${lib.escapeShellArg "${cfg.configDir}/.s3.config.XXXXXXXX"})
+          trap 'rm -f "$s3_tmp"' EXIT
+          ${lib.getExe pkgs.jq} -n --rawfile access "$accessKeyFile" --rawfile secret "$secretKeyFile" '{
+            identities: [{
+              name: "admin",
+              credentials: [{accessKey: ($access | rtrimstr("\n")), secretKey: ($secret | rtrimstr("\n"))}],
+              actions: ["Admin", "Read", "Write", "List", "Tagging"]
+            }]
+          }' > "$s3_tmp"
+          chmod 0600 "$s3_tmp"
+          ${pkgs.coreutils}/bin/sync -f "$s3_tmp"
+          mv -T "$s3_tmp" ${lib.escapeShellArg "${cfg.configDir}/s3.config.json"}
         ''}
-        chown -R seaweedfs:seaweedfs ${cfg.master.dataDir} ${cfg.volume.dataDir} ${cfg.configDir} ${optionalString cfg.filer.enable cfg.filer.dataDir}
       '';
 
       serviceConfig = {
         Type = "simple";
         User = "seaweedfs";
         Group = "seaweedfs";
+        UMask = "0077";
         Restart = "on-failure";
         RestartSec = 5;
 
