@@ -296,6 +296,15 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        security-boundaries = import ./tests/security-boundaries.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          masterPkgs = inputs.nixpkgs-master.legacyPackages.${system};
+        };
+
+        microvm-egress = import ./tests/microvm-egress.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         cross-seed = import ./tests/cross-seed.nix {
           inherit (self.nixosConfigurations) blizzard;
           crossSeedVm = self.nixosConfigurations.cross-seed-vm;
