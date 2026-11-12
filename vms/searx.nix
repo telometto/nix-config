@@ -31,8 +31,8 @@ in
 
     services.searx-secret-key = {
       description = "Generate SearxNG secret key";
-      before = [ "searx.service" ];
-      requiredBy = [ "searx.service" ];
+      before = [ "searx-secret-environment.service" ];
+      requiredBy = [ "searx-secret-environment.service" ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
