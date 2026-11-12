@@ -15,63 +15,39 @@ Note: not every workflow that runs a `nix` command needs this key. `auto-format.
 runs `nix fmt` (formatting only, no evaluation), and `update-dashboards.yml` uses
 `nix-hash` only — neither requires the SSH deploy key.
 
-**SSH_DEPLOY_KEY requirement:** Workflows that evaluate the flake —
-`flake-check`, `validate-config`, `update-nix-lock`, `health-check`, and
-`update-nix-lock-recreate` — use `webfactory/ssh-agent@v0.10.0` with
-`secrets.SSH_DEPLOY_KEY`. To set this up:
+**Private-input credentials:** Full evaluation runs only for trusted `main`
+(pushes, schedules and manual runs on `main`). PRs run parsing, classifier/gate
+unit tests, and the public-input `security-boundaries` and `microvm-egress`
+checks, including base/master Immich image contracts. They do not evaluate private host/user data or the full flake.
 
-1. Generate a dedicated SSH key pair: `ssh-keygen -t ed25519 -C "github-actions"`
-1. Add the **public key** as a deploy key on the `nix-secrets` repository
-   (Settings → Deploy keys, read-only is sufficient).
-1. Add the **private key** as a repository secret named `SSH_DEPLOY_KEY` on
-   this repository (Settings → Secrets and variables → Actions).
+Before accepting this CI boundary, create a `trusted-main` GitHub environment,
+restrict it to `main`, require independent reviewers, and move `SSH_DEPLOY_KEY`
+and `PAT_TOKEN` into that environment. Remove their repository-wide copies.
+Otherwise a same-repository collaborator can change a PR workflow to request a
+repository secret directly, regardless of the conditions in this patch.
+Environment jobs will need these secrets before full validation can work.
+No external settings or credentials are changed by this repository patch.
 
-Without this secret, any workflow that evaluates the flake will fail with an
-SSH authentication error.
+The SSH deploy key should read only `nix-secrets`. `PAT_TOKEN` is used only by
+lockfile discovery to open/update a PR; scope it to this repository's Contents
+and Pull requests. Formatter and PR reporting jobs have read-only permissions,
+disable checkout credential persistence, and publish reports to summaries or
+artifacts. All executable action references are pinned to resolved full SHAs.
 
-**PAT_TOKEN requirement:** `update-nix-lock.yml` uses a personal access token
-when it creates or updates the lock-file pull request. A PR opened with the
-built-in `GITHUB_TOKEN` does not trigger the validation workflows that gate
-auto-merge.
+### Review and promotion
 
-For a fine-grained token, grant this repository read/write access to
-**Contents** and **Pull requests**. For a classic token, grant the `repo` scope.
-Store it as the repository Actions secret `PAT_TOKEN`, and rotate the secret
-before the token expires. The workflow validates the token before installing
-Nix and reports whether it is missing, invalid, or lacks push access.
-
-`auto-format.yml` also uses `PAT_TOKEN` for checkout and formatting pushes so
-validation runs automatically on the corrected commit. Formatting commits do
-not include a CI skip marker. The formatter runs when supported source files
-or `flake.lock` change, since lock updates can change formatter versions even
-when no source files change. A follow-up run stops without committing when
-the files are already formatted.
-
-______________________________________________________________________
-
-### Auto-Merge Chain
-
-The primary lock-file automation (`update-nix-lock.yml`) opens a PR, then
-blocks on the full validation suite before enabling auto-merge. A separate
-monthly workflow recreates the lock file from scratch.
+Lockfile automation opens update proposals. It does not enable auto-merge;
+Copilot reviews are advisory. Human review must assess upstream provenance
+and changes, since functional checks alone cannot establish dependency safety.
+Blizzard's unattended upgrade is disabled. Merge, trusted full validation and
+manual deployment are separate decisions.
 
 ```mermaid
-flowchart TD
-    A[update-nix-lock.yml\ncron every 3h] -->|opens PR| B[flake-check.yml]
-    A -->|opens PR| C[validate-config.yml\ndiscover-hosts]
-    C --> D["validate (snowfall)"]
-    C --> E["validate (blizzard)"]
-    C --> F["validate (avalanche)"]
-    C --> G["validate (kaizer)"]
-    B --> H{All checks pass?}
-    D --> H
-    E --> H
-    F --> H
-    G --> H
-    H -->|yes| I[auto-merge PR]
-    H -->|no| J[PR stays open]
-
-    K[update-nix-lock-recreate.yml\ncron 1st of month] -->|opens separate PR| L[manual review\nor auto-merge]
+flowchart LR
+    A[Dependency discovery] --> B[PR public-input checks]
+    B --> C[Human review and merge]
+    C --> D[Trusted main full evaluation]
+    D --> E[Manual deployment approval]
 ```
 
 ______________________________________________________________________
@@ -80,19 +56,19 @@ ______________________________________________________________________
 
 | Workflow | Trigger | Purpose | Auto-commits? |
 |----------|---------|---------|--------------|
-| `auto-format.yml` | PR / push to main / manual | Runs `nix fmt`, commits formatted changes back to the branch, comments on PR, enables auto-merge | Yes — formats in-place |
-| `flake-check.yml` | Every PR / push to main / manual / nightly 02:17 UTC | Classifies the complete diff, evaluates all flake outputs for Nix/shared changes, builds selected checks with lifecycle on a separate runner, and preserves the stable `flake-check` gate; full runs discover and build every declared check | No |
-| `validate-config.yml` | PR / push to main / manual | Discovers hosts via `mkHost` grep, evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix, and evaluates the Home Manager users attrset | No |
-| `change-impact-analysis.yml` | PR | Diffs changed files under `hosts/`, `modules/`, `home/`, `vms/`, `lib/`, `flake.*`, posts impact report as a PR comment | No |
-| `compliance-check.yml` | PR / push / cron Mon 09:00 | Runs `deadnix` and other Nix linters, comments results | No |
+| `auto-format.yml` | PR / push to main / manual | Runs `nix fmt -- --fail-on-change` without write credentials | No |
+| `flake-check.yml` | Every PR / push to main / manual / nightly 02:17 UTC | Classifies the complete diff; PRs run public-input checks, trusted main runs selected/full evaluation and lifecycle checks; preserves the `flake-check` gate | No |
+| `validate-config.yml` | push to main / manual on main | Discovers hosts via `mkHost` grep, evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix, and evaluates the Home Manager users attrset | No |
+| `change-impact-analysis.yml` | PR | Diffs changed files under `hosts/`, `modules/`, `home/`, `vms/`, `lib/`, `flake.*`, publishes an impact summary | No |
+| `compliance-check.yml` | PR / push / cron Mon 09:00 | Runs `deadnix` and other Nix linters, uploads and summarizes results | No |
 | `doc-drift.yml` | PR | Warns if code changes ship without any `docs/*.md` or `*.md` updates | No |
 | `flake-freshness.yml` | cron Mon 08:00 / manual | Walks `flake.lock`, flags inputs older than 90 days via a GitHub Issue | No (opens Issue) |
 | `health-check.yml` | cron daily 06:00 / manual | Discovers hosts, builds `config.system.build.toplevel` for each, opens or updates a bot-created infrastructure Issue on failure, and closes matching Issues after an authoritative recovery | No (opens, comments on, and closes Issues) |
-| `security-audit.yml` | cron Mon 02:00 / manual | Runs `gitleaks`; greps for `openFirewall.*true` | No |
-| `update-nix-lock.yml` | cron every 3h / manual | Runs `update-flake-lock`, opens PR, waits for `flake-check` + full validate matrix, then auto-merges | Yes — lock file |
-| `update-nix-lock-recreate.yml` | cron 1st of month 03:00 / manual | `nix flake update --recreate-lock-file`, opens PR via `peter-evans/create-pull-request@v7`, auto-merge | Yes — lock file |
+| `security-audit.yml` | PR / push / cron Mon 02:00 / manual | Runs redacted `gitleaks` and fails on detection; audits firewall declarations | No |
+| `update-nix-lock.yml` | cron every 3h / manual | Runs `update-flake-lock`, opens a PR for human review | Yes — lock file |
+| `update-nix-lock-recreate.yml` | cron 1st of month 03:00 / manual | `nix flake update --recreate-lock-file`, opens a PR for human review | Yes — lock file |
 | `update-dashboards.yml` | cron Mon 09:00 / manual | Polls Grafana.com API for new revisions of dashboards 1860 and 315, opens PR if newer revision found | No (opens PR) |
-| `copilot-auto-merge.yml` | PR review submitted | Arms auto-merge when `copilot-pull-request-reviewer[bot]` submits a review with zero inline comments; disabled when inline comments exist. Merge still gated by branch protection. | No |
+| `copilot-auto-merge.yml` | PR review submitted | Reports Copilot review status in the run summary; a human reviews and merges | No |
 
 ______________________________________________________________________
 
@@ -124,7 +100,7 @@ under `.github/tests/` run before classification on every invocation.
 | Other existing check definitions | Their check and formatting |
 | Lockfile, flake, treefmt, CI control scripts/tests/workflow, shared helpers/loaders/core/VM infrastructure, or any unmapped runtime file | Full suite |
 
-Every Nix file change retains global output evaluation, even when its check
+On trusted main runs, every Nix file change retains global output evaluation, even when its check
 builds are targeted. Documentation and mapped Python/fixture changes avoid that
 global evaluation; building their selected checks still evaluates those checks'
 dependencies. Unmapped non-Nix runtime changes also select full evaluation.
@@ -137,7 +113,7 @@ short checks sequentially on that runner for cache reuse. The
 `microvm-lifecycle` check runs concurrently on its own runner whenever selected.
 Its QEMU configuration and lifecycle coverage are unchanged.
 
-Full runs discover the current `checks.x86_64-linux` attribute names from Nix
+Trusted full runs discover the current `checks.x86_64-linux` attribute names from Nix
 and build every declaration, including future checks, formatting, and
 `jellyfin-microvm`. Lifecycle is excluded from the grouped loop because its
 separate job builds it. The Jellyfin MicroVM check evaluates assertions and
@@ -150,18 +126,15 @@ without `SSH_AUTH_SOCK` or `SSH_AGENT_PID`. No later Nix work requires an agent
 restart. Evaluation and Nix build failures pass diagnostics through
 `redact-secrets.sh`; fixture preparation failures also propagate to the gate.
 
-The final job is named exactly `flake-check` and uses `always()`. It requires
-classifier success, a valid selection plan, and success for each selected
-worker. Only unselected workers may be skipped; selected skips, failures,
-cancellations, missing results, and inconsistent plans fail the gate. The
-lock-update workflow continues to require this check on the exact PR head SHA.
+The final job remains named `flake-check` and uses `always()`. On PRs it
+requires classifier success, a valid plan, success for `pr-static`, and skipped
+private workers. On trusted runs it requires each selected private worker to
+succeed; selected failures, cancellations, missing results and inconsistent
+plans fail the gate. A green PR gate does not establish private-input evaluation.
 
-The separate host and Home Manager validation workflow remains in place.
-Daily health-check host builds supplement the nightly explicit check builds.
-Auto-format's Python filter omission, tolerated formatter failures, and bot
-commits that do not trigger another CI run make it insufficient as a strict
-formatting gate. Conditional Flake Check therefore builds the formatting check
-when relevant changes select it.
+The separate host and Home Manager matrix and daily health builds remain on
+trusted main/manual runs. Formatting now fails if files would change and never
+pushes corrections. Run `nix fmt` locally to prepare those corrections.
 
 For local classifier and gate validation without Nix or the private input:
 
@@ -208,7 +181,7 @@ These scheduled runs supplement event and manual triggers:
 
 - **`update-nix-lock.yml`** — The primary lock-file automation. Uses
   DeterminateSystems/update-flake-lock@v28. Opens a PR only when inputs have
-  actually changed, then blocks on the full validation suite before merging.
+  actually changed. Human review and merge are required.
 
 **Monthly (1st of month)**
 
@@ -224,17 +197,16 @@ These run on every pull request:
 
 | Workflow | What it checks |
 |----------|---------------|
-| `auto-format.yml` | Formats all files and commits back; if this commits, the PR diff is automatically clean |
-| `flake-check.yml` | Selects checks from the complete PR diff, retains global evaluation for Nix changes, runs relevant CrowdSec fixtures without SSH credentials, and always creates the required final gate |
-| `validate-config.yml` | Evaluates each host's `config.system.build.toplevel` with `nix eval` in a matrix (does not perform a full build) |
-| `change-impact-analysis.yml` | Posts a comment summarising which layer (hosts, modules, home, vms, lib, flake) is affected |
+| `auto-format.yml` | Checks formatting without committing or pushing |
+| `flake-check.yml` | Runs public parsing, gate/classifier tests and isolated service/network security checks; always creates the required final gate |
+| `validate-config.yml` | Private host evaluation runs only on trusted main/manual runs |
+| `change-impact-analysis.yml` | Summarizes which layer (hosts, modules, home, vms, lib, flake) is affected |
 | `compliance-check.yml` | Dead-code linting and other Nix hygiene checks |
 | `doc-drift.yml` | Warns when code changes land without documentation updates |
 
-The `update-nix-lock.yml` workflow explicitly waits for `flake-check`,
-`discover-hosts`, and every `validate (<hostname>)` matrix job before it
-enables auto-merge on lock-file PRs. Adding a new host to `flake.nix` therefore
-automatically extends the gate — no workflow file changes needed.
+Lockfile PRs require human review and merge. A new host extends the trusted
+host-validation and health-check matrices, and still requires full validation
+before deployment.
 
 ______________________________________________________________________
 
