@@ -5,7 +5,7 @@
       enable = true;
 
       port = consts.ports.host.scrutiny;
-      openFirewall = true;
+      openFirewall = false;
 
       reverseProxy = {
         enable = false;
