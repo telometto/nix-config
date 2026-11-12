@@ -11,8 +11,11 @@ let
   cfg = config.services.immich-machine-learning-container;
   containerPort = consts.ports.secondary.immichMachineLearning.containerPort;
 
-  imageSuffix = lib.optionalString (cfg.acceleration != "cpu") "-${cfg.acceleration}";
-  defaultImage = "ghcr.io/immich-app/immich-machine-learning:v${pkgs.immich.version}${imageSuffix}";
+  imagePins = (import ../lib/oci-images.nix).immich;
+  defaultImage =
+    (imagePins.${pkgs.immich.version}
+      or (throw "No reviewed Immich ML digest for version ${pkgs.immich.version}; update the image pins alongside nixpkgs.")
+    ).${cfg.acceleration};
 in
 {
   options.services.immich-machine-learning-container = {
@@ -77,6 +80,12 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.image != null || builtins.hasAttr pkgs.immich.version imagePins;
+        message = "Update the Immich ML digest pins alongside the nixpkgs Immich version, or supply an explicitly reviewed image.";
+      }
+    ];
     systemd.user.tmpfiles.rules = [
       "d ${cfg.cacheDir} 0755 - - -"
     ];
