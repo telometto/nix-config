@@ -81,8 +81,8 @@ If that key is unavailable, use CI as the source of truth and see
 
 - Incremental lock updates run automatically every 3 hours via
   `.github/workflows/update-nix-lock.yml`.
-- Auto-merge for lockfile PRs is gated on successful `Flake Check` and
-  `Configuration Validation` checks.
+- Lockfile PRs require human review and merge. PR checks use public inputs;
+  full private-input validation runs on trusted `main` and manual runs.
 - Full lock recreation runs monthly (and manually) via
   `.github/workflows/update-nix-lock-recreate.yml` using
   `nix flake update --recreate-lock-file`.
