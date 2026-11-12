@@ -25,5 +25,8 @@ regexes = ['''(?i)^condition=\w+$''']
 regexTarget = "secret"
 
 [[allowlists]]
-description = "CrowdSec firewall-bouncer key — draft comment in commit 4fe0533f (2024-10-30), bouncer deleted"
-stopwords = ["a2aCfCdapZ3NdhlXfXhWB5KAwTs52q5r4EadFfPt"]
+description = "Historical deleted CrowdSec bouncer in one legacy commit; verify revocation separately"
+condition = "AND"
+targetRules = ["generic-api-key"]
+paths = ['''^flake\.nix$''']
+commits = ["4fe0533f359ee95399872cd0bcd8861a7409f8bc"]
