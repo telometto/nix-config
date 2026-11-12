@@ -2,6 +2,7 @@
 # Home Manager module - runs rootless via quadlet-nix
 { lib, config, ... }:
 let
+  imagePins = import ../lib/oci-images.nix;
   cfg = config.services.ollama-container;
 in
 {
@@ -53,9 +54,9 @@ in
           if cfg.image != null then
             cfg.image
           else if cfg.gpu.enable then
-            "docker.io/ollama/ollama:rocm"
+            imagePins.ollama.rocm
           else
-            "docker.io/ollama/ollama:latest";
+            imagePins.ollama.cpu;
         publishPorts = [
           "${toString cfg.port}:11434"
         ];
