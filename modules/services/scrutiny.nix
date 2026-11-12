@@ -52,6 +52,7 @@ in
       inherit (cfg) openFirewall;
 
       settings.web = {
+        listen.host = "127.0.0.1";
         listen.port = cfg.port;
         influxdb.host = "127.0.0.1";
       };
@@ -82,6 +83,10 @@ in
     };
 
     assertions = [
+      {
+        assertion = !cfg.openFirewall;
+        message = "Scrutiny has no client authentication; use a loopback SSH tunnel or an authenticated proxy instead of opening its firewall port.";
+      }
       {
         assertion = config.sys.secrets.scrutinyTokenEnvironmentFile != null;
         message = "sys.services.scrutiny requires sys.secrets.scrutinyTokenEnvironmentFile.";
