@@ -146,6 +146,27 @@ let
           '';
         };
 
+        networkPolicy.hostServices = lib.mkOption {
+          type = lib.types.submodule {
+            options = {
+              tcpPorts = lib.mkOption {
+                type = lib.types.listOf lib.types.port;
+                default = [ ];
+              };
+              udpPorts = lib.mkOption {
+                type = lib.types.listOf lib.types.port;
+                default = [ ];
+              };
+              reason = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+              };
+            };
+          };
+          default = { };
+          description = "Explicit guest-to-host service permissions; host management is denied by default.";
+        };
+
         cfTunnel = lib.mkOption {
           type = lib.types.nullOr lib.types.attrs;
           default = null;
@@ -505,12 +526,29 @@ let
         ) registeredGatewayReferences
       );
 
+  hostServiceRules =
+    map
+      (name: {
+        source = identityFor name;
+        inherit (cfg.instances.${name}.networkPolicy.hostServices) tcpPorts udpPorts reason;
+      })
+      (
+        lib.filter (
+          name:
+          let
+            permission = cfg.instances.${name}.networkPolicy.hostServices;
+          in
+          permission.tcpPorts != [ ] || permission.udpPorts != [ ]
+        ) registeredEnabledInstanceNames
+      );
+
   policyCompiler = import ../../lib/microvm-network-policy.nix {
     inherit
       lib
       serviceEdges
       gatewayPairs
       internalBridgeNames
+      hostServiceRules
       ;
     identities = policyIdentities;
     inherit (cfg.networkPolicy) mode;
@@ -892,6 +930,10 @@ in
       {
         assertion = policyMissingReasons == [ ];
         message = "sys.virtualisation.microvm network policy permissions require a non-empty reason: ${formatList policyMissingReasons}";
+      }
+      {
+        assertion = lib.all (rule: lib.trim rule.reason != "") hostServiceRules;
+        message = "sys.virtualisation.microvm guest-to-host service permissions require a non-empty reason.";
       }
       {
         assertion = policyEmptyServices == [ ];
