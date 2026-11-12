@@ -1,8 +1,17 @@
 # Scrutiny Operations
 
 Scrutiny runs on `blizzard`. Its web interface listens on `127.0.0.1:11001`
-and is published through the host's existing reverse-proxy and Cloudflare
-Tunnel configuration. The collector uses the same local endpoint.
+and is kept off the global firewall. Its reverse proxy and Cloudflare
+publication are disabled. The collector uses the same local endpoint.
+For administration, create an SSH tunnel to Blizzard and open
+`http://127.0.0.1:11001` locally:
+
+```bash
+ssh -N -L 11001:127.0.0.1:11001 blizzard
+```
+
+Scrutiny has no native UI/API authentication; its InfluxDB token does not
+authenticate callers. Re-publication requires an authenticated gateway.
 
 ## Configure the InfluxDB token
 
@@ -36,7 +45,7 @@ systemctl show scrutiny.service --property=EnvironmentFiles
 journalctl -u scrutiny.service -n 50 --no-pager
 ```
 
-Open the published Scrutiny hostname and confirm that the collector produces
+Open Scrutiny through the SSH tunnel and confirm that the collector produces
 current disk data. The service log should not contain InfluxDB authentication
 errors. Use the InfluxDB token audit or usage view, when available, to confirm
 that the replacement token is being used.
