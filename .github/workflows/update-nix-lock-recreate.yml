@@ -14,28 +14,31 @@ permissions:
 
 jobs:
   recreate-lockfile:
+    if: github.ref == 'refs/heads/main'
+    environment: trusted-main
     runs-on: ubuntu-latest
     steps:
       - name: Setup SSH for private repositories
-        uses: webfactory/ssh-agent@v0.10.0
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
       - name: Checkout main repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v22
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
       - name: Recreate flake.lock
         run: nix flake update --recreate-lock-file
 
       - name: Create Pull Request
         id: create-pull-request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: update_flake_lock_recreate_action
@@ -47,12 +50,4 @@ jobs:
             This complements the frequent incremental lockfile updates by periodically re-resolving the complete dependency graph.
           labels: |
             maintenance
-            auto-merge
           delete-branch: true
-
-      - name: Enable auto-merge for recreate lockfile PR
-        if: ${{ steps.create-pull-request.outputs.pull-request-url != '' }}
-        env:
-          PR_URL: ${{ steps.create-pull-request.outputs.pull-request-url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr merge --auto --merge "$PR_URL"
