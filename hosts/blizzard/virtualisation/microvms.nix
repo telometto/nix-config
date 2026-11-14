@@ -186,7 +186,6 @@ let
 
     qbittorrent = {
       enable = true;
-      portForwards = [ (mkPortForward "tcp" consts.ports.vm.qbittorrent null) ];
     };
 
     cross-seed = {
@@ -199,7 +198,6 @@ let
 
     sabnzbd = {
       enable = true;
-      portForwards = [ (mkPortForward "tcp" consts.ports.vm.sabnzbd null) ];
       publication = {
         enable = true;
         hostname = "sab";
@@ -210,14 +208,15 @@ let
     wireguard = {
       enable = true;
       portForwards = [ (mkPortForward "udp" 51820 consts.ports.vm.wireguard) ];
+      networkPolicy.allowedPeers.qbittorrent = {
+        tcpPorts = [ consts.ports.network.qbittorrentTorrent ];
+        udpPorts = [ consts.ports.network.qbittorrentTorrent ];
+        reason = "Forward the VPN provider's inbound torrent port";
+      };
     };
 
     firefox = {
       enable = true;
-      portForwards = [
-        (mkPortForward "tcp" consts.ports.vm.firefox null)
-        (mkPortForward "tcp" consts.ports.secondary.firefoxHttps null)
-      ];
       publication = {
         enable = true;
         hostname = "ff";
@@ -275,6 +274,10 @@ let
 
     immich = {
       enable = true;
+      networkPolicy.hostServices = {
+        tcpPorts = [ consts.ports.secondary.immichMachineLearning.hostPort ];
+        reason = "Call the host's source-restricted Immich ML relay";
+      };
       # Keep the managed Cloudflare publication while also allowing direct
       # home-LAN access through Blizzard at TCP 11070.
       portForwards = [ (mkPortForward "tcp" consts.ports.vm.immich null) ];
@@ -323,9 +326,9 @@ in
 {
   boot.kernelParams = lib.optionals jellyfinSettings.gpuPassthrough.enable [ "intel_iommu=on" ];
 
-  networking.firewall.interfaces."microvm-br0".allowedTCPPorts = [
-    consts.ports.secondary.immichMachineLearning.hostPort
-  ];
+  networking.firewall.extraCommands = ''
+    iptables -A nixos-fw -i microvm-br0 -s ${reg.immich.ip}/32 -p tcp --dport ${toString consts.ports.secondary.immichMachineLearning.hostPort} -j nixos-fw-accept
+  '';
 
   systemd.services.immich-ml-proxy = {
     description = "Proxy Immich MicroVM machine-learning requests to Kaizer";
@@ -338,7 +341,7 @@ in
     wantedBy = [ "multi-user.target" ];
 
     serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.socat} TCP-LISTEN:${toString consts.ports.secondary.immichMachineLearning.hostPort},bind=10.100.0.1,reuseaddr,fork TCP:kaizer.boreal-ruler.ts.net:${toString consts.ports.secondary.immichMachineLearning.hostPort}";
+      ExecStart = "${lib.getExe pkgs.socat} TCP-LISTEN:${toString consts.ports.secondary.immichMachineLearning.hostPort},bind=10.100.0.1,range=${reg.immich.ip}/32,reuseaddr,fork,max-children=8 TCP4:kaizer.boreal-ruler.ts.net:${toString consts.ports.secondary.immichMachineLearning.hostPort}";
       Restart = "always";
       RestartSec = "5s";
       DynamicUser = true;
@@ -346,6 +349,9 @@ in
       PrivateTmp = true;
       ProtectHome = true;
       ProtectSystem = "strict";
+      TasksMax = 32;
+      LimitNOFILE = 256;
+      MemoryMax = "256M";
     };
   };
 

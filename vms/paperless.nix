@@ -49,6 +49,14 @@ in
         mode = "0440";
         owner = "paperless";
         group = "paperless";
+        restartUnits = [
+          "paperless-secret-environment.service"
+          "paperless-secret-key.service"
+          "paperless-consumer.service"
+          "paperless-task-queue.service"
+          "paperless-web.service"
+          "paperless-scheduler.service"
+        ];
       };
     };
   };

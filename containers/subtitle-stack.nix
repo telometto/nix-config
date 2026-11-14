@@ -3,6 +3,7 @@
 { lib, config, ... }:
 let
   mediaStorage = import ../vms/media-storage.nix;
+  imagePins = import ../lib/oci-images.nix;
   cfgLingarr = config.services.lingarr;
   cfgSubgen = config.services.subgen;
   anyEnabled = cfgLingarr.enable || cfgSubgen.enable;
@@ -148,7 +149,7 @@ in
           lingarr = {
             autoStart = true;
             containerConfig = {
-              image = "docker.io/lingarr/lingarr:latest";
+              image = imagePins.lingarr;
               environments = {
                 ASPNETCORE_URLS = "http://+:9876";
                 MAX_CONCURRENT_JOBS = "1";
@@ -176,7 +177,7 @@ in
           libretranslate = {
             autoStart = true;
             containerConfig = {
-              image = "docker.io/libretranslate/libretranslate:latest";
+              image = imagePins.libretranslate;
               environments = {
                 LT_LOAD_ONLY = "en,it,nb";
               };
@@ -192,7 +193,7 @@ in
           ollama = {
             autoStart = true;
             containerConfig = {
-              image = "docker.io/ollama/ollama:latest";
+              image = imagePins.ollama.cpu;
               volumes = [
                 "${cfgLingarr.dataDir}/ollama:/root/.ollama"
               ];
@@ -205,7 +206,7 @@ in
           subgen = {
             autoStart = true;
             containerConfig = {
-              image = "docker.io/mccloud/subgen";
+              image = imagePins.subgen.latest;
               environments = {
                 WHISPER_MODEL = cfgSubgen.whisperModel;
                 WHISPER_THREADS = "6";

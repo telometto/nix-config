@@ -7,7 +7,7 @@ in
     (import ../../lib/linuxserver-browser.nix {
       name = "firefox";
       title = "Firefox";
-      image = "linuxserver/firefox:latest";
+      image = (import ../../lib/oci-images.nix).firefox;
     })
   ];
 

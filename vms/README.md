@@ -419,7 +419,8 @@ enabled VM's bridge, tap, MAC, IP, gateway, and primary service from
   service edges, derived WireGuard clients, unknown taps, and broadcast or
   multicast filtering
 - a native nftables `inet` table that blocks routing from `microvm-br0` back to
-  itself and between MicroVM bridges
+  itself and between MicroVM bridges, denies new protected-network egress and
+  direct VPN-client egress through the host, and blocks tailnet-to-guest routing
 
 The default mode is `enforce`, and Blizzard is configured explicitly for
 `enforce` in `hosts/blizzard/virtualisation/microvms.nix`. The dated
@@ -433,7 +434,24 @@ explicit ports. Stateful replies are allowed, but a new reverse connection
 needs its own declaration. Peer ICMP is not implied. Dedicated-bridge VMs
 cannot receive exceptions, and a newly enabled VM receives no lateral access
 by default. Gateway pairs such as `qbittorrent -> wireguard` are derived from
-the registry rather than declared manually.
+the registry rather than declared manually. Gateway-to-client traffic is
+return-only unless a service edge explicitly allows initiation; qBittorrent
+retains TCP/UDP 50820 for forwarded torrent connections. Private/link-local/CGNAT
+egress has no new-flow exceptions; add a reviewed destination/port policy before
+introducing workloads that need one. Existing replies to LAN publications remain
+allowed. The `microvm-egress` check tests these boundaries with public inputs.
+
+Guest-to-host TCP/UDP is also denied by default, including host LAN-address
+aliases. Health-check pings and established replies remain allowed. Immich has
+one explicit `instances.immich.networkPolicy.hostServices` grant to TCP 3003;
+other guests cannot invoke its source-restricted ML relay. Kaizer additionally
+filters ML requests before Tailscale's early accept rules, allowing only
+Blizzard's Tailscale IPv4; the relay uses IPv4 and has connection/process limits.
+The raw guard stays closed through firewall stop/reload transitions.
+
+The existing Firefox, Brave and Paperless NFS client declarations are not active
+host exports. The empty Blizzard NFS server is disabled; any future NFS workflow
+needs reviewed exports and a corresponding source-specific host-service grant.
 
 Operational inspection on Blizzard:
 
@@ -460,7 +478,12 @@ ______________________________________________________________________
 outbound traffic through `wireguard-vm` (10.100.0.11); Brave is currently
 disabled on Blizzard. This ensures enabled download and browser sessions exit
 via the VPN rather than the host's public IP. Their default gateway is set to
-10.100.0.11 in the registry.
+10.100.0.11 in the registry. Direct LAN administration forwards for qBittorrent,
+SABnzbd and Firefox are removed. SABnzbd and Firefox retain their managed HTTPS
+publication; use an SSH tunnel through Blizzard for the qBittorrent UI. The
+embedded FlareSolverr API binds to loopback; configure Prowlarr to use
+`http://127.0.0.1:11013`. Blizzard no longer advertises the guest subnet to
+Tailscale; use Blizzard as an SSH jump host for guest administration.
 
 ### Firefox transfer directory
 
@@ -524,6 +547,9 @@ ______________________________________________________________________
 
 ### Security considerations
 
+- Host `/nix/store` virtiofs exports are explicitly read-only, including the raw
+  `/nix/.ro-store` mount. This does not validate or repair previously modified
+  store paths. Application/media shares retain their separate permissions.
 - Each VM has an isolated filesystem; the host shares directories via virtiofs (`microvm.shares`), and VM state is stored in per-VM disk images (`microvm.volumes`).
 - Secrets are injected per-VM via sops-nix. Services that read
   `/run/secrets/*` at startup should declare `after` and `requires` on

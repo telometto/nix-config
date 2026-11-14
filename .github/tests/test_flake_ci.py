@@ -232,6 +232,25 @@ class GateTests(unittest.TestCase):
         ):
             self.assertEqual(ci.gate_errors(self.needs(plan)), [])
 
+    def test_public_pr_requires_static_checks_and_no_private_workers(self):
+        needs = self.needs(ci.make_plan(full=True))
+        needs["grouped"]["result"] = "skipped"
+        needs["lifecycle"]["result"] = "skipped"
+        needs["pr-static"] = {"result": "success"}
+        self.assertEqual(ci.gate_errors(needs, public_pr=True), [])
+        for job in ("classify", "pr-static", "grouped", "lifecycle"):
+            for result in ("failure", "cancelled", "missing", "skipped", "success"):
+                expected = "success" if job in ("classify", "pr-static") else "skipped"
+                if result == expected:
+                    continue
+                with self.subTest(job=job, result=result):
+                    changed = {key: dict(value) for key, value in needs.items()}
+                    if result == "missing":
+                        del changed[job]
+                    else:
+                        changed[job]["result"] = result
+                    self.assertTrue(ci.gate_errors(changed, public_pr=True))
+
     def test_selected_skips_failures_cancellations_and_missing_jobs_fail(self):
         for job in ("grouped", "lifecycle"):
             for result in ("skipped", "failure", "cancelled", "missing"):

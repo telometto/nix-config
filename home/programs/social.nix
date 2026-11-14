@@ -22,17 +22,11 @@ in
         vencord = {
           useSystem = lib.mkDefault false; # TODO: temporary until upstream fixes this
 
-          themes = {
-            clearvision = ../files/vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;
-            glass = ../files/vesktop-themes/glass_local.theme.css;
-          };
-
           settings = {
-            useQuickCss = true;
-            enabledThemes = [
-              "clearvision.css"
-              "glass.css"
-            ];
+            # These wrappers import mutable remote CSS. Keep them disabled
+            # until their complete stylesheet and asset closure is pinned.
+            useQuickCss = false;
+            enabledThemes = [ ];
 
             plugins = {
               ClearURLs.enabled = true;

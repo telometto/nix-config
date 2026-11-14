@@ -10,3 +10,8 @@ vars/
 *.crt
 
 result
+
+# Local working documents and operational output; preserve these outside Git.
+/Omega_365_Product_Mentorship_Qualification_Framework.pdf
+/handoff.md
+/output.log

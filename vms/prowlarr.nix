@@ -10,11 +10,11 @@ in
     })
   ];
 
-  networking.firewall.allowedTCPPorts = [ flaresolverrPort ];
   services.flaresolverr = {
     enable = true;
     port = flaresolverrPort;
   };
+  systemd.services.flaresolverr.environment.HOST = "127.0.0.1";
 
   sys.services.arrExporter.prowlarr.extraEnvironment.ENABLE_ADDITIONAL_METRICS = "true";
 }

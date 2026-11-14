@@ -1,7 +1,21 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.sys.services.searx or { };
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
+  secretEnvironment = import ../../lib/runtime-secret-environment.nix {
+    inherit lib pkgs;
+    name = "searx";
+    variable = "SEARX_SECRET_KEY";
+    source = config.sys.secrets.searxSecretKeyFile;
+    group = "searx";
+    jsonScalar = true;
+    requiredBy = [ "searx-init.service" ];
+  };
 in
 {
   options.sys.services.searx = {
@@ -67,6 +81,7 @@ in
     services.searx = {
       enable = lib.mkDefault true;
       redisCreateLocally = lib.mkDefault true;
+      environmentFile = secretEnvironment.path;
 
       # Rate limiting configuration for bot detection and abuse prevention
       limiterSettings = {
@@ -113,7 +128,7 @@ in
           # Server configuration
           server = {
             # Use centralized secrets bridge; avoids direct SOPS references here
-            secret_key = config.sys.secrets.searxSecretKeyFile or "/run/secrets/searx-secret-key";
+            secret_key = "$SEARX_SECRET_KEY";
             inherit (cfg) port;
             bind_address = cfg.bind;
 
@@ -279,6 +294,8 @@ in
       ];
     };
 
+    systemd.services.searx-secret-environment = secretEnvironment.service;
+
     services.traefik.dynamic.files.searx = traefikLib.mkTraefikDynamicConfig {
       name = "searx";
       inherit cfg config;
@@ -286,6 +303,10 @@ in
     };
 
     assertions = [
+      {
+        assertion = config.sys.secrets.searxSecretKeyFile != null;
+        message = "SearXNG requires a runtime secret key file.";
+      }
       {
         assertion = !cfg.publicInstance || cfg.contactUrl != null;
         message = "sys.services.searx.contactUrl must be set when publicInstance = true (required for abuse reports)";
