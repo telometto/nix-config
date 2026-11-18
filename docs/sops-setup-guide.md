@@ -133,6 +133,30 @@ flowchart LR
 
 This avoids forcing every host to decrypt secrets for services it does not run.
 
+Kaizer's RustDesk client reads its server public key from
+`rustdesk/blizzard_server_public_key` in the private flake's
+`secrets.rustdeskFile` (`secrets/rustdesk.yaml`). Although RustDesk identifies
+this as a public encryption key, it is kept out of this repository and generated
+Nix store scripts by policy. SOPS installs it with mode `0400`; systemd passes
+it to the configuration helper through a credential file and standard input.
+Snowfall's RustDesk server settings currently remain in its runtime configuration.
+
+Publish the private `nix-secrets` change and update this repository's pinned
+`nix-secrets` input before deploying the RustDesk change. Evaluation against the
+old private input cannot resolve the new `secrets.rustdeskFile` export.
+
+The dedicated file's `.sops.yaml` creation rule must include Kaizer's current
+age recipient. Run `sops updatekeys secrets/rustdesk.yaml` in the private
+checkout after changing that recipient set. The encrypted entry must contain
+Blizzard's RustDesk server **public** key, matching its active server keypair.
+The server's private key never belongs in this client input.
+
+The helper publishes the hostname and public key to a root-owned, mode `0644`
+file under `/run/rustdesk`. All RustDesk contexts read this shared layer,
+including SDDM; the helper does not open user profiles. See the
+[RustDesk runbook](rustdesk.md) for restart, key rotation, rollback and runtime
+acceptance checks.
+
 ______________________________________________________________________
 
 ## Home Manager user secrets

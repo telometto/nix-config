@@ -1,0 +1,49 @@
+--- a/libs/hbb_common/src/config.rs
++++ b/libs/hbb_common/src/config.rs
+@@ -486,6 +486,26 @@
+     path
+ }
+ 
++// Kaizer's root-owned runtime layer is shared by root, the greeter and GUIs.
++// Read it on lookup so an existing process observes an atomic key rotation.
++fn managed_server_options() -> HashMap<String, String> {
++    let Ok(contents) = fs::read_to_string("/run/rustdesk/server-options") else {
++        return HashMap::new();
++    };
++    let lines: Vec<_> = contents.lines().collect();
++    let [server, key] = lines.as_slice() else {
++        return HashMap::new();
++    };
++    if server.is_empty() || key.is_empty() {
++        return HashMap::new();
++    }
++    HashMap::from([
++        ("custom-rendezvous-server".to_owned(), (*server).to_owned()),
++        ("relay-server".to_owned(), (*server).to_owned()),
++        ("key".to_owned(), (*key).to_owned()),
++    ])
++}
++
+ impl Config2 {
+     fn load() -> Config2 {
+         let mut config = Config::load_::<Config2>("2");
+@@ -1221,6 +1241,7 @@
+         let mut res = DEFAULT_SETTINGS.read().unwrap().clone();
+         res.extend(CONFIG2.read().unwrap().options.clone());
+         res.extend(OVERWRITE_SETTINGS.read().unwrap().clone());
++        res.extend(managed_server_options());
+         res
+     }
+ 
+@@ -1240,6 +1261,11 @@
+     }
+ 
+     pub fn get_option(k: &str) -> String {
++        if matches!(k, "custom-rendezvous-server" | "relay-server" | "key") {
++            if let Some(value) = managed_server_options().remove(k) {
++                return value;
++            }
++        }
+         get_or(
+             &OVERWRITE_SETTINGS,
+             &CONFIG2.read().unwrap().options,

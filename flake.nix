@@ -280,6 +280,11 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        rustdesk-config = import ./tests/rustdesk-config.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          rustdeskPkgs = inputs.nixpkgs-rustdesk.legacyPackages.${system};
+        };
+
         sandfly-target = import ./tests/sandfly-target.nix {
           inherit (self.nixosConfigurations) snowfall blizzard;
           inherit consts;

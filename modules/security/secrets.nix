@@ -1,6 +1,12 @@
 { lib, ... }:
 {
   options.sys.secrets = {
+    rustdeskServerPublicKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Runtime path to the SOPS-managed RustDesk server public key; never read during Nix evaluation.";
+    };
+
     crossSeedSettingsFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
