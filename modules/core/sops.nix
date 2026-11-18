@@ -32,6 +32,7 @@ let
   hasPushover = config.sys.services.grafanaPushover.enable or false;
   hasScrutiny = config.sys.services.scrutiny.enable or false;
   hasCrossSeed = config.sys.services.cross-seed.enable or false;
+  hasRustdesk = config.sys.services.rustdeskUnattended.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -65,6 +66,13 @@ in
       }
       // whenEnabled (hasTailscale && isKaizer) {
         "external/kaizer_tsKey" = { };
+      }
+      // whenEnabled (hasRustdesk && isKaizer) {
+        "rustdesk/blizzard_server_public_key" = {
+          sopsFile = inputs.nix-secrets.secrets.rustdeskFile;
+          mode = "0400";
+          restartUnits = [ "rustdesk.service" ];
+        };
       }
       // whenEnabled hasBorg {
         "general/borgKeyFilePath" = { };
@@ -236,6 +244,11 @@ in
     }
     // whenEnabled (hasTailscale && isKaizer) {
       kaizerTsKey = toString config.sops.secrets."external/kaizer_tsKey".path;
+    }
+    // whenEnabled (hasRustdesk && isKaizer) {
+      rustdeskServerPublicKeyFile =
+        toString
+          config.sops.secrets."rustdesk/blizzard_server_public_key".path;
     }
     // whenEnabled hasPaperless {
       paperlessKeyFile = toString config.sops.secrets."general/paperlessKeyFilePath".path;
