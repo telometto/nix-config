@@ -35,6 +35,7 @@ let
   bareDisabled =
     (import (pkgs.path + "/nixos/lib/eval-config.nix") {
       inherit pkgs;
+      system = pkgs.stdenv.hostPlatform.system;
       modules = [
         ../modules/security/kwallet-tpm.nix
         { system.stateVersion = "26.05"; }
