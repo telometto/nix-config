@@ -56,6 +56,18 @@ let
     };
   };
   rules = enabled.security.pam.services.sddm-autologin.rules.auth;
+  # Force the actual renderer and the inherited session chain, not only rule attrs.
+  renderedLines =
+    service:
+    map (line: builtins.head (lib.splitString " #" line)) (
+      lib.splitString "\n" enabled.security.pam.services.${service}.text
+    );
+  renderedAutologin = renderedLines "sddm-autologin";
+  expectedHandoff = [
+    "auth [success=ok default=1] ${rules.kwallet-tpm-token.modulePath}"
+    "auth optional ${rules.kwallet-tpm-wallet.modulePath}"
+    "auth optional ${rules.kwallet-tpm-clear.modulePath} clear"
+  ];
   moduleValid =
     config:
     lib.all (a: a.assertion || !(lib.hasPrefix "sys.security.kwalletTpm:" a.message)) config.assertions;
@@ -80,6 +92,14 @@ assert !(bareDisabled.security.pam.services ? sddm-autologin);
 assert !(disabled.security.pam.services.sddm-autologin.rules.auth ? kwallet-tpm-token);
 assert moduleValid enabled && moduleValid other;
 assert !(moduleValid invalidPolicy) && !(moduleValid invalidUser);
+assert lib.any (i: lib.sublist i 3 renderedAutologin == expectedHandoff) (
+  lib.range 0 (builtins.length renderedAutologin - 3)
+);
+assert lib.elem "session include sddm" (renderedLines "sddm-autologin");
+assert lib.elem "session include login" (renderedLines "sddm");
+assert lib.elem
+  "session optional ${enabled.security.pam.services.login.kwallet.package}/lib/security/pam_kwallet5.so"
+  (renderedLines "login");
 assert rules.kwallet-tpm-token.order == rules.permit.order + 10;
 assert rules.kwallet-tpm-wallet.order == rules.kwallet-tpm-token.order + 10;
 assert rules.kwallet-tpm-clear.order == rules.kwallet-tpm-wallet.order + 10;

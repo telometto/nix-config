@@ -4,8 +4,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
 
-#ifdef PAM_FIXTURE_MODULE
+#ifdef PAM_WAIT_FIXTURE
+pid_t __real_waitpid(pid_t pid, int *status, int options);
+pid_t __wrap_waitpid(pid_t pid, int *status, int options) {
+    if (options == 0) {
+        struct timespec delay = {2, 0};
+        nanosleep(&delay, NULL);
+    }
+    pid_t result = __real_waitpid(pid, status, options);
+    if (options == 0 && result > 0) {
+        int fd = open(REAP_MARKER_PATH, O_WRONLY | O_CREAT | O_CLOEXEC, 0600);
+        if (fd >= 0) {
+            if (write(fd, "reaped", 6) != 6) _exit(125);
+            close(fd);
+        }
+    }
+    return result;
+}
+#elif defined(PAM_FIXTURE_MODULE)
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                                    const char **argv) {
     (void)flags;

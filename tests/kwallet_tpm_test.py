@@ -16,6 +16,20 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "packages" / "kwallet-tpm"
 
 
+def compile_fixture(*args, check=True, **kwargs):
+    try:
+        return subprocess.run(*args, check=check, **kwargs)
+    except subprocess.CalledProcessError as error:
+        detail = (
+            error.stderr.decode(errors="replace")
+            if isinstance(error.stderr, bytes)
+            else error.stderr
+        )
+        raise RuntimeError(
+            "PAM fixture compilation failed:\n" + (detail or "")
+        ) from error
+
+
 class EnrollmentTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -57,7 +71,7 @@ class EnrollmentTests(unittest.TestCase):
         argv = call.args[0]
         self.assertIn("--with-key=host+tpm2", argv)
         self.assertIn("--tpm2-pcrs=4+7", argv)
-        self.assertIn("--name=kwallet-tpm-fixture", argv)
+        self.assertIn("--name=kwallet-tpm-fixture-pcr-4_7", argv)
         self.assertNotIn("fixture-only-password", " ".join(argv))
         self.assertEqual(call.kwargs["input"], b"fixture-only-password")
         self.assertEqual(self.credential.read_bytes(), b"fixture-ciphertext")
@@ -192,6 +206,47 @@ class EnrollmentTests(unittest.TestCase):
                     )
             self.assertEqual(self.credential.read_bytes(), b"previous-fixture")
 
+    def test_policy_identity_canonicalizes_duplicate_and_reordered_pcrs(self):
+        self.config["pcrs"] = [7, 4, 7]
+        argv = self.run_enrollment().args[0]
+        self.assertIn("--tpm2-pcrs=4+7", argv)
+        self.assertIn("--name=kwallet-tpm-fixture-pcr-4_7", argv)
+
+    def test_interruption_after_replace_does_not_claim_previous_file_survived(self):
+        self.credential.write_bytes(b"previous-fixture")
+        self.credential.chmod(0o600)
+        original = self.enroll.enroll
+
+        def enroll_fixture(user, config):
+            return original(
+                user, config, prompt=mock.Mock(return_value="fixture-only-password")
+            )
+
+        with (
+            mock.patch.object(
+                self.enroll.sys, "argv", ["kwallet-tpm-enroll", "fixture"]
+            ),
+            mock.patch.object(
+                self.enroll.Path, "read_text", return_value=json.dumps(self.config)
+            ),
+            mock.patch.object(self.enroll.resource, "setrlimit"),
+            mock.patch.object(self.enroll, "preflight"),
+            mock.patch.object(self.enroll, "enroll", side_effect=enroll_fixture),
+            mock.patch.object(self.enroll.subprocess, "run") as run,
+            mock.patch.object(
+                self.enroll.os, "fsync", side_effect=[None, KeyboardInterrupt()]
+            ),
+            mock.patch.object(
+                self.enroll.sys, "stderr", new_callable=io.StringIO
+            ) as error,
+        ):
+            run.return_value = subprocess.CompletedProcess(
+                [], 0, b"replacement-fixture", b""
+            )
+            self.assertEqual(self.enroll.main(), 1)
+            self.assertNotIn("not replaced", error.getvalue())
+        self.assertEqual(self.credential.read_bytes(), b"replacement-fixture")
+
     def test_strict_umask_still_produces_readable_private_credential(self):
         previous = os.umask(0o777)
         try:
@@ -242,7 +297,8 @@ class PamTests(unittest.TestCase):
             "import json, os, sys, time\n"
             "from pathlib import Path\n"
             f"Path({str(cls.base / 'call')!r}).write_text(json.dumps(sys.argv[1:]))\n"
-            "mode = sys.stdin.read().strip()\n"
+            "mode, _, bound_name = sys.stdin.read().strip().partition('@')\n"
+            "if bound_name and bound_name not in sys.argv[1:]: sys.exit(1)\n"
             "if mode == 'fail':\n"
             "    print('fixture-only-password', file=sys.stderr)\n"
             "    sys.exit(1)\n"
@@ -263,6 +319,8 @@ class PamTests(unittest.TestCase):
         ]
         fixture = ROOT / "tests" / "kwallet_tpm_pam_fixture.c"
         cls.bridge = cls.base / "pam_kwallet_tpm.so"
+        cls.strict_bridge = cls.base / "pam_kwallet_tpm_strict.so"
+        cls.slow_bridge = cls.base / "pam_kwallet_tpm_slow.so"
         cls.capture = cls.base / "pam_fixture.so"
         cls.driver = cls.base / "pam-driver"
         header = cls.base / "config.h"
@@ -271,6 +329,7 @@ class PamTests(unittest.TestCase):
             f"#define CREDENTIAL_DIRECTORY {json.dumps(str(cls.directory))}\n"
             f"#define SYSTEMD_CREDS {json.dumps(str(cls.helper))}\n"
             '#define ALLOWED_USERS { "fixture", NULL }\n'
+            '#define CREDENTIAL_POLICY "pcr-4_7"\n'
             "#define DECRYPT_TIMEOUT_MS 250\n"
         )
         for argv in (
@@ -299,7 +358,51 @@ class PamTests(unittest.TestCase):
             ],
             [cc, *flags, str(fixture), "-o", str(cls.driver), *links],
         ):
-            subprocess.run(argv, check=True, capture_output=True)
+            compile_fixture(argv, check=True, capture_output=True)
+        strict_header = cls.base / "strict-config.h"
+        strict_header.write_text(header.read_text().replace("pcr-4_7", "pcr-4_7_11"))
+        compile_fixture(
+            [
+                cc,
+                *flags,
+                "-shared",
+                "-fPIC",
+                "-include",
+                str(strict_header),
+                str(PACKAGE / "pam_kwallet_tpm.c"),
+                "-o",
+                str(cls.strict_bridge),
+                *links,
+            ],
+            check=True,
+            capture_output=True,
+        )
+        delay_header = cls.base / "delay-config.h"
+        delay_header.write_text(
+            header.read_text()
+            + "#define REAP_MARKER_PATH "
+            + json.dumps(str(cls.base / "reaped"))
+            + "\n"
+        )
+        compile_fixture(
+            [
+                cc,
+                *flags,
+                "-shared",
+                "-fPIC",
+                "-include",
+                str(delay_header),
+                "-DPAM_WAIT_FIXTURE",
+                "-Wl,--wrap=waitpid",
+                str(PACKAGE / "pam_kwallet_tpm.c"),
+                str(fixture),
+                "-o",
+                str(cls.slow_bridge),
+                *links,
+            ],
+            check=True,
+            capture_output=True,
+        )
         cls.permit = prefix / "lib/security/pam_permit.so"
         cls.deny = prefix / "lib/security/pam_deny.so"
 
@@ -316,6 +419,7 @@ class PamTests(unittest.TestCase):
         service="sddm-autologin",
         denied=False,
         seed=False,
+        bridge=None,
     ):
         if mode:
             self.credential.write_text(mode)
@@ -324,9 +428,9 @@ class PamTests(unittest.TestCase):
         if seed:
             lines.append(f"auth optional {self.capture} seed")
         lines += [
-            f"auth [success=ok default=1] {self.bridge}",
+            f"auth [success=ok default=1] {bridge or self.bridge}",
             f"auth optional {self.capture} wallet",
-            f"auth optional {self.bridge} clear",
+            f"auth optional {bridge or self.bridge} clear",
             f"auth optional {self.capture} after",
         ]
         (self.base / service).write_text("\n".join(lines) + "\n")
@@ -347,8 +451,19 @@ class PamTests(unittest.TestCase):
         self.assertIn("seen=yes after=clear", output)
         argv = json.loads((self.base / "call").read_text())
         self.assertEqual(argv[:2], ["decrypt", "--no-ask-password"])
-        self.assertIn("--name=kwallet-tpm-fixture", argv)
+        self.assertIn("--name=kwallet-tpm-fixture-pcr-4_7", argv)
         self.assertNotIn("fixture-only-password", " ".join(argv))
+
+    def test_policy_change_rejects_a_previously_enrolled_credential(self):
+        self.assertIn("seen=yes", self.attempt("success"))
+        previous_name = next(
+            argument
+            for argument in json.loads((self.base / "call").read_text())
+            if argument.startswith("--name=")
+        )
+        output = self.attempt("success@" + previous_name, bridge=self.strict_bridge)
+        self.assertIn("result=0", output)
+        self.assertIn("seen=- after=clear", output)
 
     def test_unavailable_credential_skips_wallet_without_prompting(self):
         self.assertIn("seen=- after=clear", self.attempt())
@@ -365,6 +480,21 @@ class PamTests(unittest.TestCase):
         start = time.monotonic()
         self.assertIn("seen=- after=clear", self.attempt("hang"))
         self.assertLess(time.monotonic() - start, 2)
+
+    def test_slow_helper_reaping_does_not_block_login_and_eventually_finishes(self):
+        marker = self.base / "reaped"
+        marker.unlink(missing_ok=True)
+        start = time.monotonic()
+        self.assertIn(
+            "seen=- after=clear", self.attempt("hang", bridge=self.slow_bridge)
+        )
+        self.assertLess(time.monotonic() - start, 1.5)
+        deadline = time.monotonic() + 3
+        while not marker.exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertTrue(
+            marker.exists(), "detached worker did not reap the synthetic helper"
+        )
 
     def test_unauthorized_user_or_service_never_decrypts(self):
         for args in ({"user": "unlisted"}, {"service": "login"}):

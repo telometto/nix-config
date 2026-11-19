@@ -38,11 +38,11 @@ and `tests/{kwallet_tpm_test.py,kwallet_tpm_pam_fixture.c}`.
 `bin/kwallet-tpm-enroll USER`. Runtime path is
 `/var/lib/kwallet-tpm/USER.cred`; credential name is `kwallet-tpm-USER`.
 
-- [ ] Write fixture tests for the security limits listed above, using real PAM
+- [x] Write fixture tests for the security limits listed above, using real PAM
   and synthetic ciphertext/plaintext; run and observe failure before the package exists.
-- [ ] Implement bounded, private decryption and token ownership/cleanup.
-- [ ] Implement interactive enrollment, prerequisite checks and atomic writes.
-- [ ] Run the full fixture suite until green; compile C with warnings as errors.
+- [x] Implement bounded, private decryption and token ownership/cleanup.
+- [x] Implement interactive enrollment, prerequisite checks and atomic writes.
+- [x] Run the full fixture suite until green; compile C with warnings as errors.
 
 ### Task 2: Reusable module, Kaizer enablement and CI
 
@@ -54,11 +54,11 @@ and `tests/{kwallet_tpm_test.py,kwallet_tpm_pam_fixture.c}`.
 enable/users/pcrs. Produce only the autologin PAM handoff, local enrollment
 command and private state directory. The enabled host supplies only its users.
 
-- [ ] Write public module-evaluation assertions for disabled/enabled/reused
+- [x] Write public module-evaluation assertions for disabled/enabled/reused
   hosts, ordered PAM rules, missing enrollment, invalid policy/users and
   unchanged regular-login settings; run before module implementation.
-- [ ] Implement the module and Kaizer's opt-in, then register its check.
-- [ ] Build the public-only check and run CI classifier tests.
+- [x] Implement the module and Kaizer's opt-in, then register its check.
+- [x] Build the public-only check and run CI classifier tests.
 
 ### Task 3: User instructions and publication
 
@@ -67,9 +67,23 @@ command and private state directory. The enabled host supplies only its users.
 **Interfaces:** Document local password restoration, enrollment, post-update
 re-enrollment, failure recovery, reuse and the physical-access boundary.
 
-- [ ] Write exact local commands that never put a password in command arguments
+- [x] Write exact local commands that never put a password in command arguments
   or ask the user to share it. Do not execute enrollment or access the wallet.
-- [ ] Format changed files, inspect the scoped diff, and independently review.
-- [ ] Fix confirmed issues, rerun relevant checks, and scan only staged additions.
+- [x] Format changed files, inspect the scoped diff, and independently review.
+- [x] Fix confirmed issues, rerun relevant checks, and scan only staged additions.
 - [ ] Commit with no co-author trailers, push the feature branch, create and
   attach an unmerged PR, and report validation limits and local enrollment steps.
+
+## Review outcome
+
+The independent review found policy changes could reuse an older enrollment,
+TPM cleanup could outlive the PAM deadline, post-replacement interruption text
+was misleading, and the rendered PAM include chain needed a direct assertion.
+All four were repaired. Synthetic regression tests observed the first three
+fail before the repairs. The public check now forces the rendered auth rules
+and complete session include chain.
+
+The decryptor is owned and reaped by an orphaned worker. The PAM path uses a
+pidfd to cancel it and never waits for TPM cleanup. The credential's
+authenticated name includes the canonical PCR set, so changed policy requires
+local re-enrollment. KDE still retains the password copy its session hook needs.

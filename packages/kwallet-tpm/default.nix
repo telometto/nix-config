@@ -14,6 +14,8 @@
 }:
 let
   credentialDirectory = "/var/lib/kwallet-tpm";
+  policy =
+    "pcr-" + lib.concatMapStringsSep "_" toString (lib.sort builtins.lessThan (lib.unique pcrs));
   configFile = writeText "kwallet-tpm-config.json" (
     builtins.toJSON {
       users = allowedUsers;
@@ -24,6 +26,7 @@ let
   );
   header = writeText "kwallet-tpm-config.h" ''
     #define CREDENTIAL_DIRECTORY ${builtins.toJSON credentialDirectory}
+    #define CREDENTIAL_POLICY ${builtins.toJSON policy}
     #define SYSTEMD_CREDS "${systemd}/bin/systemd-creds"
     #define ALLOWED_USERS { ${lib.concatMapStringsSep ", " builtins.toJSON allowedUsers}, NULL }
   '';

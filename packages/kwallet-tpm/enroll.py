@@ -128,7 +128,10 @@ def enroll(username, config, *, prompt=getpass.getpass):
                     "--with-key=host+tpm2",
                     "--tpm2-device=auto",
                     "--tpm2-pcrs=" + "+".join(map(str, sorted(set(config["pcrs"])))),
-                    "--name=kwallet-tpm-" + username,
+                    "--name=kwallet-tpm-"
+                    + username
+                    + "-pcr-"
+                    + "_".join(map(str, sorted(set(config["pcrs"])))),
                     "-",
                     "-",
                 ],
@@ -204,7 +207,7 @@ def main():
         print("Could not disable terminal echo; enrollment cancelled.", file=sys.stderr)
         return 1
     except (EOFError, KeyboardInterrupt):
-        print("Enrollment cancelled; credential was not replaced.", file=sys.stderr)
+        print("Enrollment interrupted; rerun enrollment if needed.", file=sys.stderr)
         return 1
     print(
         f"Enrolled TPM KWallet unlocking for {args.user}; test at the next automatic login."

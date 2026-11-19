@@ -35,7 +35,8 @@ token. Preserve any pre-existing token. A missing credential or failed,
 malformed, oversized or timed-out decrypt skips the wallet hook without
 prompting or changing the login decision. KDE's inherited session hook handles
 startup. The compiled bridge bounds output/time, excludes its buffer from core
-dumps, and wipes temporary plaintext. Normal password login remains unchanged.
+dumps, and wipes its temporary plaintext buffer and clears PAM_AUTHTOK. KDE keeps its
+own password copy for the session hook. Normal password login remains unchanged.
 
 ## Local enrollment and recovery
 
@@ -44,8 +45,8 @@ password is recommended. Enrollment requires an interactive root terminal,
 an allowlisted normal user, a usable TPM 2.0, Secure Boot enabled, and the active
 generation already booted. Prompt twice, refuse empty/mismatched passwords,
 and call `systemd-creds encrypt` with explicit `host+tpm2` and PCR binding.
-Atomically replace the credential with private permissions; failures leave the
-old credential intact. Never place plaintext in argv, environment or logs.
+Atomically replace the credential with private permissions; failures before
+replacement leave the old credential intact. Never place plaintext in argv, environment or logs.
 
 PCR 4 binds booted executable measurements, and PCR 7 binds Secure Boot policy.
 Boot/kernel updates can require local re-enrollment after booting the intended
@@ -73,3 +74,7 @@ disabled and another-host module cases using only locked public nixpkgs.
 Add a flake check and run scoped formatting/static checks. Independently
 review the finished branch. Live enrollment, TPM sealing, wallet access,
 activation and reboot acceptance are left to the user.
+
+The authenticated credential name includes the canonical configured PCR set.
+A policy change invalidates older enrollment. An orphaned worker owns and reaps
+the TPM decryptor; PAM cancels it via a pidfd without waiting for TPM cleanup.

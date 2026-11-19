@@ -11,8 +11,9 @@ KWallet 6.26; it does not implement the wallet format or run another wallet daem
 The wallet keeps a nonempty password. A separate copy of that password is
 encrypted with `systemd-creds` using **both** the host key and TPM 2.0, and
 is bound to explicit boot measurements. The default policy uses PCR 4 (boot
-executables) and PCR 7 (Secure Boot policy). There is no host-only or unbound
-fallback. The credential is stored locally as
+executables) and PCR 7 (Secure Boot policy). The authenticated credential name also binds the canonical
+configured PCR set; changing that set invalidates earlier enrollments until
+you enroll again. There is no host-only or unbound fallback. The credential is stored locally as
 `/var/lib/kwallet-tpm/USER.cred`, root-owned mode 0600 inside a mode-0700
 directory. Nothing secret belongs in the repository, Nix options or Nix store.
 
@@ -33,7 +34,7 @@ Development, PR creation and CI do not deploy it or enroll a password.
    `/run/current-system` differs from `/run/booted-system`.
 
 1. In Gianluca's desktop, open **KWallet Manager**, select **kdewallet**, and use
-   **Change Password** to restore a **nonempty** password. A separate wallet-only
+   **Change Password** to set a **nonempty** password. A separate wallet-only
    password is recommended. Leave the account/login password unchanged.
    This integration supports password-encrypted wallets, not GPG-encrypted ones.
 
@@ -57,7 +58,7 @@ Development, PR creation and CI do not deploy it or enroll a password.
    prompt. Application-access approval dialogs are separate from wallet
    password prompts.
 
-Enrollment requires an interactive root terminal, an allowlisted non-root
+Enrollment requires an interactive root terminal (a root SSH PTY also qualifies), an allowlisted non-root
 account, usable TPM 2.0, Secure Boot enabled, and the active generation already
 booted. An empty password, mismatched confirmation, TPM error or a failure
 before atomic replacement leaves the previous credential unchanged. Passwords
@@ -117,8 +118,9 @@ understand their lifecycle before adding them.
 The module uses NixOS's **experimental** PAM rules API. Its shape and ordering
 can change without notice on nixpkgs updates. Review the rendered PAM stack and
 rerun the public regression check after such updates; incorrect PAM ordering
-can lock users out or weaken authentication. The three added auth rules must
-remain adjacent after SDDM's required permit rule. A configuration assertion
+can lock users out or weaken authentication. The bridge clears its temporary
+buffer and PAM_AUTHTOK; KDE retains its own password copy for its normal session
+handling. The three added auth rules must remain adjacent after SDDM's required permit rule. A configuration assertion
 rejects an intervening rule.
 
 ## Validation boundaries
