@@ -13,11 +13,15 @@ let
         ../modules/security/kwallet-tpm.nix
         {
           networking.hostName = "fixture";
-          services.desktopManager.plasma6.enable = true;
-          services.displayManager.sddm.enable = true;
-          services.displayManager.autoLogin = {
-            enable = true;
-            user = "fixture";
+          services = {
+            desktopManager.plasma6.enable = true;
+            displayManager = {
+              sddm.enable = true;
+              autoLogin = {
+                enable = true;
+                user = "fixture";
+              };
+            };
           };
           users.users.fixture = {
             isNormalUser = true;
