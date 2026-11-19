@@ -11,6 +11,8 @@ in
 {
   config = lib.mkIf cfg.enable {
     sys = {
+      home.enable = true;
+
       boot = {
         lanzaboote.enable = true;
         plymouth = {
@@ -79,7 +81,7 @@ in
           # ];
           nixpkgs-unstable-small = [
             #   "atuin"
-            "brave-origin"
+            # "brave-origin"
             #   "tailscale"
           ];
         };
@@ -141,8 +143,6 @@ in
         ];
       };
     };
-
-    sys.home.enable = true;
 
     # Enable udev access for VIA/Keychron Launcher on QMK-based keyboards.
     hardware.keyboard.qmk = {
