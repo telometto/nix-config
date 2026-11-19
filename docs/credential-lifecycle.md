@@ -126,6 +126,12 @@ justifies downtime.
 1. Verify health and authentication behavior.
 1. Remove the old credential after the new one is confirmed.
 
+Kaizer's RustDesk client uses Blizzard's server public key from a dedicated
+SOPS file. Rotating it requires coordinating the server keypair, private
+`secrets.rustdeskFile` input and Kaizer's client restart. Follow the
+[RustDesk rotation and rollback runbook](rustdesk.md); verify access both at
+SDDM and inside a desktop session before retiring the previous keypair.
+
 For the Matrix MicroVM, a SOPS update is not complete when the encrypted value
 has merely been re-materialized. The `matrix-synapse-secret.service` and
 `mas-secret.service` one-shot generators assemble runtime files under `/run`,
