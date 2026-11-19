@@ -4,6 +4,30 @@ Kaizer uses the pinned RustDesk unattended Wayland package and Blizzard's
 RustDesk backend over Tailscale. Snowfall uses the same upstream package
 without Kaizer's managed backend layer.
 
+## Direct-IP desktop access
+
+Kaizer's managed client enables direct-IP access on TCP `21120`. Its existing
+ID server already occupies the default direct-IP port `21118`. The firewall
+opens `21120` only on `services.tailscale.interfaceName`; disabling the
+unattended service removes that opening too.
+
+After activation, enter `100.99.194.117:21120` in RustDesk on Snowfall or
+`work-ago` and use normal RustDesk authentication. The tailnet policy grants
+Snowfall this TCP port explicitly; `work-ago` retains its existing broader
+administration permission. This uses the existing shared-node connection to
+Kaizer and works independently of Blizzard ID/relay registration.
+
+The managed getters enforce `direct-server=Y` and `direct-access-port=21120`
+for root, SDDM, and desktop contexts, including stale or missing profile
+options. These two settings remain available if the runtime backend layer is
+missing or malformed. Saved identities, passwords, and unrelated options keep
+their normal lifecycle; the public-key provisioning format is unchanged.
+
+Activate the matching Kaizer Nix generation before testing. Check for a TCP
+`21120` listener using `ss -ltn`, then test a real desktop connection from both
+viewers, including video and input. A passing configuration check or an open
+TCP socket does not establish that desktop acceptance check.
+
 ## Configuration and provisioning
 
 [`hosts/kaizer/rustdesk.nix`](../hosts/kaizer/rustdesk.nix) adds a small patch
