@@ -1,27 +1,58 @@
 #define _GNU_SOURCE
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>
+#include <errno.h>
+#include <poll.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 
-#ifdef PAM_WAIT_FIXTURE
+#ifdef PAM_DEADLINE_FIXTURE
+ssize_t __real_send(int socket, const void *buffer, size_t length, int flags);
+ssize_t __wrap_send(int socket, const void *buffer, size_t length, int flags) {
+    ssize_t sent = __real_send(socket, buffer, length, flags);
+    if (sent == 1 && length == 1 && *(const char *)buffer == 'g') {
+        /* Let the worker queue its pidfd without receiving it, then resume
+         * PAM only after its deadline. No production timing hook is needed. */
+        struct pollfd pending = {.fd = socket, .events = POLLIN};
+        int ready;
+        do { ready = poll(&pending, 1, 1000); } while (ready < 0 && errno == EINTR);
+        if (ready != 1 || !(pending.revents & POLLIN)) _exit(125);
+        struct timespec delay = {0, 300000000};
+        while (nanosleep(&delay, &delay) < 0 && errno == EINTR) {}
+    }
+    return sent;
+}
+#endif
+
+#if defined(PAM_WAIT_FIXTURE) || defined(PAM_DEADLINE_FIXTURE)
 pid_t __real_waitpid(pid_t pid, int *status, int options);
 pid_t __wrap_waitpid(pid_t pid, int *status, int options) {
+#ifdef PAM_WAIT_FIXTURE
     if (options == 0) {
         struct timespec delay = {2, 0};
         nanosleep(&delay, NULL);
     }
+#endif
     pid_t result = __real_waitpid(pid, status, options);
     if (options == 0 && result > 0) {
         int fd = open(REAP_MARKER_PATH, O_WRONLY | O_CREAT | O_CLOEXEC, 0600);
         if (fd >= 0) {
-            if (write(fd, "reaped", 6) != 6) _exit(125);
+#ifdef PAM_DEADLINE_FIXTURE
+            const char *outcome = WIFSIGNALED(*status) && WTERMSIG(*status) == SIGKILL
+                                      ? "killed" : "exited";
+#else
+            const char *outcome = "reaped";
+#endif
+            size_t length = strlen(outcome);
+            if (write(fd, outcome, length) != (ssize_t)length) _exit(125);
             close(fd);
         }
     }

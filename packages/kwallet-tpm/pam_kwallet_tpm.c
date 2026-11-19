@@ -185,6 +185,17 @@ static void worker(int input, int output, int socket, const char *credential_nam
         kill(helper, SIGKILL);
     } else if (!send_pidfd(socket, pidfd)) {
         (void)syscall(SYS_pidfd_send_signal, pidfd, SIGKILL, NULL, 0);
+    } else {
+        /* PAM may time out before receiving the queued pidfd. Keep owning
+         * cancellation until the helper exits, even after a successful send. */
+        struct pollfd fds[] = {
+            {.fd = pidfd, .events = POLLIN},
+            {.fd = socket, .events = 0},
+        };
+        int ready;
+        do { ready = poll(fds, 2, -1); } while (ready < 0 && errno == EINTR);
+        if (ready < 0 || fds[1].revents || !(fds[0].revents & POLLIN))
+            (void)syscall(SYS_pidfd_send_signal, pidfd, SIGKILL, NULL, 0);
     }
     int status = 0;
     pid_t reaped;

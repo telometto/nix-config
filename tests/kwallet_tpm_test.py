@@ -303,9 +303,10 @@ class PamTests(unittest.TestCase):
             "    print('fixture-only-password', file=sys.stderr)\n"
             "    sys.exit(1)\n"
             "if mode == 'hang': time.sleep(20)\n"
+            "if mode == 'queued': time.sleep(2)\n"
             "data = {'success': b'fixture-only-password', 'empty': b'',\n"
             "        'nul': b'fixture-only-password\\x00tail', 'large': b'x' * 4097,\n"
-            "        'hang': b''}[mode]\n"
+            "        'hang': b'', 'queued': b''}[mode]\n"
             "sys.stdout.buffer.write(data)\n"
         )
         cls.helper.chmod(0o755)
@@ -321,6 +322,7 @@ class PamTests(unittest.TestCase):
         cls.bridge = cls.base / "pam_kwallet_tpm.so"
         cls.strict_bridge = cls.base / "pam_kwallet_tpm_strict.so"
         cls.slow_bridge = cls.base / "pam_kwallet_tpm_slow.so"
+        cls.deadline_bridge = cls.base / "pam_kwallet_tpm_deadline.so"
         cls.capture = cls.base / "pam_fixture.so"
         cls.driver = cls.base / "pam-driver"
         header = cls.base / "config.h"
@@ -398,6 +400,32 @@ class PamTests(unittest.TestCase):
                 str(fixture),
                 "-o",
                 str(cls.slow_bridge),
+                *links,
+            ],
+            check=True,
+            capture_output=True,
+        )
+        deadline_header = cls.base / "deadline-config.h"
+        deadline_header.write_text(
+            header.read_text()
+            + "#define REAP_MARKER_PATH "
+            + json.dumps(str(cls.base / "deadline-reaped"))
+            + "\n"
+        )
+        compile_fixture(
+            [
+                cc,
+                *flags,
+                "-shared",
+                "-fPIC",
+                "-include",
+                str(deadline_header),
+                "-DPAM_DEADLINE_FIXTURE",
+                "-Wl,--wrap=send,--wrap=waitpid",
+                str(PACKAGE / "pam_kwallet_tpm.c"),
+                str(fixture),
+                "-o",
+                str(cls.deadline_bridge),
                 *links,
             ],
             check=True,
@@ -495,6 +523,22 @@ class PamTests(unittest.TestCase):
         self.assertTrue(
             marker.exists(), "detached worker did not reap the synthetic helper"
         )
+
+    def test_timeout_with_unreceived_pidfd_cancels_and_reaps_helper(self):
+        marker = self.base / "deadline-reaped"
+        marker.unlink(missing_ok=True)
+        start = time.monotonic()
+        self.assertIn(
+            "seen=- after=clear", self.attempt("queued", bridge=self.deadline_bridge)
+        )
+        self.assertLess(time.monotonic() - start, 1.5)
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            if marker.exists() and marker.stat().st_size:
+                break
+            time.sleep(0.02)
+        self.assertTrue(marker.exists(), "detached worker did not reap its helper")
+        self.assertEqual(marker.read_text(), "killed")
 
     def test_unauthorized_user_or_service_never_decrypts(self):
         for args in ({"user": "unlisted"}, {"service": "login"}):
