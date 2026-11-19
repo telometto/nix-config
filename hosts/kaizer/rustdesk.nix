@@ -22,11 +22,6 @@ in
         });
   };
 
-  # The desktop listener is separate from the existing ID server on TCP 21118.
-  networking.firewall = lib.mkIf config.sys.services.rustdeskUnattended.enable {
-    interfaces.${config.services.tailscale.interfaceName}.allowedTCPPorts = [ 21120 ];
-  };
-
   # All client processes read the same runtime layer, including a fresh SDDM
   # greeter and independently launched GUIs. Never rewrite their profile files.
   systemd.services.rustdesk = lib.mkIf config.sys.services.rustdeskUnattended.enable {

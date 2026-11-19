@@ -30,10 +30,6 @@ let
 in
 assert !(disabled.systemd.services ? rustdesk);
 assert disabled.sys.secrets.rustdeskServerPublicKeyFile == null;
-assert enabled.networking.firewall.interfaces.tailscale0.allowedTCPPorts == [ 21120 ];
-assert !(lib.elem 21120 enabled.networking.firewall.allowedTCPPorts);
-assert
-  !(lib.elem 21120 (disabled.networking.firewall.interfaces.tailscale0.allowedTCPPorts or [ ]));
 assert unit.serviceConfig.LoadCredential == [ "server-key:/fixture/public-key" ];
 assert unit.serviceConfig.RuntimeDirectory == "rustdesk";
 assert unit.serviceConfig.RuntimeDirectoryMode == "0755";
