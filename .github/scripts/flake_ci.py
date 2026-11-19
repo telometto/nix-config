@@ -37,6 +37,7 @@ CHECKS = {
     "jellyfin-firewall",
     "jellyfin-microvm",
     "libvirt-firmware",
+    "kwallet-tpm",
     "sandfly-target",
     "sandfly-runtime",
     "scrutiny",
@@ -48,6 +49,13 @@ CHECKS = {
 # Shared Traefik, Cloudflared, Prometheus, Grafana, loaders, lib helpers, and
 # common VM infrastructure deliberately remain unmapped.
 DEPENDENCIES = {
+    "modules/security/kwallet-tpm.nix": {"kwallet-tpm"},
+    "hosts/kaizer/kwallet-tpm.nix": {"kwallet-tpm"},
+    "packages/kwallet-tpm/default.nix": {"kwallet-tpm"},
+    "packages/kwallet-tpm/pam_kwallet_tpm.c": {"kwallet-tpm"},
+    "packages/kwallet-tpm/enroll.py": {"kwallet-tpm"},
+    "tests/kwallet_tpm_test.py": {"kwallet-tpm"},
+    "tests/kwallet_tpm_pam_fixture.c": {"kwallet-tpm"},
     "home/programs/codex.nix": {"codex-adapter"},
     "lib/codex-generators.nix": {"codex-adapter"},
     "tests/codex-check.nix": {"codex-adapter"},

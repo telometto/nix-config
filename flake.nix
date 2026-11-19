@@ -280,6 +280,10 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        kwallet-tpm = import ./tests/kwallet-tpm.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         rustdesk-config = import ./tests/rustdesk-config.nix {
           pkgs = nixpkgs.legacyPackages.${system};
           rustdeskPkgs = inputs.nixpkgs-rustdesk.legacyPackages.${system};

@@ -54,6 +54,8 @@ flowchart LR
 - [libvirt-firmware.md](libvirt-firmware.md) —
   Preserve existing NVRAM when migrating to QCOW2 and validate snapshots
 
+- [kwallet-tpm.md](kwallet-tpm.md) — TPM-backed KWallet automatic unlocking, local enrollment and recovery.
+
 - [rustdesk.md](rustdesk.md) —
   Provision Kaizer's backend, rotate server keys, verify greeter access and roll back
 
