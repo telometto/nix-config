@@ -45,26 +45,6 @@
       frankie.enable = false;
     };
 
-    nix.distributedBuilds = {
-      enable = true;
-
-      buildMachines = [
-        {
-          hostName = "snowfall";
-          systems = [ "x86_64-linux" ];
-          sshUser = "zeno";
-          sshKey = "/home/gianluca/.ssh/nix-build-kaizer";
-          maxJobs = 16;
-          speedFactor = 3;
-          supportedFeatures = [
-            "kvm"
-            "big-parallel"
-            "benchmark"
-          ];
-        }
-      ];
-    };
-
     # Keep the standalone Immich ML container image aligned with the server.
     overlays.fromInputs.nixpkgs-master = [
       "immich"
@@ -156,6 +136,11 @@
     bluetooth = {
       enable = true;
       powerOnBoot = true;
+    };
+
+    openrazer = {
+      enable = true;
+      users = [ "gianluca" ];
     };
 
     graphics = {
