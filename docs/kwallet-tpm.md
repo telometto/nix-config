@@ -53,10 +53,12 @@ Development, PR creation and CI do not deploy it or enroll a password.
    shown first, asks for your account password. Do not put either password in
    the command, a shell variable, a file, or a chat message.
 
-1. Reboot or log out and let SDDM log Gianluca in automatically. Open an
-   application that uses KWallet and confirm there is no unlock-password
-   prompt. Application-access approval dialogs are separate from wallet
-   password prompts.
+1. Reboot and let SDDM log Gianluca in automatically. Open an application
+   that uses KWallet and confirm there is no unlock-password prompt.
+   Application-access approval dialogs are separate from wallet password
+   prompts. Logging out returns to the greeter by default; it only exercises
+   automatic login again on hosts that already enable
+   `services.displayManager.sddm.autoLogin.relogin`.
 
 Enrollment requires an interactive root terminal (a root SSH PTY also qualifies), an allowlisted non-root
 account, usable TPM 2.0, Secure Boot enabled, and the active generation already
