@@ -7,9 +7,9 @@ without Kaizer's managed backend layer.
 ## Direct-IP desktop access
 
 Kaizer's managed client enables direct-IP access on TCP `21120`. Its existing
-ID server already occupies the default direct-IP port `21118`. The firewall
-opens `21120` only on `services.tailscale.interfaceName`; disabling the
-unattended service removes that opening too.
+ID server already occupies the default direct-IP port `21118`. A temporary
+listener verified that Snowfall can reach `21120` after the ACL rollout with
+the existing host firewall; this change adds no firewall rule.
 
 After activation, enter `100.99.194.117:21120` in RustDesk on Snowfall or
 `work-ago` and use normal RustDesk authentication. The tailnet policy grants
