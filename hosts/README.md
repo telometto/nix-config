@@ -19,25 +19,41 @@ privileged scanner account.
 
 ### CachyOS kernel cache
 
-Snowfall and Kaizer use the `nix-cachyos-kernel/release` input and its `pinned`
-overlay. Their host-local declarations for the
-[upstream binary cache](https://github.com/xddxdd/nix-cachyos-kernel#binary-cache)
-are currently commented out, so those blocks do not enable the cache. Cache
-misses and external kernel modules can still require builds.
+Snowfall and Kaizer use [Chaotic-Nyx](https://www.nyx.chaotic.cx/)'s
+`nyxpkgs-unstable` input, `nyx-cache` and `nyx-overlay` modules, and
+`pkgs.linuxPackages_cachyos`. Kaizer selects `pkgs.nvidia_cachyos` through
+`sys.hardware.nvidia.package` and keeps `sys.hardware.nvidia.open = true` to
+use its matching open kernel modules. Both hosts also enable OpenRazer.
 
-To use the cache for one build, pass its settings explicitly (replace
-`snowfall` with `kaizer` where appropriate):
+The `nyx-cache` module defaults `chaotic.nyx.cache.enable` to `true`, adding
+Nyx's substituter and signing key to `nix.settings`. These settings take effect
+in the running daemon after activating the host configuration.
+
+Keep Nyx's own dependency pins: making its `nixpkgs` input follow this
+repository's input, or customizing its kernel build, can change store hashes
+and require compilation. The previous upstream Attic cache is not used.
+
+Before the new cache configuration is activated, pass its settings explicitly.
+This downloads the kernel outputs and external modules, refusing compilation
+if a required binary is missing:
 
 ```bash
-nix build .#nixosConfigurations.snowfall.config.system.build.toplevel \
-  --option extra-substituters https://attic.xuyh0120.win/lantian \
-  --option extra-trusted-public-keys 'lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc='
+nix build --no-link --max-jobs 0 --builders '' \
+  --option extra-substituters https://nyx-cache.chaotic.cx/ \
+  --option extra-trusted-public-keys 'nyx-cache.chaotic.cx:dJxTrgMC3V3cFfyIiBQDQorG6k1LsqurH/srpMSq7qk=' \
+  '.#nixosConfigurations.snowfall.config.boot.kernelPackages.kernel^*' \
+  '.#nixosConfigurations.kaizer.config.boot.kernelPackages.kernel^*' \
+  '.#nixosConfigurations.kaizer.config.hardware.nvidia.package.open' \
+  '.#nixosConfigurations.snowfall.config.boot.kernelPackages.openrazer' \
+  '.#nixosConfigurations.kaizer.config.boot.kernelPackages.openrazer'
 ```
 
-This builds without activating the configuration or persisting those options.
-For repeated use, enable the declarations and activate the host configuration.
-The source does not establish the active daemon settings; inspect
-`nix config show substituters` and `/etc/nix/nix.conf` on the host to check them.
+This command needs the private `nix-secrets` input for host evaluation; see
+[the CI reference](../docs/reference-ci.md#introduction). It does not
+activate a configuration or persist the command-line cache settings. The first
+deployment also needs these explicit cache options; later rebuilds use the
+Nyx settings installed by that deployment. Inspect `nix config show substituters`
+and `/etc/nix/nix.conf` on the host when checking active daemon settings.
 
 ### Host Structure
 

@@ -7,6 +7,11 @@
   ...
 }:
 {
+  imports = [
+    inputs.chaotic.nixosModules.nyx-cache
+    inputs.chaotic.nixosModules.nyx-overlay
+  ];
+
   programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   networking = {
     hostName = lib.mkForce "kaizer";
@@ -24,16 +29,9 @@
   };
 
   boot = {
-    kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
+    kernelPackages = pkgs.linuxPackages_cachyos;
     kernelParams = [ "usbcore.autosuspend=-1" ];
   };
-
-  # Match the upstream release builds provided by the pinned CachyOS overlay.
-  # WARNING! Disabled due to repository having been pwned
-  # nix.settings = {
-  #   substituters = [ "https://attic.xuyh0120.win/lantian" ];
-  #   trusted-public-keys = [ "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=" ];
-  # };
 
   sys = {
     role.desktop.enable = true;
@@ -51,11 +49,9 @@
       "immich-cli"
       "immich-machine-learning"
     ];
-    overlays.custom = [ inputs.nix-cachyos-kernel.overlays.pinned ];
-
     hardware.nvidia = {
       enable = true;
-
+      package = pkgs.nvidia_cachyos;
       open = true;
 
       # Enable if suspend/resume issues occur (experimental)
