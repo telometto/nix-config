@@ -37,7 +37,7 @@ ______________________________________________________________________
 | [hardware/](hardware/) | NVIDIA driver config (`sys.hardware.nvidia.*`) | `sys.hardware.nvidia.enable` |
 | [networking/](networking/) | `base.nix`, `networkd.nix`, `networkmanager.nix` | `sys.networking.networkd.enable`, `sys.networking.networkmanager.enable` |
 | [programs/](programs/) | System-wide programs: ssh, gaming, java, gnupg, jellyfin-gpu, nix-ld, python-venv, mtr | `sys.programs.gaming.enable` |
-| [security/](security/) | Secret-path declarations, OpenSSH hardening, and dedicated Sandfly scan listeners/accounts | `sys.secrets.*`, `sys.security.sandflyTarget.*` |
+| [security/](security/) | Secret-path declarations, TPM-backed KWallet unlocking, OpenSSH hardening, and dedicated Sandfly scan listeners/accounts | `sys.secrets.*`, `sys.security.kwalletTpm.*`, `sys.security.sandflyTarget.*` |
 | [services/](services/) | ~60 service modules — see [services/README.md](services/README.md) for the full catalog | `sys.services.grafana.enable`, `sys.services.traefik.enable` |
 | [storage/](storage/) | `filesystems.nix` **only** (`sys.storage.filesystems.*`) — ZFS, NFS, and sanoid live in `services/` | `sys.storage.filesystems.*` |
 | [virtualisation/](virtualisation/) | `virtualisation.nix`, `microvm-base.nix` (`sys.virtualisation.*`), `libvirtd.nix`, `k3s.nix` | `sys.virtualisation.enable` |
@@ -99,3 +99,6 @@ Other devices, such as passthrough devices, may impose snapshot restrictions.
 - [services/README.md](services/README.md) — Full service catalog
 - [vms/README.md](../vms/README.md) — MicroVM inventory and network topology
 - [Architecture notes](../CLAUDE.md) — High-level repo architecture
+
+See [TPM-backed KWallet unlocking](../docs/kwallet-tpm.md) for the opt-in module,
+local enrollment, boot-update behavior and recovery.
