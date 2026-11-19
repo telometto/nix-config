@@ -5,6 +5,7 @@
   gatewayPairs,
   internalBridgeNames,
   mode,
+  hostServiceRules ? [ ],
 }:
 let
   networkDefaults = import ../vms/microvm-network-defaults.nix;
@@ -13,10 +14,38 @@ let
   quoteList = values: lib.concatStringsSep ", " (map quote values);
   addressList = values: lib.concatStringsSep ", " values;
   portList = values: lib.concatStringsSep ", " (map toString values);
+  hostInputRules = lib.concatMapStringsSep "\n" (
+    rule:
+    let
+      inherit (rule) source;
+    in
+    ''
+      ${lib.optionalString (rule.tcpPorts != [ ]) ''
+        iifname ${quote source.bridge} ip saddr ${source.ip} tcp dport { ${portList rule.tcpPorts} } accept comment ${quote rule.reason}
+      ''}
+      ${lib.optionalString (rule.udpPorts != [ ]) ''
+        iifname ${quote source.bridge} ip saddr ${source.ip} udp dport { ${portList rule.udpPorts} } accept comment ${quote rule.reason}
+      ''}
+    ''
+  ) hostServiceRules;
 
   knownTapNames = map (identity: identity.tap) identities;
   knownVmAddresses = map (identity: identity.ip) identities;
   gateways = lib.unique (map (pair: pair.gateway) gatewayPairs);
+  vpnClientAddresses = lib.unique (map (pair: pair.client.ip) gatewayPairs);
+  protectedNetworks = [
+    "0.0.0.0/8"
+    "10.0.0.0/8"
+    "100.64.0.0/10"
+    "127.0.0.0/8"
+    "169.254.0.0/16"
+    "172.16.0.0/12"
+    "192.0.0.0/24"
+    "192.168.0.0/16"
+    "198.18.0.0/15"
+    "224.0.0.0/4"
+    "240.0.0.0/4"
+  ];
   gatewayNames = map (gateway: gateway.name) gateways;
   knownDestinationRules = lib.concatMapStringsSep "\n" (identity: ''
     iifname @known_taps oifname ${quote identity.tap} jump undeclared_lateral
@@ -86,7 +115,7 @@ let
         iifname ${quote pair.client.tap} oifname ${quote pair.gateway.tap} ether daddr ${pair.gateway.mac} ip daddr { ${addressList otherVmAddresses} } jump deny_gateway_bypass
       ''}
       iifname ${quote pair.client.tap} oifname ${quote pair.gateway.tap} ether type ip ether daddr ${pair.gateway.mac} accept
-      iifname ${quote pair.gateway.tap} oifname ${quote pair.client.tap} ether type ip ether daddr ${pair.client.mac} ip daddr ${pair.client.ip} accept
+      iifname ${quote pair.gateway.tap} oifname ${quote pair.client.tap} ether type ip ether daddr ${pair.client.mac} ip daddr ${pair.client.ip} ct state { established, related } accept
     ''
   ) gatewayPairs;
 
@@ -235,10 +264,30 @@ let
         comment "Packets rejected while routing between MicroVM bridge ports or bridges"
       }
 
+      counter protected_egress_drops {
+        comment "Guest attempts to initiate protected-network or direct VPN-bypass traffic"
+      }
+
+      chain deny_protected_egress {
+        counter name protected_egress_drops
+        limit rate 10/minute burst 20 packets log prefix "microvm-policy egress-drop: " level info
+        drop
+      }
+
       chain deny_routed_lateral {
         counter name routed_lateral_drops
         limit rate 10/minute burst 20 packets log prefix "microvm-policy routed-drop: " level info
         drop
+      }
+
+      chain input {
+        type filter hook input priority -300; policy accept;
+        ${lib.optionalString (internalBridgeNames != [ ]) ''
+          iifname { ${quoteList internalBridgeNames} } ct state { established, related } accept
+          iifname { ${quoteList internalBridgeNames} } ip protocol icmp icmp type echo-request accept
+          ${hostInputRules}
+          iifname { ${quoteList internalBridgeNames} } jump deny_protected_egress
+        ''}
       }
 
       chain forward {
@@ -246,6 +295,19 @@ let
 
         iifname ${quote networkDefaults.sharedBridge.name} oifname ${quote networkDefaults.sharedBridge.name} jump deny_routed_lateral
         ${routedIsolationRules}
+        ${lib.optionalString (internalBridgeNames != [ ]) ''
+          # Enforce before tailnet subnet SNAT can impersonate the host proxy.
+          iifname "tailscale0" oifname { ${quoteList internalBridgeNames} } drop
+
+          # Replies to declared publications are allowed; new private-network
+          # flows are denied regardless of NAT or a gateway's claimed source.
+          iifname { ${quoteList internalBridgeNames} } ct state { established, related } accept
+          iifname { ${quoteList internalBridgeNames} } meta nfproto ipv6 jump deny_protected_egress
+          iifname { ${quoteList internalBridgeNames} } ip daddr { ${addressList protectedNetworks} } jump deny_protected_egress
+          ${lib.optionalString (vpnClientAddresses != [ ]) ''
+            iifname { ${quoteList internalBridgeNames} } ip saddr { ${addressList vpnClientAddresses} } jump deny_protected_egress
+          ''}
+        ''}
       }
     }
   '';

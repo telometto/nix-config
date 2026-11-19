@@ -224,7 +224,7 @@ def validate_plan(plan):
             raise ValueError(f"inconsistent plan: {key}")
 
 
-def gate_errors(needs):
+def gate_errors(needs, *, public_pr=False):
     classifier = needs.get("classify", {})
     if classifier.get("result") != "success":
         return ["classifier did not succeed"]
@@ -234,8 +234,10 @@ def gate_errors(needs):
     except (ValueError, TypeError, AttributeError):
         return ["classifier returned an invalid plan"]
     errors = []
+    if public_pr and needs.get("pr-static", {}).get("result") != "success":
+        errors.append("secretless PR checks did not succeed")
     for job in ("grouped", "lifecycle"):
-        expected = "success" if plan[job] else "skipped"
+        expected = "success" if plan[job] and not public_pr else "skipped"
         actual = needs.get(job, {}).get("result", "missing")
         if actual != expected:
             errors.append(f"{job}: expected {expected}, got {actual}")
@@ -358,10 +360,15 @@ def main():
             "build", f".#checks.{SYSTEM}.{LIFECYCLE}", "--no-link", "--print-build-logs"
         )
     else:
-        errors = gate_errors(json.loads(os.environ["NEEDS"]))
+        public_pr = os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
+        errors = gate_errors(json.loads(os.environ["NEEDS"]), public_pr=public_pr)
         if errors:
             raise SystemExit("\n".join(errors))
-        print("Every selected Flake Check job succeeded.")
+        print(
+            "Secretless PR checks passed; private-input evaluation was not performed."
+            if public_pr
+            else "Every selected Flake Check job succeeded."
+        )
 
 
 if __name__ == "__main__":

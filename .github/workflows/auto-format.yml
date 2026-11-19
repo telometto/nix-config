@@ -1,133 +1,29 @@
-name: Auto Format
+name: Formatting Check
 
 on:
   workflow_dispatch:
   pull_request:
-    types: [opened, synchronize, reopened]
   push:
-    branches:
-      - main
-      - testing
+    branches: [main, testing]
 
 concurrency:
   group: auto-format-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name != 'pull_request' }}
+  cancel-in-progress: true
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   format:
-    name: format
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
-      (github.event_name == 'push' && contains(fromJson('["main", "testing"]'), github.ref_name))
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+      - name: Checkout without credentials
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # Formatting pushes must trigger validation on the corrected revision.
-          token: ${{ secrets.PAT_TOKEN }}
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
-          fetch-depth: 0
-
-      - name: Detect format-relevant changes
-        id: changed-files
-        if: github.event_name != 'workflow_dispatch'
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323
-        with:
-          files: |
-            flake.lock
-            **/*.nix
-            **/*.sh
-            **/*.yml
-            **/*.yaml
-            **/*.md
-            **/*.json
-
-      - name: No relevant files changed
-        if: github.event_name != 'workflow_dispatch' && steps.changed-files.outputs.any_changed != 'true'
-        run: echo "No format-relevant files changed; nothing to do."
+          persist-credentials: false
 
       - name: Install Nix
-        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
-        uses: DeterminateSystems/nix-installer-action@v22
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
-      - name: Setup Nix cache
-        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
-        uses: DeterminateSystems/magic-nix-cache-action@v14
-        with:
-          use-flakehub: false
-
-      - name: Check and format files
-        id: check-formatting
-        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          PUSH_REF_NAME: ${{ github.ref_name }}
-        run: |
-          if ! nix fmt; then
-            echo "nix fmt failed; skipping auto-format but continuing workflow"
-            echo "formatted=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "Changes were made by formatter"
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add .
-            formatted_files=$(git diff --cached --name-only)
-            git commit -m "style: automatic formatting by treefmt"
-
-            if [ "$EVENT_NAME" = "pull_request" ]; then
-              git push origin "HEAD:$PR_HEAD_REF"
-            else
-              git push origin "HEAD:$PUSH_REF_NAME"
-            fi
-
-            echo "formatted=true" >> "$GITHUB_OUTPUT"
-            {
-              echo "formatted-files<<EOF"
-              printf '%s\n' "$formatted_files"
-              echo "EOF"
-            } >> "$GITHUB_OUTPUT"
-          else
-            echo "No formatting changes needed"
-            echo "formatted=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Comment on PR if formatted
-        if: github.event_name == 'pull_request' && steps.check-formatting.outputs.formatted == 'true'
-        uses: actions/github-script@v9.0.0
-        env:
-          FORMATTED_FILES: ${{ steps.check-formatting.outputs.formatted-files }}
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const comment = require('.github/scripts/comment');
-            const formattedFiles = (process.env.FORMATTED_FILES || '')
-              .split(/\r?\n/)
-              .map((file) => file.trim())
-              .filter(Boolean);
-
-            const formattedList = formattedFiles.length
-              ? '\n\n**Files formatted:**\n' + formattedFiles.map((file) => `- \`${file}\``).join('\n')
-              : '';
-
-            const header = '🎨 **Auto-formatted**';
-            const body = `Files have been automatically formatted with treefmt to maintain code consistency.${formattedList}`;
-
-            await comment({ github, context, header, body });
-
-      - name: Enable auto-merge for formatted PR
-        if: github.event_name == 'pull_request' && steps.check-formatting.outputs.formatted == 'true'
-        run: gh pr merge "$PR_NUMBER" --auto --merge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+      - name: Check formatting
+        run: nix fmt -- --fail-on-change

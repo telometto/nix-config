@@ -7,6 +7,14 @@
 let
   cfg = config.sys.services.paperless;
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
+  secretEnvironment = import ../../lib/runtime-secret-environment.nix {
+    inherit lib pkgs;
+    name = "paperless";
+    variable = "PAPERLESS_SECRET_KEY";
+    source = cfg.secretKeyFile;
+    group = config.services.paperless.group;
+    requiredBy = [ "paperless-secret-key.service" ];
+  };
 in
 {
   options.sys.services.paperless = {
@@ -85,6 +93,7 @@ in
 
         database.createLocally = cfg.database.createLocally;
         inherit (cfg) configureTika;
+        environmentFile = lib.mkIf (cfg.secretKeyFile != null) secretEnvironment.path;
 
         settings = {
           PAPERLESS_OCR_LANGUAGE = lib.mkDefault "eng+nor+ita";
@@ -100,9 +109,6 @@ in
         // lib.optionalAttrs (cfg.reverseProxy.enable && cfg.reverseProxy.domain != null) {
           PAPERLESS_URL = "https://${cfg.reverseProxy.domain}";
         }
-        // lib.optionalAttrs (cfg.secretKeyFile != null) {
-          PAPERLESS_SECRET_KEY = cfg.secretKeyFile;
-        }
         // cfg.settings;
       };
 
@@ -114,6 +120,10 @@ in
     };
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
+
+    systemd.services.paperless-secret-environment = lib.mkIf (
+      cfg.secretKeyFile != null
+    ) secretEnvironment.service;
 
     assertions = [
       {

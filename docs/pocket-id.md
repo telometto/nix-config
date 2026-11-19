@@ -85,14 +85,18 @@ sudo nixos-rebuild switch --flake .#blizzard
 
 The VM should boot even though `sops-install-secrets` and `pocket-id` initially
 fail. On Blizzard, derive the age recipient from the VM's presented persistent
-SSH host key without copying the private key:
+SSH host public key through the authenticated VM console. On the console, run:
 
 ```bash
-ssh-keyscan -t ed25519 10.100.1.2 | cut -d ' ' -f 2- | ssh-to-age
+sudo ssh-keygen -lf /persist/ssh/ssh_host_ed25519_key.pub -E sha256
+sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key | ssh-to-age
 ```
 
-Confirm that the VM is using the expected registry address before trusting the
-result.
+Record the full SHA256 fingerprint from the console before enrolling the age
+recipient. If retrieving the public key over SSH instead, first verify that
+fingerprint and install a known_hosts entry; use StrictHostKeyChecking=yes.
+An expected IP address or an unverified ssh-keyscan response does not authenticate
+the encryption recipient.
 
 ### 3. Add the private secret
 

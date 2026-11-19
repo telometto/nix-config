@@ -44,7 +44,7 @@ in
 
   # SOPS configuration for this MicroVM
   # After first boot, get the VM's age key with:
-  #   ssh admin@10.100.0.50 "sudo cat /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
+  #   ssh admin@10.100.0.50 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then add it to your .sops.yaml and re-encrypt secrets
   sops = {
     secrets = {

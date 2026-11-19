@@ -28,5 +28,13 @@ in
       enable = true;
       inherit (cfg) port openFirewall;
     };
+    systemd.services.flaresolverr.environment.HOST = "127.0.0.1";
+
+    assertions = [
+      {
+        assertion = !cfg.openFirewall;
+        message = "FlareSolverr is an unauthenticated local helper; remote publication requires a separately authenticated service.";
+      }
+    ];
   };
 }

@@ -494,10 +494,22 @@ pkgs.testers.runNixOSTest {
             machine.succeed(f"echo allowed | ip netns exec {source_namespace} ${pkgs.socat}/bin/socat - TCP:${registry.prowlarr.ip}:${toString registry.prowlarr.port},connect-timeout=2 | grep -q allowed")
             machine.fail(f"echo denied | ip netns exec {source_namespace} ${pkgs.socat}/bin/socat - TCP:${registry.prowlarr.ip}:5355,connect-timeout=1")
 
-    with subtest("registered WireGuard pair remains bidirectional"):
+    with subtest("WireGuard pair permits client initiation and return traffic"):
         machine.succeed("ip netns exec ns-qbittorrent ping -c 1 -W 2 ${registry.wireguard.ip}")
-        machine.succeed("ip netns exec ns-wireguard ping -c 1 -W 2 ${registry.qbittorrent.ip}")
+        machine.fail("ip netns exec ns-wireguard ping -c 1 -W 2 ${registry.qbittorrent.ip}")
         machine.succeed("ip netns exec ns-qbittorrent ping -c 1 -W 2 192.0.2.2")
+
+    with subtest("guests cannot initiate protected-LAN traffic"):
+        machine.succeed("ip -n ns-internet address add 192.168.2.2/24 dev eth0")
+        machine.succeed("ip route add 192.168.2.0/24 dev uplink-test")
+        machine.fail("ip netns exec ns-prowlarr ping -c 1 -W 1 192.168.2.2")
+        machine.fail("ip netns exec ns-wireguard ping -c 1 -W 1 192.168.2.2")
+        machine.succeed("nft list counter inet microvm_policy protected_egress_drops | grep -Eq 'packets [1-9]'")
+
+    with subtest("VPN clients cannot bypass the gateway through Blizzard"):
+        machine.succeed("ip -n ns-qbittorrent route add 192.0.2.2/32 via 10.100.0.1")
+        machine.fail("ip netns exec ns-qbittorrent ping -c 1 -W 1 192.0.2.2")
+        machine.succeed("ip -n ns-qbittorrent route del 192.0.2.2/32")
 
     with subtest("VPN client cannot use its gateway to bypass lateral policy"):
         machine.succeed("ip -n ns-qbittorrent route replace ${registry.gitea.ip}/32 via ${registry.wireguard.ip}")

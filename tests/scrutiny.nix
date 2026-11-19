@@ -29,6 +29,9 @@ assert cfg.sops.templates."scrutiny-environment".mode == "0400";
 assert cfg.sops.templates."scrutiny-environment".owner == "root";
 assert lib.elem "scrutiny.service" cfg.sops.secrets."scrutiny/token".restartUnits;
 assert cfg.services.scrutiny.settings.web.influxdb.host == "127.0.0.1";
+assert cfg.services.scrutiny.settings.web.listen.host == "127.0.0.1";
+assert !cfg.services.scrutiny.openFirewall;
+assert !(lib.elem cfg.sys.services.scrutiny.port cfg.networking.firewall.allowedTCPPorts);
 assert
   cfg.services.scrutiny.collector.settings.api.endpoint
   == "http://127.0.0.1:${toString cfg.sys.services.scrutiny.port}";

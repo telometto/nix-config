@@ -87,6 +87,8 @@
     };
 
     services = {
+      # Promote a reviewed generation manually; dependency discovery is not deployment approval.
+      autoUpgrade.enable = lib.mkForce false;
       k3s.enable = false;
 
       resolved = {
@@ -104,7 +106,7 @@
         extraUpFlags = [
           "--reset"
           "--ssh"
-          "--advertise-routes=192.168.2.0/24,10.100.0.0/24"
+          "--advertise-routes=192.168.2.0/24"
         ];
       };
     };

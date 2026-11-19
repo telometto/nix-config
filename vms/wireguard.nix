@@ -23,9 +23,6 @@ let
     "10.0.0.0/8"
     "172.16.0.0/12"
   ];
-  homeNetworkFirewallRules = lib.concatMapStringsSep "\n" (
-    network: "-A WG_OUTPUT -d ${network} -j ACCEPT"
-  ) homeNetworks;
   legacyFirewallCleanup = lib.concatMapStringsSep "\n" (rule: "${iptablesPath} ${rule} || true") (
     lib.concatMap (interface: [
       # Keep deletion-only cleanup for historical predictable names; no active
@@ -64,7 +61,7 @@ let
     -A WG_FORWARD -i ${wireguardInterface} -o ${guestInterface} -p udp --dport ${toString consts.ports.network.qbittorrentTorrent} -j ACCEPT
     -A WG_FORWARD -i ${wireguardInterface} -o ${guestInterface} -j REJECT
     -A WG_FORWARD -j RETURN
-    ${homeNetworkFirewallRules}
+    -A WG_OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     -A WG_OUTPUT ! -o ${wireguardInterface} -m mark ! --mark ${toString wireguardFwmark} -m addrtype ! --dst-type LOCAL -j REJECT
     -A WG_OUTPUT -j RETURN
     COMMIT

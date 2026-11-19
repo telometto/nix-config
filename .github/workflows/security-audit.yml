@@ -21,12 +21,13 @@ jobs:
       secrets_found: ${{ steps.gitleaks.outputs.secrets_found }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v22
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
       - name: Check secrets exposure
         id: gitleaks
@@ -44,6 +45,7 @@ jobs:
           else
             echo "🚨 Gitleaks: Potential secrets found" >> "$GITHUB_STEP_SUMMARY"
             echo "secrets_found=true" >> "$GITHUB_OUTPUT"
+            exit 1
           fi
 
       - name: Audit firewall configuration
@@ -114,14 +116,14 @@ jobs:
 
   create-security-issue:
     needs: security-audit
-    if: needs.security-audit.outputs.secrets_found == 'true' && github.event_name != 'pull_request'
+    if: always() && needs.security-audit.outputs.secrets_found == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
     steps:
       - name: Create issue if secrets found
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const { owner, repo } = context.repo;

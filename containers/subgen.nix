@@ -3,6 +3,7 @@
 # Uses docker.io/mccloud/subgen:cpu by default, docker.io/mccloud/subgen:amd when gpu.enable is true
 { lib, config, ... }:
 let
+  imagePins = import ../lib/oci-images.nix;
   mediaStorage = import ../vms/media-storage.nix;
   cfg = config.services.subgen-container;
   hasPlex = cfg.plexServer != null;
@@ -149,9 +150,9 @@ in
           if cfg.image != null then
             cfg.image
           else if cfg.gpu.enable then
-            "docker.io/mccloud/subgen:amd"
+            imagePins.subgen.amd
           else
-            "docker.io/mccloud/subgen:cpu";
+            imagePins.subgen.cpu;
         publishPorts = [
           "${toString cfg.port}:9000"
         ];

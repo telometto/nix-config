@@ -37,7 +37,7 @@ in
   extraRoutes ? [ ],
   ...
 }:
-{ lib, ... }:
+{ lib, config, ... }:
 let
   ipv4 = import ./ipv4.nix;
   prefixIsValid = ipv4.validPrefix prefixLength && prefixLength >= 1 && prefixLength <= 31;
@@ -60,6 +60,14 @@ let
 in
 {
   assertions = [
+    {
+      assertion = lib.all (
+        share:
+        !(share.source == "/nix/store" || lib.hasPrefix "/nix/store/" (toString share.source))
+        || share.readOnly
+      ) config.microvm.shares;
+      message = "mkMicrovmConfig (${name}): every host Nix store export must be read-only";
+    }
     {
       assertion = prefixIsValid;
       message = "mkMicrovmConfig (${name}): prefixLength must be an integer between 1 and 31";
@@ -115,6 +123,7 @@ in
         mountPoint = "/nix/.ro-store";
         tag = "ro-store";
         proto = "virtiofs";
+        readOnly = true;
       }
     ]
     ++ extraShares;
