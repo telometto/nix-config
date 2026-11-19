@@ -23,7 +23,8 @@
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
-    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
+    # Keep Nyx's own dependency pins to match its precompiled kernels and modules.
+    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
 
     flake-compat = {
       url = "github:NixOS/flake-compat";
