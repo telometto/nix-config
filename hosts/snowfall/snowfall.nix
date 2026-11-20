@@ -278,10 +278,6 @@ in
     };
   };
 
-  users.users.${VARS.users.zeno.user}.extraGroups = VARS.users.zeno.extraGroups ++ [
-    "openrazer"
-  ];
-
   services = {
     stirling-pdf = {
       enable = false;
@@ -321,7 +317,10 @@ in
       powerOnBoot = true;
     };
 
-    openrazer.enable = lib.mkDefault true;
+    openrazer = {
+      enable = lib.mkDefault true;
+      users = [ VARS.users.zeno.user ];
+    };
 
     amdgpu.initrd.enable = lib.mkDefault true;
 
