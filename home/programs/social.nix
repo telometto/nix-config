@@ -20,7 +20,7 @@ in
         # settings = {};
 
         vencord = {
-          useSystem = lib.mkDefault false; # TODO: temporary until upstream fixes this
+          useSystem = lib.mkDefault true;
 
           themes = {
             clearvision = ../files/vesktop-themes/ClearVision-v7-BetterDiscord.theme.css;
