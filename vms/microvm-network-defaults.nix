@@ -1,0 +1,33 @@
+let
+  sharedBridge = {
+    name = "microvm-br0";
+    address = "10.100.0.1";
+    prefixLength = 24;
+    network = "10.100.0.0/24";
+  };
+
+  # mkMicrovmConfig assigns this name to the NIC matched by the VM's fixed MAC.
+  # The stable name avoids trusting a predictable-name suffix that can change
+  # when Cloud Hypervisor's device layout changes.
+  guestInterface = "microvm0";
+
+  # Names used by earlier generations of the guest-interface contract. Keep
+  # each name here until all deployed generations that may have installed
+  # direct firewall rules with it have been retired.
+  historicalGuestInterfaces = [ "ens3" ];
+in
+{
+  inherit sharedBridge guestInterface historicalGuestInterfaces;
+  defaultGateway = sharedBridge.address;
+  defaultPrefixLength = sharedBridge.prefixLength;
+  vpnReturnRoutes = [
+    {
+      Gateway = sharedBridge.address;
+      Destination = "192.168.0.0/16";
+    }
+    {
+      Gateway = sharedBridge.address;
+      Destination = sharedBridge.network;
+    }
+  ];
+}

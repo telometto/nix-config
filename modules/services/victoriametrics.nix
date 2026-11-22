@@ -5,10 +5,13 @@
   lib,
   config,
   pkgs,
+  consts,
   ...
 }:
 let
   cfg = config.sys.services.victoriametrics;
+  hasHttpAuth = cfg.httpAuth.username != null;
+  credentialGroup = "monitoring-credentials";
 in
 {
   options.sys.services.victoriametrics = {
@@ -18,8 +21,29 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 11008;
+      default = consts.ports.host.victoriametrics;
       description = "Port on which VictoriaMetrics listens for HTTP requests";
+    };
+
+    httpAuth = {
+      username = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = ''
+          Username for VictoriaMetrics HTTP Basic Authentication. Set this
+          together with passwordFile to protect every HTTP endpoint.
+        '';
+      };
+
+      passwordFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = ''
+          SOPS-managed file containing the VictoriaMetrics HTTP Basic
+          Authentication password. The password is loaded through systemd
+          credentials and is never placed in the unit command line.
+        '';
+      };
     };
 
     listenAddress = lib.mkOption {
@@ -27,9 +51,20 @@ in
       default = "127.0.0.1";
       description = ''
         Address on which VictoriaMetrics listens.
-        Set to "0.0.0.0" to listen on all interfaces (required for remote write from other hosts).
+        Remote clients require a reachable non-loopback address. Bind to the
+        narrowest interface that serves the intended clients.
       '';
-      example = "0.0.0.0";
+      example = "100.86.227.97";
+    };
+
+    localAddress = lib.mkOption {
+      type = lib.types.str;
+      default = "127.0.0.1";
+      description = ''
+        Address used by local Prometheus and Grafana clients to reach VictoriaMetrics.
+        Set this when listenAddress does not include the loopback interface.
+      '';
+      example = "127.0.0.1";
     };
 
     openFirewall = lib.mkOption {
@@ -64,6 +99,15 @@ in
         default = "/api/v1/write";
         description = "URL path for Prometheus remote write endpoint";
       };
+
+      excludedMetricNames = lib.mkOption {
+        type = lib.types.listOf (lib.types.strMatching "[A-Za-z_:][A-Za-z0-9_:]*");
+        default = [ ];
+        description = ''
+          Exact Prometheus metric names to keep in local Prometheus without
+          copying them into long-term VictoriaMetrics storage.
+        '';
+      };
     };
 
     # Grafana datasource integration
@@ -78,6 +122,12 @@ in
         type = lib.types.str;
         default = "VictoriaMetrics";
         description = "Name of the Grafana datasource";
+      };
+
+      uid = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = "victoriametrics";
+        description = "Optional stable Grafana datasource UID for VictoriaMetrics";
       };
 
       isDefault = lib.mkOption {
@@ -144,6 +194,9 @@ in
       enable = true;
       inherit (cfg) package retentionPeriod;
 
+      basicAuthUsername = cfg.httpAuth.username;
+      basicAuthPasswordFile = cfg.httpAuth.passwordFile;
+
       listenAddress = "${cfg.listenAddress}:${toString cfg.port}";
 
       extraOptions =
@@ -160,51 +213,133 @@ in
     services.prometheus.remoteWrite =
       lib.mkIf (cfg.prometheusRemoteWrite.enable && config.services.prometheus.enable or false)
         [
-          {
-            url = "http://127.0.0.1:${toString cfg.port}${cfg.prometheusRemoteWrite.path}";
+          (
+            {
+              url = "http://${cfg.localAddress}:${toString cfg.port}${cfg.prometheusRemoteWrite.path}";
 
-            queue_config = {
-              capacity = 10000;
-              max_shards = 3;
-              min_shards = 1;
-              max_samples_per_send = 1000;
-              batch_send_deadline = "5s";
-              min_backoff = "30ms";
-              max_backoff = "5s";
-            };
+              queue_config = {
+                capacity = 10000;
+                max_shards = 3;
+                min_shards = 1;
+                max_samples_per_send = 1000;
+                batch_send_deadline = "5s";
+                min_backoff = "30ms";
+                max_backoff = "5s";
+              };
 
-            # Add hostname label to all metrics
-            write_relabel_configs = [
-              {
-                source_labels = [ "__address__" ];
-                target_label = "source_host";
-                replacement = config.networking.hostName;
-              }
-            ];
-          }
+              write_relabel_configs =
+                lib.optionals (cfg.prometheusRemoteWrite.excludedMetricNames != [ ]) [
+                  {
+                    source_labels = [ "__name__" ];
+                    regex = lib.concatStringsSep "|" cfg.prometheusRemoteWrite.excludedMetricNames;
+                    action = "drop";
+                  }
+                ]
+                ++ [
+                  {
+                    source_labels = [ "__address__" ];
+                    target_label = "source_host";
+                    replacement = config.networking.hostName;
+                  }
+                ];
+            }
+            // lib.optionalAttrs hasHttpAuth {
+              basic_auth = {
+                username = cfg.httpAuth.username;
+                password_file = cfg.httpAuth.passwordFile;
+              };
+            }
+          )
         ];
 
     # Add VictoriaMetrics as Grafana datasource
     # VictoriaMetrics is 100% compatible with Prometheus datasource type
-    sys.services.grafana.provision.datasources =
+    sys.services.grafana.provision.deleteDatasources =
       lib.mkIf (cfg.grafanaDatasource.enable && config.sys.services.grafana.enable or false)
         [
           {
-            inherit (cfg.grafanaDatasource) name isDefault;
-            type = "prometheus"; # VictoriaMetrics is PromQL-compatible
-            access = "proxy";
-            url = "http://127.0.0.1:${toString cfg.port}";
-            editable = false;
-            jsonData = {
-              # VictoriaMetrics supports Prometheus-compatible API
-              httpMethod = "POST";
-              # Enable range queries for better performance
-              manageAlerts = false;
-            };
+            inherit (cfg.grafanaDatasource) name;
+            orgId = 1;
           }
+        ];
+
+    sys.services.grafana.provision.datasources =
+      lib.mkIf (cfg.grafanaDatasource.enable && config.sys.services.grafana.enable or false)
+        [
+          (
+            {
+              inherit (cfg.grafanaDatasource) name isDefault;
+              type = "prometheus"; # VictoriaMetrics is PromQL-compatible
+              access = "proxy";
+              url = "http://${cfg.localAddress}:${toString cfg.port}";
+              editable = false;
+              jsonData = {
+                # VictoriaMetrics supports Prometheus-compatible API
+                httpMethod = "POST";
+                # Enable range queries for better performance
+                manageAlerts = false;
+              };
+            }
+            // lib.optionalAttrs hasHttpAuth {
+              basicAuth = true;
+              basicAuthUser = cfg.httpAuth.username;
+              secureJsonData.basicAuthPassword = "$__file{${cfg.httpAuth.passwordFile}}";
+            }
+            // lib.optionalAttrs (cfg.grafanaDatasource.uid != null) {
+              inherit (cfg.grafanaDatasource) uid;
+            }
+          )
         ];
 
     # Open firewall if requested
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
+
+    users = {
+      users = {
+        prometheus.extraGroups = lib.mkIf (hasHttpAuth && (config.services.prometheus.enable or false)) (
+          lib.mkAfter [ credentialGroup ]
+        );
+
+        grafana.extraGroups = lib.mkIf (hasHttpAuth && (config.sys.services.grafana.enable or false)) (
+          lib.mkAfter [ credentialGroup ]
+        );
+      };
+
+      groups.${credentialGroup} = lib.mkIf hasHttpAuth { };
+    };
+
+    systemd.services = {
+      victoriametrics = lib.mkIf hasHttpAuth {
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+      };
+
+      prometheus = lib.mkIf (hasHttpAuth && (config.services.prometheus.enable or false)) {
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+      };
+
+      grafana = lib.mkIf (hasHttpAuth && (config.sys.services.grafana.enable or false)) {
+        after = [ "sops-install-secrets.service" ];
+        requires = [ "sops-install-secrets.service" ];
+      };
+    };
+
+    assertions = [
+      {
+        assertion = (cfg.httpAuth.username == null) == (cfg.httpAuth.passwordFile == null);
+        message = "sys.services.victoriametrics.httpAuth.username and passwordFile must both be set or both be null";
+      }
+      {
+        assertion =
+          lib.elem cfg.listenAddress [
+            "127.0.0.1"
+            "::1"
+            "localhost"
+          ]
+          || hasHttpAuth;
+        message = "sys.services.victoriametrics requires HTTP Basic Authentication when listenAddress is not loopback";
+      }
+    ];
   };
 }

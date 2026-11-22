@@ -1,22 +1,14 @@
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  consts,
+  ...
+}:
 let
-  reg = (import ./vm-registry.nix).qbittorrent;
-  mediaShare = {
-    source = "/rpool/unenc/media/data";
-    mountPoint = "/data";
-    tag = "media-data";
-    proto = "virtiofs";
-  };
-  vpnRoutes = [
-    {
-      Gateway = "10.100.0.1";
-      Destination = "192.168.0.0/16";
-    }
-    {
-      Gateway = "10.100.0.1";
-      Destination = "10.100.0.0/24";
-    }
-  ];
+  reg = (import ./vm-registry.nix { inherit consts; }).qbittorrent;
+  mediaStorage = import ./media-storage.nix;
+  networkDefaults = import ./microvm-network-defaults.nix;
 in
 {
   imports = [
@@ -32,8 +24,8 @@ in
             size = 10240;
           }
         ];
-        extraShares = [ mediaShare ];
-        extraRoutes = vpnRoutes;
+        extraShares = [ mediaStorage.share ];
+        extraRoutes = networkDefaults.vpnReturnRoutes;
       }
     ))
   ];
@@ -41,15 +33,21 @@ in
   networking.firewall = {
     allowedTCPPorts = [
       reg.port
-      50820
+      consts.ports.network.qbittorrentTorrent
     ];
-    allowedUDPPorts = [ 50820 ];
+    allowedUDPPorts = [ consts.ports.network.qbittorrentTorrent ];
+  };
+
+  # New downloads use the shared media group; account/state ownership stays private.
+  systemd.services.qbittorrent.serviceConfig = {
+    Group = lib.mkForce "users";
+    SupplementaryGroups = lib.mkForce [ config.sys.services.qbittorrent.group ];
   };
 
   sys.services.qbittorrent = {
     enable = true;
     webPort = reg.port;
-    torrentPort = 50820;
+    torrentPort = consts.ports.network.qbittorrentTorrent;
     dataDir = "/var/lib/qbittorrent";
     openFirewall = false;
 

@@ -1,13 +1,13 @@
 { lib, config, ... }:
 let
   cfg = config.hm;
-  locale = cfg.langs;
+  regionalLocale = cfg.langs;
 in
 {
   options.hm.langs = lib.mkOption {
     type = lib.types.str;
     default = "en_US.UTF-8";
-    description = "Default locale";
+    description = "Regional locale for formatting; does not change the UI language";
   };
 
   config = {
@@ -70,26 +70,31 @@ in
       security = {
         sops.enable = lib.mkDefault true;
       };
+
+      accounts = {
+        email.enable = lib.mkDefault false;
+        calendar.enable = lib.mkDefault false;
+        contact.enable = lib.mkDefault false;
+      };
     };
 
     home = {
       stateVersion = lib.mkDefault "24.05";
-      enableDebugInfo = lib.mkDefault true;
       preferXdgDirectories = lib.mkDefault true;
 
       language = {
-        address = lib.mkDefault locale;
-        base = lib.mkDefault locale;
-        collate = lib.mkDefault locale;
-        ctype = lib.mkDefault locale;
-        measurement = lib.mkDefault locale;
-        messages = lib.mkDefault locale;
-        monetary = lib.mkDefault locale;
-        name = lib.mkDefault locale;
-        numeric = lib.mkDefault locale;
-        paper = lib.mkDefault locale;
-        telephone = lib.mkDefault locale;
-        time = lib.mkDefault locale;
+        address = lib.mkDefault regionalLocale;
+        base = lib.mkDefault "en_US.UTF-8";
+        collate = lib.mkDefault regionalLocale;
+        ctype = lib.mkDefault regionalLocale;
+        measurement = lib.mkDefault regionalLocale;
+        messages = lib.mkDefault "en_US.UTF-8";
+        monetary = lib.mkDefault regionalLocale;
+        name = lib.mkDefault regionalLocale;
+        numeric = lib.mkDefault regionalLocale;
+        paper = lib.mkDefault regionalLocale;
+        telephone = lib.mkDefault regionalLocale;
+        time = lib.mkDefault regionalLocale;
       };
 
       keyboard.layout = lib.mkDefault "no";

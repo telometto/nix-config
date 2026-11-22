@@ -10,30 +10,40 @@ let
   # Determine API endpoint based on whether appId is provided
   # Reusable policy: /accounts/{account_id}/access/policies/{policy_id}
   # App-specific:    /accounts/{account_id}/access/apps/{app_id}/policies/{policy_id}
-  apiEndpoint =
+  apiEndpointTemplate =
     if cfg.appId == null then
-      "https://api.cloudflare.com/client/v4/accounts/\$ACCOUNT_ID/access/policies/\$POLICY_ID"
+      "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/access/policies/$POLICY_ID"
     else
-      "https://api.cloudflare.com/client/v4/accounts/\$ACCOUNT_ID/access/apps/\$APP_ID/policies/\$POLICY_ID";
+      "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/access/apps/$APP_ID/policies/$POLICY_ID";
 
   # Script to update Cloudflare Access policy with current IP
   updateScript = pkgs.writeShellScript "cloudflare-access-ip-updater" ''
     set -euo pipefail
 
-    # Configuration
-    ACCOUNT_ID="${cfg.accountId}"
-    ${lib.optionalString (cfg.appId != null) ''APP_ID="${cfg.appId}"''}
-    POLICY_ID="${cfg.policyId}"
-    API_TOKEN_FILE="${cfg.apiTokenFile}"
-    STATE_FILE="/var/lib/cloudflare-access-ip-updater/last-ip"
-    API_ENDPOINT="${apiEndpoint}"
+    # Validate secret files exist before reading
+    for secret_file in "${cfg.accountIdFile}" "${cfg.policyIdFile}" "${cfg.apiTokenFile}"; do
+      if [[ ! -f "$secret_file" ]]; then
+        echo "Error: Required secret file not found: $secret_file"
+        exit 1
+      fi
+    done
 
-    # Read API token
-    if [[ ! -f "$API_TOKEN_FILE" ]]; then
-      echo "Error: API token file not found: $API_TOKEN_FILE"
-      exit 1
-    fi
-    API_TOKEN=$(${pkgs.coreutils}/bin/cat "$API_TOKEN_FILE" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
+    # Read secrets from files at runtime
+    ACCOUNT_ID=$(${pkgs.coreutils}/bin/cat "${cfg.accountIdFile}" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
+    ${lib.optionalString (cfg.appId != null) ''APP_ID="${cfg.appId}"''}
+    POLICY_ID=$(${pkgs.coreutils}/bin/cat "${cfg.policyIdFile}" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
+    API_TOKEN=$(${pkgs.coreutils}/bin/cat "${cfg.apiTokenFile}" | ${pkgs.coreutils}/bin/tr -d '[:space:]')
+    STATE_FILE="/var/lib/cloudflare-access-ip-updater/last-ip"
+    API_ENDPOINT="${apiEndpointTemplate}"
+
+    to_cidr() {
+      local ip="$1"
+      if [[ "$ip" == *:* ]]; then
+        printf '%s/128' "$ip"
+      else
+        printf '%s/32' "$ip"
+      fi
+    }
 
     # Get current public IP
     CURRENT_IP=$(${pkgs.curl}/bin/curl -sf ${lib.escapeShellArg cfg.ipService} | ${pkgs.coreutils}/bin/tr -d '[:space:]')
@@ -44,6 +54,7 @@ let
     echo "Current IP: $CURRENT_IP"
 
     # Check if IP has changed
+    LAST_IP=""
     if [[ -f "$STATE_FILE" ]]; then
       LAST_IP=$(${pkgs.coreutils}/bin/cat "$STATE_FILE")
       if [[ "$CURRENT_IP" == "$LAST_IP" ]]; then
@@ -72,23 +83,35 @@ let
 
     echo "Policy: $POLICY_NAME (decision: $POLICY_DECISION, precedence: $POLICY_PRECEDENCE)"
 
-    # Build the updated policy JSON
-    # This creates a policy with the IP rule for bypass
-    UPDATE_PAYLOAD=$(${pkgs.jq}/bin/jq -n \
-      --arg name "$POLICY_NAME" \
-      --arg decision "$POLICY_DECISION" \
-      --argjson precedence "$POLICY_PRECEDENCE" \
-      --arg ip "$CURRENT_IP/32" \
-      '{
-        name: $name,
-        decision: $decision,
-        precedence: $precedence,
-        include: [
-          { ip: { ip: $ip } }
-        ],
-        exclude: [],
-        require: []
-      }')
+    IP_CIDR=$(to_cidr "$CURRENT_IP")
+    LAST_IP_CIDR=""
+    if [[ -n "$LAST_IP" ]]; then
+      LAST_IP_CIDR=$(to_cidr "$LAST_IP")
+    fi
+
+    # Keep unmanaged policy rules intact and only replace this service's last managed IP rule.
+    UPDATE_PAYLOAD=$(echo "$POLICY_RESPONSE" | ${pkgs.jq}/bin/jq \
+      --arg ip "$IP_CIDR" \
+      --arg previous_ip "$LAST_IP_CIDR" \
+      '
+        .result as $policy
+        | ($policy.include // []) as $include
+        | ($include | map(
+            select(
+              (.ip.ip? // "") as $existing_ip
+              | ($existing_ip != $ip)
+                and ($previous_ip == "" or $existing_ip != $previous_ip)
+            )
+          )) as $preserved_include
+        | {
+            name: $policy.name,
+            decision: $policy.decision,
+            precedence: $policy.precedence,
+            include: ([{ ip: { ip: $ip } }] + $preserved_include),
+            exclude: ($policy.exclude // []),
+            require: ($policy.require // [])
+          }
+      ')
 
     echo "Updating policy with new IP..."
     UPDATE_RESPONSE=$(${pkgs.curl}/bin/curl -sf \
@@ -117,10 +140,14 @@ in
   options.sys.services.cloudflareAccessIpUpdater = {
     enable = lib.mkEnableOption "Cloudflare Access IP Updater";
 
-    accountId = lib.mkOption {
-      type = lib.types.str;
-      description = "Cloudflare Account ID";
-      example = "abcdef1234567890abcdef1234567890";
+    accountIdFile = lib.mkOption {
+      type = lib.types.str; # runtime path string (do not coerce into store)
+      description = ''
+        Path to file containing the Cloudflare Account ID.
+        Use config.sys.secrets.cloudflareAccountIdFile (preferred) or
+        toString config.sops.secrets."cloudflare/accountId".path.
+      '';
+      example = "/run/secrets/cloudflare-account-id";
     };
 
     appId = lib.mkOption {
@@ -134,18 +161,23 @@ in
       example = "12345678-1234-1234-1234-123456789012";
     };
 
-    policyId = lib.mkOption {
-      type = lib.types.str;
-      description = "Cloudflare Access Policy ID to update with dynamic IP";
-      example = "87654321-4321-4321-4321-210987654321";
+    policyIdFile = lib.mkOption {
+      type = lib.types.str; # runtime path string (do not coerce into store)
+      description = ''
+        Path to file containing the Cloudflare Access Policy ID to update with dynamic IP.
+        Use config.sys.secrets.cloudflarePolicyIdFile (preferred) or
+        toString config.sops.secrets."cloudflare/policyId".path.
+      '';
+      example = "/run/secrets/cloudflare-policy-id";
     };
 
     apiTokenFile = lib.mkOption {
-      type = lib.types.path;
+      type = lib.types.str; # runtime path string (do not coerce into store)
       description = ''
         Path to file containing Cloudflare API token.
         Token needs "Zero Trust: Edit" permission.
-        Use sops.secrets.*.path for secure storage.
+        Use config.sys.secrets.cloudflareAccessApiTokenFile (preferred) or
+        toString config.sops.secrets."cloudflare/access_api_token".path.
       '';
       example = "/run/secrets/cloudflare-access-api-token";
     };
@@ -191,8 +223,12 @@ in
       # Main service
       services.cloudflare-access-ip-updater = {
         description = "Update Cloudflare Access policy with current public IP";
-        after = [ "network-online.target" ];
+        after = [
+          "network-online.target"
+          "sops-install-secrets.service"
+        ];
         wants = [ "network-online.target" ];
+        requires = [ "sops-install-secrets.service" ];
 
         serviceConfig = {
           Type = "oneshot";

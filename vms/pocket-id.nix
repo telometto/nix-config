@@ -1,0 +1,110 @@
+{
+  config,
+  VARS,
+  lib,
+  consts,
+  ...
+}:
+let
+  reg = (import ./vm-registry.nix { inherit consts; })."pocket-id";
+  dataDir = "/var/lib/pocket-id";
+  blizzardSource = "${reg.gateway}/32";
+  pocketIdVersion = lib.getVersion config.services.pocket-id.package;
+in
+{
+  imports = [
+    ./base.nix
+    ./sops-base.nix
+    (import ./mkMicrovmConfig.nix (
+      reg
+      // {
+        volumes = [
+          {
+            mountPoint = dataDir;
+            image = "pocket-id-state.img";
+            size = 2048;
+          }
+        ];
+      }
+    ))
+  ];
+
+  assertions = [
+    {
+      assertion = lib.versionAtLeast pocketIdVersion "2.10.0";
+      message = "Pocket ID 2.10 or newer is required to reject non-loopback plain-HTTP OIDC callback URLs.";
+    }
+  ];
+
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
+
+  # The VM's persistent SSH host key is its SOPS age identity. On first boot,
+  # add that recipient and pocket-id/encryption_key to the private nix-secrets
+  # flake before expecting the service to start successfully.
+  sops = {
+    secrets."pocket-id/encryption_key" = {
+      mode = "0400";
+      owner = "pocket-id";
+      group = "pocket-id";
+      restartUnits = [ "pocket-id.service" ];
+    };
+  };
+
+  # Pocket ID trusts Cloudflare's client-IP header, so its backend must only be
+  # reachable through Blizzard's Traefik instance. Restrict administrative SSH
+  # to Blizzard as well, retaining explicit guest-level boundaries in addition
+  # to the host's cross-bridge forwarding policy.
+  networking = {
+    nftables.enable = true;
+    firewall.extraInputRules = ''
+      ip saddr ${blizzardSource} ip daddr ${reg.ip} tcp dport 22 accept comment "Pocket ID SSH from Blizzard only"
+      ip saddr ${blizzardSource} ip daddr ${reg.ip} tcp dport ${toString reg.port} accept comment "Pocket ID via Blizzard Traefik only"
+    '';
+  };
+
+  services.openssh.openFirewall = false;
+
+  services.pocket-id = {
+    enable = true;
+    inherit dataDir;
+
+    credentials.ENCRYPTION_KEY = config.sops.secrets."pocket-id/encryption_key".path;
+
+    settings = {
+      APP_URL = "https://id.${VARS.domains.public}";
+      HOST = "0.0.0.0";
+      PORT = reg.port;
+
+      DB_CONNECTION_STRING = "${dataDir}/pocket-id.db";
+      FILE_BACKEND = "filesystem";
+      UPLOAD_PATH = "${dataDir}/uploads";
+
+      TRUSTED_PLATFORM = "CF-Connecting-IP";
+      UI_CONFIG_DISABLED = true;
+      REQUIRE_USER_EMAIL = true;
+      ALLOW_OWN_ACCOUNT_EDIT = true;
+      ALLOW_USER_SIGNUPS = "withToken";
+      ANALYTICS_DISABLED = true;
+      VERSION_CHECK_DISABLED = true;
+    }
+    // lib.optionalAttrs (lib.versionAtLeast pocketIdVersion "2.11.0") {
+      # Pocket ID 2.10 enforces this policy by default. Version 2.11 made
+      # insecure non-loopback HTTP callbacks configurable and defaulted the
+      # compatibility switch to true, so keep the earlier secure behavior.
+      ALLOW_INSECURE_CALLBACK_URLS = false;
+    };
+  };
+
+  # Keep the exact packaged CLI available for health checks and the documented
+  # export/import recovery workflow.
+  environment.systemPackages = [ config.services.pocket-id.package ];
+
+  systemd.services.pocket-id = {
+    after = [
+      "network-online.target"
+      "sops-install-secrets.service"
+    ];
+    wants = [ "network-online.target" ];
+    requires = [ "sops-install-secrets.service" ];
+  };
+}

@@ -25,6 +25,12 @@ in
         description = "Git user email";
       };
 
+      signingKey = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "SSH public key used to sign Git commits and tags";
+      };
+
       lfs = lib.mkEnableOption "Git Large File Storage (LFS)";
     };
 
@@ -117,11 +123,15 @@ in
       git = {
         enable = lib.mkDefault true;
 
+        signing.format = "ssh";
+
         settings = {
           user = {
             name = cfg.git.userName;
             email = cfg.git.userEmail;
-            signingKey = "${config.home.homeDirectory}/.ssh/github-key.pub";
+          }
+          // lib.optionalAttrs (cfg.git.signingKey != null) {
+            signingKey = cfg.git.signingKey;
           };
 
           init.defaultBranch = "master";
@@ -160,6 +170,7 @@ in
       [
         pkgs.nixd
         pkgs.ansible
+        pkgs.libsecret
       ]
       ++ cfg.extraPackages
     );

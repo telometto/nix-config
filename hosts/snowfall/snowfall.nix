@@ -4,12 +4,19 @@
   VARS,
   pkgs,
   consts,
+  inputs,
   ...
 }:
 let
   grafanaDashboards = import ../../lib/grafana-dashboards.nix { inherit lib pkgs; };
 in
 {
+  imports = [
+    inputs.chaotic.nixosModules.nyx-cache
+    inputs.chaotic.nixosModules.nyx-overlay
+  ];
+
+  programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   networking = {
     hostName = lib.mkForce "snowfall";
     hostId = lib.mkForce "131b6b39";
@@ -25,8 +32,19 @@ in
     };
   };
 
+  boot.kernelPackages = pkgs.linuxPackages_cachyos;
+
   sys = {
     role.desktop.enable = true;
+
+    security.sandflyTarget = {
+      enable = true;
+      tailscalePolicyReady = true;
+      listenAddress = consts.tailscale.hosts.snowfall.ipv4;
+      authorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMZyLM+KB77uiVvCwMNetNam1Qmf4jxcD7IP9z2hJ7qd sandfly-generated-key-20261005142820"
+      ];
+    };
 
     desktop.flavor = "kde";
 
@@ -66,27 +84,36 @@ in
       ];
     };
 
+    virtualisation.libvirtd.enable = true;
+
     programs = {
       nix-ld.enable = true;
       python-venv.enable = true;
     };
 
     ## Pull specific packages from different nixpkgs inputs
-    # overlays.fromInputs = {
-    # nixpkgs-unstable = [ "lutris" ];
-    #  nixpkgs-stable = [ "vesktop" ];
-    # };
-    #
-    ## Add custom overlays
-    # overlays.custom = [
-    #   (final: prev: {
-    #     firefox = prev.firefox.override {
-    #       enablePlasmaBrowserIntegration = true;
-    #     };
-    #   })
-    # ];
+    overlays = {
+      fromInputs = {
+        # nixpkgs-gnupg = [ "gnupg" ];
+        # nixpkgs = [
+        #   "pipx"
+        #   "openrazer"
+        # ];
+        # nixpkgs-beta = [ "pipx" ];
+        nixpkgs-unstable = [
+          "vscode"
+          "codex"
+          "chatgpt"
+          "podman-desktop"
+        ];
+        # nixpkgs-stable-small = [ "openblas" ];
+      };
+
+    };
 
     services = {
+      vscode-server.enable = true;
+
       resolved = {
         enableDNS = false;
         enableFallbackDNS = true;
@@ -102,21 +129,22 @@ in
 
       cloudflareAccessIpUpdater = {
         enable = true;
-        inherit (consts.cloudflare) accountId policyId;
-        apiTokenFile = config.sops.secrets."cloudflare/access_api_token".path;
+        accountIdFile = config.sys.secrets.cloudflareAccountIdFile;
+        policyIdFile = config.sys.secrets.cloudflarePolicyIdFile;
+        apiTokenFile = config.sys.secrets.cloudflareAccessApiTokenFile;
         interval = "30min";
       };
 
       # Enable RAPL power monitoring for CPU
       prometheusExporters.node = {
         enableRapl = true;
-        port = 11011;
+        port = consts.ports.host.nodeExporter;
       };
 
       # Norwegian electricity price exporter (NO2 = Sør-Norge)
       electricityPriceExporter = {
         enable = true;
-        port = 11012;
+        port = consts.ports.host.electricityPriceExporter;
         priceArea = "NO2";
       };
 
@@ -136,7 +164,7 @@ in
 
       prometheus = {
         enable = lib.mkDefault true;
-        port = 11009;
+        port = consts.ports.host.prometheus;
         listenAddress = "127.0.0.1";
         openFirewall = lib.mkDefault false;
         scrapeInterval = "15s";
@@ -164,7 +192,7 @@ in
 
       grafana = {
         enable = lib.mkDefault true;
-        port = 11010;
+        port = consts.ports.host.grafana;
 
         addr = "127.0.0.1";
         openFirewall = lib.mkDefault false;
@@ -205,6 +233,11 @@ in
       victoriametricsRemoteWrite = {
         enable = true;
         vmHost = "blizzard"; # Tailscale hostname
+        vmPort = consts.ports.host.victoriametrics;
+        basicAuth = {
+          username = consts.victoriametrics.username;
+          passwordFile = config.sops.secrets."victoriametrics/remote_write_password".path;
+        };
       };
 
       traefik = {
@@ -245,14 +278,49 @@ in
     };
   };
 
-  users.users.${VARS.users.zeno.user}.extraGroups = VARS.users.zeno.extraGroups ++ [ "openrazer" ];
+  services = {
+    stirling-pdf = {
+      enable = false;
+      environment.SERVER_PORT = 50000;
+    };
 
-  services.rpcbind.enable = lib.mkDefault true;
+    rpcbind.enable = lib.mkDefault true;
+  };
+
+  fileSystems = {
+    "/mnt/backups" = {
+      device = "${consts.tailscale.hosts.blizzard.ipv4}:/rpool/enc/transfers";
+      fsType = "nfs";
+      options = [
+        "nofail"
+        "x-systemd.automount"
+        "x-systemd.idle-timeout=600"
+      ];
+    };
+
+    "/mnt/media" = {
+      device = "${consts.tailscale.hosts.blizzard.ipv4}:/rpool/unenc/media/data/media";
+      fsType = "nfs";
+      options = [
+        "nofail"
+        "x-systemd.automount"
+        "x-systemd.idle-timeout=600"
+      ];
+    };
+  };
 
   hardware = {
     cpu.amd.updateMicrocode = lib.mkDefault true;
 
-    openrazer.enable = lib.mkDefault true;
+    bluetooth = {
+      enable = true;
+      powerOnBoot = true;
+    };
+
+    openrazer = {
+      enable = lib.mkDefault true;
+      users = [ VARS.users.zeno.user ];
+    };
 
     amdgpu.initrd.enable = lib.mkDefault true;
 
@@ -261,8 +329,6 @@ in
       enable32Bit = lib.mkDefault true;
     };
   };
-
-  programs.virt-manager.enable = true;
 
   system.stateVersion = "24.05";
 }

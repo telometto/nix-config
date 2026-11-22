@@ -1,18 +1,18 @@
 {
   lib,
   config,
-  inputs,
   VARS,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).firefly;
+  reg = (import ./vm-registry.nix { inherit consts; }).firefly;
 in
 {
   imports = [
     ./base.nix
     ../modules/services/firefly.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -33,11 +33,6 @@ in
   ];
 
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "firefly/app_key" = {
         mode = "0440";
@@ -46,8 +41,6 @@ in
       };
     };
   };
-
-  sys.secrets.fireflyAppKeyFile = config.sops.secrets."firefly/app_key".path;
 
   networking.firewall.allowedTCPPorts = [ reg.port ];
 
@@ -69,20 +62,24 @@ in
     "en_US.UTF-8/UTF-8"
   ];
 
-  sys.services.firefly = {
-    enable = true;
+  sys = {
+    secrets.fireflyAppKeyFile = config.sops.secrets."firefly/app_key".path;
 
-    reverseProxy = {
+    services.firefly = {
       enable = true;
-      domain = "finance.${VARS.domains.public}";
-    };
 
-    settings = {
-      ALLOW_WEBHOOKS = false;
-      COOKIE_SECURE = "true";
-      SEND_REGISTRATION_MAIL = true;
-      SEND_LOGIN_NEW_IP_WARNING = true;
-      DEFAULT_LOCALE = "nb_NO";
+      reverseProxy = {
+        enable = true;
+        domain = "finance.${VARS.domains.public}";
+      };
+
+      settings = {
+        ALLOW_WEBHOOKS = false;
+        COOKIE_SECURE = "true";
+        SEND_REGISTRATION_MAIL = true;
+        SEND_LOGIN_NEW_IP_WARNING = true;
+        DEFAULT_LOCALE = "nb_NO";
+      };
     };
   };
 

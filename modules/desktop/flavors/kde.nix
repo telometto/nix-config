@@ -7,7 +7,10 @@
 let
   flavor = config.sys.desktop.flavor or "none";
   is = v: flavor == v;
-  SDDM_THEME = "hyprland_kath";
+  SDDM_THEME = "pixel_sakura";
+  SDDM_ASTRONAUT = pkgs.sddm-astronaut.override {
+    embeddedTheme = SDDM_THEME;
+  };
 in
 {
   config = lib.mkIf (is "kde") {
@@ -18,7 +21,10 @@ in
       displayManager.sddm = {
         enable = lib.mkDefault true;
 
-        wayland.enable = lib.mkDefault true;
+        wayland = {
+          enable = lib.mkDefault true;
+          compositor = lib.mkDefault "kwin";
+        };
         autoNumlock = lib.mkDefault true;
         /**
           Available themes:
@@ -45,20 +51,21 @@ in
       variables.SSH_ASKPASS_REQUIRE = lib.mkDefault "prefer";
 
       systemPackages = [
-        pkgs.kdePackages.ksshaskpass
-        pkgs.kdePackages.kwallet
-        pkgs.kdePackages.kwalletmanager
-        # pkgs.kdePackages.kwallet-pam
-        pkgs.kdePackages.qtwayland
         pkgs.kdePackages.qtwebengine
-        pkgs.xwayland
-        (pkgs.sddm-astronaut.override {
-          embeddedTheme = SDDM_THEME;
-        })
+        pkgs.kdePackages.flatpak-kcm
+        SDDM_ASTRONAUT
       ];
 
       plasma6.excludePackages = with pkgs.kdePackages; [ gwenview ];
     };
+
+    fonts.fontconfig.localConf = ''
+      <?xml version="1.0"?>
+      <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+      <fontconfig>
+        <dir>/run/current-system/sw/share/sddm/themes/sddm-astronaut-theme/Fonts</dir>
+      </fontconfig>
+    '';
 
     programs = {
       kdeconnect.enable = lib.mkDefault true;
@@ -85,17 +92,6 @@ in
       login = {
         enableAppArmor = true;
         gnupg.enable = true;
-        kwallet.enable = true;
-      };
-      sddm = {
-        enableAppArmor = true;
-        gnupg.enable = true;
-        kwallet.enable = true;
-      };
-      kwallet = {
-        enableAppArmor = true;
-        gnupg.enable = true;
-        kwallet.enable = true;
       };
     };
   };

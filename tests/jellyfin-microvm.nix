@@ -1,0 +1,174 @@
+{
+  blizzard,
+  jellyfinVm,
+  pkgs,
+}:
+let
+  inherit (pkgs) lib;
+  # Exercise explicit scenarios instead of requiring the deployed services
+  # to remain enabled or at a particular migration stage.
+  stagedSettings = {
+    vmServiceReady = false;
+    vpsIPv4 = null;
+    lanIPv4Subnet = null;
+    gpuPassthrough = {
+      enable = false;
+      pciFunctions = [ ];
+    };
+  };
+  stagedHost =
+    (blizzard.extendModules {
+      specialArgs.jellyfinSettings = stagedSettings;
+    }).config;
+  stagedGuest =
+    (jellyfinVm.extendModules {
+      specialArgs.jellyfinSettings = stagedSettings;
+    }).config;
+  readySettings = stagedSettings // {
+    vmServiceReady = true;
+    vpsIPv4 = "100.99.88.77";
+    lanIPv4Subnet = "192.168.2.0/24";
+  };
+  readyHostFor =
+    settings:
+    (blizzard.extendModules {
+      specialArgs.jellyfinSettings = settings;
+      modules = [
+        {
+          # Keep this fixture active even when deployment disables the VM.
+          sys.virtualisation.microvm.instances.jellyfin.enable = lib.mkVMOverride true;
+        }
+      ];
+    }).config;
+  readyHost = readyHostFor readySettings;
+  readyGuest =
+    (jellyfinVm.extendModules {
+      specialArgs.jellyfinSettings = readySettings;
+    }).config;
+  stagedWithVps =
+    (blizzard.extendModules {
+      specialArgs.jellyfinSettings = stagedSettings // {
+        vpsIPv4 = "100.99.88.77";
+        lanIPv4Subnet = "192.168.2.0/24";
+      };
+    }).config;
+  lanOnlyHost = readyHostFor (readySettings // { vpsIPv4 = null; });
+  privateHost = readyHostFor (
+    readySettings
+    // {
+      vpsIPv4 = null;
+      lanIPv4Subnet = null;
+    }
+  );
+  gpuSettings = readySettings // {
+    gpuPassthrough = {
+      enable = true;
+      pciFunctions = [
+        "0000:03:00.0"
+        "0000:03:00.1"
+      ];
+    };
+  };
+  gpuHost =
+    (blizzard.extendModules {
+      specialArgs.jellyfinSettings = gpuSettings;
+    }).config;
+  gpuGuest =
+    (jellyfinVm.extendModules {
+      specialArgs.jellyfinSettings = gpuSettings;
+    }).config;
+  reg = (import ../vms/vm-registry.nix { consts = import ../lib/constants.nix; }).jellyfin;
+  stateVolume = lib.findFirst (
+    volume: volume.mountPoint == "/var/lib/jellyfin"
+  ) null stagedGuest.microvm.volumes;
+  cacheVolume = lib.findFirst (
+    volume: volume.mountPoint == "/var/cache/jellyfin"
+  ) null stagedGuest.microvm.volumes;
+  mediaShare = lib.findFirst (
+    share: share.mountPoint == "/rpool/unenc/media/data/media"
+  ) null stagedGuest.microvm.shares;
+  importShare = lib.findFirst (
+    share: share.mountPoint == "/mnt/host-jellyfin"
+  ) null stagedGuest.microvm.shares;
+  hasImportSudo =
+    cfg:
+    lib.any (
+      rule:
+      lib.elem "admin" rule.users
+      && lib.any (
+        command:
+        command.command == "/run/current-system/sw/bin/jellyfin-import-state"
+        && lib.elem "NOPASSWD" command.options
+      ) rule.commands
+    ) cfg.security.sudo.extraRules;
+  hasImportProgram =
+    cfg: lib.any (package: package.name == "jellyfin-import-state") cfg.environment.systemPackages;
+  jellyfinForwards =
+    cfg:
+    lib.filter (
+      forward: lib.hasPrefix "10.100.0.72:" forward.destination
+    ) cfg.networking.nat.forwardPorts;
+  lanForward = {
+    proto = "tcp";
+    sourcePort = 11072;
+    destination = "10.100.0.72:8096";
+    loopbackIPs = [ ];
+  };
+in
+assert reg.ip == "10.100.0.72" && reg.cid == 128 && reg.port == 8096;
+assert jellyfinVm.pkgs.jellyfin.version == jellyfinVm.pkgs.jellyfin-web.version;
+assert readyGuest.microvm.mem == 16384 && readyGuest.microvm.vcpu == 8;
+assert stateVolume != null && stateVolume.size == 131072;
+assert cacheVolume != null && cacheVolume.size == 131072;
+assert mediaShare != null && mediaShare.proto == "virtiofs" && mediaShare.readOnly;
+assert importShare != null && importShare.readOnly;
+assert stagedHost.sys.services.jellyfin.enable;
+assert !stagedGuest.services.jellyfin.enable;
+assert stagedGuest.microvm.devices == [ ];
+assert hasImportSudo stagedGuest;
+assert hasImportProgram stagedGuest;
+assert !(hasImportSudo readyGuest);
+assert !(hasImportProgram readyGuest);
+assert !builtins.hasAttr "jellyfin-vps-relay" stagedHost.systemd.sockets;
+assert !builtins.hasAttr "jellyfin-vps-relay" stagedWithVps.systemd.sockets;
+assert !(lib.elem 8096 stagedWithVps.networking.firewall.interfaces.tailscale0.allowedTCPPorts);
+assert !(lib.hasInfix "-s 100.99.88.77/32" stagedWithVps.networking.firewall.extraCommands);
+assert jellyfinForwards stagedHost == [ ];
+assert jellyfinForwards stagedWithVps == [ ];
+assert jellyfinForwards privateHost == [ ];
+assert jellyfinForwards readyHost == [ lanForward ];
+assert jellyfinForwards lanOnlyHost == [ lanForward ];
+assert readyHost.networking.nat.externalInterface == "enp8s0";
+assert !builtins.hasAttr "jellyfin-vps-relay" lanOnlyHost.systemd.sockets;
+assert !(lib.elem 8096 lanOnlyHost.networking.firewall.interfaces.tailscale0.allowedTCPPorts);
+assert !readyHost.sys.services.jellyfin.enable && readyGuest.services.jellyfin.enable;
+assert !readyHost.services.jellyfin.enable;
+assert builtins.isString readyHost.system.build.toplevel.drvPath;
+assert builtins.isString readyGuest.system.build.toplevel.drvPath;
+assert !(lib.any (share: share.mountPoint == "/mnt/host-jellyfin") readyGuest.microvm.shares);
+assert readyHost.systemd.sockets.jellyfin-vps-relay.listenStreams == [ "100.85.254.99:8096" ];
+assert readyHost.systemd.sockets.jellyfin-vps-relay.socketConfig.FreeBind;
+assert !(readyHost.systemd.sockets.jellyfin-vps-relay.socketConfig ? BindToDevice);
+assert lib.hasSuffix "10.100.0.72:8096"
+  readyHost.systemd.services.jellyfin-vps-relay.serviceConfig.ExecStart;
+assert lib.hasInfix "-s 100.99.88.77/32" readyHost.networking.firewall.extraCommands;
+assert lib.elem "intel_iommu=on" gpuHost.boot.kernelParams;
+assert
+  map (device: { inherit (device) bus path; }) gpuGuest.microvm.devices == [
+    {
+      bus = "pci";
+      path = "0000:03:00.0";
+    }
+    {
+      bus = "pci";
+      path = "0000:03:00.1";
+    }
+  ];
+assert !(lib.elem 8096 readyHost.networking.firewall.allowedTCPPorts);
+assert lib.elem 8096 readyHost.networking.firewall.interfaces.tailscale0.allowedTCPPorts;
+# Switching Jellyfin's readiness must preserve the operator's Plex setting.
+assert stagedHost.sys.services.plex.enable == readyHost.sys.services.plex.enable;
+assert !(lib.elem 8096 readyGuest.networking.firewall.allowedTCPPorts);
+assert lib.hasInfix "-i microvm0 -s 10.100.0.1/32 -p tcp --dport 8096 -j nixos-fw-accept"
+  readyGuest.networking.firewall.extraCommands;
+pkgs.runCommand "jellyfin-microvm-contract" { } "touch $out"

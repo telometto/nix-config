@@ -1,4 +1,9 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   base = [ ];
 
@@ -12,7 +17,7 @@ let
 
   development = [ ];
 
-  extras = [ ];
+  extras = [ pkgs.dupe-krill ];
 in
 {
   options.hm.programs.packages = {

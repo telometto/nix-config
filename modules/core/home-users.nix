@@ -10,17 +10,23 @@ let
 
   # Transform VARS.users from role-keyed to username-keyed
   varsUsersByUsername = lib.listToAttrs (
-    map (userData: {
-      name = userData.user;
-      value = userData;
-    }) (builtins.attrValues (VARS.users or { }))
+    lib.mapAttrsToList (
+      roleName: userData:
+      let
+        username = userData.user or null;
+      in
+      {
+        name = if builtins.isString username && username != "" then username else roleName;
+        value = userData;
+      }
+    ) (VARS.users or { })
   );
 
   # Use VARS as the source of truth for which users to configure
   # Filter to only normal users that are enabled on this host
   systemUsers = lib.filterAttrs (
     username: userData:
-    (userData.isNormalUser or false) && (config.sys.users.${username}.enable or true)
+    (userData.isNormalUser or false) && (config.sys.users.${username}.enable or false)
   ) varsUsersByUsername;
 
   # Auto-enable desktop flavor based on system config
@@ -47,20 +53,41 @@ let
     let
       override = lib.attrByPath [ username ] cfg.users { };
 
+      # Resolve the active role name (desktop takes precedence over server)
+      roleName =
+        if config.sys.role.desktop.enable then
+          "desktop"
+        else if config.sys.role.server.enable then
+          "server"
+        else
+          null;
+
+      # Path to role-specific override file (applies to all users sharing this role)
+      roleOverridePath = if roleName != null then ../../home/overrides/role/${roleName}.nix else null;
+
       # Path to host-specific override file
       hostOverridePath = ../../home/overrides/host/${config.networking.hostName}.nix;
 
-      # Path to user-specific config file
-      userConfigPath = ../../home/overrides/user/${username}-${config.networking.hostName}.nix;
+      # Path to user-specific override file (applies on every host)
+      userOverridePath = ../../home/overrides/user/${username}.nix;
+
+      # Path to user-and-host-specific override file
+      userHostOverridePath = ../../home/overrides/user/${username}-${config.networking.hostName}.nix;
     in
     lib.unique (
       [ ../../hm-loader.nix ]
       ++ cfg.extraModules
       ++ lib.toList (cfg.template.imports or [ ])
+      # Import role-override if it exists (applies to all users on hosts with that role)
+      ++ (lib.optional (
+        roleOverridePath != null && builtins.pathExists roleOverridePath
+      ) roleOverridePath)
       # Import host-override if it exists (applies to all users on this host)
       ++ (lib.optional (builtins.pathExists hostOverridePath) hostOverridePath)
-      # Import user-specific config if it exists (applies only to this user on this host)
-      ++ (lib.optional (builtins.pathExists userConfigPath) userConfigPath)
+      # Import user-override if it exists (applies to this user on every host)
+      ++ (lib.optional (builtins.pathExists userOverridePath) userOverridePath)
+      # Import user-and-host override if it exists (applies only to this user on this host)
+      ++ (lib.optional (builtins.pathExists userHostOverridePath) userHostOverridePath)
       ++ lib.toList (override.extraModules or [ ])
       ++ lib.toList (override.extraConfig.imports or [ ])
     );

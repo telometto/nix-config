@@ -76,6 +76,10 @@
     };
 
     polkit.enable = lib.mkDefault true;
-    tpm2.enable = lib.mkDefault true;
+    tpm2 = {
+      enable = lib.mkDefault true;
+      abrmd.enable = lib.mkDefault true;
+      pkcs11.enable = lib.mkDefault true;
+    };
   };
 }

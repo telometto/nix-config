@@ -6,17 +6,6 @@
   ...
 }:
 {
-  hardware.ksm = {
-    enable = true;
-    sleep = 50;
-  };
-
-  boot.kernelParams = [
-    "zswap.enabled=1"
-    "zswap.compressor=zstd"
-    "zswap.max_pool_percent=20"
-  ];
-
   networking = {
     hostName = lib.mkForce "blizzard";
     hostId = lib.mkForce "86bc16e3";
@@ -32,8 +21,20 @@
     };
   };
 
+  # Services with SOPS credentials require sops-install-secrets.service.
+  sops.useSystemdActivation = true;
+
   sys = {
     role.server.enable = true;
+
+    security.sandflyTarget = {
+      enable = true;
+      tailscalePolicyReady = true;
+      listenAddress = consts.tailscale.hosts.blizzard.ipv4;
+      authorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHYUErzwbGg210rOrtMctyFGps8QvKoV0+5iDhGg0t2l sandfly-generated-key-20261005142842"
+      ];
+    };
 
     users.zeno.enable = true;
 
@@ -57,20 +58,36 @@
       ];
     };
 
-    overlays.fromInputs = {
-      # nixpkgs-unstable = [ "intel-graphics-compiler" ];
-      # nixpkgs-stable = [ "searxng" ];
+    ## Pull specific packages from different nixpkgs inputs
+    overlays = {
+      fromInputs = {
+        #   nixpkgs-small = [
+        #     "pipx"
+        #     "openrazer"
+        #   ];
+        nixpkgs-unstable = [
+          "tailscale"
+          "atuin"
+        ];
+      };
 
-      # TODO: Remove once microvm.nix adds format=raw to cloud-hypervisor disk args
-      # cloud-hypervisor v51.0 blocks sector-0 writes for autodetected raw images
-      # (security fix PR #7728), breaking all MicroVM volume mounts
-      nixpkgs-stable-latest = [ "beets" ];
+      ## Add custom overlays
+      custom = [
+        (final: prev: {
+          # openldap = prev.openldap.overrideAttrs {
+          #   doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
+          # };
+
+          pipx = prev.pipx.overrideAttrs {
+            # Issues on master
+            doInstallCheck = false;
+          };
+        })
+      ];
     };
 
     services = {
       k3s.enable = false;
-
-      maintenance.zram.enable = lib.mkForce false;
 
       resolved = {
         enableDNS = false;
@@ -95,6 +112,8 @@
     programs = {
       mtr.enable = true;
       gnupg.enable = false;
+      nix-ld.enable = true;
+      python-venv.enable = true;
     };
   };
 

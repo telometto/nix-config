@@ -3,25 +3,50 @@
 { lib, pkgs, ... }:
 {
   home.packages = [
-    pkgs.variety
-    pkgs.rustdesk-flutter
+    # RustDesk is installed system-wide by sys.services.rustdeskUnattended.
+    pkgs.polychromatic # Razer configuration tool
+    # pkgs.kdePackages.krdc
+    pkgs.meld
+    pkgs.rendercv
   ];
 
-  hm = {
-    programs = {
-      media = {
-        enable = true;
-
-        mpv.enable = true;
-        yt-dlp.enable = true;
-        jf-mpv.enable = lib.mkForce false;
+  systemd.user = {
+    services.kaizer-flatpak-update-user = {
+      Unit = {
+        Description = "Update user Flatpak applications and runtimes";
       };
 
-      gaming.lutris.enable = lib.mkForce false;
+      Service = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.flatpak}/bin/flatpak --user update -y --noninteractive";
+      };
+    };
 
-      terminal.zellij.exitShellOnExit = true;
+    timers.kaizer-flatpak-update-user = {
+      Unit = {
+        Description = "Daily update of user Flatpak applications and runtimes";
+      };
+
+      Timer = {
+        OnCalendar = "daily";
+        Persistent = true;
+        RandomizedDelaySec = "1h";
+      };
+
+      Install = {
+        WantedBy = [ "timers.target" ];
+      };
     };
   };
 
-  programs.ssh.enableDefaultConfig = false;
+  hm.programs = {
+    media = {
+      enable = true;
+
+      mpv.enable = true;
+      yt-dlp.enable = true;
+    };
+
+    gaming.lutris.enable = lib.mkForce false;
+  };
 }

@@ -18,6 +18,16 @@ in
       description = "HTTP listener port for Synapse (client + federation).";
     };
 
+    bindAddress = lib.mkOption {
+      type = lib.types.str;
+      default = "0.0.0.0";
+      description = ''
+        Address on which Synapse listens. Set this to 127.0.0.1 when a local
+        reverse proxy is the only intended network boundary.
+      '';
+      example = "127.0.0.1";
+    };
+
     serverName = lib.mkOption {
       type = lib.types.str;
       description = "The public-facing domain for Matrix user IDs (@user:domain).";
@@ -104,8 +114,52 @@ in
 
       masEndpoint = lib.mkOption {
         type = lib.types.str;
-        default = "http://localhost:8081/";
+        default = "http://127.0.0.1:8081/";
         description = "Internal MAS endpoint URL for Synapse ↔ MAS communication.";
+      };
+    };
+
+    autoCompressor = {
+      enable = lib.mkEnableOption "periodic Synapse state compressor (reclaims DB space)";
+
+      interval = lib.mkOption {
+        type = lib.types.str;
+        default = "weekly";
+        description = "systemd calendar expression for how often to run the compressor.";
+        example = "daily";
+      };
+
+      chunksToCompress = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 500;
+        description = "Number of state groups to work on per run.";
+      };
+
+      chunkSize = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 500;
+        description = "Number of state groups per compression chunk.";
+      };
+    };
+
+    vacuumTimer = {
+      enable = lib.mkEnableOption "periodic VACUUM ANALYZE on the Synapse DB";
+
+      interval = lib.mkOption {
+        type = lib.types.str;
+        default = "monthly";
+        description = "systemd calendar expression for how often to run VACUUM ANALYZE.";
+        example = "weekly";
+      };
+    };
+
+    dbSizeLogger = {
+      enable = lib.mkEnableOption "periodic DB size logging to the journal";
+
+      interval = lib.mkOption {
+        type = lib.types.str;
+        default = "weekly";
+        description = "systemd calendar expression for how often to log DB size.";
       };
     };
 
@@ -129,6 +183,14 @@ in
                  LC_COLLATE = "C"
                  LC_CTYPE = "C";
         '';
+
+        settings = {
+          autovacuum_vacuum_scale_factor = 0.05;
+          autovacuum_analyze_scale_factor = 0.02;
+          autovacuum_naptime = "30s";
+          autovacuum_max_workers = 4;
+          autovacuum_vacuum_cost_limit = 2000;
+        };
       };
 
       matrix-synapse = {
@@ -154,7 +216,7 @@ in
             listeners = [
               {
                 inherit (cfg) port;
-                bind_addresses = [ "0.0.0.0" ];
+                bind_addresses = [ cfg.bindAddress ];
                 type = "http";
                 tls = false;
                 x_forwarded = true;
@@ -237,6 +299,128 @@ in
       allowedTCPPorts = [ cfg.port ];
     };
 
+    systemd = {
+      timers = {
+        synapse-auto-compressor = lib.mkIf cfg.autoCompressor.enable {
+          description = "Run Synapse state compressor periodically";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = cfg.autoCompressor.interval;
+            Persistent = true;
+            RandomizedDelaySec = "4h";
+          };
+        };
+
+        matrix-synapse-vacuum = lib.mkIf (cfg.vacuumTimer.enable && cfg.database.createLocally) {
+          description = "Run VACUUM ANALYZE on the Synapse DB periodically";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = cfg.vacuumTimer.interval;
+            Persistent = true;
+            RandomizedDelaySec = "1h";
+          };
+        };
+
+        matrix-synapse-db-size = lib.mkIf (cfg.dbSizeLogger.enable && cfg.database.createLocally) {
+          description = "Log Synapse DB size to the journal periodically";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = cfg.dbSizeLogger.interval;
+            Persistent = true;
+            RandomizedDelaySec = "1h";
+          };
+        };
+      };
+
+      services = {
+        synapse-auto-compressor = lib.mkIf cfg.autoCompressor.enable {
+          description = "Compress Synapse room state to reclaim database space";
+          after = [
+            "matrix-synapse.service"
+            "postgresql.service"
+          ];
+          requires = [ "postgresql.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            User = "matrix-synapse";
+          };
+          script = ''
+            ${pkgs.rust-synapse-compress-state}/bin/synapse_auto_compressor \
+              -p ${lib.escapeShellArg "host=/run/postgresql user=matrix-synapse dbname=matrix-synapse"} \
+              -c ${toString cfg.autoCompressor.chunksToCompress} \
+              -n ${toString cfg.autoCompressor.chunkSize}
+          '';
+        };
+
+        matrix-synapse-vacuum = lib.mkIf (cfg.vacuumTimer.enable && cfg.database.createLocally) {
+          description = "VACUUM ANALYZE the Synapse PostgreSQL database";
+          after = [
+            "matrix-synapse.service"
+            "postgresql.service"
+          ];
+          requires = [ "postgresql.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            User = "matrix-synapse";
+          };
+          script = ''
+            ${config.services.postgresql.package}/bin/psql \
+              --no-psqlrc \
+              --set=ON_ERROR_STOP=1 \
+              -h /run/postgresql \
+              -d matrix-synapse \
+              -c "VACUUM (ANALYZE);"
+          '';
+        };
+
+        matrix-synapse-db-size = lib.mkIf (cfg.dbSizeLogger.enable && cfg.database.createLocally) {
+          description = "Log Synapse PostgreSQL database size to the journal";
+          after = [ "postgresql.service" ];
+          requires = [ "postgresql.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            User = "matrix-synapse";
+          };
+          script = ''
+            ${config.services.postgresql.package}/bin/psql \
+              --no-psqlrc \
+              --set=ON_ERROR_STOP=1 \
+              -h /run/postgresql \
+              -d matrix-synapse \
+              -c "SELECT pg_size_pretty(pg_database_size('matrix-synapse')) AS db_size;" \
+              -c "SELECT relname, pg_size_pretty(pg_total_relation_size(oid)) AS total_size FROM pg_class WHERE relkind = 'r' ORDER BY pg_total_relation_size(oid) DESC LIMIT 10;"
+          '';
+        };
+
+        matrix-synapse-pg-tuning = lib.mkIf cfg.database.createLocally {
+          description = "Apply per-table autovacuum settings for Synapse hot tables";
+          wantedBy = [ "multi-user.target" ];
+          after = [
+            "matrix-synapse.service"
+            "postgresql.service"
+          ];
+          requires = [ "postgresql.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            User = "matrix-synapse";
+          };
+          script = ''
+            ${config.services.postgresql.package}/bin/psql \
+              --no-psqlrc \
+              --set=ON_ERROR_STOP=1 \
+              -h /run/postgresql \
+              -d matrix-synapse \
+              -c "ALTER TABLE state_groups_state SET (autovacuum_vacuum_scale_factor = 0.02);" \
+              -c "ALTER TABLE event_json SET (autovacuum_vacuum_scale_factor = 0.05);" \
+              -c "ALTER TABLE event_edges SET (autovacuum_vacuum_scale_factor = 0.05);" \
+              -c "ALTER TABLE event_auth SET (autovacuum_vacuum_scale_factor = 0.05);" \
+              -c "ALTER TABLE events SET (autovacuum_vacuum_scale_factor = 0.05);"
+          '';
+        };
+      };
+    };
+
     assertions = [
       {
         assertion = !cfg.reverseProxy.enable || cfg.reverseProxy.domain != null;
@@ -249,6 +433,18 @@ in
       {
         assertion = !cfg.authDelegation.enable || cfg.extraConfigFiles != [ ];
         message = "sys.services.matrix-synapse.extraConfigFiles must contain at least one secrets file when authDelegation is enabled";
+      }
+      {
+        assertion = !cfg.autoCompressor.enable || cfg.database.createLocally;
+        message = "sys.services.matrix-synapse.autoCompressor requires database.createLocally = true (local PostgreSQL)";
+      }
+      {
+        assertion = !cfg.vacuumTimer.enable || cfg.database.createLocally;
+        message = "sys.services.matrix-synapse.vacuumTimer requires database.createLocally = true";
+      }
+      {
+        assertion = !cfg.dbSizeLogger.enable || cfg.database.createLocally;
+        message = "sys.services.matrix-synapse.dbSizeLogger requires database.createLocally = true";
       }
       (traefikLib.mkCfTunnelAssertion {
         name = "matrix-synapse";

@@ -19,8 +19,8 @@ rec {
   community = {
     node-exporter-full = fetchGrafanaDashboard {
       gnetId = 1860;
-      revision = 42;
-      hash = "0phjy96kq4kymzggm0r51y8i2s2z2x3p69bd5nx4n10r33mjgn54";
+      revision = 46;
+      hash = "sha256-5Y3cXcU11MkB+U2pZIvD49Wue2946Y4YW86LKJlhzqM=";
     };
 
     kubernetes-cluster = fetchGrafanaDashboard {
@@ -31,11 +31,14 @@ rec {
   };
 
   custom = {
+    arr-services = ../dashboards/shared/arr-services.json;
+    cloudflare-overview = ../dashboards/host/blizzard/cloudflare-overview.json;
     zfs-overview = ../dashboards/host/blizzard/zfs-overview.json;
     power-consumption = ../dashboards/shared/power-consumption.json;
     power-consumption-historical = ../dashboards/host/blizzard/power-consumption-historical.json;
     ups-monitoring = ../dashboards/host/blizzard/ups-monitoring.json;
     electricity-prices = ../dashboards/shared/electricity-prices.json;
+    service-availability = ../dashboards/shared/service-availability.json;
   };
 
   all = community // custom;

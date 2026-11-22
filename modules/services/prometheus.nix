@@ -1,6 +1,18 @@
 { lib, config, ... }:
 let
   cfg = config.sys.services.prometheus;
+
+  addSourceHostRelabel =
+    scrapeConfig:
+    scrapeConfig
+    // {
+      relabel_configs = (scrapeConfig.relabel_configs or [ ]) ++ [
+        {
+          target_label = "source_host";
+          replacement = config.networking.hostName;
+        }
+      ];
+    };
 in
 {
   options.sys.services.prometheus = {
@@ -100,7 +112,7 @@ in
         scrape_interval = cfg.scrapeInterval;
       };
 
-      scrapeConfigs =
+      scrapeConfigs = map addSourceHostRelabel (
         lib.optionals (config.sys.services.prometheusExporters.node.enable or false) [
           {
             job_name = "node";
@@ -125,7 +137,8 @@ in
             ];
           }
         ]
-        ++ cfg.extraScrapeConfigs;
+        ++ cfg.extraScrapeConfigs
+      );
     };
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];

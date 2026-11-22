@@ -3,27 +3,22 @@
   config,
   pkgs,
   inputs,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).firefox;
-  vpnRoutes = [
-    {
-      Gateway = "10.100.0.1";
-      Destination = "192.168.0.0/16";
-    }
-    {
-      Gateway = "10.100.0.1";
-      Destination = "10.100.0.0/24";
-    }
-  ];
+  reg = (import ./vm-registry.nix { inherit consts; }).firefox;
+  transferDir = "/home/admin/Downloads";
+  mediaStorage = import ./media-storage.nix;
+  networkDefaults = import ./microvm-network-defaults.nix;
 in
 {
   imports = [
     ./base.nix
     ../modules/services/firefox.nix
     ../modules/virtualisation/virtualisation.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
+    inputs.quadlet-nix.nixosModules.quadlet
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -38,38 +33,35 @@ in
             image = "containers-storage.img";
             size = 4096;
           }
+          {
+            mountPoint = transferDir;
+            image = "firefox-downloads.img";
+            size = 524288;
+          }
         ];
-        extraRoutes = vpnRoutes;
+        extraRoutes = networkDefaults.vpnReturnRoutes;
       }
     ))
   ];
+
+  # security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   # SOPS configuration for this MicroVM
   # After first boot, derive the VM's age public key without copying the private key:
   #   ssh admin@10.100.0.52 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then add the resulting age public key to your .sops.yaml and re-encrypt secrets
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "firefox/user" = { };
       "firefox/password" = { };
     };
   };
 
-  sys.secrets = {
-    firefoxUser = config.sops.secrets."firefox/user".path;
-    firefoxPassword = config.sops.secrets."firefox/password".path;
-  };
-
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
   networking.firewall.allowedTCPPorts = [
     reg.port
-    11053
+    consts.ports.secondary.firefoxHttps
   ];
 
   systemd = {
@@ -79,15 +71,26 @@ in
     };
 
     tmpfiles.rules = [
-      "d /data 0750 root root -"
+      "d ${mediaStorage.guestPath} 0750 root root -"
       "d /var/lib/containers/tmp 0750 root root -"
     ];
 
     # Use persistent storage for image pull temp files instead of tmpfs
-    services.podman-firefox.environment.TMPDIR = "/var/lib/containers/tmp";
+    services.firefox.environment.TMPDIR = "/var/lib/containers/tmp";
+  };
+
+  users.groups.firefox-downloads.gid = 1000;
+  users.users.admin = {
+    uid = 1000;
+    extraGroups = lib.mkAfter [ "firefox-downloads" ];
   };
 
   sys = {
+    secrets = {
+      firefoxUser = config.sops.secrets."firefox/user".path;
+      firefoxPassword = config.sops.secrets."firefox/password".path;
+    };
+
     virtualisation.enable = true;
 
     services = {
@@ -96,8 +99,8 @@ in
 
         mounts.media = {
           server = "10.100.0.1";
-          export = "/rpool/unenc/media/data";
-          target = "/data";
+          export = mediaStorage.hostPath;
+          target = mediaStorage.guestPath;
         };
       };
 
@@ -106,11 +109,23 @@ in
 
         dataDir = "/var/lib/firefox";
         httpPort = reg.port;
-        httpsPort = 11053;
+        httpsPort = consts.ports.secondary.firefoxHttps;
         networkMode = "bridge";
         timeZone = "Europe/Oslo";
         title = "Firefox";
         openFirewall = false;
+
+        fileTransfer = {
+          enable = true;
+          hostPath = transferDir;
+          containerPath = "/downloads";
+          hostUid = 1000;
+          sharedGid = 1000;
+          # LinuxServer's existing abc user owns the Firefox profile at UID
+          # 911. Only its group identity is shared with the VM Downloads
+          # directory; do not make the whole container run as admin (1000).
+          containerUid = 911;
+        };
 
         customUserFile = config.sys.secrets.firefoxUser;
         passwordFile = config.sys.secrets.firefoxPassword;

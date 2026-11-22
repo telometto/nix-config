@@ -1,13 +1,13 @@
 {
   lib,
   config,
-  inputs,
   pkgs,
   VARS,
+  consts,
   ...
 }:
 let
-  registry = import ./vm-registry.nix;
+  registry = import ./vm-registry.nix { inherit consts; };
   reg = registry."firefly-importer";
   fireflyReg = registry.firefly;
   importerDomain = "finimport.${VARS.domains.public}";
@@ -17,7 +17,7 @@ in
 {
   imports = [
     ./base.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -33,11 +33,6 @@ in
   ];
 
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "firefly/eb_app_id" = {
         mode = "0400";
@@ -46,6 +41,12 @@ in
       };
 
       "firefly/eb_key" = {
+        mode = "0400";
+        owner = "firefly-iii-data-importer";
+        group = "nginx";
+      };
+
+      "firefly/importer_token" = {
         mode = "0400";
         owner = "firefly-iii-data-importer";
         group = "nginx";
@@ -78,28 +79,31 @@ in
     requires = [ "sops-install-secrets.service" ];
   };
 
-  services.firefly-iii-data-importer = {
-    enable = true;
-    enableNginx = true;
-    virtualHost = importerDomain;
-
-    settings = {
-      FIREFLY_III_URL = fireflyInternalUrl;
-      FIREFLY_III_CLIENT_ID = "8";
-      VANITY_URL = fireflyPublicUrl;
-      ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly/eb_app_id".path;
-      ENABLE_BANKING_PRIVATE_KEY_FILE = config.sops.secrets."firefly/eb_key".path;
-      TRUSTED_PROXIES = "**";
-    };
-  };
-
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   # EnableBanking production callbacks need HTTPS, so this VM is ready for a dedicated ingress URL.
-  services.nginx.virtualHosts.${importerDomain}.listen = lib.mkForce [
-    {
-      addr = "0.0.0.0";
-      inherit (reg) port;
-    }
-  ];
+  services = {
+    firefly-iii-data-importer = {
+      enable = true;
+      enableNginx = true;
+      virtualHost = importerDomain;
+
+      settings = {
+        FIREFLY_III_URL = fireflyInternalUrl;
+        FIREFLY_III_ACCESS_TOKEN_FILE = config.sops.secrets."firefly/importer_token".path;
+        FIREFLY_III_CLIENT_ID = "8";
+        VANITY_URL = fireflyPublicUrl;
+        ENABLE_BANKING_APP_ID_FILE = config.sops.secrets."firefly/eb_app_id".path;
+        ENABLE_BANKING_PRIVATE_KEY_FILE = config.sops.secrets."firefly/eb_key".path;
+        TRUSTED_PROXIES = "**";
+      };
+    };
+
+    nginx.virtualHosts.${importerDomain}.listen = lib.mkForce [
+      {
+        addr = "0.0.0.0";
+        inherit (reg) port;
+      }
+    ];
+  };
 }

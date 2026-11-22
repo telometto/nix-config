@@ -1,163 +1,76 @@
-{
-  lib,
-  config,
-  pkgs,
-  ...
-}:
+{ lib, config, ... }:
 let
   cfg = config.sys.services.firefox;
-  isHost = cfg.networkMode == "host";
-
-  hasCredentials = cfg.customUserFile != null && cfg.passwordFile != null;
-  credentialsEnvFile = "/run/firefox/credentials.env";
-
-  environment = {
-    TZ = cfg.timeZone;
-    TITLE = cfg.title;
-  }
-  // lib.optionalAttrs (cfg.driNode != null) { DRINODE = cfg.driNode; }
-  // lib.optionalAttrs isHost {
-    CUSTOM_PORT = toString cfg.httpPort;
-    CUSTOM_HTTPS_PORT = toString cfg.httpsPort;
-  };
-
-  ports = lib.optionals (!isHost) [
-    "${toString cfg.httpPort}:3000"
-    "${toString cfg.httpsPort}:3001"
-  ];
-
-  extraOptions = [
-    "--shm-size=4g"
-  ]
-  ++ lib.optional cfg.enableDri "--device=/dev/dri"
-  ++ lib.optional isHost "--network=host";
-
-  preStartScript = pkgs.writeShellScript "firefox-credentials" ''
-    set -euo pipefail
-    umask 0077
-    : > ${credentialsEnvFile}
-    printf 'CUSTOM_USER=%s\n' "$(cat "${cfg.customUserFile}")" >> ${credentialsEnvFile}
-    printf 'PASSWORD=%s\n' "$(cat "${cfg.passwordFile}")" >> ${credentialsEnvFile}
-    chmod 0400 ${credentialsEnvFile}
-  '';
 in
 {
+  imports = [
+    (import ../../lib/linuxserver-browser.nix {
+      name = "firefox";
+      title = "Firefox";
+      image = "linuxserver/firefox:latest";
+    })
+  ];
+
   options.sys.services.firefox = {
-    enable = lib.mkEnableOption "Firefox";
+    fileTransfer = {
+      enable = lib.mkEnableOption "Firefox file transfers";
 
-    image = lib.mkOption {
-      type = lib.types.str;
-      default = "linuxserver/firefox:latest";
-      description = "Container image to run.";
-    };
+      hostPath = lib.mkOption {
+        type = lib.types.str;
+        default = "/home/admin/Downloads";
+        description = "Writable VM path to expose to the browser file manager.";
+      };
 
-    dataDir = lib.mkOption {
-      type = lib.types.str;
-      default = "/var/lib/firefox";
-      description = "Container /config volume path on the VM.";
-    };
+      containerPath = lib.mkOption {
+        type = lib.types.str;
+        default = "/downloads";
+        description = "Path inside the Firefox container used for uploads and downloads.";
+      };
 
-    httpPort = lib.mkOption {
-      type = lib.types.port;
-      default = 3000;
-      description = "HTTP port exposed by the container.";
-    };
+      hostUid = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 1000;
+        description = "Numeric owner UID for the VM-side file-transfer directory.";
+      };
 
-    httpsPort = lib.mkOption {
-      type = lib.types.port;
-      default = 3001;
-      description = "HTTPS port exposed by the container.";
-    };
+      sharedGid = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 1000;
+        description = "Numeric group GID shared by the VM-side directory and container.";
+      };
 
-    # Host mode is recommended for single-purpose MicroVMs:
-    # - Bridge mode fails because systemd-networkd manages Podman veth
-    #   interfaces (microvm-nix#203); fixable via Unmanaged = true.
-    # - Host mode is safe here: VM-to-host isolation is enforced by the
-    #   hypervisor, not by container networking. Both modes are equivalent
-    #   for preventing escape to the physical network.
-    networkMode = lib.mkOption {
-      type = lib.types.enum [
-        "bridge"
-        "host"
-      ];
-      default = "host";
-      description = "Container network mode.";
-    };
-
-    timeZone = lib.mkOption {
-      type = lib.types.str;
-      default = "UTC";
-    };
-
-    title = lib.mkOption {
-      type = lib.types.str;
-      default = "Firefox";
-    };
-
-    customUserFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Path to a file containing the basic-auth username for the web UI.";
-    };
-
-    passwordFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Path to a file containing the basic-auth password for the web UI.";
-    };
-
-    driNode = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Optional DRM render node path inside the container.";
-    };
-
-    enableDri = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Expose /dev/dri to the container.";
-    };
-
-    openFirewall = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
+      containerUid = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 911;
+        description = "PUID for the LinuxServer container's existing /config profile identity.";
+      };
     };
   };
 
   config = lib.mkIf cfg.enable {
-    systemd.tmpfiles.rules = [
-      "d ${cfg.dataDir} 0750 root root -"
-    ];
+    systemd.tmpfiles.rules = lib.optional cfg.fileTransfer.enable "d ${cfg.fileTransfer.hostPath} 2770 ${toString cfg.fileTransfer.hostUid} ${toString cfg.fileTransfer.sharedGid} -";
 
-    systemd.services.podman-firefox = lib.mkIf hasCredentials {
-      after = [ "sops-install-secrets.service" ];
-      requires = [ "sops-install-secrets.service" ];
-      serviceConfig = {
-        RuntimeDirectory = "firefox";
-        RuntimeDirectoryMode = "0700";
-        ExecStartPre = [ "+${preStartScript}" ];
+    virtualisation.quadlet.containers.firefox.containerConfig = {
+      environments = lib.optionalAttrs cfg.fileTransfer.enable {
+        # The existing profile stays at its own UID; only the transfer group is shared.
+        PUID = toString cfg.fileTransfer.containerUid;
+        PGID = toString cfg.fileTransfer.sharedGid;
+        FILE_MANAGER_PATH = cfg.fileTransfer.containerPath;
+        SELKIES_FILE_TRANSFERS = "upload,download";
       };
-    };
-
-    virtualisation.oci-containers.containers.firefox = {
-      inherit (cfg) image;
-      autoStart = true;
-      inherit environment ports extraOptions;
-      volumes = [ "${cfg.dataDir}:/config" ];
-      environmentFiles = lib.optionals hasCredentials [ credentialsEnvFile ];
-    };
-
-    networking.firewall = lib.mkIf cfg.openFirewall {
-      allowedTCPPorts = [
-        cfg.httpPort
-        cfg.httpsPort
-      ];
+      volumes = lib.mkAfter (
+        lib.optional cfg.fileTransfer.enable "${cfg.fileTransfer.hostPath}:${cfg.fileTransfer.containerPath}"
+      );
     };
 
     assertions = [
       {
-        assertion = (cfg.customUserFile == null) == (cfg.passwordFile == null);
-        message = "sys.services.firefox: customUserFile and passwordFile must both be set or both be null";
+        assertion = !cfg.fileTransfer.enable || lib.hasPrefix "/" cfg.fileTransfer.hostPath;
+        message = "sys.services.firefox.fileTransfer.hostPath must be an absolute path";
+      }
+      {
+        assertion = !cfg.fileTransfer.enable || lib.hasPrefix "/" cfg.fileTransfer.containerPath;
+        message = "sys.services.firefox.fileTransfer.containerPath must be an absolute path";
       }
     ];
   };

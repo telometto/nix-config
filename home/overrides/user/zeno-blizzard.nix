@@ -1,11 +1,6 @@
-# User-specific configuration for admin user on blizzard host
-# This file is automatically imported only for the admin user on blizzard
-{
-  lib,
-  config,
-  pkgs,
-  ...
-}:
+# User-specific configuration for zeno on blizzard host
+# This file is automatically imported only for zeno on blizzard
+{ config, pkgs, ... }:
 {
   home.packages = with pkgs; [
     sqlite
@@ -14,70 +9,30 @@
 
   hm = {
     programs = {
+      development.git.signingKey = "${config.home.homeDirectory}/.ssh/zeno-blizzard.pub";
+
       fastfetch = {
         enable = true;
+
+        package = pkgs.fastfetch.override { zfsSupport = true; };
+
         extraModules = [
           {
-            "type" = "disk";
-            "folders" = "/";
-            "key" = "root";
-          }
-          {
-            "type" = "zpool";
-            "folders" = "/flash";
-            "key" = "flash";
-          }
-          {
-            "type" = "zpool";
-            "folders" = "/rpool";
-            "key" = "rpool";
-          }
-          {
-            "type" = "zpool";
-            "folders" = "/tank";
-            "key" = "tank";
+            type = "zpool";
+            key = "Disk (/{name})";
+            format = "{size-used} / {size-total} ({allocated-percentage} allocated, {frag-percentage} frag) - {state}";
           }
         ];
       };
 
       beets = {
         enable = true;
-        # Uses default plugins: fetchart, embedart, convert, scrub, replaygain, lastgenre, chroma, inline
-        # To customize: plugins = [ "fetchart" "embedart" "lastfm" "lyrics" ];
+        musicDirectory = "/rpool/unenc/media/data/music";
+        guidedImport.enable = true;
         webInterface = {
           enable = true;
           host = "0.0.0.0";
           port = 8337;
-        };
-      };
-    };
-
-    files = {
-      enable = true;
-
-      sshConfig = {
-        enable = true;
-
-        hosts = {
-          "*" = {
-            ForwardAgent = "yes";
-            AddKeysToAgent = "yes";
-            Compression = "yes";
-          };
-
-          "github.com" = {
-            Hostname = "ssh.github.com";
-            Port = "443";
-            User = "git";
-            IdentityFile = "${config.home.homeDirectory}/.ssh/zeno-blizzard";
-          };
-
-          "ssh-git.*" = {
-            User = "gitea";
-            IdentityFile = "${config.home.homeDirectory}/.ssh/github-key";
-            IdentitiesOnly = "yes";
-            ProxyCommand = "${pkgs.cloudflared.out}/bin/cloudflared access ssh --hostname %h";
-          };
         };
       };
     };
@@ -97,6 +52,14 @@
   };
 
   programs = {
+    ssh.settings."github.com" = {
+      HostName = "ssh.github.com";
+      Port = 443;
+      User = "git";
+      IdentitiesOnly = true;
+      IdentityFile = "${config.home.homeDirectory}/.ssh/zeno-blizzard";
+    };
+
     zsh.shellAliases = {
       # Kubernetes
       k = "kubectl";

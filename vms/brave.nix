@@ -3,27 +3,21 @@
   config,
   pkgs,
   inputs,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).brave;
-  vpnRoutes = [
-    {
-      Gateway = "10.100.0.1";
-      Destination = "192.168.0.0/16";
-    }
-    {
-      Gateway = "10.100.0.1";
-      Destination = "10.100.0.0/24";
-    }
-  ];
+  reg = (import ./vm-registry.nix { inherit consts; }).brave;
+  mediaStorage = import ./media-storage.nix;
+  networkDefaults = import ./microvm-network-defaults.nix;
 in
 {
   imports = [
     ./base.nix
     ../modules/services/brave.nix
     ../modules/virtualisation/virtualisation.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
+    inputs.quadlet-nix.nixosModules.quadlet
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -39,7 +33,7 @@ in
             size = 4096;
           }
         ];
-        extraRoutes = vpnRoutes;
+        extraRoutes = networkDefaults.vpnReturnRoutes;
       }
     ))
   ];
@@ -49,27 +43,17 @@ in
   #   ssh admin@10.100.0.54 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then add the resulting age public key to your .sops.yaml and re-encrypt secrets
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "brave/user" = { };
       "brave/password" = { };
     };
   };
 
-  sys.secrets = {
-    braveUser = config.sops.secrets."brave/user".path;
-    bravePassword = config.sops.secrets."brave/password".path;
-  };
-
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
   networking.firewall.allowedTCPPorts = [
     reg.port
-    11055
+    consts.ports.secondary.braveHttps
   ];
 
   systemd = {
@@ -79,14 +63,19 @@ in
     };
 
     tmpfiles.rules = [
-      "d /data 0750 root root -"
+      "d ${mediaStorage.guestPath} 0750 root root -"
       "d /var/lib/containers/tmp 0750 root root -"
     ];
 
-    services.podman-brave.environment.TMPDIR = "/var/lib/containers/tmp";
+    services.brave.environment.TMPDIR = "/var/lib/containers/tmp";
   };
 
   sys = {
+    secrets = {
+      braveUser = config.sops.secrets."brave/user".path;
+      bravePassword = config.sops.secrets."brave/password".path;
+    };
+
     virtualisation.enable = true;
 
     services = {
@@ -95,8 +84,8 @@ in
 
         mounts.media = {
           server = "10.100.0.1";
-          export = "/rpool/unenc/media/data";
-          target = "/data";
+          export = mediaStorage.hostPath;
+          target = mediaStorage.guestPath;
         };
       };
 
@@ -105,7 +94,7 @@ in
 
         dataDir = "/var/lib/brave";
         httpPort = reg.port;
-        httpsPort = 11055;
+        httpsPort = consts.ports.secondary.braveHttps;
         networkMode = "bridge";
         timeZone = "Europe/Oslo";
         title = "Brave";

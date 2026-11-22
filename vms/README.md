@@ -1,194 +1,569 @@
 ## MicroVM Configurations
 
-Isolated service VMs using [microvm.nix](https://github.com/astro/microvm.nix)
-for lightweight virtualization.
-
-### Available VMs
-
-| VM | Module | Purpose |
-|----|--------|---------|
-| adguard-vm | [adguard.nix](adguard.nix) | AdGuard Home DNS filtering |
-| actual-vm | [actual.nix](actual.nix) | Actual Budget management |
-| searx-vm | [searx.nix](searx.nix) | SearXNG metasearch engine |
-| overseerr-vm | [overseerr.nix](overseerr.nix) | Media request management |
-| ombi-vm | [ombi.nix](ombi.nix) | Media requests |
-| tautulli-vm | [tautulli.nix](tautulli.nix) | Plex monitoring |
-| gitea-vm | [gitea.nix](gitea.nix) | Git hosting |
-| sonarr-vm | [sonarr.nix](sonarr.nix) | TV show management |
-| radarr-vm | [radarr.nix](radarr.nix) | Movie management |
-| prowlarr-vm | [prowlarr.nix](prowlarr.nix) | Indexer management |
-| bazarr-vm | [bazarr.nix](bazarr.nix) | Subtitle management |
-| readarr-vm | [readarr.nix](readarr.nix) | Book management |
-| lidarr-vm | [lidarr.nix](lidarr.nix) | Music management |
-| qbittorrent-vm | [qbittorrent.nix](qbittorrent.nix) | BitTorrent client |
-| sabnzbd-vm | [sabnzbd.nix](sabnzbd.nix) | Usenet downloader |
-| firefox-vm | [firefox.nix](firefox.nix) | Isolated Firefox browser |
-| brave-vm | [brave.nix](brave.nix) | Isolated Brave browser |
-| wireguard-vm | [wireguard.nix](wireguard.nix) | WireGuard VPN |
-| matrix-synapse-vm | [matrix-synapse.nix](matrix-synapse.nix) | Matrix Synapse homeserver |
-| paperless-vm | [paperless.nix](paperless.nix) | Paperless-ngx document management |
-| firefly-vm | [firefly.nix](firefly.nix) | Firefly III personal finance |
-| firefly-importer-vm | [firefly-importer.nix](firefly-importer.nix) | Firefly III data importer for bank sync |
-
-The Firefly importer VM is configured to talk to Firefly III over the internal
-MicroVM network while keeping user-facing redirects on the public
-`finance.<domain>` URL. This avoids reverse-proxy and Cloudflare Access issues
-during the OAuth token exchange.
-
-### Architecture
-
-MicroVMs provide isolated environments for services that benefit from:
-
-- Minimal attack surface
-- Resource isolation
-- Independent updates
-- Security boundaries
-
-```
-┌─────────────────────────────────────────┐
-│  Host (blizzard)                        │
-│  └── microvm.nixosModules.host          │
-└─────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────┐
-│  vms/base.nix (hardened base)           │
-│  ├── Hardened kernel                    │
-│  ├── Restrictive sysctl                 │
-│  └── Minimal services                   │
-└─────────────────────────────────────────┘
-         │
-         ├── actual-vm
-         ├── adguard-vm
-         ├── firefox-vm
-         ├── firefly-vm
-         ├── firefly-importer-vm
-         ├── gitea-vm
-         ├── matrix-synapse-vm
-         ├── overseerr-vm, ombi-vm, tautulli-vm
-         ├── paperless-vm
-         ├── qbittorrent-vm, sabnzbd-vm
-         ├── searx-vm
-         ├── sonarr-vm, radarr-vm, prowlarr-vm, bazarr-vm, ...
-         └── wireguard-vm
-```
-
-### Base Configuration
-
-[base.nix](base.nix) provides a hardened foundation:
-
-- **Hardened kernel** (`linuxPackages_hardened`)
-- **Security sysctl settings** — IP spoofing prevention, disabled ICMP redirects
-- **Blacklisted modules** — Bluetooth, webcam drivers
-- **Restricted SSH** — No root login, key-only authentication
-- **Disabled core dumps** — Prevent sensitive data leaks
-- **Journal limits** — Constrained log storage
-
-### Key Differences from Hosts
-
-MicroVMs do **not** use `system-loader.nix` to avoid importing host-only
-modules. Their outputs are centralized in [vms/flake-microvms.nix](flake-microvms.nix)
-and merged into `nixosConfigurations` from [flake.nix](../flake.nix):
-
-```nix
-# In flake.nix
-microvmConfigurations = import ./vms/flake-microvms.nix { inherit inputs system VARS; };
-
-nixosConfigurations = {
-  # hosts...
-} // microvmConfigurations;
-```
-
-### Creating a New VM
-
-1. Create `vms/<service>.nix`:
-
-```nix
-{ lib, pkgs, ... }:
-{
-  imports = [ ./base.nix ];
-
-  microvm = {
-    hypervisor = "qemu";
-    vcpu = 2;
-    mem = 1024;
-
-    interfaces = [{
-      type = "tap";
-      id = "vm-<service>";
-      mac = "02:00:00:00:00:01";
-    }];
-
-    shares = [{
-      source = "/var/lib/<service>";
-      mountPoint = "/data";
-      tag = "<service>-data";
-      proto = "virtiofs";
-    }];
-  };
-
-  # Service configuration
-  services.<service>.enable = true;
-}
-```
-
-2. Register in [flake.nix](../flake.nix):
-
-```nix
-<service>-vm = nixpkgs.lib.nixosSystem {
-  inherit system;
-  modules = [
-    inputs.microvm.nixosModules.microvm
-    ./vms/<service>.nix
-  ];
-  specialArgs = { inherit inputs system VARS; };
-};
-```
-
-### Running VMs
-
-On the host with microvm.nixosModules.host enabled:
-
-```bash
-# Start a VM
-microvm -c <vm-name>
-
-# List running VMs
-microvm -l
-
-# Stop a VM
-microvm -k <vm-name>
-```
-
-### Host-level enablement and exposure
-
-Hosts enable MicroVMs through `sys.virtualisation.microvm.instances.<name>`.
-Each instance entry controls whether the VM is present on that host and which
-host-side exposure paths are active.
-
-- `enable` opts a VM into the host
-- `autostart` defaults to the VM's `enable` value
-- `portForward.enable` defaults to `true` when the VM is enabled and port forwards are defined
-- `cfTunnel.enable` defaults to `true` when the VM is enabled and tunnel ingress is defined
-- `reverseProxy.enable` defaults to `true` when both `subdomain` and `url` are set in reverse-proxy metadata
-
-Those exposure toggles remain overridable per host, so a VM can stay enabled
-while selectively disabling Cloudflare Tunnel or Traefik routing.
-
-### Security Considerations
-
-- VMs run with minimal privileges
-- Network access controlled via tap interfaces
-- Filesystem shares use virtiofs for performance
-- Each VM has isolated secrets via sops-nix
-- Services that read `/run/secrets/*` at startup should declare `after` and `requires` on `sops-install-secrets.service` to avoid boot-order race/failure
-
-### Related Documentation
-
-- [microvm.nix documentation](https://github.com/astro/microvm.nix)
-- [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
+Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
+for lightweight virtualization. The flake currently defines 28 MicroVM
+configurations for the `blizzard` host. Most use the shared `10.100.0.0/24`
+tap bridge behind a host-owned identity and lateral-access policy; Pocket ID
+uses a dedicated `10.100.1.0/30` host-to-VM bridge.
 
 ______________________________________________________________________
 
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*
+### VM build pipeline
+
+```mermaid
+flowchart TD
+    A["vms/vm-registry.nix\n(CID · MAC · IP · prefix · port · mem · vcpu · gateway)"]
+    B["vms/mkMicrovmConfig.nix\n(NixOS module: microvm + networking)"]
+    C["vms/base.nix\n(standard kernel · sysctl · AppArmor\nOpenSSH · admin user · firewall)"]
+    D["vms/<name>.nix\n(service-specific config)"]
+    E["vms/flake-microvms.nix\nmkMicrovm helper"]
+    F["nixosConfigurations.*-vm"]
+
+    A --> B
+    B --> D
+    C --> D
+    D --> E
+    E --> F
+```
+
+The six Arr VM entry files compose [`mkArrVm.nix`](mkArrVm.nix), which owns
+their shared state-volume, firewall and exporter assembly. Prowlarr keeps
+FlareSolverr local and opts out of the media share; additional exporter metrics
+remain explicit in Sonarr, Bazarr and Prowlarr. Blizzard's scrape targets use
+registry IPs and the effective exporter ports from the guest configurations,
+including disabled instances in the existing inventory.
+
+[`media-storage.nix`](media-storage.nix) owns the shared media host/guest paths
+and virtiofs share data. Consumers opt in explicitly; Jellyfin's restricted
+library share remains separate. [`sops-base.nix`](sops-base.nix) is also opt-in:
+it imports SOPS and sets its file/format, persisted SSH key path and systemd
+activation mode. Secret declarations and consumer/rotation ordering stay local.
+The existing flake constructor adds the common MicroVM module to every output.
+Only the four VPN-routed guests select `vpnReturnRoutes` from
+[`microvm-network-defaults.nix`](microvm-network-defaults.nix).
+
+______________________________________________________________________
+
+### Guest compressed swap
+
+Service guests importing `base.nix` enable zram swap by default, using zstd
+and a logical swap size of 25% of guest RAM. Physical RAM is allocated to zram
+on demand; the logical size is not a reserved RAM allocation or a guaranteed
+increase in usable memory.
+
+Each guest can override `zramSwap.enable`, `zramSwap.algorithm`, or
+`zramSwap.memoryPercent`. Keep the RAM allocations in `vm-registry.nix` until
+workload measurements justify changing them. Guest zram is separate from the
+host's swap configuration.
+
+______________________________________________________________________
+
+### Network topology
+
+```mermaid
+flowchart TB
+    subgraph host["blizzard"]
+        bridge["microvm-br0\n10.100.0.1/24 shared bridge\nregistered identities + declared edges"]
+        idbridge["pocket-id-br0\n10.100.1.1/30 dedicated bridge"]
+    end
+
+    adguard["adguard-vm\n10.100.0.10\n(DNS)"]
+    wg["wireguard-vm\n10.100.0.11\n(VPN gateway)"]
+
+    subgraph direct["Direct-routed VMs (via bridge)"]
+        d1["actual · bazarr · cross-seed · firefly · firefly-importer\ngitea · immich · jellyfin · lidarr\nmatrix-synapse · mealie · ombi · overseerr · paperless\nprowlarr · radarr · readarr · searx\nsonarr · tautulli · trigger"]
+    end
+
+    subgraph wgrouted["WG-routed VMs (traffic via wireguard-vm)"]
+        w1["qbittorrent 10.100.0.30"]
+        w2["sabnzbd 10.100.0.31"]
+        w3["firefox 10.100.0.52"]
+        w4["brave 10.100.0.54"]
+    end
+
+    bridge --> adguard
+    bridge --> wg
+    bridge --> direct
+    wg -->|"all traffic"| w1
+    wg --> w2
+    wg --> w3
+    wg --> w4
+
+    pocket["pocket-id-vm\n10.100.1.2/30"]
+    idbridge --> pocket
+```
+
+______________________________________________________________________
+
+### VM inventory
+
+| VM | IP | Service port | RAM | vCPU | Network | Purpose |
+|----|----|-----------|-----|------|---------|---------|
+| adguard | 10.100.0.10 | 11010 | 3 GB | 1 | Direct | DNS sinkhole / ad blocker |
+| actual | 10.100.0.51 | 11051 | 1 GB | 1 | Direct | Actual Budget (personal finance) |
+| bazarr | 10.100.0.23 | 11023 | 1 GB | 1 | Direct | Subtitle management |
+| brave | 10.100.0.54 | 11054 | 4 GB | 4 | Via WG | Containerized Brave browser |
+| cross-seed | 10.100.0.32 | 11032 (loopback) | 1 GB | 1 | Direct | Cross-seeding; daemon staged pending [provisioning](../docs/cross-seed.md) |
+| firefly | 10.100.0.62 | 11062 | 2 GB | 2 | Direct | Firefly III finance |
+| firefly-importer | 10.100.0.63 | 11063 | 512 MB | 1 | Direct | Firefly data importer |
+| firefox | 10.100.0.52 | 11052 | 4 GB | 4 | Via WG | Containerized Firefox browser |
+| gitea | 10.100.0.50 | 11050 | 2 GB | 2 | Direct | Self-hosted git forge; public `git.<canonical-domain>` via Cloudflare Tunnel/Traefik |
+| immich | 10.100.0.70 | 11070 | 8 GB | 4 | Direct | Photo library |
+| jellyfin | 10.100.0.72 | 8096 | 16 GB | 8 | Direct | Media server; home-LAN and VPS/Tailscale access |
+| lidarr | 10.100.0.26 | 11028 | 1 GB | 1 | Direct | Music PVR |
+| matrix-synapse | 10.100.0.60 | 11060 | 4 GB | 4 | Gateway only | Matrix homeserver |
+| mealie | 10.100.0.71 | 11071 | 1 GB | 1 | Direct | Recipe manager and meal planner |
+| ombi | 10.100.0.41 | 11041 | 1 GB | 1 | Direct | Media request portal (legacy) |
+| overseerr | 10.100.0.40 | 11040 | 1 GB | 1 | Direct | Seerr media request portal (legacy VM name) |
+| paperless | 10.100.0.61 | 11061 | 8 GB | 4 | Direct | Document management |
+| pocket-id | 10.100.1.2 | 11081 | 1 GB | 1 | Dedicated | Passkey-based OIDC identity provider |
+| prowlarr | 10.100.0.20 | 11020 | 1 GB | 1 | Direct | Indexer aggregator |
+| qbittorrent | 10.100.0.30 | 11030 | 2 GB | 1 | Via WG | Torrent client |
+| radarr | 10.100.0.22 | 11022 | 1 GB | 1 | Direct | Movie PVR |
+| readarr | 10.100.0.24 | 11024 | 1 GB | 1 | Direct | Books PVR |
+| sabnzbd | 10.100.0.31 | 11031 | 1 GB | 1 | Via WG | Usenet client |
+| searx | 10.100.0.12 | 11012 | 2 GB | 1 | Direct | Meta-search engine |
+| sonarr | 10.100.0.21 | 11021 | 1 GB | 1 | Direct | TV PVR |
+| tautulli | 10.100.0.42 | 11042 | 1 GB | 1 | Direct | Plex statistics |
+| trigger | 10.100.0.80 | 11080 | 12 GB | 6 | Direct | Trigger.dev v4 background job platform |
+| wireguard | 10.100.0.11 | 56943 | 512 MB | 1 | Direct | VPN gateway (routes qb/sabnzbd/firefox/brave) |
+
+______________________________________________________________________
+
+### Seerr migration
+
+Seerr runs in the existing `overseerr-vm`, preserving its registry identity,
+`overseerr-state.img`, and `requests.<canonical-domain>` publication. Its
+`seerr.service` reads `/var/lib/overseerr` and migrates the existing settings
+and database on first start. Follow the [backup, deployment, and rollback
+instructions](../docs/seerr.md) before starting the new generation.
+
+### Matrix network and authentication boundary
+
+The Matrix VM's TCP `11060` port is a guest service port, not a host
+port-forward. Nginx listens on `0.0.0.0:11060` inside the VM, while the guest
+firewall accepts that port only from Blizzard's MicroVM gateway
+`10.100.0.1` on the stable `microvm0` interface. `microvm0` is the shared
+all-MicroVM guest-interface contract, not a Matrix-only alias:
+`mkMicrovmConfig.nix` assigns it by matching each VM's fixed MAC address, so
+Cloud Hypervisor device renumbering does not broaden or break interface-bound
+firewall rules. Any future interface-name change must update this shared
+helper, its consumers, and the VM network checks together. The public path is
+the managed `matrix` publication through Cloudflare Tunnel and Traefik; no raw
+host forward bypasses those controls.
+
+Synapse and MAS web/health listeners are loopback-only. Nginx is the only
+trusted MAS proxy, and the public `/_synapse/admin` path returns `403`. MAS
+owns password login and email recovery: anonymous password registration is
+disabled, while existing password login, recovery, password changes, and
+account-profile changes remain enabled during the OIDC migration. OAuth client
+registration is a separate dynamic MAS policy used by OIDC-native clients.
+
+Runtime secrets follow a separate, guest-local pipeline. After
+`sops-install-secrets.service`, `matrix-synapse-secret.service` and
+`mas-secret.service` read their declared SOPS files and write only
+`/run/matrix-synapse-secret/shared-secret.yaml` and
+`/run/mas-secret/config.json`, respectively. MAS reads the generated config as
+well as the Nix-generated base config and writes durable state only to
+`/var/lib/mas`; the base config contains no decrypted secret values. The
+generator units, `mas-db-init.service`, and MAS itself use systemd sandboxing
+with explicit read-only and writable paths. See the [Matrix hardening plan](../docs/matrix-hardening-plan.md)
+for the accepted runtime compatibility, rotation, client-IP, and SMTP-outage
+evidence. R-03 was closed by explicit operator approval on 2026-10-12, with
+the remaining seven-day baseline observation waived. Matrix offsite
+backup/restore is optional under R-04.
+
+The generators are `Type=oneshot` units with `RemainAfterExit=true`. Treat a
+SOPS rotation as an explicit generator-and-consumer restart operation and verify
+the resulting runtime files; an initial successful boot does not prove that a
+later rotation was consumed.
+
+______________________________________________________________________
+
+### Declarative WhatsApp appservice boundary
+
+The [`mautrix-whatsapp` bridge](../docs/matrix-whatsapp-bridge.md) is an
+opt-in, pre-login service inside `matrix-synapse-vm`, not a new MicroVM. It
+calls Synapse over `127.0.0.1:8008`, listens for appservice transactions only
+on `127.0.0.1:29318`, and has no public publication or host port-forward. When
+enabled, its linked-device state is stored in `mautrix-whatsapp-state.img` and
+its separate PostgreSQL database remains distinct from Synapse and MAS. Both
+must be included if the optional Matrix backup is used; offsite backup/restore
+is not a login prerequisite. Document re-login recovery if linked-device state
+is lost. The registration file is generated under `/run` and is not an
+independent backup artifact.
+
+The bridge implementation is composed in
+[`matrix-whatsapp.nix`](matrix-whatsapp.nix). Its VM-owned registration gate
+runs before Synapse because the locked nixpkgs module normally generates the
+registration during the bridge service's `preStart`; the VM-owned gate owns
+that preparation instead. It builds a complete generation and switches
+`/run/matrix-whatsapp-registration/current` atomically, so Synapse and the
+bridge consume a matching registration/configuration pair at startup. The
+`mautrix-whatsapp-stack.target` and its reconcile service coordinate SOPS
+rotation and re-enter the same order after PostgreSQL recovery. The bridge's
+`PrivateUsers` sandbox remains enabled: the dedicated
+database uses loopback SCRAM password authentication, and the password is
+SOPS-backed. Raw bridge secrets remain bridge-only; Synapse receives only the
+generated registration through the dedicated read-only group. Memory, task,
+address-family, filesystem, and the remaining upstream systemd hardening stay
+explicit. Systemd also denies private, link-local, and CGNAT destinations for
+the bridge while preserving required loopback and public WhatsApp connectivity;
+the live acceptance test must verify the effective egress filter because this
+is defense in depth, not a separate network namespace.
+
+This placement avoids a new registry identity and lateral network-policy edge
+for the initial rollout. A dedicated VM remains an isolation option for a
+future multi-user or less-trusted deployment; the placement rationale and
+split requirements are recorded in the dedicated design document.
+
+______________________________________________________________________
+
+### Base configuration (vms/base.nix)
+
+[base.nix](base.nix) provides a hardened-but-compatible foundation for every VM:
+
+- **Standard kernel** (`pkgs.linuxPackages`) — intentionally not the hardened
+  variant; chosen for broad driver compatibility. The comment at line 19 of
+  `base.nix` makes this explicit.
+- **sysctl hardening** — rp_filter=1 (strict; trigger-vm overrides to 2 via `sys.services.trigger.looseRpFilter` in `modules/services/trigger.nix`), no ICMP redirects/broadcasts, no source
+  routing, kptr_restrict=2, dmesg_restrict=1, core dumps disabled
+  (`kernel.core_pattern = "|/bin/false"`)
+- **Kernel module blacklist** — bluetooth, btusb, uvcvideo
+- **AppArmor** — enabled with `apparmor-profiles`, killUnconfinedConfinables=true
+- **Hardened OpenSSH** — no root, password-only auth disabled, no X11/agent/TCP
+  forwarding, MaxAuthTries=3, host keys at `/persist/ssh/`
+- **Immutable users** — single `admin` account (wheel group) with
+  `VARS.users.zeno.sshPubKey`; sudo requires a password
+- **Firewall** — enabled, allowPing=false, logRefusedConnections=false
+- **journald caps** — SystemMaxUse=100M, RuntimeMaxUse=50M
+- **coredump** — systemd coredump disabled
+- **stateVersion** — `"24.11"`
+
+______________________________________________________________________
+
+### Architecture
+
+MicroVMs do **not** use `system-loader.nix` (which would pull in host-only
+modules). Their outputs are assembled in [vms/flake-microvms.nix](flake-microvms.nix)
+and merged into `nixosConfigurations` from [flake.nix](../flake.nix):
+
+```nix
+microvmConfigurations = import ./vms/flake-microvms.nix { inherit inputs system VARS consts; };
+
+nixosConfigurations = {
+  # hosts ...
+} // microvmConfigurations;
+```
+
+______________________________________________________________________
+
+### Host-side enablement
+
+On `blizzard`, VMs are managed via
+`sys.virtualisation.microvm.instances.<name>`. Some instances are currently
+disabled (for example `adguard`, `actual`, `lidarr`, and `brave`).
+
+```nix
+sys.virtualisation.microvm.instances.<name> = {
+  enable = true;
+
+  # Defaults to enable; override when the VM should be defined but not
+  # started automatically.
+  autostart = false;
+
+  # Optional transport-layer reachability:
+  portForward.ports = [ ... ];
+
+  # Optional standard public HTTP publication:
+  publication = {
+    enable = true;
+    hostname = "service";
+    policy = "strict";
+  };
+
+  # Optional directional private service access. The target IP, MAC, tap, and
+  # primary TCP port are derived from vm-registry.nix.
+  networkPolicy.allowedPeers.target-vm = {
+    primaryService = true;
+    reason = "Describe the operational dependency";
+  };
+};
+```
+
+Enabling an instance starts it automatically by default; set `autostart = false`
+to keep the VM defined without starting it on boot. Instance enablement never
+publishes the VM automatically. A standard publication is an independent
+opt-in that maps one hostname under the canonical public domain to the VM's IP
+and primary port from
+[vm-registry.nix](vm-registry.nix). The host module renders both Cloudflare
+Tunnel ingress and the matching Traefik router and service, applies CrowdSec,
+and uses strict security headers unless a registered compatibility policy is
+selected.
+
+### VM-only updates
+
+The shared MicroVM adapter defaults `restartIfChanged` to `true`, so a host
+switch installs the new host-managed runner before restarting an affected guest.
+An individual instance can explicitly override this through `vmConfig` if it has
+a special maintenance requirement.
+
+Blizzard also gives enabled instances the default `vmConfig.updateFlake` value
+`github:telometto/nix-config`. The host persists that reference under its
+MicroVM state directory (`/flash/enc/vms/<name>-vm/flake`), and the host's
+`microvm` command can subsequently update one guest without switching the
+Blizzard system. This source does not opt out of host-managed upgrades: the
+adapter also installs runners for existing VMs. It publishes the reference
+using a same-directory atomic rename, including null fallback, with owner
+`microvm:kvm` and mode `0644`.
+
+Run:
+
+```bash
+sudo microvm -Ru <name>-vm
+```
+
+The command evaluates and builds the flake named by the persisted reference,
+installs the new `microvm.declaredRunner`, and restarts only that VM. Commit and
+push the VM change first when using the default GitHub reference. A subsequent
+host installer run restores the runner declared by that host configuration;
+keep the host checkout and locked inputs current after a manual VM update.
+With `restartIfChanged = false`, the installer can advance `current` while the
+old guest continues running until an explicit restart. Recording `booted` pulls
+the installer into the same start transaction, including on rollback. The
+installer remains active after completion, and manual guest restarts do not
+restart it, preserving runners selected by `microvm -Ru`.
+
+The `microvm-lifecycle` flake check boots a real guest and switches between host
+generations. It checks the installed and booted runners, running guest
+configuration, reference changes, null fallback, restart opt-out, manual runner
+selection, and concurrent reference readers:
+
+```bash
+nix build .#checks.x86_64-linux.microvm-lifecycle --no-link --print-build-logs
+```
+
+The VM flake imports the private `nix-secrets` input, so the host running
+`microvm -u` must also have the SSH access required to evaluate that input.
+A VM can use a different source, or retain only the host's declarative flake
+source, with an instance-local override:
+
+```nix
+vmConfig = {
+  updateFlake = "git+https://git.example/nix-config?ref=main";
+  # updateFlake = null; # use the host's immutable flake source
+  # restartIfChanged = false;
+};
+```
+
+This path applies to guest configuration changes. Host-owned changes such as
+enablement, autostart, publication, port forwarding, network policy, registry
+identity, or the state directory still require a Blizzard switch. The initial
+installation and changes to the host-side MicroVM wiring also require:
+
+```bash
+sudo nixos-rebuild switch --flake .#blizzard
+```
+
+```mermaid
+flowchart LR
+    DECL["instances.<name>.publication\nhostname label + policy"]
+    REG["vm-registry.nix\nVM IP + primary port"]
+    POL["publicationPolicyMiddlewares\nnamed compatibility policies"]
+    PUB["microvm-base.nix\nvalidate + derive publication"]
+    CF["Cloudflare Tunnel ingress\nhostname → localhost:80"]
+    TR["Traefik router + service\npolicy middleware + CrowdSec"]
+    VM["Enabled MicroVM\nhttp://registry IP:port"]
+    CLIENT["Public HTTP client"]
+    BESPOKE["Supplemental host/path routes\nfor example Matrix discovery"]
+
+    DECL --> PUB
+    REG --> PUB
+    POL --> PUB
+    PUB --> CF
+    PUB --> TR
+    CLIENT --> CF --> TR --> VM
+    PUB -.->|publication gates supplemental route| BESPOKE
+    BESPOKE -.-> TR
+```
+
+Compatibility-policy middleware mappings live in
+`hosts/blizzard/security/traefik.nix`. Matrix's `matrix.<domain>` workload route
+uses the standard publication path. Its root-domain `/.well-known/matrix/`
+discovery route remains explicit in the host Traefik configuration, but is
+enabled only while the Matrix publication is enabled.
+
+Legacy host-wide MicroVM options were removed in favor of instance-local
+intent. Using one of them now fails evaluation with a targeted migration
+message:
+
+| Removed option | Replacement |
+|---|---|
+| `microvm.hypervisor` | Configure the hypervisor in the guest when required |
+| `microvm.autostart` | `instances.<name>.autostart` |
+| `microvm.vms` | `instances.<name>.flake` and `instances.<name>.vmConfig` |
+| `microvm.expose` | `instances.<name>.portForward` and `instances.<name>.publication` |
+| `instances.<name>.cfTunnel` | `instances.<name>.publication` or a bespoke host ingress |
+| `instances.<name>.reverseProxy` | `instances.<name>.publication` or a bespoke host route |
+
+`immich` is published at `https://photos.${VARS.domains.public}` through Cloudflare Tunnel
+and Traefik. Blizzard also forwards TCP `11070` to the same registry service
+for direct home-LAN access; `10.100.0.70:11070` remains reachable on the
+MicroVM network and through the advertised Tailscale subnet route.
+
+`jellyfin` uses the same port-forwarding helper for direct home-LAN access at
+`http://192.168.2.100:11072`, forwarding to the VM's standard TCP `8096` port
+with a guest firewall restriction to `192.168.2.0/24`. Its public route keeps
+the separate VPS/Tailscale relay, and
+direct tailnet access to the guest remains blocked. Both paths and the private
+setup controls are documented in [Jellyfin networking](../docs/jellyfin-vps.md).
+
+______________________________________________________________________
+
+### Host-side network policy
+
+`modules/virtualisation/microvm-base.nix` owns the MicroVM network policy while
+leaving NixOS's standard firewall and NAT backend unchanged. It derives every
+enabled VM's bridge, tap, MAC, IP, gateway, and primary service from
+`vm-registry.nix` and renders:
+
+- non-aging static FDB entries, permanent networkd neighbor entries, and
+  unknown-unicast and multicast flooding disabled on all `vm-*` ports
+- a native nftables `bridge` table for Ethernet, ARP, IPv4 identity, declared
+  service edges, derived WireGuard clients, unknown taps, and broadcast or
+  multicast filtering
+- a native nftables `inet` table that blocks routing from `microvm-br0` back to
+  itself and between MicroVM bridges
+
+The default mode is `enforce`, and Blizzard is configured explicitly for
+`enforce` in `hosts/blizzard/virtualisation/microvms.nix`. The dated
+[deployment audit](../docs/deployment-audit-2026-08-08-microvm-networking.md)
+records the preceding audit window and the explicit decision to enable
+enforcement; it is historical evidence rather than the current runtime mode.
+
+An allowed peer is directional. `primaryService = true` permits new TCP
+connections only to the target registry port; `tcpPorts` and `udpPorts` add
+explicit ports. Stateful replies are allowed, but a new reverse connection
+needs its own declaration. Peer ICMP is not implied. Dedicated-bridge VMs
+cannot receive exceptions, and a newly enabled VM receives no lateral access
+by default. Gateway pairs such as `qbittorrent -> wireguard` are derived from
+the registry rather than declared manually.
+
+Operational inspection on Blizzard:
+
+```bash
+systemctl status microvm-network-policy.service
+sudo nft list table bridge microvm_policy
+sudo nft list table inet microvm_policy
+journalctl -u microvm-network-policy.service
+journalctl -k -g 'microvm-policy'
+```
+
+In `enforce`, inspect the named `lateral_drops` counter and
+`microvm-policy lateral-drop:` messages. Historical audit counters and ruleset
+snapshots are retained under `/var/lib/microvm-network-policy/` when the policy
+is reloaded. The supported rollback is declarative: return to `audit` or
+switch/boot the previous NixOS generation. Stopping the policy service does not
+delete its tables.
+
+______________________________________________________________________
+
+### WG-routed VMs
+
+`qbittorrent`, `sabnzbd`, `firefox`, and `brave` are configured to route all
+outbound traffic through `wireguard-vm` (10.100.0.11); Brave is currently
+disabled on Blizzard. This ensures enabled download and browser sessions exit
+via the VPN rather than the host's public IP. Their default gateway is set to
+10.100.0.11 in the registry.
+
+### Firefox transfer directory
+
+The Firefox VM has a dedicated persistent `firefox-downloads.img` volume mounted
+at `/home/admin/Downloads`. The LinuxServer Firefox container exposes only that
+directory at `/downloads`; its Selkies file manager is configured for both
+uploads and downloads. The Firefox browser itself must be pointed at `/downloads`
+once in its Settings → General → Downloads panel. This keeps browser transfer
+data separate from the `/config` profile volume. The container keeps its existing
+LinuxServer profile UID for `/config`; only the shared transfer directory uses
+the VM user's group, so changing file-transfer permissions cannot make the
+Firefox profile inaccessible.
+
+The same directory is available to the VM's `admin` account, so ordinary SSH
+file transfer works without sudo or SSH forwarding. For example, from a device
+that can reach the VM:
+
+```bash
+sftp admin@10.100.0.52
+put local-file /home/admin/Downloads/
+get /home/admin/Downloads/remote-file
+```
+
+The web UI's file sidebar and SFTP both operate on the dedicated directory. Do
+not mount the whole `/home/admin` directory into the container: the LinuxServer
+Firefox interface includes a terminal with passwordless sudo inside the
+container, so its access should remain limited to the intended transfer path.
+
+If the earlier file-transfer configuration was already applied, restore the
+PulseAudio subdirectory's original LinuxServer ownership once before restarting
+with the corrected configuration:
+
+```bash
+sudo podman exec --user 0 firefox chown -R 911:911 /config/.config/pulse
+```
+
+This is narrowly scoped to the directory that was changed during diagnosis;
+do not recursively chown the whole `/config` volume.
+
+______________________________________________________________________
+
+### Creating a new VM
+
+1. Add or reuse the service port in [lib/constants.nix](../lib/constants.nix)
+   under `ports.vm`; host and secondary endpoints belong under their matching
+   namespaces.
+1. Add an entry to [vm-registry.nix](vm-registry.nix) with a unique CID, MAC,
+   IP, service port, memory, and vCPU count.
+1. Create `vms/<service>.nix` importing `./base.nix` and adding the
+   service-specific NixOS config.
+1. Wire it up in [flake-microvms.nix](flake-microvms.nix) using `mkMicrovm`.
+1. Enable on the host: `sys.virtualisation.microvm.instances.<name>.enable = true`.
+1. Declare each required private peer service under
+   `instances.<source>.networkPolicy.allowedPeers.<target>`; the default is no
+   lateral access.
+1. If it needs the standard public HTTP path, explicitly enable
+   `instances.<name>.publication` with one hostname and a registered
+   compatibility policy.
+
+______________________________________________________________________
+
+### Security considerations
+
+- Each VM has an isolated filesystem; the host shares directories via virtiofs (`microvm.shares`), and VM state is stored in per-VM disk images (`microvm.volumes`).
+- Secrets are injected per-VM via sops-nix. Services that read
+  `/run/secrets/*` at startup should declare `after` and `requires` on
+  `sops-install-secrets.service` to avoid boot-order races.
+- VMs may share `microvm-br0`, but the host validates their registry MAC and
+  ARP identity, and validates IPv4 sources for ordinary VMs. The WireGuard
+  gateway is intentionally exempt from the ordinary source-IP check so it can
+  originate traffic for its derived VPN clients; its host input path remains
+  constrained. Static FDB/neighbor bindings prevent unknown-unicast observation
+  and host ARP-cache poisoning. The guest firewall remains an independent
+  defense.
+- Pocket ID additionally uses a dedicated bridge. Host-level nftables routing
+  filters prevent shared-bridge peers from reaching it, and its guest firewall
+  accepts TCP ports `22` and `11081` only from Blizzard's dedicated bridge
+  address.
+
+______________________________________________________________________
+
+### Related documentation
+
+- [microvm.nix upstream](https://github.com/microvm-nix/microvm.nix)
+- [Immich backup and recovery](../docs/immich-backup.md) — Offsite image backup, retention, and restore runbook
+- [Matrix backup and recovery](../docs/matrix-backup.md) — Matrix image backup, retention, and isolated restore runbook
+- [modules/services/README.md](../modules/services/README.md) — Service module catalog
+- [Blizzard host config](../hosts/blizzard/blizzard.nix) — VM host example
+- [vm-registry.nix](vm-registry.nix) — Single source of truth for all VM parameters
+- [Infrastructure context](../CONTEXT.md) — Canonical publication terminology
+- [ADR 0001](../docs/adr/0001-model-public-http-publication-as-instance-intent.md) — Publication interface decision
+- [ADR 0002](../docs/adr/0002-enforce-host-owned-microvm-network-policy.md) — Host-owned identity and lateral-access policy

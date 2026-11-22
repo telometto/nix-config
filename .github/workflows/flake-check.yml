@@ -2,55 +2,143 @@ name: Flake Check
 on:
     workflow_dispatch:
     pull_request:
-        paths:
-            - "**.nix"
-            - "flake.lock"
-            - "treefmt.nix"
     push:
         branches: [main]
-        paths:
-            - "**.nix"
-            - "flake.lock"
+    schedule:
+        - cron: "17 2 * * *"
 
 concurrency:
-    group: flake-check-${{ github.ref }}
-    cancel-in-progress: true
+    group: flake-check-${{ github.event_name }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
 
 permissions:
     contents: read
 
 jobs:
-    flake-check:
+    classify:
         runs-on: ubuntu-latest
+        outputs:
+            plan: ${{ steps.select.outputs.plan }}
+            grouped: ${{ steps.select.outputs.grouped }}
+            lifecycle: ${{ steps.select.outputs.lifecycle }}
+            evaluate: ${{ steps.select.outputs.evaluate }}
+            crowdsec: ${{ steps.select.outputs.crowdsec }}
+        steps:
+            - name: Checkout complete history
+              uses: actions/checkout@v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            - name: Test classifier and final gate
+              run: python3 -B -m unittest discover -s .github/tests -v
+
+            - name: Select requirements from the complete diff
+              id: select
+              run: python3 -B .github/scripts/flake_ci.py classify
+
+    grouped:
+        needs: classify
+        if: needs.classify.outputs.grouped == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 90
+        env:
+            PLAN: ${{ needs.classify.outputs.plan }}
         steps:
             - name: Access private repository
-              uses: webfactory/ssh-agent@v0.9.1
+              uses: webfactory/ssh-agent@v0.10.0
               with:
                   ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
             - name: Checkout repository
-              uses: actions/checkout@v6.0.2
+              uses: actions/checkout@v7.0.1
+              with:
+                  persist-credentials: false
 
             - name: Install Nix
-              uses: DeterminateSystems/nix-installer-action@v21
+              uses: DeterminateSystems/nix-installer-action@v23
 
             - name: Setup Nix cache
-              uses: DeterminateSystems/magic-nix-cache-action@v13
+              uses: DeterminateSystems/magic-nix-cache-action@v15
               with:
-                use-flakehub: false
+                  use-flakehub: false
 
-            - name: Run flake check
+            - name: Evaluate flake outputs sequentially
+              if: needs.classify.outputs.evaluate == 'true'
+              run: bash .github/scripts/evaluate-flake-outputs.sh
+
+            - name: Build selected checks sequentially
+              run: python3 -B .github/scripts/flake_ci.py build
+
+            # All Nix work finishes before credentials are removed. These paths
+            # and generated settings are prepared while SSH is still available.
+            - name: Prepare CrowdSec integration fixture paths
+              if: needs.classify.outputs.crowdsec == 'true'
+              id: crowdsec-fixtures
+              run: python3 -B .github/scripts/flake_ci.py prepare-crowdsec
+
+            - name: Remove private repository credentials
+              if: needs.classify.outputs.crowdsec == 'true'
               run: |
-                  echo "## 🔍 Flake Check Results" >> $GITHUB_STEP_SUMMARY
-                  output_file=$(mktemp)
-                  trap 'rm -f "$output_file"' EXIT
-
-                  if nix flake check --no-build >"$output_file" 2>&1; then
-                    echo "✅ All flake outputs evaluate successfully" >> $GITHUB_STEP_SUMMARY
-                  else
-                    echo "❌ Flake check failed" >> $GITHUB_STEP_SUMMARY
-                    echo '```' >> $GITHUB_STEP_SUMMARY
-                    bash .github/scripts/redact-secrets.sh < "$output_file" >> $GITHUB_STEP_SUMMARY
-                    echo '```' >> $GITHUB_STEP_SUMMARY
-                    exit 1
+                  if [ -n "${SSH_AGENT_PID:-}" ]; then
+                      kill "$SSH_AGENT_PID" || true
                   fi
+                  printf 'SSH_AUTH_SOCK=\nSSH_AGENT_PID=\n' >> "$GITHUB_ENV"
+
+            - name: Run CrowdSec integration fixtures
+              if: needs.classify.outputs.crowdsec == 'true'
+              env:
+                  TRAEFIK: ${{ steps.crowdsec-fixtures.outputs.traefik }}
+                  BOUNCER: ${{ steps.crowdsec-fixtures.outputs.bouncer }}
+                  ALLOY: ${{ steps.crowdsec-fixtures.outputs.alloy }}
+                  VICTORIALOGS: ${{ steps.crowdsec-fixtures.outputs.vlogs }}
+                  CROWDSEC: ${{ steps.crowdsec-fixtures.outputs.crowdsec }}
+                  SETTINGS: ${{ steps.crowdsec-fixtures.outputs.settings }}
+              run: |
+                  env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_bouncer_runtime.py --traefik "$TRAEFIK/bin/traefik" --plugin "$BOUNCER"
+                  env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_logs_runtime.py --alloy "$ALLOY/bin/alloy" --victorialogs "$VICTORIALOGS/bin/victoria-logs" --config "$RUNNER_TEMP/crowdsec.alloy" --settings "$SETTINGS"
+                  env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_appsec_runtime.py --package "$CROWDSEC" --settings "$SETTINGS"
+
+    lifecycle:
+        needs: classify
+        if: needs.classify.outputs.lifecycle == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 90
+        steps:
+            - name: Access private repository
+              uses: webfactory/ssh-agent@v0.10.0
+              with:
+                  ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
+
+            - name: Checkout repository
+              uses: actions/checkout@v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Install Nix
+              uses: DeterminateSystems/nix-installer-action@v23
+
+            - name: Setup Nix cache
+              uses: DeterminateSystems/magic-nix-cache-action@v15
+              with:
+                  use-flakehub: false
+
+            - name: Build MicroVM lifecycle check
+              run: python3 -B .github/scripts/flake_ci.py lifecycle
+
+    # Keep the name exactly: update-nix-lock waits for it on the PR head SHA.
+    flake-check:
+        name: flake-check
+        needs: [classify, grouped, lifecycle]
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout gate
+              uses: actions/checkout@v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Require every selected job to succeed
+              env:
+                  NEEDS: ${{ toJSON(needs) }}
+              run: python3 -B .github/scripts/flake_ci.py gate

@@ -1,6 +1,6 @@
 # How-to: Add a Host and Enable Users
 
-Problem: Add a new machine to the flake and enable specific users’ accounts and Home Manager profiles on that machine.
+Problem: Add a new machine to the flake and enable specific users' accounts and Home Manager profiles on that machine.
 
 ## Steps
 
@@ -25,16 +25,100 @@ sys.desktop.flavor = "kde";     # kde | gnome | hyprland
 sys.users.<username>.enable = true;  # e.g., zeno
 ```
 
-4. (Optional) Add Home Manager overrides:
+### UID policy
+
+The private `VARS.users` registry pins `zeno` to UID `1000`; other users omit
+`uid` and use NixOS allocation. On a fresh host where `zeno` is enabled and
+UID `1000` is free, this gives `zeno` that UID and leaves later new accounts to
+the next free IDs. On an existing host, NixOS preserves the UID of an existing
+named account and allocates a free UID only for a new account.
+
+The order of entries in `VARS.users` does not control allocation. The explicit
+`zeno` pin is also not a UID migration: if UID `1000` is already assigned to a
+different account, enabling `zeno` can conflict, and changing a UID does not
+rewrite ownership of existing files. Check the host's current account and file
+ownership state before treating a reimage or UID change as routine.
+
+4. Register the host in `flake.nix`:
+
+```nix
+nixosConfigurations = {
+  # ... existing hosts ...
+  <hostname> = mkHost "<hostname>" [ ];
+};
+```
+
+5. Configure SOPS for the new host if it will run any secrets-enabled services
+   such as Tailscale or borgbackup. Follow
+   [SOPS Setup Guide](sops-setup-guide.md) to derive the host's age recipient,
+   update the private `nix-secrets` repository, and re-encrypt affected secret
+   files.
+
+1. (Optional) Add Home Manager overrides:
 
 - Host-wide: `home/overrides/host/<hostname>.nix`
+- User-wide: `home/overrides/user/<user>.nix`
 - User@host specific: `home/overrides/user/<user>-<hostname>.nix`
 
-5. Build or switch:
+7. Build or switch:
 
 ```bash
 nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel
 sudo nixos-rebuild switch --flake .#<hostname>
+```
+
+## Recipes
+
+**Enable a VM on blizzard:**
+
+```nix
+# In hosts/blizzard/virtualisation/microvms.nix
+sys.virtualisation.microvm.instances.searx = {
+  enable = true;
+  # VM options
+};
+```
+
+**Add a per-host HM override:**
+
+```nix
+# home/overrides/host/<hostname>.nix
+{ ... }:
+{
+  hm.programs.terminal.enable = true;
+  programs.git.extraConfig.core.autocrlf = false;
+}
+```
+
+**Add a cross-host per-user override:**
+
+```nix
+# home/overrides/user/<username>.nix
+{ lib, ... }:
+{
+  hm.langs = lib.mkDefault "nb_NO.UTF-8";
+}
+```
+
+**Add a per-user@host override:**
+
+```nix
+# home/overrides/user/<username>-<hostname>.nix
+{ ... }:
+{
+  hm.desktop.kde.enable = true;
+  programs.ssh.matchBlocks."internal" = {
+    hostname = "192.168.2.10";
+    user = "admin";
+  };
+}
+```
+
+**Add a service to a host:**
+
+```nix
+# In the host's .nix file or a service-specific file under hosts/<hostname>/
+sys.services.grafana.enable = true;
 ```
 
 ## Notes
@@ -45,14 +129,11 @@ sudo nixos-rebuild switch --flake .#<hostname>
 
 ## Troubleshooting
 
-- User missing: Ensure `sys.users.<username>.enable = true` and that the user
-  exists in `VARS.users`.
-- HM not applying: Confirm `sys.home.enable = true` (defaults to true under
-  roles) and check overrides file names.
-- Service secrets: Enable the service option first; `modules/core/sops.nix`
+- **User missing**: Ensure `sys.users.<username>.enable = true` and that the
+  user exists in `VARS.users`.
+- **HM not applying**: Confirm `sys.home.enable = true` (defaults to true under
+  roles) and check overrides file names match the expected pattern.
+- **Service secrets**: Enable the service option first; `modules/core/sops.nix`
   defines secrets only when the service is on.
-
-______________________________________________________________________
-
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*
+- **SOPS decryption fails**: Use the checklist in
+  [SOPS troubleshooting](sops-setup-guide.md#troubleshooting).

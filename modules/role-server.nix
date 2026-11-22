@@ -27,10 +27,7 @@ in
 
         timesyncd.enable = true;
         resolved.enable = true;
-        maintenance = {
-          enable = true;
-          zram.enable = true;
-        };
+        maintenance.enable = true;
 
         autoUpgrade = {
           enable = true;

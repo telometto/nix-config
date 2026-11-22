@@ -31,10 +31,11 @@ let
 
   extras = [
     # inputs.agenix.packages."x86_64-linux".default
-    pkgs.protonvpn-gui
+    pkgs.proton-vpn
     pkgs.deja-dup
     pkgs.peazip
     pkgs.mat2
+    pkgs.asdf-vm
   ];
 in
 {

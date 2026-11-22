@@ -1,6 +1,6 @@
 _: {
   sys.services.samba = {
-    enable = false;
+    enable = true;
     openFirewall = true;
 
     shares.destroyme = {

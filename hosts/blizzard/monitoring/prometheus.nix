@@ -1,9 +1,18 @@
-{ config, lib, ... }:
+{
+  config,
+  consts,
+  self,
+  lib,
+  ...
+}:
+let
+  registry = import ../../../vms/vm-registry.nix { inherit consts; };
+in
 {
   sys.services.prometheus = {
     enable = true;
 
-    port = 11009;
+    port = consts.ports.host.prometheus;
     listenAddress = "127.0.0.1";
     openFirewall = false;
     scrapeInterval = "5s";
@@ -61,6 +70,36 @@
             targets = [ "localhost:${toString config.sys.services.electricityPriceExporter.port}" ];
           }
         ];
+      }
+      {
+        job_name = "cloudflare";
+        scrape_interval = "1m";
+        static_configs = [
+          {
+            targets = [ "127.0.0.1:${toString config.sys.services.cloudflareMetrics.port}" ];
+          }
+        ];
+      }
+      {
+        job_name = "arr-exporter";
+        static_configs =
+          map
+            (name: {
+              targets = [
+                "${registry.${name}.ip}:${
+                  toString self.nixosConfigurations."${name}-vm".config.sys.services.arrExporter.${name}.port
+                }"
+              ];
+              labels.arr_service = name;
+            })
+            [
+              "sonarr"
+              "radarr"
+              "lidarr"
+              "readarr"
+              "bazarr"
+              "prowlarr"
+            ];
       }
       {
         job_name = "ups";

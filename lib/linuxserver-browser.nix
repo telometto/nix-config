@@ -1,0 +1,162 @@
+{
+  name,
+  title,
+  image,
+}:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.sys.services.${name};
+  isHost = cfg.networkMode == "host";
+
+  hasCredentials = cfg.customUserFile != null && cfg.passwordFile != null;
+  credentialsEnvFile = "/run/${name}/credentials.env";
+
+  environments = {
+    TZ = cfg.timeZone;
+    TITLE = cfg.title;
+  }
+  // lib.optionalAttrs (cfg.driNode != null) { DRINODE = cfg.driNode; }
+  // lib.optionalAttrs isHost {
+    CUSTOM_PORT = toString cfg.httpPort;
+    CUSTOM_HTTPS_PORT = toString cfg.httpsPort;
+  };
+
+  publishPorts = lib.optionals (!isHost) [
+    "${toString cfg.httpPort}:3000"
+    "${toString cfg.httpsPort}:3001"
+  ];
+
+  preStartScript = pkgs.writeShellScript "${name}-credentials" ''
+    set -euo pipefail
+    umask 0077
+    : > ${credentialsEnvFile}
+    printf 'CUSTOM_USER=%s\n' "$(cat "${cfg.customUserFile}")" >> ${credentialsEnvFile}
+    printf 'PASSWORD=%s\n' "$(cat "${cfg.passwordFile}")" >> ${credentialsEnvFile}
+    chmod 0400 ${credentialsEnvFile}
+  '';
+in
+{
+  options.sys.services.${name} = {
+    enable = lib.mkEnableOption title;
+
+    image = lib.mkOption {
+      type = lib.types.str;
+      default = image;
+      description = "Container image to run.";
+    };
+
+    dataDir = lib.mkOption {
+      type = lib.types.str;
+      default = "/var/lib/${name}";
+      description = "Container /config volume path on the VM.";
+    };
+
+    httpPort = lib.mkOption {
+      type = lib.types.port;
+      default = 3000;
+      description = "HTTP port exposed by the container.";
+    };
+
+    httpsPort = lib.mkOption {
+      type = lib.types.port;
+      default = 3001;
+      description = "HTTPS port exposed by the container.";
+    };
+
+    networkMode = lib.mkOption {
+      type = lib.types.enum [
+        "bridge"
+        "host"
+      ];
+      default = "host";
+      description = "Container network mode.";
+    };
+
+    timeZone = lib.mkOption {
+      type = lib.types.str;
+      default = "UTC";
+    };
+
+    title = lib.mkOption {
+      type = lib.types.str;
+      default = title;
+    };
+
+    customUserFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to a file containing the basic-auth username for the web UI.";
+    };
+
+    passwordFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to a file containing the basic-auth password for the web UI.";
+    };
+
+    driNode = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Optional DRM render node path inside the container.";
+    };
+
+    enableDri = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Expose /dev/dri to the container.";
+    };
+
+    openFirewall = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    systemd.tmpfiles.rules = [
+      "d ${cfg.dataDir} 0750 root root -"
+    ];
+
+    systemd.services.${name} = lib.mkIf hasCredentials {
+      after = [ "sops-install-secrets.service" ];
+      requires = [ "sops-install-secrets.service" ];
+      serviceConfig = {
+        RuntimeDirectory = "${name}";
+        RuntimeDirectoryMode = "0700";
+        ExecStartPre = [ "+${preStartScript}" ];
+      };
+    };
+
+    virtualisation.quadlet.containers.${name} = {
+      autoStart = true;
+      containerConfig = {
+        inherit (cfg) image;
+        inherit environments publishPorts;
+        shmSize = "4g";
+        volumes = [ "${cfg.dataDir}:/config" ];
+        networks = lib.optionals isHost [ "host" ];
+        devices = lib.optionals cfg.enableDri [ "/dev/dri" ];
+        environmentFiles = lib.optionals hasCredentials [ credentialsEnvFile ];
+      };
+    };
+
+    networking.firewall = lib.mkIf cfg.openFirewall {
+      allowedTCPPorts = [
+        cfg.httpPort
+        cfg.httpsPort
+      ];
+    };
+
+    assertions = [
+      {
+        assertion = (cfg.customUserFile == null) == (cfg.passwordFile == null);
+        message = "sys.services.${name}: customUserFile and passwordFile must both be set or both be null";
+      }
+    ];
+  };
+}

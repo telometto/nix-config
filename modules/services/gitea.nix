@@ -84,15 +84,6 @@ in
         default = true;
       };
 
-      allowPureSSH = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = ''
-          Allow LFS transfers over pure SSH. Disable this to force HTTP-based LFS,
-          which is useful when SSH goes through a tunnel with size limits (e.g., Cloudflare).
-        '';
-      };
-
       s3Backend = {
         enable = lib.mkOption {
           type = lib.types.bool;
@@ -166,6 +157,29 @@ in
       default = true;
     };
 
+    ssh = {
+      enable = lib.mkEnableOption "Gitea built-in SSH server";
+
+      domain = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Public SSH hostname advertised to clients (SSH_DOMAIN). Defaults to the HTTP domain when null.";
+        example = "ssh-git.example.com";
+      };
+
+      listenHost = lib.mkOption {
+        type = lib.types.str;
+        default = "0.0.0.0";
+        description = "Address the built-in SSH server binds to (SSH_LISTEN_HOST).";
+      };
+
+      listenPort = lib.mkOption {
+        type = lib.types.port;
+        default = 2222;
+        description = "Port the built-in SSH server listens on (SSH_LISTEN_PORT).";
+      };
+    };
+
     reverseProxy = traefikLib.mkReverseProxyOptions {
       name = "gitea";
       defaults.enable = false;
@@ -201,8 +215,11 @@ in
             HTTP_PORT = cfg.port;
 
             LFS_START_SERVER = lib.mkIf cfg.lfs.enable true;
-            LFS_ALLOW_PURE_SSH = lib.mkIf cfg.lfs.enable cfg.lfs.allowPureSSH;
-            LFS_HTTP_AUTH_EXPIRY = lib.mkIf cfg.lfs.enable "24h";
+
+            START_SSH_SERVER = lib.mkIf cfg.ssh.enable true;
+            SSH_LISTEN_HOST = lib.mkIf cfg.ssh.enable cfg.ssh.listenHost;
+            SSH_LISTEN_PORT = lib.mkIf cfg.ssh.enable cfg.ssh.listenPort;
+            SSH_DOMAIN = lib.mkIf (cfg.ssh.enable && cfg.ssh.domain != null) cfg.ssh.domain;
           };
 
           repository = {
@@ -212,7 +229,7 @@ in
 
           service.DISABLE_REGISTRATION = cfg.disableRegistration;
 
-          session.COOKIE_SECURE = lib.mkIf cfg.reverseProxy.enable true;
+          session.COOKIE_SECURE = lib.mkDefault true;
         }
         (lib.mkIf (cfg.lfs.enable && cfg.lfs.s3Backend.enable) {
           lfs = {
@@ -239,7 +256,7 @@ in
     };
 
     networking.firewall = lib.mkIf cfg.openFirewall {
-      allowedTCPPorts = [ cfg.port ];
+      allowedTCPPorts = [ cfg.port ] ++ lib.optional cfg.ssh.enable cfg.ssh.listenPort;
     };
 
     services.traefik.dynamic.files.gitea = traefikLib.mkTraefikDynamicConfig {

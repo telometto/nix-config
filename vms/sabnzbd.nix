@@ -1,22 +1,8 @@
-_:
+{ consts, ... }:
 let
-  reg = (import ./vm-registry.nix).sabnzbd;
-  mediaShare = {
-    source = "/rpool/unenc/media/data";
-    mountPoint = "/data";
-    tag = "media-data";
-    proto = "virtiofs";
-  };
-  vpnRoutes = [
-    {
-      Gateway = "10.100.0.1";
-      Destination = "192.168.0.0/16";
-    }
-    {
-      Gateway = "10.100.0.1";
-      Destination = "10.100.0.0/24";
-    }
-  ];
+  reg = (import ./vm-registry.nix { inherit consts; }).sabnzbd;
+  mediaStorage = import ./media-storage.nix;
+  networkDefaults = import ./microvm-network-defaults.nix;
 in
 {
   imports = [
@@ -32,8 +18,8 @@ in
             size = 10240;
           }
         ];
-        extraShares = [ mediaShare ];
-        extraRoutes = vpnRoutes;
+        extraShares = [ mediaStorage.share ];
+        extraRoutes = networkDefaults.vpnReturnRoutes;
       }
     ))
   ];

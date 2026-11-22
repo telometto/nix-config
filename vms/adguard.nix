@@ -1,19 +1,19 @@
 {
   lib,
   config,
-  inputs,
   VARS,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).adguard;
+  reg = (import ./vm-registry.nix { inherit consts; }).adguard;
 in
 {
   imports = [
     ./base.nix
     ../modules/services/adguardhome.nix
     ../modules/services/resolved.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -34,11 +34,6 @@ in
   #   ssh admin@10.100.0.10 "sudo ssh-keygen -y -f /persist/ssh/ssh_host_ed25519_key" | ssh-to-age
   # Then add the resulting age public key to your .sops.yaml and re-encrypt secrets
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "adguard/password_hash" = {
         mode = "0400";

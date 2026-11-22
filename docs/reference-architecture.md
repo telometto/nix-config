@@ -1,119 +1,410 @@
 # Reference: Architecture & Options
 
-Information reference for this repo’s moving parts, options, and commands.
+Information reference for this repo's moving parts, options, and commands.
 
 ## Flake
 
-- Hosts are defined via `mkHost` in [flake.nix](../flake.nix). Each host includes:
-  - [system-loader.nix](../system-loader.nix)
-  - [host-loader.nix](../host-loader.nix) (auto-imports all `.nix` files under `hosts/<hostname>/`)
-  - External modules: home-manager, sops-nix, lanzaboote, microvm
+`system` is hard-pinned to `x86_64-linux` in `flake.nix`. All machines are x86_64.
 
-Outputs:
+### Outputs
 
-- `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}`
-- `formatter.<system>` (treefmt wrapper)
-- `checks.<system>.formatting`
+| Output | Description |
+|--------|-------------|
+| `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}` | The four physical hosts |
+| `nixosConfigurations.<vm-name>` (×28) | MicroVM guests defined in `vms/` |
+| `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
+| `checks.x86_64-linux.formatting` | treefmt formatting check |
+| `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
+| `checks.x86_64-linux.blackbox-observability` | Rendered public HTTP/TLS probe, alert, exporter-hardening, and dashboard contract tests |
+| `checks.x86_64-linux.matrix-baseline` | Matrix publication, listener, firewall, routing, authentication, systemd-ordering, service-hardening, and runtime-secret-path contract tests |
+| `checks.x86_64-linux.matrix-whatsapp-bridge` | Opt-in Matrix–WhatsApp listener, registration, secret-ownership, PostgreSQL, and systemd contract tests |
+| `checks.x86_64-linux.microvm-network-policy` | NixOS integration test for MicroVM identity, lateral, gateway, and bridge isolation |
+| `checks.x86_64-linux.microvm-publication` | Rendered publication contract and failure-case evaluation tests |
+| `checks.x86_64-linux.sandfly-target` | Sandfly target policy, Tailscale, account, and sudo contract tests |
+| `checks.x86_64-linux.scrutiny` | Scrutiny service, secret, and systemd contract tests |
+| `checks.x86_64-linux.cross-seed` | Cross-seed bootstrap, secret, full-content policy, shared media, and private-network contracts |
+| `checks.x86_64-linux.victoriametrics` | VictoriaMetrics listener, firewall, authentication, client credentials, and startup-order contract tests |
+| `devShells.x86_64-linux.default` | Dev shell with nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
-## System Loader
+### `mkHost` — what it always injects
 
-- [system-loader.nix](../system-loader.nix) auto-imports all `.nix` files under [modules/](../modules).
-- Modules typically expose `options.sys.*` with enable toggles and settings.
+Every physical host built with `mkHost` automatically receives:
 
-## Home Manager Integration
+- `system-loader.nix` — imports all modules
+- `host-loader.nix` — imports all files under `hosts/<hostname>/`
+- `home-manager` NixOS module
+- `sops-nix` NixOS module
+- `lanzaboote` NixOS module
+- `microvm.host` NixOS module
+- `quadlet-nix` NixOS module
+- `disko` NixOS module (used by Avalanche; see [Disko and Btrfs](explanation-design.md#disko-and-btrfs))
 
-- Enabled as a NixOS module via flake.
+`specialArgs` available in every host module: `inputs`, `system`, `VARS`, `consts`, `self`, `hostname`, `jellyfinSettings`.
 
-- Control: [modules/core/home-options.nix](../modules/core/home-options.nix)
+______________________________________________________________________
 
-  - `sys.home.enable` (bool)
-  - `sys.home.template` (attrs)
-  - `sys.home.extraModules` (list)
-  - `sys.home.users.<username>.{enable,extraConfig,extraModules}`
+## Loaders
 
-- Build logic: [modules/core/home-users.nix](../modules/core/home-users.nix)
+Three auto-import helpers eliminate manual import lists.
 
-  - Users sourced from `VARS.users` (private secrets flake)
-  - Imports HM modules via [hm-loader.nix](../hm-loader.nix)
-  - Adds host-wide and user@host overrides when files exist
-  - Auto-enables HM desktop flavor: `hm.desktop.<flavor>.enable = true` for `kde|gnome|hyprland`
+### `system-loader.nix`
 
-## Users
+Recursively imports every `.nix` file found under `./modules/`. No exclusions. Any new file placed under `modules/` is immediately in scope for all hosts.
 
-- Options: [modules/core/user-options.nix](../modules/core/user-options.nix)
-  - `sys.users.<username>.enable` (bool per host)
-- Accounts: [modules/core/users.nix](../modules/core/users.nix)
-  - Creates `users.users.<username>` from `VARS.users` when enabled
+### `host-loader.nix`
+
+Recursively imports every `.nix` file under `./hosts/${hostname}/`. The `hostname` value comes from `specialArgs`, so each host's config is fully isolated in its own directory tree.
+
+### `hm-loader.nix`
+
+Recursively imports every `.nix` file under `./home/`, **excluding** override paths. `home-users.nix` opts into only the active role, host, user-wide, and user@host overrides. Host overrides stay machine-local; `home/overrides/user/<username>.nix` intentionally follows that user across machines. See [HM Override System](#hm-override-system) below.
+
+______________________________________________________________________
+
+## System Options (`sys.*`)
+
+All NixOS-level options are defined under the `sys.*` namespace in `modules/`.
+
+| Namespace | Defined in | Purpose |
+|-----------|-----------|---------|
+| `sys.role.{desktop,server}.enable` | `modules/core/roles.nix` | Machine role selection |
+| `sys.desktop.flavor` | `modules/desktop/base.nix` | Desktop env enum: `none` / `gnome` / `kde` / `hyprland` / `cosmic` |
+| `sys.users.<name>.enable` | `modules/core/user-options.nix` | Per-host user toggle |
+| `sys.home.*` | `modules/core/home-options.nix` | HM integration (`enable`, `template`, `users.*`) |
+| `sys.secrets.*` | `modules/security/secrets.nix` | Runtime secret path strings (`nullOr str`) |
+| `sys.security.sandflyTarget.*` | `modules/security/sandfly-target.nix` | Policy-gated, root-equivalent account for agentless Sandfly scans |
+| `sys.boot.lanzaboote.enable` | `modules/boot/secureboot.nix` | Secure Boot via lanzaboote |
+| `sys.boot.plymouth.*` | `modules/boot/plymouth.nix` | Boot splash screen |
+| `sys.networking.{base,networkd,networkmanager}.enable` | `modules/networking/` | Networking stack selection |
+| `sys.programs.*` | `modules/programs/` | ssh, gaming, java, gnupg, nix-ld, etc. |
+| `sys.services.*` | `modules/services/` | ~60 service modules |
+| `sys.storage.filesystems.*` | `modules/storage/filesystems.nix` | Filesystem options |
+| `sys.virtualisation.*` | `modules/virtualisation/` | libvirt, microvm, k3s, general enable |
+| `sys.hardware.nvidia.*` | `modules/hardware/nvidia.nix` | NVIDIA GPU configuration |
+| `sys.nix.distributedBuilds.*` | `modules/core/distributed-builds.nix` | Remote build targets |
+| `sys.overlays.*` | `modules/core/overlays.nix` | Nixpkgs overlays (`fromInputs`, `custom`) |
+
+______________________________________________________________________
+
+## Home Manager Options (`hm.*`)
+
+All Home Manager options are defined under the `hm.*` namespace in `home/`.
+
+| Namespace | Defined in | Purpose |
+|-----------|-----------|---------|
+| `hm.langs` | `home/base.nix` | Regional formatting locale; does not set UI language |
+| `hm.desktop.{gnome,kde,hyprland,xdg}.enable` | `home/desktop/` | Desktop environment integration |
+| `hm.programs.{browsers,development,terminal,media,social,gaming,gpg,tools,beets,fastfetch,packages,gitea,codex}.enable` | `home/programs/` | User program bundles; `gitea` and `codex` are opt-in integrations |
+| `hm.services.{autotidy,gpgAgent,sshAgent}.enable` | `home/services/` | User-level background services; `autotidy` is opt-in with declarative YAML settings |
+| `hm.security.sops.*` | `home/security/sops.nix` | User-level SOPS secret decryption |
+| `hm.accounts.{email,calendar,contact}.enable` | `home/accounts/` | PIM accounts (email, calendar, contacts) |
+| `hm.files.enable` | `home/files/files.nix` | Managed dotfiles |
+
+______________________________________________________________________
+
+## HM Override System
+
+Home Manager config is assembled in the following order. Import order does not
+itself set Nix option priority; overlapping definitions must use
+`lib.mkDefault`, `lib.mkOverride`, or `lib.mkForce` as appropriate.
+
+| Layer | File / mechanism | Scope |
+|-------|-----------------|-------|
+| 1. HM loader modules | All non-override files under `home/` (via hm-loader) | All users, all hosts |
+| 2. Host-wide extra modules | `sys.home.extraModules` in host file | All users on that host |
+| 3. Base template imports | `sys.home.template.imports` in host file | All users on that host |
+| 4. Role override | `home/overrides/role/<role>.nix` | All users on hosts with that role |
+| 5. Host override | `home/overrides/host/<hostname>.nix` | All users on that specific host |
+| 6. User-wide override | `home/overrides/user/<username>.nix` | Specific user on every host |
+| 7. User@host override | `home/overrides/user/<username>-<hostname>.nix` | Specific user on one host |
+| 8. User extra modules | `sys.home.users.<username>.extraModules` in host file | Specific user on that host |
+| 9. Per-user config | `sys.home.users.<username>.extraConfig` in host file | Specific user on that host |
+
+`autoDesktopConfig` is merged separately with `lib.mkDefault`. `lib.mkForce`
+in any override file always wins regardless of import order.
+
+### The `ssh-common.nix` exception
+
+`home/overrides/host/ssh-common.nix` is a shared SSH match-block config that is **not** named after a hostname. It is imported manually by individual host override files (e.g. `home/overrides/host/blizzard.nix` imports it). It is **not** auto-imported by `hm-loader.nix` (overrides are excluded from the loader) nor is it picked up automatically by `home-users.nix`. To share SSH config across multiple hosts, each relevant host override file imports `ssh-common.nix` explicitly.
+
+______________________________________________________________________
 
 ## Roles
 
-- Options: [modules/core/roles.nix](../modules/core/roles.nix)
-  - `sys.role.desktop.enable`
-  - `sys.role.server.enable`
-- Config: [modules/role-desktop.nix](../modules/role-desktop.nix), [modules/role-server.nix](../modules/role-server.nix)
-  - Desktop role enables networking, pipewire, printing, maintenance, tailscale, HM
-  - Server role enables networkd, maintenance, auto-upgrade, HM, tailscale
+Roles bundle sensible defaults for classes of machines. Enable in a host file:
 
-## Secrets (sops-nix)
+```nix
+sys.role.desktop.enable = true;
+# or
+sys.role.server.enable = true;
+```
 
-- Module: [modules/core/sops.nix](../modules/core/sops.nix)
-- `sops.defaultSopsFile` points to secrets from the `nix-secrets` flake.
-- Secrets for services are defined only when the service is enabled.
-- Exposes runtime paths under `config.sys.secrets.*` for consumers.
+| Feature | Desktop role | Server role |
+|---------|:-----------:|:-----------:|
+| Lanzaboote (Secure Boot) | yes | yes |
+| Tailscale | yes | yes |
+| Home Manager | yes | yes |
+| Plymouth (boot splash) | yes | no |
+| PipeWire (audio) | yes | no |
+| Flatpak | yes | no |
+| Gaming / Steam | yes | no |
+| NetworkManager | yes | no |
+| networkd | no | yes |
+| Monthly auto-upgrade | no | yes |
+| NFS awareness | no | yes |
+
+Neither role is a sealed abstraction — any setting it enables can be overridden in the host file.
+
+Config files: [`modules/role-desktop.nix`](../modules/role-desktop.nix), [`modules/role-server.nix`](../modules/role-server.nix).
+
+______________________________________________________________________
+
+## Stack
+
+Operational tools used across the repo.
+
+| Tool | Purpose | Config |
+|------|---------|--------|
+| treefmt-nix | Formatter orchestrator | `treefmt.nix` |
+| nixfmt | Nix file formatter | `treefmt.nix` |
+| shfmt | Shell script formatter (2-space indent, `-ci -sr`) | `treefmt.nix` |
+| yamlfmt | YAML formatter (excludes `.github/workflows/`) | `treefmt.nix` |
+| mdformat | Markdown formatter | `treefmt.nix` |
+| jsonfmt | JSON formatter | `treefmt.nix` |
+| ruff | Python formatter | `treefmt.nix` |
+| sops-nix | Secret decryption at activation time | `modules/core/sops.nix` |
+| lanzaboote | Secure Boot (both roles) | `modules/boot/secureboot.nix` |
+| disko | Declarative Avalanche GPT/Btrfs layout | `hosts/avalanche/disko.nix` |
+| auto-upgrade | Monthly NixOS upgrades (server role only) | `modules/services/auto-upgrade.nix` |
+
+Locally, `nix flake check` evaluates the flake and builds all declared
+checks. The `flake-check.yml` CI workflow runs on every PR and push to main
+and classifies the complete diff with `.github/scripts/flake_ci.py`. Nix changes
+retain global output evaluation through `evaluate-flake-outputs.sh`; shared or
+unmapped runtime inputs select full coverage. Documentation and mapped non-Nix
+inputs select formatting and relevant checks without global output evaluation.
+Selected checks build sequentially in the grouped job, while `microvm-lifecycle`
+runs on a separate runner. Manual and nightly runs evaluate all outputs and
+build every declared check. The stable `flake-check` gate requires every selected
+job to succeed. See [Conditional Flake Check](reference-ci.md#conditional-flake-check)
+for the dependency map and coverage limits. Host and Home Manager validation
+runs separately in `validate-config.yml`.
+
+______________________________________________________________________
+
+## Secrets Flow
+
+Secrets are handled across three distinct layers. The private `nix-secrets`
+flake contains raw secret values encrypted with age keys. System services use
+the system SOPS layer: `sops-nix` decrypts at system activation using the
+host's age identity and writes under `/run/secrets/`. The bridge between that
+layer and system service modules is the `sys.secrets.*` option namespace; those
+modules consume runtime path strings rather than SOPS primitives.
+
+Home Manager profiles have a separate user SOPS layer. The
+`home/security/sops.nix` wrapper forwards `hm.security.sops.*` to the Home
+Manager SOPS-Nix module, which renders user-owned secrets under `%r/secrets.d`
+and stable symlinks under `%r/secrets`. These are not system `/run/secrets`
+paths and are not exposed through `sys.secrets.*`. Opt-in modules consume the
+user paths or placeholders directly within the Home Manager profile.
+
+For example, `hm.programs.gitea.enable` is enabled only for zeno on snowfall.
+It declares `gitea/cf_access_id` and `gitea/cf_access_secret`, renders
+`$XDG_CONFIG_HOME/sops-nix/secrets/rendered/gitea-git-http` with mode `0400`,
+and scopes the Git include and `libsecret` helper to
+`https://git.<public-domain>/`. It asserts that the user SOPS and Git features
+remain enabled, and orders the user SOPS service before the target that starts
+it.
+
+The `whenEnabled` pattern ties secret definitions to their owning feature. A
+system secret is only declared when its corresponding service is enabled, and
+the Gitea user secrets/template are only declared when
+`hm.programs.gitea.enable` and `hm.security.sops.enable` are both effective.
+Disabling the owner removes the dependent declarations instead of leaving a
+dangling decryption rule or Git include.
+
+See also: [Architecture Blueprint — Section 8: Secrets Architecture](Project_Architecture_Blueprint.md#section-8---secrets-architecture) for a full diagram.
+
+______________________________________________________________________
+
+## VM Registry & MicroVM Helper
+
+VMs do **not** use `system-loader.nix`. They are built with a minimal module set assembled by `vms/flake-microvms.nix::mkMicrovm`, which provides only what a VM needs. The physical hosts that run VMs use `microvm.host` (injected by `mkHost`).
+
+- [`vms/vm-registry.nix`](../vms/vm-registry.nix): Central data registry. Single source of truth for CID, MAC, IP, prefix, gateway, optional dedicated host bridge, port, memory, vCPU, and DNS per VM. Import-time validation rejects duplicate allocations, invalid subnets, tap/bridge collisions, and overlapping dedicated networks.
+- [`vms/mkMicrovmConfig.nix`](../vms/mkMicrovmConfig.nix): Helper function that generates common MicroVM infrastructure config (hypervisor, networking, volumes, shares) from a registry entry. Each VM file imports this and passes its registry entry plus any extra volumes or shares.
+- [`vms/base.nix`](../vms/base.nix): Shared hardened base config for all VMs. Includes SSH host keys, admin user, firewall, and stateVersion.
+
+See [`vms/README.md`](../vms/README.md) for the full VM list and per-VM details.
+
+### Host-side instance lifecycle and publication
+
+[`modules/virtualisation/microvm-base.nix`](../modules/virtualisation/microvm-base.nix)
+owns host-side MicroVM lifecycle, network identity and lateral access, raw port
+forwarding, and the standard public HTTP publication path.
+
+| Option | Purpose |
+|--------|---------|
+| `sys.virtualisation.microvm.instances.<name>.enable` | Start and manage the registered VM instance |
+| `sys.virtualisation.microvm.instances.<source>.networkPolicy.allowedPeers.<target>` | Directional private service access; selects primary/explicit ports and requires a reason |
+| `sys.virtualisation.microvm.instances.<name>.portForward.ports` | Optional transport-layer forwarding, independent of publication |
+| `sys.virtualisation.microvm.instances.<name>.publication.enable` | Explicitly enable standard public HTTP publication |
+| `sys.virtualisation.microvm.instances.<name>.publication.hostname` | One DNS label under the canonical public domain |
+| `sys.virtualisation.microvm.instances.<name>.publication.policy` | Named compatibility policy; defaults to the built-in `strict` policy |
+| `sys.virtualisation.microvm.instances.<name>.vmConfig.restartIfChanged` | Restart the guest when its host-managed runner changes; defaults to `true` |
+| `sys.virtualisation.microvm.instances.<name>.vmConfig.updateFlake` | Flake reference atomically persisted without disabling host-managed upgrades, for per-VM `microvm -u` updates; defaults on Blizzard to `github:telometto/nix-config` |
+| `sys.virtualisation.microvm.publication.canonicalDomain` | Domain suffix for standard publications |
+| `sys.virtualisation.microvm.networkPolicy.mode` | `enforce` by default; temporary `audit` logs and accepts only otherwise-valid undeclared registered unicast |
+| `services.traefik.publicationPolicyMiddlewares` | Host-owned mapping from compatibility-policy names to Traefik middleware implementations |
+
+For each enabled publication, the module derives the backend from the VM
+registry and renders Cloudflare Tunnel ingress plus a matching Traefik router
+and service. CrowdSec is appended automatically. The built-in `strict` policy
+uses `security-headers` and cannot be redefined.
+
+Evaluation rejects publications with disabled instances, missing or malformed
+hostnames, unknown policies or registry targets, duplicate hostnames, an
+unset canonical domain, or disabled Cloudflare/Traefik adapters. Host routes,
+raw port forwarding, and bespoke multi-host or path routes such as Matrix stay
+outside this interface. See the
+[publication diagram](../vms/README.md#host-side-enablement) and
+[ADR 0001](adr/0001-model-public-http-publication-as-instance-intent.md).
+
+Guest-only changes can be built and updated independently of the Blizzard
+system generation. The VM output is the `microvm.declaredRunner`, and the
+host-installed `microvm` command uses each instance's persisted
+`vmConfig.updateFlake` reference:
+
+```bash
+nix build .#nixosConfigurations.<name>-vm.config.microvm.declaredRunner
+sudo microvm -Ru <name>-vm
+```
+
+The first host switch after enabling an instance installs the VM and records
+the update reference. A later host switch is still required for host-owned
+changes such as instance enablement, autostart, publication, forwarding,
+network policy, registry identity, or `stateDir`.
+
+The network-policy implementation derives tap/MAC/IP/FDB/neighbor identity and
+WireGuard gateway pairs from the registry. Native nftables `bridge` and `inet`
+tables authenticate VM frames, filter declared stateful service edges, reject
+unknown taps and unsupported EtherTypes, and block both same-bridge host
+routing and cross-MicroVM-bridge routing. It does not enable the NixOS nftables
+firewall backend; the standard NixOS firewall and NAT continue to own host
+`INPUT` and external forwarding. Blizzard is configured explicitly for
+`enforce`; the preceding audit window is recorded in the dated deployment
+report, and `audit` remains the declarative rollback mode. See the
+[network-policy reference](../vms/README.md#host-side-network-policy) and
+[ADR 0002](adr/0002-enforce-host-owned-microvm-network-policy.md).
+
+______________________________________________________________________
+
+## Podman Containers (quadlet-nix)
+
+- Backend: [quadlet-nix](https://github.com/SEIAROTg/quadlet-nix) — Podman Quadlet systemd integration.
+- Container definitions: [`containers/`](../containers/) (Home Manager modules; imported explicitly by hosts into `home-manager.users.<user>`).
+- Rootless containers use `virtualisation.quadlet.containers` in HM config. The owning user needs `linger = true` and `autoSubUidGidRange = true`.
+- Rootful containers (e.g., inside MicroVMs) use `virtualisation.quadlet.containers` at the NixOS system level.
+- Requires `sys.virtualisation.enable = true` on the host (provides Podman + quadlet via [`modules/virtualisation/virtualisation.nix`](../modules/virtualisation/virtualisation.nix)).
+
+______________________________________________________________________
+
+## Traefik Helpers (`lib/traefik.nix`)
+
+- `mkSecurityHeaders { ... }`: Generate Traefik middleware attrsets with customisable security response headers (X-Frame-Options, CSP, etc.). Pass `null` to any header to omit it.
+- `mkRoutes { domain; defaultMiddlewares? }`: Generate `{ routers; services; }` from a concise routing table mapping service names to subdomains and URLs.
+- `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`: Per-service reverse proxy options used by `modules/services/*.nix`.
+
+These helpers support host services and bespoke routes. Standard public
+MicroVM routes use the publication interface described above.
+
+______________________________________________________________________
+
+## Constants (`lib/constants.nix`)
+
+Centralises shared magic strings and service endpoints: the Tailscale domain
+suffix, the shared Blizzard Tailscale address, namespaced host/VM/secondary and
+network ports, and monitoring identifiers. Cloudflare account and policy IDs
+remain SOPS secrets, not constants. Imported once in `flake.nix` and passed
+into NixOS, MicroVM, and Home Manager modules as `consts` via `specialArgs`.
+Prefer the injected `consts` argument over ad-hoc direct imports.
+
+______________________________________________________________________
 
 ## Commands
 
 ```bash
-# Build a host
-nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel
-
-# Switch to a host
+# Apply configuration (requires root; switches immediately)
 sudo nixos-rebuild switch --flake .#<hostname>
 
-# Format code
+# Test activation without making it the boot default
+sudo nixos-rebuild test --flake .#<hostname>
+
+# Dry run — show what would change
+nixos-rebuild dry-run --flake .#<hostname>
+
+# Build without activating
+nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel
+
+# Format all files (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff)
 nix fmt
 
-# Run checks
+# Evaluate and build all checks
 nix flake check
+
+# Evaluate all flake outputs without building them locally
+nix flake check --no-build
+
+# Build and run only the Cloudflare metrics unit-test check
+nix build .#checks.x86_64-linux.cloudflare-metrics --no-link --print-build-logs
+
+# Build and run only the MicroVM publication contract check
+nix build .#checks.x86_64-linux.microvm-publication --no-link --print-build-logs
+
+# Build and run the Matrix baseline contract check
+nix build .#checks.x86_64-linux.matrix-baseline --no-link --print-build-logs
+
+# Build and run the opt-in Matrix–WhatsApp bridge contract check
+nix build .#checks.x86_64-linux.matrix-whatsapp-bridge --no-link --print-build-logs
+
+# Build and run the blackbox observability contract check
+nix build .#checks.x86_64-linux.blackbox-observability --no-link --print-build-logs
+
+# Build and run the MicroVM network-policy integration test
+nix build .#checks.x86_64-linux.microvm-network-policy --no-link --print-build-logs
+
+# Build and run only the Sandfly target contract check
+nix build .#checks.x86_64-linux.sandfly-target --no-link --print-build-logs
+
+# Build and run only the Scrutiny service contract check
+nix build .#checks.x86_64-linux.scrutiny --no-link --print-build-logs
+
+# Build and run only the VictoriaMetrics contract check
+nix build .#checks.x86_64-linux.victoriametrics --no-link --print-build-logs
+
+# Dev shell (includes nil, nixfmt, deadnix, statix, sops, ssh-to-age)
+nix develop
 ```
-
-## Conventions
-
-- Put new system modules under `modules/` — they’re auto-loaded.
-- Put HM modules under `home/` — they’re auto-loaded by HM.
-- Use `sys.*` options to opt-in features; avoid ad-hoc host edits when a module
-  exists.
-- Use overrides under `home/overrides/*` for per-host or per-user adjustments.
-- Use `home/overrides/host/ssh-common.nix` for shared SSH matchBlocks across hosts.
-
-## VM Registry & MicroVM Helper
-
-- [vms/vm-registry.nix](../vms/vm-registry.nix): Central data registry for all
-  MicroVM network and resource allocations. Single source of truth for CID, MAC,
-  IP, port, memory, vCPU, gateway, and DNS per VM.
-- [vms/mkMicrovmConfig.nix](../vms/mkMicrovmConfig.nix): Helper function that
-  generates common MicroVM infrastructure config (hypervisor, networking,
-  volumes, shares) from registry entries. Each VM file imports this and passes
-  its registry entry plus any extra volumes or shares.
-- [vms/base.nix](../vms/base.nix): Shared hardened base config for all VMs.
-  Includes SSH host keys, admin user, firewall, and stateVersion.
-
-## Traefik Helpers (`lib/traefik.nix`)
-
-- `mkSecurityHeaders { ... }`: Generate Traefik middleware attrsets with
-  customisable security response headers (X-Frame-Options, CSP, etc.). Pass
-  `null` to any header to omit it.
-- `mkRoutes { domain; defaultMiddlewares? }`: Generate `{ routers; services; }`
-  from a concise routing table mapping service names to subdomains and URLs.
-- `mkReverseProxyOptions`, `mkTraefikDynamicConfig`, `mkCfTunnelAssertion`:
-  Per-service reverse proxy options used by `modules/services/*.nix`.
-
-## Constants (`lib/constants.nix`)
-
-- Centralises shared magic strings: Tailscale domain suffix, Cloudflare
-  account/policy IDs. Imported directly where needed.
 
 ______________________________________________________________________
 
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*
+## Conventions
+
+- Put new system modules under `modules/` — they're auto-loaded via `system-loader.nix`.
+- Put HM modules under `home/` — they're auto-loaded via `hm-loader.nix`.
+- Use `sys.*` options to opt in features; avoid ad-hoc host edits when a module already exists.
+- Use overrides under `home/overrides/*` for per-host or per-user adjustments.
+- Use `home/overrides/host/ssh-common.nix` for shared SSH matchBlocks; import it from each host override that needs it.
+- Put new PIM account modules under `home/accounts/` — they're auto-loaded via `hm-loader.nix`.
+- Keep sensitive data out of this repo; extend `nix-secrets` (`VARS`) when needed.
+- Module pattern: `options.sys.<category>.<name>.enable = lib.mkEnableOption "..."` with `config = lib.mkIf cfg.enable { ... }`.
+
+______________________________________________________________________
+
+## See Also
+
+- [Architecture Blueprint](Project_Architecture_Blueprint.md) — comprehensive diagrams and detailed explanations
+- [Explanation: Design](explanation-design.md) — rationale behind key decisions
+- [How-To: Add Hosts and Users](how-to-add-host-and-users.md) — step-by-step task guide
+- [vms/README.md](../vms/README.md) — VM list and configuration details
+- [modules/README.md](../modules/README.md) — system modules overview

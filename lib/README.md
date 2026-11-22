@@ -1,28 +1,162 @@
 ## Library Functions
 
-Reusable Nix functions and data for the configuration.
+Reusable Nix functions and data shared across the configuration.
+`constants.nix` is passed into hosts and VMs as `consts` via `specialArgs` from
+`flake.nix`, while the other helper files are imported directly where needed.
 
-### Modules
+______________________________________________________________________
 
-#### grafana-dashboards.nix
+### `matrixRoutes` in traefik.nix
 
-Provides functions and pre-configured dashboards for Grafana provisioning.
+Defines the MAS and Synapse Nginx route locations used by the Matrix MicroVM,
+plus the path probes used by its focused baseline check. Keep route boundaries
+and near-miss cases in this helper so the generated configuration and its
+runtime-selection tests share one contract.
 
-**Functions:**
+The exact rendezvous endpoint and its session prefix have separate contracts.
+The baseline check requires a representative probe for every proxied location,
+derives its route and client-IP probes from those contracts, and checks backend
+identity independently using two mock backends. MAS rejects Synapse-only
+rendezvous traffic. The mocks use dynamic loopback ports, bounded requests,
+and explicit readiness checks; they do not establish live MAS/Synapse behavior.
 
-| Function | Description |
-|----------|-------------|
-| `fetchGrafanaDashboard` | Fetch dashboard JSON from grafana.com |
+______________________________________________________________________
 
-**Dashboard Collections:**
+### constants.nix
 
-| Collection | Description |
-|------------|-------------|
-| `community` | Popular dashboards from grafana.com |
-| `custom` | Local dashboards from [dashboards/](../dashboards/) |
-| `all` | Combined community + custom dashboards |
+Shared string, endpoint, and port constants used throughout the configuration.
+Loaded once in `flake.nix` as `consts` and threaded through all hosts, VMs, and
+Home Manager modules via `specialArgs`.
 
-**Usage:**
+**Purpose:** Avoid repeating magic strings (domain suffixes, IDs) in multiple
+places.
+
+**Usage pattern:**
+
+```nix
+# In any host or VM module that receives specialArgs
+{ consts, ... }:
+{
+  # Build a Tailscale FQDN for a service
+  services.nginx.virtualHosts."myservice.${consts.tailscale.suffix}" = { ... };
+}
+```
+
+**Exported values:**
+
+| Key | Value | Purpose |
+|-----|-------|---------|
+| `tailscale.suffix` | `"mole-delta.ts.net"` | Tailscale network domain suffix for building service FQDNs |
+| `tailscale.hosts.blizzard.ipv4` | `"100.85.254.99"` | Shared Blizzard Tailscale endpoint |
+| `tailscale.hosts.snowfall.ipv4` | `"100.67.190.43"` | Snowfall Tailscale endpoint |
+| `tailscale.hosts.sandfly.ipv4` | `"100.116.146.113"` | Sandfly scanner source address |
+| `ports.host.sandflySsh` | `2222` | Dedicated host scanner SSH listener |
+| `ports.host.<service>` | service-specific integer | Physical-host service ports |
+| `ports.vm.<service>` | service-specific integer | MicroVM primary service ports |
+| `ports.secondary.<service>` | service-specific integer or `{ hostPort, containerPort }` | Secondary service endpoints and container contracts |
+| `ports.network.<service>` | service-specific integer | Network-only ports such as the qBittorrent torrent port |
+| `victoriametrics.username` | `"metrics-writer"` | Shared Basic Authentication username for the protected metrics endpoint |
+
+MicroVM primary ports in `vms/vm-registry.nix` are sourced from
+`consts.ports.vm`, so the registry remains the assembled VM contract without
+duplicating numeric assignments. The registry receives the same injected
+`consts` value as the rest of the NixOS configuration.
+
+______________________________________________________________________
+
+### traefik.nix
+
+Helper functions for generating Traefik dynamic configuration and NixOS option
+declarations. Reduces the per-service boilerplate when wiring up reverse-proxy
+support.
+
+**Purpose:** Every service module that supports a reverse proxy needs the same
+set of options (domain, pathPrefix, cfTunnel, etc.) and the same Traefik
+router/service config block. These helpers generate both from a single
+descriptor.
+
+These helpers remain appropriate for host services and bespoke routes.
+Standard public MicroVM routes use the provider-neutral publication interface
+in `modules/virtualisation/microvm-base.nix`; see
+[vms/README.md](../vms/README.md#host-side-enablement).
+
+**Usage pattern — adding reverse-proxy options to a service module:**
+
+```nix
+{ lib, config, pkgs, ... }:
+let
+  traefikLib = import ../../lib/traefik.nix { inherit lib; };
+  cfg = config.sys.services.myservice;
+in
+{
+  options.sys.services.myservice = {
+    enable = lib.mkEnableOption "My Service";
+  } // traefikLib.mkReverseProxyOptions { name = "myservice"; };
+
+  config = lib.mkIf cfg.enable (lib.mkMerge [
+    {
+      # ... service config ...
+    }
+    (traefikLib.mkTraefikDynamicConfig {
+      name = "myservice";
+      cfg = cfg;
+      config = config;
+      port = 8080;
+    })
+    { assertions = [ (traefikLib.mkCfTunnelAssertion { name = "myservice"; cfg = cfg; }) ]; }
+  ]);
+}
+```
+
+**Function signatures:**
+
+| Function | Parameters | Returns |
+|----------|------------|---------|
+| `defaultPermissionsPolicy` | — | `string` — opinionated browser permissions policy header value |
+| `defaultCsp` | — | `string` — default Content Security Policy header value |
+| `mkSecurityHeaders` | `{ xFrameOptions, xssProtection, referrerPolicy, permissionsPolicy, csp, extraResponseHeaders, requestHeaders }` | Traefik middleware headers attrset. Pass `null` to any param to omit that header. |
+| `mkRoutes` | `{ domain, defaultMiddlewares? } routes` | `{ routers, services }` — Traefik router + service config for each route |
+| `mkReverseProxyOptions` | `{ name, defaults? }` | NixOS option declarations for `reverseProxy` sub-option |
+| `mkTraefikDynamicConfig` | `{ name, cfg, config, port, defaultMiddlewares?, extraDynamicConfig? }` | `lib.mkIf` block generating Traefik router + service config |
+| `mkCfTunnelAssertion` | `{ name, cfg }` | NixOS assertion: `cfTunnel.enable` requires `domain` to be set |
+
+**`mkReverseProxyOptions` generated sub-options:**
+
+Each call adds these options under `sys.services.<name>.reverseProxy`:
+
+| Option | Type | Purpose |
+|--------|------|---------|
+| `enable` | `bool` | Toggle reverse proxy for this service |
+| `domain` | `str` (nullable) | FQDN used for the Traefik router rule |
+| `pathPrefix` | `str` (nullable) | URL path prefix to match |
+| `stripPrefix` | `bool` | Strip the path prefix before forwarding |
+| `middlewares` | `[str]` (nullable) | Replacement middleware chain. When `null`, the helper uses `defaultMiddlewares`. |
+| `extraMiddlewares` | `[str]` | Additional middleware names appended after the selected default or replacement chain |
+| `cfTunnel.enable` | `bool` | Route via Cloudflare tunnel instead of direct |
+
+**`mkRoutes` route entry shape:**
+
+```nix
+{ subdomain, url, entryPoints?, middlewares? }
+```
+
+For services using `mkTraefikDynamicConfig`, set `reverseProxy.middlewares`
+when a route needs to replace the default middleware chain, for example to avoid
+stacking two CSP-producing header middlewares. Use
+`reverseProxy.extraMiddlewares` when the route should keep its default chain and
+append additional behavior.
+
+______________________________________________________________________
+
+### grafana-dashboards.nix
+
+Provides functions and pre-configured dashboard references for Grafana
+provisioning.
+
+**Purpose:** Centralise all dashboard fetch parameters (gnetId, revision, hash)
+so they are updated in one place and referenced by name elsewhere.
+
+**Usage pattern:**
 
 ```nix
 let
@@ -33,35 +167,42 @@ in
     enable = true;
     provision.dashboards = {
       inherit (grafanaDashboards.community) node-exporter-full;
-      inherit (grafanaDashboards.custom) zfs-overview power-consumption;
+      inherit (grafanaDashboards.custom) cloudflare-overview zfs-overview power-consumption;
+      # Or pull everything at once:
+      # inherit (grafanaDashboards.all) node-exporter-full zfs-overview;
     };
   };
 }
 ```
 
-**Available Community Dashboards:**
+**Function signatures:**
 
-- `node-exporter-full` — Comprehensive node metrics (ID: 1860)
-- `kubernetes-cluster` — Kubernetes overview (ID: 315)
+| Function | Parameters | Returns |
+|----------|------------|---------|
+| `fetchGrafanaDashboard` | `{ gnetId, revision, hash, name? }` | `pkgs.fetchurl` derivation from grafana.com/api/dashboards |
 
-**Available Custom Dashboards:**
+**Available community dashboards** (fetched from grafana.com at build time):
 
-- `zfs-overview` — ZFS pool and dataset metrics
-- `power-consumption` — Power usage monitoring
-- `power-consumption-historical` — Historical power data
-- `ups-monitoring` — UPS status and metrics
-- `electricity-prices` — Energy pricing data
+| Key | gnetId | Revision | Description |
+|-----|--------|----------|-------------|
+| `community.node-exporter-full` | 1860 | 45 | Comprehensive node metrics |
+| `community.kubernetes-cluster` | 315 | 3 | Kubernetes cluster overview |
 
-#### grafana.nix
+**Available custom dashboards** (local JSON files):
 
-Helper functions for Grafana configuration.
+| Key | Source path | Description |
+|-----|-------------|-------------|
+| `custom.arr-services` | `dashboards/shared/arr-services.json` | Sonarr/Radarr/etc metrics |
+| `custom.cloudflare-overview` | `dashboards/host/blizzard/cloudflare-overview.json` | Cloudflare HTTP analytics, Access authentication activity, and collector health |
+| `custom.zfs-overview` | `dashboards/host/blizzard/zfs-overview.json` | ZFS pool and dataset metrics |
+| `custom.power-consumption` | `dashboards/shared/power-consumption.json` | Real-time power usage |
+| `custom.power-consumption-historical` | `dashboards/host/blizzard/power-consumption-historical.json` | Historical power data |
+| `custom.ups-monitoring` | `dashboards/host/blizzard/ups-monitoring.json` | UPS status and metrics |
+| `custom.electricity-prices` | `dashboards/shared/electricity-prices.json` | Energy pricing data |
 
-### Adding Dashboards
+`all = community // custom` — convenient union of both sets.
 
-#### From Grafana.com
-
-1. Find the dashboard ID and revision on grafana.com
-1. Add to `community` in [grafana-dashboards.nix](grafana-dashboards.nix):
+**Adding a community dashboard:**
 
 ```nix
 community = {
@@ -73,11 +214,7 @@ community = {
 };
 ```
 
-#### Custom Dashboards
-
-1. Export JSON from Grafana or create manually
-1. Save to [dashboards/](../dashboards/) (shared or host-specific)
-1. Reference in `custom`:
+**Adding a custom dashboard:**
 
 ```nix
 custom = {
@@ -85,12 +222,86 @@ custom = {
 };
 ```
 
+______________________________________________________________________
+
+### grafana.nix
+
+Panel-builder DSL for authoring Grafana dashboard JSON in Nix. Eliminates
+hand-editing large JSON blobs by providing typed constructor functions for every
+panel kind.
+
+**Purpose:** Build fully valid Grafana dashboard JSON from Nix expressions so
+dashboards can reference variables, share field configs, and be composed
+programmatically.
+
+**Usage pattern:**
+
+```nix
+let
+  g = import ./lib/grafana.nix { inherit lib; };
+in
+g.mkDashboard {
+  title = "My Service";
+  uid = "my-service-uid";
+  tags = [ "myservice" ];
+  panels = [
+    (g.mkRow { title = "Overview"; id = 1; gridPos = { x = 0; y = 0; w = 24; h = 1; }; })
+    (g.mkTimeseries {
+      title = "Request Rate";
+      id = 2;
+      description = "Requests per second";
+      gridPos = { x = 0; y = 1; w = 12; h = 8; };
+      targets = [
+        (g.mkTarget {
+          expr = "rate(http_requests_total[5m])";
+          legendFormat = "{{method}} {{status}}";
+          refId = "A";
+        })
+      ];
+    })
+  ];
+}
+```
+
+**Pre-built field config helpers:**
+
+| Name | Description |
+|------|-------------|
+| `prometheusDatasource` | `{ type = "prometheus"; uid = "\${ds_prometheus}"; }` — standard Prometheus datasource reference |
+| `defaultGaugeFieldConfig` | Gauge defaults: color-mode thresholds, 0–100% range, green/orange/red three-step |
+| `defaultTimeseriesFieldConfig` | Timeseries defaults: palette-classic, line draw, fill opacity 40 |
+
+**Panel constructor functions:**
+
+| Function | Key Parameters | Description |
+|----------|----------------|-------------|
+| `mkRow` | `{ title, id, gridPos?, collapsed? }` | Section header / collapsible row |
+| `mkGauge` | `{ title, id, description, gridPos, targets, fieldConfig?, thresholds?, unit? }` | Gauge panel |
+| `mkStat` | `{ title, id, description?, gridPos, targets, unit?, decimals?, fieldConfig? }` | Single-value stat panel |
+| `mkTimeseries` | `{ title, id, description, gridPos, targets, fieldConfig?, options?, unit? }` | Time-series graph panel |
+| `mkBargauge` | `{ title, id, description, gridPos, targets, fieldConfig? }` | Horizontal bar gauge panel |
+
+**Query and dashboard assembly functions:**
+
+| Function | Key Parameters | Description |
+|----------|----------------|-------------|
+| `mkTarget` | `{ expr, legendFormat?, refId, instant?, exemplar? }` | Prometheus query target |
+| `mkDashboard` | `{ title, uid?, panels, variables?, links?, tags?, annotations? }` | Assembles full Grafana dashboard JSON |
+
+______________________________________________________________________
+
+### Adding Things
+
+| Task | Action |
+|------|--------|
+| New shared constant | Add to `constants.nix` and reference via `consts` in `specialArgs` |
+| New Traefik middleware | Extend `mkSecurityHeaders` or add a helper in `traefik.nix` |
+| New community dashboard | Add `fetchGrafanaDashboard` entry to `grafana-dashboards.nix` |
+| New custom dashboard | Export JSON to `dashboards/`, add path to `custom` in `grafana-dashboards.nix` |
+| New panel type | Add constructor function to `grafana.nix` following the existing pattern |
+
 ### Related
 
 - [Grafana service module](../modules/services/grafana.nix)
 - [Dashboard files](../dashboards/)
-
-______________________________________________________________________
-
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*
+- [Traefik service module](../modules/services/traefik.nix)

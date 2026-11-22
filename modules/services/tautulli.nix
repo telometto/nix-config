@@ -60,7 +60,8 @@ in
             Referrer-Policy = "no-referrer-when-downgrade";
             Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), picture-in-picture=(self)";
           };
-          # Relaxed CSP to allow Plex OAuth flow
+          # Plex OAuth requires this relaxed policy; do not use it for
+          # unrelated services.
           contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://plex.tv https://*.plex.tv https://*.plex.direct wss://*.plex.direct; frame-src https://app.plex.tv;";
         };
       };

@@ -7,10 +7,12 @@
         "@wheel"
       ];
 
+      lint-url-literals = "warn";
+
       experimental-features = [
         "nix-command"
         "flakes"
-        "no-url-literals"
+        "fetch-tree"
         "parse-toml-timestamps"
         "verified-fetches"
         "cgroups"

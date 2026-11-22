@@ -1,6 +1,18 @@
 { lib, ... }:
 {
   options.sys.secrets = {
+    rustdeskServerPublicKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Runtime path to the SOPS-managed RustDesk server public key; never read during Nix evaluation.";
+    };
+
+    crossSeedSettingsFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Runtime JSON containing cross-seed API credentials and selected Torznab URLs.";
+    };
+
     tsKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string (do not coerce into store)
       default = null;
@@ -162,6 +174,42 @@
       '';
     };
 
+    cloudflareAccountIdFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the Cloudflare Account ID.
+        Used by Cloudflare API integrations. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    cloudflareMetricsApiTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the least-privilege Cloudflare metrics API token.
+        Used by cloudflare-metrics. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    cloudflareAccessOwnerEmailsFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing expected Cloudflare Access owner email addresses.
+        Used by cloudflare-metrics. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
+    cloudflarePolicyIdFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str; # runtime path string
+      default = null;
+      description = ''
+        Path to a file containing the Cloudflare Access Policy ID.
+        Used by cloudflare-access-ip-updater service. Mapped from SOPS in core/sops.nix.
+      '';
+    };
+
     upsmonPasswordFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str; # runtime path string
       default = null;
@@ -198,6 +246,18 @@
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "Path to a file containing the WireGuard private key. Mapped from SOPS in core/sops.nix.";
+    };
+
+    scrutinyTokenFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to the InfluxDB API token used by Scrutiny. Mapped from SOPS in core/sops.nix.";
+    };
+
+    scrutinyTokenEnvironmentFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to the SOPS-rendered EnvironmentFile containing the Scrutiny InfluxDB token. Mapped from core/sops.nix.";
     };
 
     paperlessSecretKeyFile = lib.mkOption {

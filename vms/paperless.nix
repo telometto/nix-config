@@ -1,11 +1,11 @@
 {
   config,
-  inputs,
   VARS,
+  consts,
   ...
 }:
 let
-  reg = (import ./vm-registry.nix).paperless;
+  reg = (import ./vm-registry.nix { inherit consts; }).paperless;
   paperlessTmpDir = "/var/lib/paperless/tmp";
 in
 {
@@ -13,7 +13,7 @@ in
     ./base.nix
     ../modules/services/paperless.nix
     ../modules/services/protonmail-bridge.nix
-    inputs.sops-nix.nixosModules.sops
+    ./sops-base.nix
     (import ./mkMicrovmConfig.nix (
       reg
       // {
@@ -39,11 +39,6 @@ in
   ];
 
   sops = {
-    defaultSopsFile = inputs.nix-secrets.secrets.secretsFile;
-    defaultSopsFormat = "yaml";
-    age.sshKeyPaths = [ "/persist/ssh/ssh_host_ed25519_key" ];
-    useSystemdActivation = true;
-
     secrets = {
       "paperless/admin_password" = {
         mode = "0440";
@@ -56,11 +51,6 @@ in
         group = "paperless";
       };
     };
-  };
-
-  sys.secrets = {
-    paperlessKeyFile = config.sops.secrets."paperless/admin_password".path;
-    paperlessSecretKeyFile = config.sops.secrets."paperless/secret_key".path;
   };
 
   networking.firewall.allowedTCPPorts = [ reg.port ];
@@ -87,6 +77,11 @@ in
   };
 
   sys = {
+    secrets = {
+      paperlessKeyFile = config.sops.secrets."paperless/admin_password".path;
+      paperlessSecretKeyFile = config.sops.secrets."paperless/secret_key".path;
+    };
+
     services = {
       protonmail-bridge.enable = true;
 
@@ -122,7 +117,7 @@ in
           PAPERLESS_DBHOST = "/run/postgresql";
           PAPERLESS_CONSUMER_RECURSIVE = "true";
           PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS = "true";
-          # inotify doesn't work over NFS — poll every 30 seconds instead
+          # inotify doesn't work over NFS - poll every 30 seconds instead
           # PAPERLESS_CONSUMER_POLLING = "30";
           # Automatically delete duplicate documents from the consumption folder
           PAPERLESS_CONSUMER_DELETE_DUPLICATES = "true";

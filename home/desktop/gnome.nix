@@ -98,7 +98,7 @@ in
       pkgs.gnomeExtensions.coverflow-alt-tab
       pkgs.gnomeExtensions.clipboard-indicator
       pkgs.gnomeExtensions.gsconnect
-      pkgs.gnomeExtensions.openweather-refined
+      # pkgs.gnomeExtensions.openweather-refined # deprecated
       pkgs.gnomeExtensions.proton-vpn-button
       pkgs.gnomeExtensions.status-area-horizontal-spacing
       pkgs.gnomeExtensions.tailscale-status
@@ -131,8 +131,11 @@ in
       gtk3.extraConfig = {
         gtk-application-prefer-dark-theme = 1;
       };
-      gtk4.extraConfig = {
-        gtk-application-prefer-dark-theme = 1;
+      gtk4 = {
+        theme = null;
+        extraConfig = {
+          gtk-application-prefer-dark-theme = 1;
+        };
       };
     };
 

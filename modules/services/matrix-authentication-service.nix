@@ -7,8 +7,15 @@
 let
   cfg = config.sys.services.matrix-authentication-service;
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
+  webBindAddress =
+    if cfg.bindAddress != null then
+      cfg.bindAddress
+    else if cfg.openFirewall then
+      "0.0.0.0"
+    else
+      "127.0.0.1";
 
-  # Base config without secrets — an external oneshot (e.g. the VM's
+  # Base config without secrets - an external oneshot (e.g. the VM's
   # mas-secret service) must merge decrypted secrets and point
   # runtimeConfigFile at the result.
   baseConfig = lib.recursiveUpdate {
@@ -26,7 +33,7 @@ let
           ];
           binds = [
             {
-              address = "${if cfg.openFirewall then "0.0.0.0" else "127.0.0.1"}:${toString cfg.port}";
+              address = "${webBindAddress}:${toString cfg.port}";
             }
           ];
           proxy_protocol = false;
@@ -36,19 +43,14 @@ let
           resources = [ { name = "health"; } ];
           binds = [
             {
-              host = "localhost";
+              host = "127.0.0.1";
               port = cfg.healthPort;
             }
           ];
           proxy_protocol = false;
         }
       ];
-      trusted_proxies = [
-        "127.0.0.1/8"
-        "10.0.0.0/8"
-        "172.16.0.0/12"
-        "192.168.0.0/16"
-      ];
+      trusted_proxies = cfg.trustedProxies;
       public_base = cfg.publicBaseUrl;
       inherit (cfg) issuer;
     };
@@ -94,7 +96,35 @@ let
 
   baseConfigFile = pkgs.writeText "mas-config-base.json" (builtins.toJSON baseConfig);
 
+  runtimeConfigPath =
+    if cfg.runtimeConfigFile != null then cfg.runtimeConfigFile else "${baseConfigFile}";
+  runtimeConfigReadOnlyPaths = lib.optional (cfg.runtimeConfigFile != null) (
+    builtins.dirOf cfg.runtimeConfigFile
+  );
+
   postgresqlPackage = config.services.postgresql.package;
+  helperServiceHardening = {
+    AmbientCapabilities = "";
+    CapabilityBoundingSet = "";
+    LockPersonality = true;
+    NoNewPrivileges = true;
+    PrivateDevices = true;
+    PrivateTmp = true;
+    ProtectClock = true;
+    ProtectControlGroups = true;
+    ProtectHome = true;
+    ProtectHostname = true;
+    ProtectKernelLogs = true;
+    ProtectKernelModules = true;
+    ProtectKernelTunables = true;
+    ProtectSystem = "strict";
+    RemoveIPC = true;
+    RestrictAddressFamilies = [ "AF_UNIX" ];
+    RestrictNamespaces = true;
+    RestrictRealtime = true;
+    RestrictSUIDSGID = true;
+    SystemCallArchitectures = "native";
+  };
 in
 {
   options.sys.services.matrix-authentication-service = {
@@ -104,6 +134,17 @@ in
       type = lib.types.port;
       default = 8081;
       description = "Port for the MAS web listener (OIDC, compat, UI).";
+    };
+
+    bindAddress = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Address on which the MAS web listener binds. When null, the listener
+        binds to 127.0.0.1 unless openFirewall is enabled, in which case it
+        binds to 0.0.0.0.
+      '';
+      example = "127.0.0.1";
     };
 
     healthPort = lib.mkOption {
@@ -157,7 +198,7 @@ in
           "smtp"
         ];
         default = "smtp";
-        description = "Email transport — blackhole discards all mail.";
+        description = "Email transport - blackhole discards all mail.";
       };
 
       mode = lib.mkOption {
@@ -206,13 +247,13 @@ in
     matrix = {
       homeserver = lib.mkOption {
         type = lib.types.str;
-        default = "localhost:8008";
+        default = "127.0.0.1:8008";
         description = "Synapse server_name:port for MAS to contact.";
       };
 
       endpoint = lib.mkOption {
         type = lib.types.str;
-        default = "http://localhost:8008/";
+        default = "http://127.0.0.1:8008/";
         description = "Synapse admin API endpoint URL.";
       };
     };
@@ -226,12 +267,25 @@ in
     runtimeConfigFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Override the MAS config file path at runtime. When null, uses the Nix-generated base config.";
+      description = ''
+        Absolute path to the MAS configuration file used by the service at
+        runtime. When null, use the Nix-generated base config. The parent
+        directory of a custom path is made read-only in the MAS service
+        sandbox; a producer must materialize the file before MAS starts.
+      '';
+      example = "/run/mas-secret/config.json";
     };
 
     openFirewall = lib.mkOption {
       type = lib.types.bool;
       default = false;
+    };
+
+    trustedProxies = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "127.0.0.1/32" ];
+      description = "CIDR ranges whose forwarded headers MAS is allowed to trust.";
+      example = [ "127.0.0.1/32" ];
     };
 
     reverseProxy = traefikLib.mkReverseProxyOptions {
@@ -255,7 +309,7 @@ in
     };
     users.groups.mas = { };
 
-    # Base config (without secrets) — written to /etc so the runtime
+    # Base config (without secrets) - written to /etc so the runtime
     # assembly service can read and merge it with decrypted secrets.
     environment.etc."matrix-authentication-service/config.json" = {
       source = baseConfigFile;
@@ -264,7 +318,7 @@ in
       mode = "0400";
     };
 
-    # Idempotent DB creation — runs before MAS to ensure the role and
+    # Idempotent DB creation - runs before MAS to ensure the role and
     # database exist even if PostgreSQL was initialised before MAS was added.
     systemd.services.mas-db-init = lib.mkIf cfg.database.createLocally {
       description = "Create MAS PostgreSQL database and role";
@@ -272,7 +326,7 @@ in
       requires = [ "postgresql.service" ];
       before = [ "matrix-authentication-service.service" ];
       requiredBy = [ "matrix-authentication-service.service" ];
-      serviceConfig = {
+      serviceConfig = helperServiceHardening // {
         Type = "oneshot";
         RemainAfterExit = true;
         User = config.services.postgresql.superUser;
@@ -305,11 +359,7 @@ in
         Type = "simple";
         User = "mas";
         Group = "mas";
-        ExecStart =
-          let
-            configPath = if cfg.runtimeConfigFile != null then cfg.runtimeConfigFile else "${baseConfigFile}";
-          in
-          "${pkgs.matrix-authentication-service}/bin/mas-cli server --config ${configPath}";
+        ExecStart = "${pkgs.matrix-authentication-service}/bin/mas-cli server --config ${runtimeConfigPath}";
         Restart = "on-failure";
         RestartSec = "5s";
 
@@ -319,11 +369,36 @@ in
         RuntimeDirectoryMode = "0750";
 
         # Hardening
+        AmbientCapabilities = "";
+        CapabilityBoundingSet = "";
+        LockPersonality = true;
+        NoNewPrivileges = true;
+        PrivateDevices = true;
         ProtectSystem = "strict";
         ProtectHome = true;
         PrivateTmp = true;
-        NoNewPrivileges = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        ReadOnlyPaths = [
+          "/etc/matrix-authentication-service/config.json"
+        ]
+        ++ runtimeConfigReadOnlyPaths;
         ReadWritePaths = [ "/var/lib/mas" ];
+        RemoveIPC = true;
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        SystemCallArchitectures = "native";
+        UMask = "0077";
       };
     };
 
@@ -353,11 +428,15 @@ in
             builtins.match ".*[:@].*@.*" cfg.database.uri != null
             || builtins.match ".*password=.*" cfg.database.uri != null
           );
-        message = "sys.services.matrix-authentication-service.database.uri must not contain embedded credentials — inject them via runtime secrets instead";
+        message = "sys.services.matrix-authentication-service.database.uri must not contain embedded credentials - inject them via runtime secrets instead";
       }
       {
         assertion = cfg.email.transport != "smtp" || (cfg.email.hostname != "" && cfg.email.username != "");
         message = "sys.services.matrix-authentication-service.email.hostname and email.username must be set when email.transport is 'smtp'";
+      }
+      {
+        assertion = cfg.runtimeConfigFile == null || lib.hasPrefix "/" cfg.runtimeConfigFile;
+        message = "sys.services.matrix-authentication-service.runtimeConfigFile must be an absolute path when set";
       }
       {
         assertion =

@@ -7,6 +7,9 @@
 let
   cfg = config.sys.services.grafana;
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
+  hasDefaultDatasource = lib.any (
+    datasource: datasource.isDefault or false
+  ) cfg.provision.datasources;
 in
 {
   options.sys.services.grafana = {
@@ -54,6 +57,20 @@ in
               type = "prometheus";
               url = "http://localhost:9090";
               isDefault = true;
+            }
+          ]
+        '';
+      };
+
+      deleteDatasources = lib.mkOption {
+        type = lib.types.listOf lib.types.attrs;
+        default = [ ];
+        description = "Datasource deletion rules to run before provisioning datasources";
+        example = lib.literalExpression ''
+          [
+            {
+              name = "Prometheus";
+              orgId = 1;
             }
           ]
         '';
@@ -140,13 +157,22 @@ in
 
         datasources.settings = {
           apiVersion = 1;
+          deleteDatasources =
+            lib.optionals (config.sys.services.prometheus.enable or false) [
+              {
+                name = "Prometheus";
+                orgId = 1;
+              }
+            ]
+            ++ cfg.provision.deleteDatasources;
           datasources =
             lib.optionals (config.sys.services.prometheus.enable or false) [
               {
                 name = "Prometheus";
+                uid = "prometheus";
                 type = "prometheus";
                 url = "http://${config.sys.services.prometheus.listenAddress}:${toString config.sys.services.prometheus.port}";
-                isDefault = true;
+                isDefault = !hasDefaultDatasource;
                 editable = false;
               }
             ]

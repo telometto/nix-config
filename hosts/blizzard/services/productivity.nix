@@ -1,11 +1,11 @@
-{ VARS, ... }:
+{ VARS, consts, ... }:
 {
   sys.services = {
     paperless.enable = false;
 
     glance = {
       enable = true;
-      port = 11064;
+      port = consts.ports.host.glance;
 
       reverseProxy = {
         enable = true;
@@ -17,24 +17,10 @@
     actual = {
       enable = false;
 
-      port = 11005;
+      port = consts.ports.host.actual;
       dataDir = "/rpool/unenc/apps/nixos/actual";
     };
 
     firefly.enable = false;
-
-    immich = {
-      enable = false;
-
-      host = "0.0.0.0";
-      port = 11007;
-      openFirewall = true;
-      mediaLocation = "/flash/enc/personal/immich-library";
-      secretsFile = "/opt/sec/immich-file";
-      environment = {
-        IMMICH_LOG_LEVEL = "verbose";
-        IMMICH_TELEMETRY_INCLUDE = "all";
-      };
-    };
   };
 }

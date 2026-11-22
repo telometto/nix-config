@@ -13,12 +13,129 @@ NixOS module, building user configurations automatically for enabled users.
 
 | Directory | Purpose | Example Options |
 |-----------|---------|-----------------|
+| [accounts/](accounts/) | PIM account definitions | `hm.accounts.email.enable`, `hm.accounts.calendar.enable` |
 | [desktop/](desktop/) | Desktop environment integration | `hm.desktop.gnome.enable`, `hm.desktop.kde.enable` |
 | [files/](files/) | Managed dotfiles and themes | File management, Vesktop themes |
-| [programs/](programs/) | User applications | `hm.programs.terminal.enable`, `hm.programs.browsers.enable` |
-| [security/](security/) | User secrets (sops) | `hm.security.sops.*` |
-| [services/](services/) | User services | `hm.services.gpgAgent.enable` |
-| [overrides/](overrides/) | Per-host and per-user overrides | Host-specific and user-specific configs |
+| [programs/](programs/) | User applications | `hm.programs.terminal.enable`, `hm.programs.browsers.enable`, opt-in `hm.programs.gitea.enable` and `hm.programs.codex.enable` |
+| [security/](security/) | User-level SOPS secrets | `hm.security.sops.*` |
+| [services/](services/) | User services | `hm.services.gpgAgent.enable`, `hm.services.sshAgent.enable` |
+| [overrides/](overrides/) | Per-role, per-host, and per-user overrides | Not auto-loaded — see Override System |
+
+### User SOPS paths
+
+The Home Manager SOPS module uses `%r/secrets` for symlinks and
+`%r/secrets.d` for its mount point. `sops-nix` resolves `%r` to the active
+user's runtime directory when the user service runs, so these paths follow the
+actual runtime UID instead of an evaluation-time UID.
+
+Rendered templates use the user's XDG config directory by default, at
+`$XDG_CONFIG_HOME/sops-nix/secrets/rendered/<name>`. Consumers should use the
+template option's `path` value rather than reconstructing this path.
+
+### Codex
+
+[programs/codex.nix](programs/codex.nix) provides opt-in
+`hm.programs.codex.enable`. Its settings, package, profiles, context,
+contextOverride, hooks, plugins, marketplaces, skills, rules, mutableSettings,
+and enableMcpIntegration options alias the corresponding
+[`programs.codex` options](https://github.com/nix-community/home-manager/blob/master/modules/programs/codex/options.nix).
+
+The module replaces only the stable Codex module with the locked `hm-master`
+version and supplies its two configuration merge/cleanup helpers locally.
+The [scoped merger repair](../lib/codex-generators.nix) preserves existing
+ownership and access ACLs during mutable replacement. The adapter guards both
+plugin cleanup paths during dry runs and places them after the write boundary.
+Preserving access controls must succeed before a replacement is installed;
+otherwise activation stops without replacing the original configuration.
+Other Home Manager modules continue using `hm-stable`. The Codex package
+comes from the host's `pkgs`, including any configured package overlay.
+
+Codex is enabled for `zeno` on `snowfall` in the user-and-host override.
+`hm.programs.codex.preferXdgDirectories = false` retains `~/.codex` for
+configuration, authentication, sessions, and installed skills/plugins while
+other programs keep the shared XDG preference. New installations default to
+`home.preferXdgDirectories`; when enabled, Home Manager sets `CODEX_HOME` to
+`$XDG_CONFIG_HOME/codex`.
+
+`mutableSettings = true` merges declared preferences into the existing writable
+`config.toml` during activation. Close Codex and editors that can write this
+file, and pause any configuration-writing automation before activation. The
+pinned merger checks for conflicts but does not lock out other writers:
+concurrent changes can abort activation or be lost between its final check
+and file replacement. With writers quiesced, declared values win and
+undeclared MCP credentials, project trust, and plugin/skill choices remain.
+Declaring an MCP transport intentionally removes incompatible fields for that
+server: a stdio `command` removes HTTP credentials and URL fields, while a
+`url` removes stdio command, argument, working-directory, and environment fields.
+Removing a declared setting does not remove it from that file; clear it locally
+if needed. Keep tokens and
+other secret values out of `settings` and all repository files. Authentication
+and existing MCP credentials remain local runtime state.
+
+The public-only compatibility fixture at
+[tests/codex-adapter.nix](../tests/codex-adapter.nix) checks the stable/master
+module boundary, directory choices, optional aliases, and disabled behavior
+without opening a user's configuration. Re-evaluate it after updating either
+Home Manager input; its header documents the command.
+The `codex-adapter` flake check evaluates all six cases and runs generated
+activation blocks against temporary fixtures for merge permissions, transport
+changes, symlinks, error handling, and static/derived plugin dry runs. ACL tests
+require a filesystem with POSIX ACL support; the secondary-group test requires
+a supplementary group and can be rerun outside the Nix build sandbox:
+
+```bash
+fixture=$(nix build --no-link --print-out-paths .#checks.x86_64-linux.codex-adapter.manifest)
+nix shell nixpkgs#acl nixpkgs#bash nixpkgs#python3 --command python3 tests/codex_activation.py "$fixture"
+```
+
+### Autotidy
+
+[services/autotidy.nix](services/autotidy.nix) wraps the upstream
+[autotidy Home Manager module](https://github.com/prettymuchbryce/autotidy/blob/master/flake.nix).
+It provides opt-in `hm.services.autotidy.enable`, `package`, and `settings`
+options. The service is enabled only for `zeno` on `snowfall`. Four
+non-recursive rules watch the direct contents of the XDG Documents, Pictures,
+Videos, Downloads, and Music directories and route matching files into their
+category directories:
+
+| Category | Example destination |
+|----------|---------------------|
+| Documents | `~/Documents/ext.pdf/report.pdf` |
+| Pictures | `~/Pictures/ext.jpg/photo.jpg` |
+| Videos | `~/Videos/ext.mp4/clip.mp4` |
+| Music | `~/Music/ext.mp3/song.mp3` |
+
+The move action creates extension folders on demand. Upstream's `${ext}`
+template includes the leading dot; the `ext` prefix keeps these folders
+visible. Extension spelling is preserved, so `.JPG` uses `ext.JPG`.
+Files recognized by content without an extension use the category's `ext`
+folder. Known extensions are matched without regard to case and take
+precedence over content detection; MIME filters also recognize supported
+formats outside the extension lists.
+
+Files that match no category stay where they are, including unmatched files
+in Downloads. Subdirectories, symlinks, common download fragments, editor
+backups, and Office lock files are left alone. Name conflicts add a numeric
+suffix to the incoming filename, preserving existing destination files.
+
+Settings are generated as `~/.config/autotidy/config.yaml`, the path upstream
+uses even when `XDG_CONFIG_HOME` is customized. Edit
+`hm.services.autotidy.settings` in the user override instead of editing this
+generated file. Home Manager restarts the service when the settings change.
+
+After rebuilding, inspect the user service and preview the configured rules:
+
+```bash
+systemctl --user status autotidy.service
+autotidy status
+autotidy run --dry-run
+journalctl --user -u autotidy.service
+```
+
+Preview proposed rules before enabling them by writing a separate YAML file
+and running `autotidy run --config /path/to/proposed-rules.yaml --dry-run`.
+See the upstream [configuration reference](https://prettymuchbryce.github.io/autotidy/configuration.html)
+for rule syntax and available filters and actions.
 
 ### Base Configuration
 
@@ -31,7 +148,7 @@ NixOS module, building user configurations automatically for enabled users.
 ### Desktop Auto-Enablement
 
 When a host sets `sys.desktop.flavor`, the corresponding HM desktop module is
-automatically enabled:
+automatically enabled for `kde`, `gnome`, and `hyprland`:
 
 ```nix
 # In host config:
@@ -40,6 +157,11 @@ sys.desktop.flavor = "kde";
 # Automatically enables:
 hm.desktop.kde.enable = true;
 ```
+
+> **Note:** `sys.desktop.flavor = "cosmic"` does **not** auto-enable an HM
+> desktop module. Only `kde`, `gnome`, and `hyprland` are mapped in
+> `modules/core/home-users.nix`. A `cosmic` host must enable any HM desktop
+> integration explicitly.
 
 ### Override System
 
@@ -51,13 +173,33 @@ Apply settings to all users on a specific host:
 home/overrides/host/<hostname>.nix
 ```
 
+#### Role Overrides
+
+Apply settings to all users on hosts with a specific role:
+
+```
+home/overrides/role/<role>.nix
+```
+
 #### User Overrides
 
-Apply settings to a specific user on a specific host:
+Apply settings to a specific user on every host:
+
+```
+home/overrides/user/<username>.nix
+```
+
+Apply settings to a specific user on one host:
 
 ```
 home/overrides/user/<username>-<hostname>.nix
 ```
+
+#### Shared Role Modules
+
+`home/overrides/role/ssh-common.nix` is a shared SSH configuration file used by
+role overrides. It is not picked up automatically as a standalone role; role
+override files that need it import it explicitly.
 
 ### Module Pattern
 
@@ -85,23 +227,45 @@ in
 1. Implement `config = lib.mkIf cfg.enable { ... };`
 1. Module auto-loads via `hm-loader.nix`
 
-### Configuration Precedence (Low → High)
+### Configuration Composition
 
-1. Module defaults (`lib.mkDefault`)
+Modules are assembled in the following order. Import order does not itself set
+Nix option priority; use `lib.mkDefault`, `lib.mkOverride`, or `lib.mkForce`
+when definitions may overlap. User-wide defaults should normally use
+`lib.mkDefault` so a user-and-host override can replace them.
+
+```mermaid
+flowchart TD
+    A["1. hm-loader output\nauto-imported home/** modules\n(includes home/base.nix mkDefaults)"] --> B
+    B["2. sys.home.extraModules\nhost-wide extra modules for all users"] --> C
+    C["3. sys.home.template\nhost-wide base template for all users"] --> D
+    D["4. home/overrides/role/<role>.nix (if exists)"] --> E
+    E["5. home/overrides/host/<hostname>.nix (if exists)"] --> F
+    F["6. home/overrides/user/<user>.nix (if exists)"] --> G
+    G["7. home/overrides/user/<user>-<host>.nix (if exists)"] --> U
+    U["8. sys.home.users.<name>.extraModules / extraConfig"] --> M
+    M["Final Home Manager user config"]
+    AD["autoDesktopConfig\nlib.mkDefault hm.desktop.<flavor>.enable\n(kde / gnome / hyprland only)"] -.->|"merged separately"| M
+    FRC["lib.mkForce (anywhere)"] -.->|"always wins"| M
+```
+
+As a numbered list:
+
+1. Auto-imported HM modules (output of `hm-loader.nix`, includes `home/base.nix` with `lib.mkDefault` values)
+1. Host-wide extra modules (`sys.home.extraModules`)
 1. Base HM template (`sys.home.template`)
-1. Auto desktop config
-1. Host overrides (`overrides/host/<hostname>.nix`)
-1. User overrides (`overrides/user/<user>-<host>.nix`)
-1. Per-user extraConfig (`sys.home.users.<name>.extraConfig`)
+1. Role overrides (`home/overrides/role/<role>.nix`)
+1. Host overrides (`home/overrides/host/<hostname>.nix`)
+1. User overrides (`home/overrides/user/<user>.nix`)
+1. User-and-host overrides (`home/overrides/user/<user>-<host>.nix`)
+1. Per-user `extraModules` / `extraConfig` (`sys.home.users.<name>.*`)
+
+`autoDesktopConfig` (`hm.desktop.<flavor>.enable = lib.mkDefault true`) is merged separately — it uses `lib.mkDefault` so any explicit `hm.desktop.*.enable` setting in any layer takes precedence.
+
+`lib.mkForce` overrides everything regardless of layer.
 
 ### Related Documentation
 
 - [Home users module](../modules/core/home-users.nix) — Builds HM configs
-- [Home options module](../modules/core/home-options.nix) —
-  `sys.home.*` options
+- [Home options module](../modules/core/home-options.nix) — `sys.home.*` options
 - [Architecture Blueprint](../docs/Project_Architecture_Blueprint.md)
-
-______________________________________________________________________
-
-*This documentation was generated with the assistance of LLMs and may require
-verification against current implementation.*

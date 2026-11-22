@@ -1,24 +1,33 @@
-{ config, ... }:
+{ config, consts, ... }:
 {
   sys.services = {
     prometheusExporters = {
       node = {
         enableRapl = true;
-        port = 11011;
+        port = consts.ports.host.nodeExporter;
       };
 
       zfs = {
         enable = true;
 
-        port = 11013;
+        port = consts.ports.host.zfsExporter;
       };
     };
 
     electricityPriceExporter = {
       enable = true;
 
-      port = 11012;
+      port = consts.ports.host.electricityPriceExporter;
       priceArea = "NO2";
+    };
+
+    cloudflareMetrics = {
+      enable = true;
+
+      port = consts.ports.host.cloudflareMetrics;
+      apiTokenFile = config.sys.secrets.cloudflareMetricsApiTokenFile;
+      accountIdFile = config.sys.secrets.cloudflareAccountIdFile;
+      ownerEmailsFile = config.sys.secrets.cloudflareAccessOwnerEmailsFile;
     };
 
     # UPS monitoring (Eaton 9130)
@@ -33,6 +42,7 @@
         description = "Eaton 9130 UPS";
         directives = [
           "pollinterval = 5"
+          "lowbatt = 30"
         ];
       };
 
@@ -55,9 +65,10 @@
       prometheusExporter = {
         enable = true;
 
-        port = 11014;
+        port = consts.ports.host.upsExporter;
         variables = [
           "battery.charge"
+          "battery.charge.low"
           "battery.runtime"
           "input.frequency"
           "input.voltage"

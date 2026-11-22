@@ -11,6 +11,7 @@ let
   grafanaDashboards = import ../../lib/grafana-dashboards.nix { inherit lib pkgs; };
 in
 {
+  programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   imports = [
     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p51
   ];
@@ -33,9 +34,18 @@ in
   sys = {
     role.desktop.enable = true;
 
+    # Bootstrap the fresh Disko installation with systemd-boot.  The desktop
+    # role enables Lanzaboote, but the new /var/lib/sbctl key bundle does not
+    # exist after the disk is wiped.  After the first successful boot, create
+    # fresh keys, remove this override, and rebuild to enable Lanzaboote again.
+    boot.lanzaboote.enable = lib.mkForce false;
+
     desktop.flavor = "gnome";
 
-    users.zeno.enable = true;
+    users = {
+      zeno.enable = true;
+      frankie.enable = true;
+    };
 
     nix.distributedBuilds = {
       enable = true;
@@ -62,13 +72,34 @@ in
       python-venv.enable = true;
     };
 
-    # Pull specific packages from different nixpkgs inputs
-    # overlays.fromInputs = {
-    #   nixpkgs-unstable = [ "vscode" ];
-    #   nixpkgs-stable = [ "vesktop" ];
-    # };
+    ## Pull specific packages from different nixpkgs inputs
+    overlays = {
+      # fromInputs = {
+      #   nixpkgs-small = [
+      #     "pipx"
+      #     "openrazer"
+      #   ];
+      #   nixpkgs-unstable = [ "vscode" ];
+      # };
+
+      ## Add custom overlays
+      custom = [
+        (final: prev: {
+          # openldap = prev.openldap.overrideAttrs {
+          #   doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
+          # };
+
+          pipx = prev.pipx.overrideAttrs {
+            # Issues on master
+            doInstallCheck = false;
+          };
+        })
+      ];
+    };
 
     services = {
+      vscode-server.enable = true;
+
       resolved = {
         enableDNS = false;
         enableFallbackDNS = true;
@@ -84,28 +115,32 @@ in
 
       cloudflareAccessIpUpdater = {
         enable = true;
-        inherit (consts.cloudflare) accountId policyId;
-        apiTokenFile = config.sops.secrets."cloudflare/access_api_token".path;
+        accountIdFile = config.sys.secrets.cloudflareAccountIdFile;
+        policyIdFile = config.sys.secrets.cloudflarePolicyIdFile;
+        apiTokenFile = config.sys.secrets.cloudflareAccessApiTokenFile;
         interval = "30min";
       };
 
       # Enable RAPL power monitoring for CPU
       prometheusExporters.node = {
+        enable = false;
         enableRapl = true;
-        port = 11011;
+        port = consts.ports.host.nodeExporter;
       };
 
       prometheus = {
-        enable = true;
-        port = 11009;
+        # Avalanche no longer collects local metrics; keep the stack disabled
+        # to avoid its services contributing to shutdown latency.
+        enable = false;
+        port = consts.ports.host.prometheus;
         listenAddress = "127.0.0.1";
         openFirewall = false;
         scrapeInterval = "15s";
       };
 
       grafana = {
-        enable = true;
-        port = 11010;
+        enable = false;
+        port = consts.ports.host.grafana;
         addr = "127.0.0.1";
         openFirewall = false;
 
@@ -115,10 +150,11 @@ in
         };
       };
 
-      # Remote write metrics to central VictoriaMetrics on Blizzard for long-term storage
+      # Avalanche no longer collects local metrics; do not send remote writes.
       victoriametricsRemoteWrite = {
-        enable = true;
+        enable = false;
         vmHost = "blizzard"; # Tailscale hostname
+        vmPort = consts.ports.host.victoriametrics;
       };
 
       # nfs = {
@@ -155,6 +191,18 @@ in
     #     # autoScrub.interval = "weekly" by default
     #   };
     # };
+  };
+
+  fileSystems = {
+    "/mnt/backups" = {
+      device = "${consts.tailscale.hosts.blizzard.ipv4}:/rpool/enc/transfers";
+      fsType = "nfs";
+      options = [
+        "nofail"
+        "x-systemd.automount"
+        "x-systemd.idle-timeout=600"
+      ];
+    };
   };
 
   boot.extraModprobeConfig = ''
@@ -200,5 +248,5 @@ in
 
   services.rpcbind.enable = lib.mkDefault true;
 
-  system.stateVersion = "24.05";
+  system.stateVersion = "26.05";
 }

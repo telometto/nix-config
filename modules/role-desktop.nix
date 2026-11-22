@@ -6,11 +6,13 @@
 }:
 let
   cfg = config.sys.role.desktop;
-  THEME = "green_blocks";
+  THEME = "loader";
 in
 {
   config = lib.mkIf cfg.enable {
     sys = {
+      home.enable = true;
+
       boot = {
         lanzaboote.enable = true;
         plymouth = {
@@ -49,12 +51,7 @@ in
 
         timesyncd.enable = true;
         resolved.enable = true;
-        maintenance = {
-          enable = true;
-          desktop.enable = true;
-          firmware.enable = true;
-          zram.enable = true;
-        };
+        maintenance.enable = true;
         autoUpgrade.enable = false;
         pipewire.enable = true;
         printing.enable = true;
@@ -63,9 +60,95 @@ in
       };
 
       virtualisation.enable = true;
+
+      ## Pull specific packages from different nixpkgs inputs
+      overlays = {
+        fromInputs = {
+          # nixpkgs = [
+          #   "pipx"
+          #   "openrazer"
+          # ];
+          # nixpkgs-beta = [ ];
+          nixpkgs-unstable = [
+            "atuin"
+            "tailscale"
+            "vesktop"
+          ];
+          # nixpkgs-stable-small = [
+          #   "atuin"
+          #   "brave-origin"
+          #   "tailscale"
+          # ];
+          nixpkgs-unstable-small = [
+            #   "atuin"
+            # "brave-origin"
+            #   "tailscale"
+          ];
+        };
+
+        ## Add custom overlays
+        custom = [
+          (final: prev: {
+            #   # Avoid loading incompatible Qt plugins from the desktop session.
+            #   brave-origin = prev.brave-origin.override {
+            #     commandLineArgs = "--ui-toolkit=gtk";
+            # };
+
+            # Replace regular Brave for all desktop-role consumers with Brave Origin.
+            # brave = final.brave-origin;
+
+            # openldap = prev.openldap.overrideAttrs {
+            #   doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
+            # };
+
+            # podman-desktop = prev.podman-desktop.override {
+            #   # pnpm 10.29.2 is marked insecure; these packages only need a pnpm 10 builder.
+            #   pnpm_10_29_2 = final.pnpm_10;
+            # };
+
+            /*
+              python3Packages = prev.python3Packages.overrideScope (
+                _python-final: python-prev: {
+                  # Django 5.2.15 install checks currently fail a timing-sensitive XML performance test.
+                  # Upstream nixpkgs update: https://github.com/NixOS/nixpkgs/pull/527788
+                  django = python-prev.django.overridePythonAttrs (_old: {
+                    doCheck = false;
+                  });
+
+                  django_5 = python-prev.django_5.overridePythonAttrs (_old: {
+                    doCheck = false;
+                  });
+                }
+              );
+
+              python313Packages = prev.python313Packages.overrideScope (
+                _python-final: python-prev: {
+                  # Keep the explicit 3.13 package set aligned with python3Packages.
+                  django = python-prev.django.overridePythonAttrs (_old: {
+                    doCheck = false;
+                  });
+
+                  django_5 = python-prev.django_5.overridePythonAttrs (_old: {
+                    doCheck = false;
+                  });
+                }
+              );
+            */
+
+            pipx = prev.pipx.overrideAttrs {
+              # Issues on master
+              doInstallCheck = false;
+            };
+          })
+        ];
+      };
     };
 
-    sys.home.enable = true;
+    # Enable udev access for VIA/Keychron Launcher on QMK-based keyboards.
+    hardware.keyboard.qmk = {
+      enable = true;
+      keychronSupport = true;
+    };
 
     networking.firewall.enable = true;
   };

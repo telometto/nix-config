@@ -1,0 +1,355 @@
+# Jellyfin on the home LAN and via a Tailscale VPS
+
+## Topology and rollout
+
+Viewers use `https://jellyfin.<public-domain>` on a dedicated Hetzner VPS. The VPS
+terminates TLS and proxies to Blizzard's Tailscale IPv4 address
+(`100.85.254.99:8096`). A TCP relay bound to that IP sends the stream
+to `jellyfin-vm` at `10.100.0.72:8096`; it does not create a host NAT
+port-forward. Blizzard does not publish Jellyfin through its local Traefik or
+Cloudflare Tunnel. When publishing the route, point the Jellyfin DNS
+record at the VPS without Cloudflare's proxy. Do not forward Jellyfin ports on
+the home router.
+
+The migration is complete. The current configuration enables Jellyfin in
+`jellyfin-vm`, disables host Jellyfin, and leaves the old
+`/var/lib/jellyfin` on Blizzard untouched. Plex is disabled and remains an
+independent choice in
+[`hosts/blizzard/services/media.nix`](../hosts/blizzard/services/media.nix).
+The Jellyfin checks exercise explicit staging and ready configurations; they
+do not require the deployed media services to stay enabled.
+
+[`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix) currently sets
+`vmServiceReady = true` and `vpsIPv4 = "100.98.54.14"`, enabling the host relay
+and its guarded Tailscale ingress. Set `vpsIPv4 = null` to close that ingress
+while retaining the guest service. For a new setup, keep ingress closed until
+private setup and load checks pass, then configure the dedicated proxy VPS's
+Tailscale IPv4 address and run the public acceptance checks below.
+Do not use the existing Sandfly VPS address
+`100.116.146.113`;
+Sandfly publishes TCP 80 and 443 and advises against other software on its
+host. The VPS, public DNS, and tailnet policy are managed outside this repository.
+
+On a fresh Jellyfin data directory, finish the first-run wizard and create the
+administrator **privately before opening the VPS ingress or enabling the public
+Caddy route**. The first visitor to an unfinished wizard could otherwise create
+the administrator.
+Keep the Jellyfin Caddy site disabled until private setup is complete;
+see [Jellyfin setup](#jellyfin-setup) below.
+
+This route keeps the home IP out of the ordinary viewer connection path when
+clients use only the VPS hostname. Other services or DNS records can still
+reveal it, and the VPS may learn Blizzard's public endpoint through Tailscale.
+Traffic to the public hostname traverses the VPS. Direct home-LAN traffic
+uses the separate local path below.
+
+## Direct home-LAN access
+
+At home, use **`http://192.168.2.100:11072`** in the browser or as the server
+address in a Jellyfin client. Blizzard uses the existing MicroVM port-forwarding
+helper, as it does for Immich: TCP `11072` arriving on `enp8s0` is forwarded to
+`10.100.0.72:8096`. This path stays on the LAN and preserves the client's source
+IP; it does not traverse the VPS, Tailscale, Traefik, or Cloudflare.
+
+The LAN host port is `consts.ports.host.jellyfin` (`11072`); Jellyfin keeps its
+standard HTTP port, `consts.ports.vm.jellyfin` (`8096`), inside the VM. This TCP
+forward carries HTTP; it does not add TLS termination.
+
+[`vms/jellyfin-settings.nix`](../vms/jellyfin-settings.nix) sets
+`lanIPv4Subnet = "192.168.2.0/24"`. Non-null values must be valid IPv4 CIDRs;
+the guest rejects invalid subnets during Nix evaluation. Both the forward and
+the guest firewall's LAN permission require `vmServiceReady = true` and a
+non-null subnet. The guest accepts TCP `8096` from that subnet on `microvm0`,
+alongside the existing host relay permission. The VPS source guard and
+direct-tailnet-to-guest block stay in place. LAN access works independently of
+`vpsIPv4`; set `lanIPv4Subnet = null`
+to disable only the LAN path. Keep **both** `lanIPv4Subnet` and `vpsIPv4` null
+while completing a fresh instance's administrator wizard privately.
+
+After both configurations are applied, disabling LAN access blocks new
+connections. Existing streams may survive a firewall-only reload because
+connection tracking retains established flows. Restart the Jellyfin guest if
+existing streams must also be disconnected.
+
+In **Dashboard → Networking → Local Networks**, include `192.168.2.0/24` if
+Jellyfin should classify these clients as local. Keep **Known Proxies** set to
+only `10.100.0.1`; LAN clients connect with their own IPs and are not trusted
+proxies. Do not add `10.100.0.1` to Local Networks: it is also the VPS relay's
+peer address.
+
+After activating the updated Blizzard host **and** Jellyfin guest configurations,
+test from another device on `192.168.2.0/24`:
+
+```bash
+curl --fail --max-time 10 http://192.168.2.100:11072/health
+```
+
+Then check login, seek, and playback in the client, and confirm the active session
+shows the LAN client's IP. The LAN endpoint is a NAT forward, so it does not
+appear as a listening host socket in `ss`. Do not add a home-router port forward.
+
+## VPS and tailnet
+
+On the dedicated VPS, install Caddy, set the Jellyfin hostname to DNS-only,
+open public TCP 80/443, and preserve SSH access. Keep the Caddy site disabled
+until the private Jellyfin administrator setup and playback checks pass.
+
+Keep the dedicated VPS Tailscale identity stable. Record its IPv4 address with
+`tailscale ip -4` and use it in the Blizzard firewall guard and tailnet
+policy. The VM sees Blizzard's TCP relay as `10.100.0.1`, so set **Dashboard →
+Networking → Known Proxies** to **only `10.100.0.1`** after the VM cutover. The VPS
+address is no longer the direct Jellyfin peer. If the VPS address changes,
+update the Blizzard guard and tailnet policy; verify the proxy headers again.
+Inspect `vpsIPv4` in `vms/jellyfin-settings.nix`; explicitly set it to `null`
+and apply that configuration for private setup. After private setup is
+complete, set it to the dedicated VPS address before activating this route.
+
+After private administrator setup, a Caddy site on the VPS can use this shape
+(replace the hostname):
+
+```caddyfile
+jellyfin.example.com {
+    reverse_proxy 100.85.254.99:8096
+}
+```
+
+Caddy handles HTTPS, WebSockets, and the `X-Forwarded-For`,
+`X-Forwarded-Proto`, and `X-Forwarded-Host` headers. Blizzard's TCP relay
+passes them unchanged; Jellyfin trusts the relay's bridge address. Confirm
+Caddy does not accept a viewer-supplied forwarded client IP. Do not configure
+a broad `trusted_proxies` range on the VPS. Do not
+enable access logging of full request URLs: Jellyfin can put API keys in query
+strings. If the VPS has a global access logger, redact the URI/query and
+sensitive headers there as well.
+
+In the *complete* Tailscale policy, allow only the VPS identity to reach
+Blizzard on `tcp:8096`. A grant for the VPS node's current Tailscale address
+is shaped like this:
+
+```json
+{
+  "src": ["<DEDICATED_VPS_TAILSCALE_IPV4>"],
+  "dst": ["100.85.254.99"],
+  "ip": ["tcp:8096"]
+}
+```
+
+Review every existing grant and ACL that could also permit port 8096. Grants
+are additive: a narrow grant does not revoke a broad one. The Blizzard host
+rule blocks non-VPS sources on `tailscale0` even when Tailscale's own netfilter
+chain accepts tailnet traffic, but the tailnet policy should enforce the same
+identity boundary.
+
+## Jellyfin setup
+
+### Fresh VM setup (for a new instance)
+
+The current instance has completed setup. The following procedures are for
+a new instance or a future migration.
+
+1. Before applying the configuration, check whether the guest state volume
+   already contains Jellyfin data from an earlier import or setup attempt.
+   This repository does not erase that volume. A first-time setup requires an
+   empty guest state volume; if it is populated, inspect it before resetting
+   that VM volume.
+
+1. Apply the Blizzard configuration with `vmServiceReady = true` and
+   `vpsIPv4 = null` and `lanIPv4Subnet = null`. Confirm host `jellyfin.service` is stopped,
+   `microvm@jellyfin-vm.service` is active, and guest `jellyfin.service` is
+   active. Keep the public Caddy route disabled.
+
+1. From an administrator workstation, forward a private local port through
+   Blizzard to the guest:
+
+   ```bash
+   ssh -N -L 127.0.0.1:8097:10.100.0.72:8096 <admin>@<blizzard-ssh-host>
+   ```
+
+   Open `http://127.0.0.1:8097`, complete the first-run administrator wizard,
+   and verify the new account and libraries before opening VPS ingress.
+
+### Existing-state migration (alternative)
+
+If the old Blizzard Jellyfin state should be retained in the VM instead,
+start with `vmServiceReady = false` and `lanIPv4Subnet = null`, and complete this stopped-state copy
+before enabling the guest service:
+
+1. On Blizzard, check the host's Jellyfin version, state size, library paths,
+   free space on `flash/enc/vms`, and read access to
+   `/rpool/unenc/media/data/media`. The state image is 128 GiB; do not start
+   the copy if the measured `/var/lib/jellyfin` contents will not fit. Preserve
+   a protected local copy of the host state before changing its service.
+   Jellyfin has no offsite job in this rollout.
+
+   ```bash
+   sudo du -sh /var/lib/jellyfin
+   zfs list -o name,available flash/enc/vms
+   sudo -u jellyfin test -r /rpool/unenc/media/data/media
+   ```
+
+1. Apply the first Blizzard configuration with `vmServiceReady = false` and
+   `vpsIPv4 = null`. Confirm host Jellyfin remains active,
+   `microvm@jellyfin-vm.service` starts, and Jellyfin is stopped in the
+   VM. The VM receives the host state at `/mnt/host-jellyfin` through a
+   **temporary read-only** virtiofs share. Keep the public Caddy route disabled.
+
+1. On **Blizzard**, stop host Jellyfin and make a separate protected copy of
+   its stopped state:
+
+   ```bash
+   sudo systemctl stop jellyfin.service
+   sudo install -d -m 0700 /flash/enc/jellyfin-host-rollback
+   sudo cp -a /var/lib/jellyfin /flash/enc/jellyfin-host-rollback/
+   ```
+
+1. From **Blizzard**, connect to the VM as `admin` and run the staged import
+   command inside the VM. The command is the only passwordless sudo action
+   granted to this account; it checks both mounts, copies the read-only host
+   state, assigns guest Jellyfin ownership, and checks the copied contents.
+   It is removed when `vmServiceReady = true`.
+
+   ```bash
+   ssh admin@10.100.0.72
+   sudo /run/current-system/sw/bin/jellyfin-import-state
+   ```
+
+   Resolve any reported differences and verify the copied state and owner before
+   continuing. Do not remove `/var/lib/jellyfin` on Blizzard; it is the
+   rollback source. If the copy fails, restart host Jellyfin and leave
+   `vmServiceReady = false`.
+
+1. Set `vmServiceReady = true` and apply the Blizzard configuration. This
+   disables host Jellyfin, removes the temporary host-state share, and starts
+   Jellyfin in the VM. `vpsIPv4` and `lanIPv4Subnet` remain `null`; the public route is
+   still blocked. From an administrator workstation, forward a local port
+   through Blizzard to the VM:
+
+   ```bash
+   ssh -N -L 127.0.0.1:8097:10.100.0.72:8096 <admin>@<blizzard-ssh-host>
+   ```
+
+   Open `http://127.0.0.1:8097`. Verify the migrated administrator, users,
+   libraries, and playback. If the source state was empty, complete the
+   first-run wizard privately before opening the VPS route.
+
+### Private validation for either setup
+
+1. In Jellyfin, set **Known Proxies** to only `10.100.0.1` and keep **Base
+   URL** empty. Check **Remote Access Settings**, **Local Networks**, and each
+   user's **Allow remote connections** permission. The VM's media share is
+   read-only; verify the Jellyfin user can read representative files and cannot
+   write to the library. Keep metadata and artwork in the state volume.
+
+1. Test direct play and **two simultaneous real 1080p software transcodes**
+   through the private tunnel. Keep ingress closed if playback or capacity
+   fails. Hardware acceleration stays disabled. The i5-10600K iGPU remains
+   with Blizzard; the disabled PCI passthrough hook in
+   `vms/jellyfin-settings.nix` is for a future dedicated card. Before enabling
+   it, identify every PCI function and IOMMU group, verify host isolation,
+   configure the guest driver and Jellyfin acceleration mode, and prove a real
+   hardware transcode. Do not turn on passthrough using an unverified address.
+
+1. With the VM stopped, take a named snapshot of `flash/enc/vms` before
+   publication and restart it. The following commands run on Blizzard; choose
+   a new snapshot name if one already exists:
+
+   ```bash
+   sudo systemctl stop microvm@jellyfin-vm.service
+   sudo zfs snapshot flash/enc/vms@jellyfin-pre-public
+   sudo systemctl start microvm@jellyfin-vm.service
+   sudo install -d -m 0700 /flash/enc/jellyfin-restore-check
+   sudo cp --sparse=always -a \
+     /flash/enc/vms/.zfs/snapshot/jellyfin-pre-public/jellyfin-vm/jellyfin-state.img \
+     /flash/enc/vms/.zfs/snapshot/jellyfin-pre-public/jellyfin-vm/persist.img \
+     /flash/enc/jellyfin-restore-check/
+   sudo e2fsck -fn /flash/enc/jellyfin-restore-check/jellyfin-state.img
+   sudo e2fsck -fn /flash/enc/jellyfin-restore-check/persist.img
+   sudo debugfs -R 'ls -l /' /flash/enc/jellyfin-restore-check/jellyfin-state.img
+   sudo debugfs -R 'ls -l /' /flash/enc/jellyfin-restore-check/persist.img
+   ```
+
+   This rehearses recovery into a staging directory using copies of the
+   stopped images. Verify that the state image contains the expected Jellyfin
+   database and configuration files and that the persist image contains the
+   guest's SSH identity. Resolve filesystem errors before publishing; retain
+   the snapshot until the live VM has been tested again, then remove the
+   scratch copies when no longer needed. The separate cache image is
+   disposable. Confirm Sanoid's existing recursive
+   `flash` policy is creating local snapshots of `flash/enc/vms`; this
+   rollout adds no offsite Jellyfin backup.
+
+   For a later maintenance snapshot **after VPS ingress is enabled**, first
+   stop `jellyfin-vps-relay.socket` and `jellyfin-vps-relay.service` on Blizzard
+   and verify both are inactive. A connection to an active socket can start
+   the relay service and its required VM. Stop the VM only after closing that
+   path; restart the VM and socket after the snapshot:
+
+   ```bash
+   sudo systemctl stop jellyfin-vps-relay.socket jellyfin-vps-relay.service
+   ! systemctl is-active --quiet jellyfin-vps-relay.socket jellyfin-vps-relay.service
+   sudo systemctl stop microvm@jellyfin-vm.service
+   sudo zfs snapshot flash/enc/vms@jellyfin-maint-YYYYMMDD
+   sudo systemctl start microvm@jellyfin-vm.service
+   sudo systemctl start jellyfin-vps-relay.socket
+   ```
+
+   Replace `YYYYMMDD` with a unique snapshot suffix. The negated
+   `systemctl is-active` check must succeed before stopping the VM. Check the
+   socket and public route again after restarting.
+
+## Acceptance before VPS publication
+
+After applying the Blizzard configuration, check the host rules and their
+packet counters on Blizzard:
+
+```bash
+sudo iptables -t raw -C PREROUTING -i tailscale0 -m addrtype --dst-type LOCAL -p tcp --dport 8096 -j JELLYFIN_VPS
+sudo iptables -t raw -C PREROUTING -i tailscale0 -d 10.100.0.72/32 -p tcp --dport 8096 -j DROP
+sudo iptables -t raw -vnL JELLYFIN_VPS
+sudo ip6tables -t raw -C PREROUTING -i tailscale0 -m addrtype --dst-type LOCAL -p tcp --dport 8096 -j DROP
+sudo ss -ltn '( sport = :8096 )'
+sudo systemctl status jellyfin-vps-relay.socket
+```
+
+A firewall reload briefly blocks this ingress while rebuilding the owned
+`JELLYFIN_VPS` chain. If the reload logs `Jellyfin VPS ingress remains blocked`,
+inspect `sudo iptables -t raw -S JELLYFIN_VPS`, resolve the unexpected rule, and
+reload the firewall again. The direct DROP remains until a successful rebuild.
+
+- From the VPS, reach `http://100.85.254.99:8096` over Tailscale. From a
+  different tailnet peer, both `100.85.254.99:8096` and the routed guest
+  address `10.100.0.72:8096` must be denied. The VPS must also be denied
+  direct access to the guest address. Check both IPv4 and IPv6.
+- Confirm the relay listens only on Blizzard's Tailscale IPv4, the guest accepts port
+  `8096` only from `10.100.0.1` and the enabled home-LAN subnet, and an attempted write to the media share
+  fails. Check the guest cannot open undeclared connections to other MicroVMs.
+- From outside the home network, confirm `https://jellyfin.<public-domain>`
+  resolves to the VPS only and supports login, WebSockets, seek, direct play,
+  and two simultaneous real 1080p software transcodes. Confirm the VPS can
+  sustain the required throughput and transfer volume.
+- Confirm home public IPv4 and IPv6 do not accept Jellyfin on TCP ports
+  11072/8096/8920 or discovery traffic on UDP 1900/7359. If Plex is re-enabled
+  with `openFirewall = true`, review its discovery ports separately. Review
+  router forwarding and DNS records.
+- Verify Jellyfin sees the client IP and enforces remote-access and user
+  permissions through the proxy. Send a spoofed `X-Forwarded-For` header from
+  a test client and verify it cannot change the recorded client IP. Check that
+  proxy logs do not include API keys.
+- Keep other media services enabled or disabled independently of Jellyfin.
+  The host's original `/var/lib/jellyfin` and the stopped-VM snapshot are the
+  rollback sources for an existing-state migration.
+  To return to host Jellyfin, close the VPS route, set
+  `vmServiceReady = false`, apply the host configuration, and verify the
+  original host administrator login. VM changes made after cutover will not
+  be in the preserved host state.
+
+## References
+
+- [Jellyfin: first-run administrator wizard](https://jellyfin.org/docs/general/post-install/setup-wizard/)
+- [Jellyfin: Tailscale and remote reverse proxy](https://jellyfin.org/docs/general/post-install/networking/tailscale/)
+- [Jellyfin: reverse proxy, Known Proxies, WebSockets, and logging](https://jellyfin.org/docs/general/post-install/networking/reverse-proxy/)
+- [Jellyfin: remote access and Base URL](https://jellyfin.org/docs/general/post-install/networking/)
+- [Caddy: reverse proxy defaults](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)
+- [Tailscale: grants syntax and additive permissions](https://tailscale.com/docs/reference/syntax/grants)
+- [Tailscale: netfilter modes](https://tailscale.com/docs/reference/netfilter-modes)
+- [Sandfly: running on non-default ports and host isolation](https://docs.sandflysecurity.com/docs/run-sandfly-on-non-default-ports)

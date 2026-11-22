@@ -17,9 +17,12 @@ let
   hasSearx = config.services.searx.enable or false;
   hasGrafana = config.sys.services.grafana.enable or false;
   hasGrafanaCloud = config.sys.services.grafanaCloud.enable or false;
+  hasVictoriaMetrics = config.sys.services.victoriametrics.enable or false;
+  hasVictoriaMetricsRemoteWrite = config.sys.services.victoriametricsRemoteWrite.enable or false;
   hasCloudflared = config.sys.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
   hasCloudflareAccessIpUpdater = config.sys.services.cloudflareAccessIpUpdater.enable or false;
+  hasCloudflareMetrics = config.sys.services.cloudflareMetrics.enable or false;
   hasUps = config.sys.services.ups.enable or false;
   hasGitea = config.sys.services.gitea.enable or false;
   hasSeaweedfs = config.sys.services.seaweedfs.enable or false;
@@ -27,6 +30,9 @@ let
   hasFirefox = config.sys.services.firefox.enable or false;
   hasBrave = config.sys.services.brave.enable or false;
   hasPushover = config.sys.services.grafanaPushover.enable or false;
+  hasScrutiny = config.sys.services.scrutiny.enable or false;
+  hasCrossSeed = config.sys.services.cross-seed.enable or false;
+  hasRustdesk = config.sys.services.rustdeskUnattended.enable or false;
 
   # Host-specific checks
   isKaizer = config.networking.hostName == "kaizer";
@@ -61,6 +67,13 @@ in
       // whenEnabled (hasTailscale && isKaizer) {
         "external/kaizer_tsKey" = { };
       }
+      // whenEnabled (hasRustdesk && isKaizer) {
+        "rustdesk/blizzard_server_public_key" = {
+          sopsFile = inputs.nix-secrets.secrets.rustdeskFile;
+          mode = "0400";
+          restartUnits = [ "rustdesk.service" ];
+        };
+      }
       // whenEnabled hasBorg {
         "general/borgKeyFilePath" = { };
         "general/borgRepo" = { };
@@ -75,6 +88,15 @@ in
         "grafana/secret_key" = {
           owner = "grafana";
           group = "grafana";
+          mode = "0440";
+        };
+      }
+      // whenEnabled (hasVictoriaMetrics || hasVictoriaMetricsRemoteWrite) {
+        # Shared by the protected Blizzard endpoint and its Prometheus writers.
+        # The value itself lives in the private nix-secrets flake.
+        "victoriametrics/remote_write_password" = {
+          owner = "root";
+          group = "monitoring-credentials";
           mode = "0440";
         };
       }
@@ -100,6 +122,14 @@ in
       }
       // whenEnabled hasCloudflareAccessIpUpdater {
         "cloudflare/access_api_token" = { };
+        "cloudflare/policyId" = { };
+      }
+      // whenEnabled (hasCloudflareAccessIpUpdater || hasCloudflareMetrics) {
+        "cloudflare/accountId" = { };
+      }
+      // whenEnabled hasCloudflareMetrics {
+        "cloudflare/metrics_api_token" = { };
+        "cloudflare/access_owner_emails" = { };
       }
       # UPS monitoring password (for NUT upsmon)
       // whenEnabled hasUps {
@@ -160,6 +190,22 @@ in
           group = "grafana";
           mode = "0440";
         };
+      }
+      // whenEnabled hasCrossSeed {
+        "cross-seed/settings" = {
+          owner = "root";
+          group = "root";
+          mode = "0400";
+          restartUnits = [ "cross-seed.service" ];
+        };
+      }
+      // whenEnabled hasScrutiny {
+        "scrutiny/token" = {
+          owner = "root";
+          group = "root";
+          mode = "0400";
+          restartUnits = [ "scrutiny.service" ];
+        };
       };
 
     # Templates for combining secrets (only created when needed)
@@ -171,6 +217,16 @@ in
           config.sops.placeholder."tokens/gitlab-fa"
         }"
       '';
+    }
+    // whenEnabled hasScrutiny {
+      "scrutiny-environment" = {
+        content = ''
+          SCRUTINY_WEB_INFLUXDB_TOKEN=${config.sops.placeholder."scrutiny/token"}
+        '';
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
     }
     // whenEnabled hasGrafanaCloud {
       "grafana-cloud-config".content = ''
@@ -188,6 +244,11 @@ in
     }
     // whenEnabled (hasTailscale && isKaizer) {
       kaizerTsKey = toString config.sops.secrets."external/kaizer_tsKey".path;
+    }
+    // whenEnabled (hasRustdesk && isKaizer) {
+      rustdeskServerPublicKeyFile =
+        toString
+          config.sops.secrets."rustdesk/blizzard_server_public_key".path;
     }
     // whenEnabled hasPaperless {
       paperlessKeyFile = toString config.sops.secrets."general/paperlessKeyFilePath".path;
@@ -226,6 +287,16 @@ in
     }
     // whenEnabled hasCloudflareAccessIpUpdater {
       cloudflareAccessApiTokenFile = toString config.sops.secrets."cloudflare/access_api_token".path;
+      cloudflarePolicyIdFile = toString config.sops.secrets."cloudflare/policyId".path;
+    }
+    // whenEnabled (hasCloudflareAccessIpUpdater || hasCloudflareMetrics) {
+      cloudflareAccountIdFile = toString config.sops.secrets."cloudflare/accountId".path;
+    }
+    // whenEnabled hasCloudflareMetrics {
+      cloudflareMetricsApiTokenFile = toString config.sops.secrets."cloudflare/metrics_api_token".path;
+      cloudflareAccessOwnerEmailsFile =
+        toString
+          config.sops.secrets."cloudflare/access_owner_emails".path;
     }
     # UPS monitoring password
     // whenEnabled hasUps {
@@ -258,6 +329,13 @@ in
     // whenEnabled hasPushover {
       pushoverApiTokenFile = toString config.sops.secrets."pushover/api_token".path;
       pushoverUserKeyFile = toString config.sops.secrets."pushover/user_key".path;
+    }
+    // whenEnabled hasCrossSeed {
+      crossSeedSettingsFile = toString config.sops.secrets."cross-seed/settings".path;
+    }
+    // whenEnabled hasScrutiny {
+      scrutinyTokenFile = toString config.sops.secrets."scrutiny/token".path;
+      scrutinyTokenEnvironmentFile = toString config.sops.templates."scrutiny-environment".path;
     };
 
   environment.systemPackages = [

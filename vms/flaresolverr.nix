@@ -1,6 +1,6 @@
-_:
+{ consts, ... }:
 let
-  reg = (import ./vm-registry.nix).flaresolverr;
+  reg = (import ./vm-registry.nix { inherit consts; }).flaresolverr;
 in
 {
   imports = [

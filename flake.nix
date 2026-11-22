@@ -2,15 +2,35 @@
   description = "NixOS configuration with auto-imported modules";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-stable-latest.url = "github:NixOS/nixpkgs/nixos-25.11";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+    # RustDesk nightly until the package is merged into nixpkgs.
+    nixpkgs-rustdesk.url = "github:telometto/nixpkgs/add-rustdesk-nightly";
+
+    # Primary channel - most packages come from here
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    # Bleeding edge
+    nixpkgs-master.url = "github:NixOS/nixpkgs/master";
+    # Latest stable alias (same target as nixpkgs; kept for symmetry and future bumps)
+    nixpkgs-beta.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs-stable-small.url = "github:NixOS/nixpkgs/nixos-26.05-small";
+    # Unstable forward-pin: use sys.overlays.fromInputs for packages that need nixos-unstable
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Bleeding-edge forward-pin: use sys.overlays.fromInputs to pull individual packages from here
+    nixpkgs-unstable-small.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+
+    # Temporary cloudflared 2026.10.3 pin for the eMudhra certificate compromise.
+    # https://github.com/NixOS/nixpkgs/pull/576762
+    nixpkgs-cloudflared.url = "github:NixOS/nixpkgs/6ed958b166ece07c2ef51894610b876cbcda6a93";
+
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+
+    # Keep Nyx's own dependency pins to match its precompiled kernels and modules.
+    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
 
     flake-compat = {
       url = "github:NixOS/flake-compat";
       flake = false;
     };
+
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
       flake = false;
@@ -21,15 +41,26 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+    hm-stable = {
+      url = "github:nix-community/home-manager/release-26.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
-    home-manager = {
+    hm-master = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    autotidy = {
+      url = "github:prettymuchbryce/autotidy";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        home-manager.follows = "hm-stable";
+      };
+    };
+
     lanzaboote = {
-      url = "github:nix-community/lanzaboote/master";
+      url = "github:nix-community/lanzaboote/v1.0.0";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         pre-commit.inputs.flake-compat.follows = "flake-compat";
@@ -61,16 +92,19 @@
       url = "github:hyprwm/Hyprland";
       inputs = {
         pre-commit-hooks.inputs.flake-compat.follows = "flake-compat";
-        pre-commit-hooks.inputs.gitignore.follows = "gitignore";
       };
     };
 
     nix-colors.url = "github:misterio77/nix-colors";
 
+    quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
+
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    vscode-server.url = "github:nix-community/nixos-vscode-server";
   };
 
   outputs =
@@ -86,7 +120,12 @@
       consts = import ./lib/constants.nix;
       treefmtEval = inputs.treefmt-nix.lib.evalModule nixpkgs.legacyPackages.${system} ./treefmt.nix;
       microvmConfigurations = import ./vms/flake-microvms.nix {
-        inherit inputs system VARS;
+        inherit
+          inputs
+          system
+          VARS
+          consts
+          ;
       };
       mkHost =
         hostname: extraModules:
@@ -96,10 +135,11 @@
             ./system-loader.nix
             ./host-loader.nix
             inputs.disko.nixosModules.disko
-            inputs.home-manager.nixosModules.home-manager
+            inputs.hm-stable.nixosModules.home-manager
             inputs.sops-nix.nixosModules.sops
             inputs.lanzaboote.nixosModules.lanzaboote
             inputs.microvm.nixosModules.host
+            inputs.quadlet-nix.nixosModules.quadlet
           ]
           ++ extraModules;
           specialArgs = {
@@ -111,6 +151,7 @@
               self
               hostname
               ;
+            jellyfinSettings = import ./vms/jellyfin-settings.nix;
           };
         };
     in
@@ -124,6 +165,187 @@
       // microvmConfigurations;
 
       formatter.${system} = treefmtEval.config.build.wrapper;
-      checks.${system}.formatting = treefmtEval.config.build.check inputs.self;
+      packages.${system}.security-log-archive =
+        nixpkgs.legacyPackages.${system}.callPackage ./packages/security-log-archive
+          { };
+      checks.${system} = {
+        formatting = treefmtEval.config.build.check inputs.self;
+
+        codex-adapter = import ./tests/codex-check.nix {
+          inherit nixpkgs system;
+          hmStable = inputs.hm-stable;
+          hmMaster = inputs.hm-master;
+        };
+
+        beets-import = import ./tests/beets-import.nix {
+          inherit nixpkgs system;
+          hmStable = inputs.hm-stable;
+        };
+
+        security-log-archive = import ./tests/security-log-archive.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        security-log-archive-runtime = import ./tests/security-log-archive-runtime.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        cloudflare-metrics =
+          nixpkgs.legacyPackages.${system}.runCommand "cloudflare-metrics-tests"
+            {
+              nativeBuildInputs = [ nixpkgs.legacyPackages.${system}.python3 ];
+            }
+            ''
+              mkdir -p \
+                work/modules/services/scripts \
+                work/tests/cloudflare_metrics \
+                work/dashboards/host/blizzard \
+                work/hosts/blizzard/monitoring
+              cp ${./modules/services/scripts/cloudflare_metrics.py} work/modules/services/scripts/cloudflare_metrics.py
+              cp ${./tests/cloudflare_metrics}/test_*.py work/tests/cloudflare_metrics/
+              cp -R ${./tests/cloudflare_metrics}/fixtures work/tests/cloudflare_metrics/
+              cp ${./dashboards/host/blizzard/cloudflare-overview.json} work/dashboards/host/blizzard/cloudflare-overview.json
+              cp ${./hosts/blizzard/monitoring/cloudflare-alerts.nix} work/hosts/blizzard/monitoring/cloudflare-alerts.nix
+              chmod -R u+w work
+
+              cd work
+              python -m unittest discover -s tests/cloudflare_metrics -p 'test_*.py'
+              touch $out
+            '';
+
+        microvm-publication = import ./tests/microvm-publication.nix {
+          inherit self VARS;
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        matrix-baseline = import ./tests/matrix-baseline.nix {
+          inherit inputs system VARS;
+          pkgs = nixpkgs.legacyPackages.${system};
+          matrix = self.nixosConfigurations.matrix-synapse-vm;
+          blizzard = self.nixosConfigurations.blizzard;
+        };
+
+        matrix-whatsapp-bridge = import ./tests/matrix-whatsapp-bridge.nix {
+          inherit VARS;
+          pkgs = nixpkgs.legacyPackages.${system};
+          matrix = self.nixosConfigurations.matrix-synapse-vm;
+          blizzard = self.nixosConfigurations.blizzard;
+        };
+
+        blackbox-observability = import ./tests/blackbox-observability.nix {
+          blizzard = self.nixosConfigurations.blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+          publicDomain = VARS.domains.public;
+        };
+
+        crowdsec-observability = import ./tests/crowdsec-observability.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        crowdsec-http = import ./tests/crowdsec-http.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        victoriametrics = import ./tests/victoriametrics.nix {
+          inherit (self.nixosConfigurations) blizzard snowfall;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        microvm-lifecycle = import ./tests/microvm-lifecycle.nix {
+          inherit inputs;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        microvm-network-policy = import ./tests/microvm-network-policy.nix {
+          inherit (nixpkgs) lib;
+          inherit (self.nixosConfigurations) blizzard;
+          wireguardVm = self.nixosConfigurations.wireguard-vm;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        jellyfin-firewall = import ./tests/jellyfin-firewall.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        jellyfin-microvm = import ./tests/jellyfin-microvm.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          jellyfinVm = self.nixosConfigurations.jellyfin-vm;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        libvirt-firmware = import ./tests/libvirt-firmware.nix {
+          inherit (self.nixosConfigurations) snowfall;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        kwallet-tpm = import ./tests/kwallet-tpm.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        rustdesk-config = import ./tests/rustdesk-config.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          rustdeskPkgs = inputs.nixpkgs-rustdesk.legacyPackages.${system};
+        };
+
+        sandfly-target = import ./tests/sandfly-target.nix {
+          inherit (self.nixosConfigurations) snowfall blizzard;
+          inherit consts;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        sandfly-runtime = import ./tests/sandfly-runtime.nix {
+          inherit consts;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        scrutiny = import ./tests/scrutiny.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        cross-seed = import ./tests/cross-seed.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          crossSeedVm = self.nixosConfigurations.cross-seed-vm;
+          qbittorrentVm = self.nixosConfigurations.qbittorrent-vm;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        seerr = import ./tests/seerr.nix {
+          seerrVm = self.nixosConfigurations.overseerr-vm;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        service-families = import ./tests/service-families.nix {
+          inherit inputs system;
+          configurations = self.nixosConfigurations;
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        grafana-alerts = import ./tests/grafana-alerts.nix {
+          inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        user-accounts = import ./tests/user-accounts.nix {
+          inherit (self.nixosConfigurations) kaizer snowfall;
+          inherit VARS;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+      };
+
+      devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {
+        packages = with nixpkgs.legacyPackages.${system}; [
+          nil
+          nixfmt
+          deadnix
+          statix
+          sops
+          ssh-to-age
+        ];
+      };
     };
 }

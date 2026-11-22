@@ -6,10 +6,13 @@
   inputs,
   ...
 }:
-let
-  LOCALE = "it_IT.UTF-8";
-in
 {
+  imports = [
+    inputs.chaotic.nixosModules.nyx-cache
+    inputs.chaotic.nixosModules.nyx-overlay
+  ];
+
+  programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   networking = {
     hostName = lib.mkForce "kaizer";
     hostId = lib.mkForce "632f97e1";
@@ -25,6 +28,11 @@ in
     };
   };
 
+  boot = {
+    kernelPackages = pkgs.linuxPackages_cachyos;
+    kernelParams = [ "usbcore.autosuspend=-1" ];
+  };
+
   sys = {
     role.desktop.enable = true;
 
@@ -35,36 +43,15 @@ in
       frankie.enable = false;
     };
 
-    nix.distributedBuilds = {
-      enable = true;
-
-      buildMachines = [
-        {
-          hostName = "snowfall";
-          systems = [ "x86_64-linux" ];
-          sshUser = "zeno";
-          sshKey = "/home/gianluca/.ssh/nix-build-kaizer";
-          maxJobs = 16;
-          speedFactor = 3;
-          supportedFeatures = [
-            "kvm"
-            "big-parallel"
-            "benchmark"
-          ];
-        }
-      ];
-    };
-
-    boot.lanzaboote.enable = lib.mkForce false;
-
-    # overlays.fromInputs = {
-    #   nixpkgs-unstable = [ "firefox" "discord" ];
-    #   nixpkgs-stable = [ "vesktop" ];
-    # };
-
+    # Keep the standalone Immich ML container image aligned with the server.
+    overlays.fromInputs.nixpkgs-master = [
+      "immich"
+      "immich-cli"
+      "immich-machine-learning"
+    ];
     hardware.nvidia = {
       enable = true;
-
+      package = pkgs.nvidia_cachyos;
       open = true;
 
       # Enable if suspend/resume issues occur (experimental)
@@ -82,20 +69,27 @@ in
     #   mtr.enable = true;
     # };
 
-    # # Pull specific packages from different nixpkgs inputs
-    # overlays.fromInputs = {
-    #   nixpkgs-unstable = [ "firefox" "discord" ];
-    #   nixpkgs-stable = [ "thunderbird" ];
+    ## Pull specific packages from different nixpkgs inputs
+    # overlays = {
+    #   fromInputs = {
+    # nixpkgs = [
+    #   "pipx"
+    #   "openrazer"
+    # ];
+    # nixpkgs-beta = [ "pipx" ];
+    # nixpkgs-unstable = [ "vscode" ];
+    # nixpkgs-small = [ "pipx" ];
     # };
-    #
-    # Add custom overlays
-    # overlays.custom = [
+
+    ## Add custom overlays
+    # custom = [
     #   (final: prev: {
-    #     firefox = prev.firefox.override {
-    #       enablePlasmaBrowserIntegration = true;
+    #     openldap = prev.openldap.overrideAttrs {
+    #       doCheck = !prev.stdenv.hostPlatform.isi686; # temporary fix for 513245
     #     };
     #   })
     # ];
+    # };
 
     services = {
       resolved = {
@@ -119,6 +113,8 @@ in
   };
 
   services = {
+    displayManager.autoLogin.user = "gianluca";
+
     tailscale.authKeyFile = lib.mkForce config.sys.secrets.kaizerTsKey;
 
     rustdesk-server = {
@@ -130,20 +126,6 @@ in
     };
   };
 
-  i18n.extraLocaleSettings = lib.mkForce (
-    lib.genAttrs [
-      "LC_ADDRESS"
-      "LC_IDENTIFICATION"
-      "LC_MEASUREMENT"
-      "LC_MONETARY"
-      "LC_NAME"
-      "LC_NUMERIC"
-      "LC_PAPER"
-      "LC_TELEPHONE"
-      "LC_TIME"
-    ] (_: LOCALE)
-  );
-
   hardware = {
     cpu.amd.updateMicrocode = lib.mkDefault true;
 
@@ -152,21 +134,57 @@ in
       powerOnBoot = true;
     };
 
+    openrazer = {
+      enable = true;
+      users = [ VARS.users.luke.user ];
+    };
+
     graphics = {
       enable = lib.mkDefault true;
       enable32Bit = lib.mkDefault true;
     };
   };
 
+  users.users.${VARS.users.luke.user} = {
+    extraGroups = VARS.users.luke.extraGroups ++ [
+      "openrazer"
+    ];
+  };
+
   environment.systemPackages = with pkgs; [
-    temurin-jre-bin-21
-    temurin-jre-bin-17
-    temurin-jre-bin-8
-    glfw
+    # temurin-jre-bin-21
+    # temurin-jre-bin-17
+    # temurin-jre-bin-8
+    # glfw
 
     # Alternative: prismlauncher if Titan doesn't work well
     # prismlauncher
   ];
+
+  systemd = {
+    services.kaizer-flatpak-update-system = {
+      description = "Update system Flatpak applications and runtimes";
+
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.flatpak}/bin/flatpak --system update -y --noninteractive";
+      };
+    };
+
+    timers.kaizer-flatpak-update-system = {
+      description = "Daily update of system Flatpak applications and runtimes";
+      wantedBy = [ "timers.target" ];
+
+      timerConfig = {
+        OnCalendar = "daily";
+        Persistent = true;
+        RandomizedDelaySec = "1h";
+      };
+    };
+  };
 
   system.stateVersion = "24.11";
 }

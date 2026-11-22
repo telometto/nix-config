@@ -28,7 +28,7 @@ in
         type = lib.types.listOf lib.types.package;
         default = with pkgs; [
           winetricks
-          gamescope
+          # gamescope # Issues on master with bubblewrap
           gamemode
           mangohud
           umu-launcher
@@ -99,6 +99,9 @@ in
       };
     };
 
-    home.packages = [ pkgs.bbe ];
+    home.packages = [
+      pkgs.bbe
+      pkgs.discover-overlay
+    ];
   };
 }

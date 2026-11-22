@@ -8,14 +8,17 @@
 {
   imports = [
     ../modules/security/secrets.nix
+    ../modules/services/arr-exporter.nix
     ../modules/services/nfs.nix
     ../modules/services/traefik.nix
   ];
 
-  # Minimal hardened configuration for service VMs
-  # Import this module for any MicroVM that should have minimal attack surface
+  # Minimal security-focused baseline for service VMs
+  # Import this module for any MicroVM that should have a minimal attack surface.
+  # Note: this module intentionally uses the standard kernel packages for
+  # compatibility; it does not provide the hardened kernel variant by default.
   boot = {
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_hardened;
+    kernelPackages = lib.mkDefault pkgs.linuxPackages;
 
     kernelParams = [
       "quiet"
@@ -23,7 +26,12 @@
     ];
 
     kernel.sysctl = {
-      # Network security: enable reverse path filtering to prevent IP spoofing
+      # Strict reverse-path filtering: drop packets whose source IP's best
+      # return route does not use the same interface the packet arrived on.
+      # This is the correct default for all VMs.  Services that run Docker
+      # (trigger-vm) override this to 2 (loose) in their own config because
+      # Docker bridge networking creates asymmetric routing that strict mode
+      # would otherwise drop.
       "net.ipv4.conf.all.rp_filter" = 1;
       "net.ipv4.conf.default.rp_filter" = 1;
 
@@ -65,6 +73,10 @@
     # Adds/removes contiguous memory blocks instead of page-level ballooning.
     # Better for large VMs that need elastic scaling (e.g. 4 GB → 32 GB),
     # but coarser granularity (128 MB blocks) makes it less suited for small VMs.
+    #
+    # Note: virtio-mem hotplug is intentionally disabled by default in this base
+    # module to keep MicroVMs simple and avoid implicit runtime memory scaling.
+    # MicroVMs that need elastic memory should explicitly set these options:
     # hotplugMem = 5120; # max additional memory in MB
     # hotpluggedMem = 0; # how much of hotplugMem is active at boot
   };
@@ -112,8 +124,6 @@
     memoryPercent = lib.mkDefault 25;
   };
 
-  systemd.coredump.enable = false;
-
   security = {
     sudo.wheelNeedsPassword = true;
 
@@ -143,10 +153,6 @@
     logRefusedConnections = false;
   };
 
-  environment.etc."profile.local".text = ''
-    umask 027
-  '';
-
   time.timeZone = lib.mkDefault "UTC";
   i18n.defaultLocale = lib.mkDefault "en_US.UTF-8";
 
@@ -158,32 +164,37 @@
     ];
   };
 
-  documentation = {
-    enable = true;
-    doc.enable = false;
-    man.enable = true;
-    info.enable = false;
-    nixos.enable = false;
-  };
+  environment = {
+    etc."profile.local".text = ''
+      umask 027
+    '';
 
-  environment.systemPackages = with pkgs; [
-    vim
-    htop
-    curl
-  ];
-
-  # Common VM user and persistence (shared by all MicroVMs)
-  users.users.admin = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keys = [
-      VARS.users.zeno.sshPubKey
+    systemPackages = with pkgs; [
+      vim
+      htop
+      curl
+      jq
     ];
   };
 
-  systemd.tmpfiles.rules = [
-    "d /persist/ssh 0700 root root -"
-  ];
+  users = {
+    mutableUsers = false;
+    users.admin = {
+      isNormalUser = true;
+      extraGroups = [ "wheel" ];
+      openssh.authorizedKeys.keys = [
+        VARS.users.zeno.sshPubKey
+      ];
+    };
+  };
+
+  systemd = {
+    coredump.enable = false;
+
+    tmpfiles.rules = [
+      "d /persist/ssh 0700 root root -"
+    ];
+  };
 
   system.stateVersion = "24.11";
 }

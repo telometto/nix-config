@@ -262,7 +262,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_battery_runtime{ups=\"$ups\"} * 60",
+          "expr": "network_ups_tools_battery_runtime{ups=\"$ups\"}",
           "legendFormat": "Runtime",
           "refId": "A"
         }
@@ -897,7 +897,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "network_ups_tools_battery_runtime{ups=\"$ups\"} * 60",
+          "expr": "network_ups_tools_battery_runtime{ups=\"$ups\"}",
           "legendFormat": "Estimated Runtime",
           "refId": "A"
         }

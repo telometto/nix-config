@@ -33,11 +33,15 @@ let
   ];
 
   extras = [
+    # Needed while the initial installation is bootstrapped with systemd-boot;
+    # the Lanzaboote module also provides sbctl after the override is removed.
+    pkgs.sbctl
     # inputs.agenix.packages."x86_64-linux".default
-    pkgs.protonvpn-gui
+    pkgs.proton-vpn
     pkgs.deja-dup
     pkgs.peazip
     pkgs.mat2
+    pkgs.asdf-vm
   ];
 in
 {
