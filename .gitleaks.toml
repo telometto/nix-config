@@ -15,6 +15,14 @@ regexTarget = "line"
 regexes = ['''(?i)^\s*oauthClientId\s*=\s*"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";\s*$''']
 
 [[allowlists]]
+description = "Beets test fixture MusicBrainz album ID is public metadata (#7194)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^tests/beets_import_test\.py$''']
+regexTarget = "secret"
+regexes = ['''^f4edaaca-02e6-3746-991d-257bb7f9ad14$''']
+
+[[allowlists]]
 description = "GPG signing key IDs (format: 0x<16 hex chars>) are public identifiers, not secrets"
 regexes = ['''(?i)^(?:0x)?[0-9a-f]{16}$''']
 regexTarget = "secret"
