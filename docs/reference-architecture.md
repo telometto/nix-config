@@ -6,12 +6,12 @@ Information reference for this repo's moving parts, options, and commands.
 
 `system` is hard-pinned to `x86_64-linux` in `flake.nix`. All machines are x86_64.
 
-### Outputs
+### Selected Outputs
 
 | Output | Description |
 |--------|-------------|
 | `nixosConfigurations.{snowfall,blizzard,avalanche,kaizer}` | The four physical hosts |
-| `nixosConfigurations.<vm-name>` (×28) | MicroVM guests defined in `vms/` |
+| `nixosConfigurations.<vm-name>` | MicroVM guests; see the [current inventory](../vms/README.md#inventory) |
 | `formatter.x86_64-linux` | treefmt wrapper (`nix fmt`) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
