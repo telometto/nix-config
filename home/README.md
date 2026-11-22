@@ -163,6 +163,15 @@ hm.desktop.kde.enable = true;
 > `modules/core/home-users.nix`. A `cosmic` host must enable any HM desktop
 > integration explicitly.
 
+#### KDE Configuration Migration
+
+`hm.desktop.kde.extraConfig` has been retired because it accepted settings but
+never applied them. Remove any explicit definition, including an empty `{ }`;
+definitions now produce a migration error even when the KDE module is disabled.
+Set native Home Manager options directly in the appropriate role, host or user
+override instead. There is no automatic mapping from the old attribute set.
+`hm.desktop.kde.extraPackages` continues to add packages when KDE is enabled.
+
 ### Override System
 
 #### Package Placement
