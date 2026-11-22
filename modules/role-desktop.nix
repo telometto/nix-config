@@ -18,8 +18,8 @@ in
       boot = {
         lanzaboote.enable = true;
         plymouth = {
-          enable = true;
-          theme = THEME;
+          enable = lib.mkDefault true;
+          theme = lib.mkDefault THEME;
           themePackages = [
             (pkgs.adi1090x-plymouth-themes.override {
               selected_themes = [ THEME ];
@@ -34,14 +34,14 @@ in
       };
 
       programs = {
-        java.enable = true;
+        java.enable = lib.mkDefault true;
         ssh.enable = true;
         gnupg.enable = false;
 
         gaming = {
-          enable = true;
+          enable = lib.mkDefault true;
 
-          steam.enable = true;
+          steam.enable = lib.mkDefault true;
         };
       };
 
@@ -55,13 +55,13 @@ in
         resolved.enable = true;
         maintenance.enable = true;
         autoUpgrade.enable = false;
-        pipewire.enable = true;
-        printing.enable = true;
-        flatpak.enable = true;
+        pipewire.enable = lib.mkDefault true;
+        printing.enable = lib.mkDefault true;
+        flatpak.enable = lib.mkDefault true;
         tailscale.enable = true;
       };
 
-      virtualisation.enable = true;
+      virtualisation.enable = lib.mkDefault true;
 
       ## Pull specific packages from different nixpkgs inputs
       overlays = {

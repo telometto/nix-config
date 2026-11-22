@@ -108,7 +108,7 @@
         openFirewall = true;
       };
 
-      printing.enable = lib.mkForce false;
+      printing.enable = false;
     };
   };
 

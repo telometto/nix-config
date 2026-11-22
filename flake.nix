@@ -361,6 +361,10 @@
         user-registry = import ./tests/user-registry.nix {
           pkgs = nixpkgs.legacyPackages.${system};
         };
+
+        role-defaults = import ./tests/role-defaults.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
       };
 
       devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {

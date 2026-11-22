@@ -68,6 +68,20 @@ Tailscale, Home Manager.
 `role-server.nix` enables: Secure Boot, networkd, auto-upgrade, Tailscale,
 Home Manager.
 
+Routine role preferences use `lib.mkDefault`: desktop Plymouth enable/theme,
+Java, gaming/Steam, PipeWire, printing, Flatpak, and virtualization, plus server
+Plymouth enable. Hosts can override them with ordinary assignments:
+
+```nix
+sys.services.printing.enable = false;
+```
+
+Package, theme-package, and overlay lists remain additive. Secure Boot,
+firewall, networking, SSH/Tailscale, GnuPG, maintenance/upgrades, Home Manager
+integration, and QMK device-access settings retain their existing priorities.
+Overriding those settings still requires an explicit priority where the role
+defines a conflicting value.
+
 Role-wide system package lists can be declared directly inside the role's
 conditional configuration. The desktop role installs `asdf-vm` for laptops
 and desktops. `modules/core/packages.nix` supplies common system packages;
