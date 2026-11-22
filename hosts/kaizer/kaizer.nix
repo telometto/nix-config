@@ -136,7 +136,7 @@
 
     openrazer = {
       enable = true;
-      users = [ VARS.users.gianluca.user ];
+      users = [ VARS.users.luke.user ];
     };
 
     graphics = {
