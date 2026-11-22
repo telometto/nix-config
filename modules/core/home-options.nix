@@ -10,8 +10,9 @@ in
       type = lib.types.attrs;
       default = { };
       description = ''
-        Base Home Manager configuration applied to every managed user.
-        Extend or override this to tweak the shared template.
+        Home Manager module definitions applied to every generated user profile.
+        Package lists combine with per-user additions. Scalar definitions use
+        normal Nix option priorities; use mkDefault for overridable defaults.
       '';
     };
 
@@ -36,7 +37,7 @@ in
             extraConfig = lib.mkOption {
               type = lib.types.attrs;
               default = { };
-              description = "Per-user overrides merged on top of the shared template.";
+              description = "Per-user Home Manager module definitions composed with the shared template.";
             };
 
             extraModules = lib.mkOption {

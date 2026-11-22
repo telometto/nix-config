@@ -64,6 +64,16 @@ flowchart LR
 | avalanche | Desktop | GNOME | ThinkPad P51; nixos-hardware module, iwlwifi+BT workaround |
 | kaizer | Desktop | KDE | External access; NVIDIA GPU, multi-user (gianluca+frankie), Java |
 
+## Package Selection
+
+Use `environment.systemPackages` for system-wide packages and `home.packages`
+for user profiles. Lists add together across the existing role, host, and user
+files. Desktop/laptop packages such as `asdf-vm` belong in
+`modules/role-desktop.nix`; host-specific additions stay in
+`hosts/<hostname>/packages.nix`. See the full
+[package placement table](home/README.md#package-placement) for common,
+role-wide, host-wide, and per-user Home Manager packages.
+
 ## Common Commands
 
 Full evaluation commands require SSH access to the private `nix-secrets` flake.

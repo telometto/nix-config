@@ -10,6 +10,8 @@ let
 in
 {
   config = lib.mkIf cfg.enable {
+    environment.systemPackages = [ pkgs.asdf-vm ];
+
     sys = {
       home.enable = true;
 
