@@ -29,12 +29,20 @@ Essential system configuration modules that form the foundation of every host.
 
 ```mermaid
 flowchart TD
-    NS["nix-secrets flake"] -->|"VARS.users"| UO["user-options.nix\ngenerates sys.users.<name>.enable"]
+    NS["nix-secrets flake"] -->|"VARS.users"| R["lib/user-registry.nix\nrecords + username lookup"]
+    R --> UO["user-options.nix\ngenerates sys.users.<name>.enable"]
+    R --> UN
+    R --> HU
     UO -->|"enabled users"| UN["users.nix\ncreates users.users.<name>"]
     UN -->|"per user"| HU["home-users.nix\nbuilds HM configs"]
     HU -->|"imports"| HL["hm-loader.nix\nauto-imports home/**"]
     HU -->|"conditionally imports"| HO["home/overrides/role/<role>.nix\nhome/overrides/host/<host>.nix\nhome/overrides/user/<user>.nix\nhome/overrides/user/<user>-<host>.nix"]
 ```
+
+The three consumers share [user-registry.nix](../../lib/user-registry.nix).
+Its complete record list preserves duplicate/invalid entries for account
+assertions; its username lookup preserves the existing fallback and collision
+rules. Each consuming module retains its own enablement and filtering policy.
 
 `users.nix` forwards an explicit `uid` from `VARS.users` only when one is
 provided. When it is omitted, NixOS preserves the UID of an existing named

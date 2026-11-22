@@ -7,26 +7,17 @@
 let
   cfg = config.sys.home;
 
-  # Transform VARS.users from role-keyed to username-keyed
-  varsUsersByUsername = lib.listToAttrs (
-    lib.mapAttrsToList (
-      roleName: userData:
-      let
-        username = userData.user or null;
-      in
-      {
-        name = if builtins.isString username && username != "" then username else roleName;
-        value = userData;
-      }
-    ) (VARS.users or { })
-  );
+  userRegistry = import ../../lib/user-registry.nix {
+    inherit lib;
+    users = VARS.users or { };
+  };
 
   # Use VARS as the source of truth for which users to configure
   # Filter to only normal users that are enabled on this host
   systemUsers = lib.filterAttrs (
     username: userData:
     (userData.isNormalUser or false) && (config.sys.users.${username}.enable or false)
-  ) varsUsersByUsername;
+  ) userRegistry.byUsername;
 
   # Auto-enable desktop flavor based on system config
   autoDesktopConfig =
