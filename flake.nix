@@ -361,6 +361,15 @@
         user-registry = import ./tests/user-registry.nix {
           pkgs = nixpkgs.legacyPackages.${system};
         };
+
+        role-defaults = import ./tests/role-defaults.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        kde-options = import ./tests/kde-options.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          hmStable = inputs.hm-stable;
+        };
       };
 
       devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {

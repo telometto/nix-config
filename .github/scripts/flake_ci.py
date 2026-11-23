@@ -41,6 +41,7 @@ CHECKS = {
     "sandfly-target",
     "sandfly-runtime",
     "scrutiny",
+    "role-defaults",
     "user-accounts",
     "victoriametrics",
     *ARCHIVE,

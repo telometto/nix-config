@@ -103,6 +103,13 @@ let
   '';
 in
 {
+  imports = [
+    (lib.mkRemovedOptionModule [ "hm" "desktop" "kde" "extraConfig" ] ''
+      Set native Home Manager options directly in a role, host, or user override instead.
+      This option never applied its settings.
+    '')
+  ];
+
   options.hm.desktop.kde = {
     enable = lib.mkEnableOption "KDE Plasma desktop environment configuration";
 
@@ -110,12 +117,6 @@ in
       type = lib.types.listOf lib.types.package;
       default = [ ];
       description = "Additional KDE packages to install";
-    };
-
-    extraConfig = lib.mkOption {
-      type = lib.types.attrs;
-      default = { };
-      description = "Additional KDE configuration";
     };
 
     excludeKeys = lib.mkOption {
