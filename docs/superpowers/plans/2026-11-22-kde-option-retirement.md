@@ -1,5 +1,9 @@
 # Retire the Inactive KDE Configuration Option
 
+**Status (2026-11-23):** Implemented in [PR #7300](https://github.com/telometto/nix-config/pull/7300),
+which is ready for review. This supersedes the original draft-publication plan
+below. The review follow-up is authorized to include a co-author trailer.
+
 ## Approved scope
 
 Retire `hm.desktop.kde.extraConfig` using the native removed-option module and

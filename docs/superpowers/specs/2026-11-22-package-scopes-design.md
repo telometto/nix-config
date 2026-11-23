@@ -199,9 +199,11 @@ activation is authorized.
 1. **Role defaults:** the role bundles mostly use plain assignments, so host
    exceptions often need `mkForce`. Distinguish overridable preferences from
    enforced security policy before converting assignments mechanically.
-1. **Unused KDE extension point:** `hm.desktop.kde.extraConfig` is declared
-   but unused and has no callers. Retire it or define a precise target in a
-   separate interface cleanup; its intended semantics are currently unclear.
+1. **Unused KDE extension point (completed):** `hm.desktop.kde.extraConfig`
+   was declared but unused and had no callers. The separate
+   [KDE option retirement](../plans/2026-11-22-kde-option-retirement.md)
+   ([PR #7300](https://github.com/telometto/nix-config/pull/7300)) now rejects
+   explicit definitions with migration guidance.
 1. **Inventory and documentation drift:** the older architecture risk list
    still proposes a role exclusivity assertion that already exists, and
    lists old VM counts. Current source deliberately reserves the
