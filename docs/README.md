@@ -54,6 +54,9 @@ flowchart LR
 - [libvirt-firmware.md](libvirt-firmware.md) —
   Preserve existing NVRAM when migrating to QCOW2 and validate snapshots
 
+- [actual-kubevirt-pilot.md](actual-kubevirt-pilot.md) —
+  Prepare and validate a private GitOps Actual pilot alongside production MicroVMs
+
 - [kwallet-tpm.md](kwallet-tpm.md) — TPM-backed KWallet automatic unlocking, local enrollment and recovery.
 
 - [rustdesk.md](rustdesk.md) —

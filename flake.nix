@@ -171,6 +171,10 @@
       checks.${system} = {
         formatting = treefmtEval.config.build.check inputs.self;
 
+        actual-pilot = import ./tests/actual-pilot-check.nix {
+          inherit nixpkgs system;
+        };
+
         codex-adapter = import ./tests/codex-check.nix {
           inherit nixpkgs system;
           hmStable = inputs.hm-stable;
