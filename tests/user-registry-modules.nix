@@ -169,6 +169,11 @@ let
   };
 in
 {
+  defaultRegistryAccepted = failures defaults == [ ];
+  enabledRegistryAccepted = failures enabled == [ ];
+  homeOptOutRegistryAccepted = failures optedOut == [ ];
+  disabledUidCollisionRegistryAccepted = failures disabledUidCollision == [ ];
+  extraKeyRegistryAccepted = failures extraKey == [ ];
   optionsUseLogins =
     builtins.attrNames defaults.sys.users == [
       "alice"
