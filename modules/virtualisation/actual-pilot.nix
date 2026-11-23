@@ -139,7 +139,7 @@ in
           && config.services.k3s.charts == { }
           && config.services.k3s.images == [ ]
           && config.services.k3s.containerdConfigTemplate == null
-          && config.services.k3s.containerdConfigTemplateV3 == null;
+          && (config.services.k3s.containerdConfigTemplateV3 or null) == null;
         message = "The pilot uses isolated k3s state: legacy NixOS manifest/chart/template staging must remain empty.";
       }
     ];

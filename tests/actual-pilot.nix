@@ -54,7 +54,7 @@ assert lib.elem "traefik" on.services.k3s.disable;
 assert lib.elem "servicelb" on.services.k3s.disable;
 assert on.services.k3s.manifests == { };
 assert on.services.k3s.containerdConfigTemplate == null;
-assert on.services.k3s.containerdConfigTemplateV3 == null;
+assert (on.services.k3s.containerdConfigTemplateV3 or null) == null;
 assert on.networking.firewall.enable;
 assert on.networking.firewall.checkReversePath == off.networking.firewall.checkReversePath;
 assert on.networking.firewall.trustedInterfaces == off.networking.firewall.trustedInterfaces;
