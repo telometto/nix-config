@@ -1,7 +1,6 @@
 {
   lib,
   config,
-  pkgs,
   VARS,
   ...
 }:
@@ -51,9 +50,9 @@ let
   collectImports =
     username: _:
     let
-      override = lib.attrByPath [ username ] cfg.users { };
+      override = cfg.users.${username} or { };
 
-      # Resolve the active role name (desktop takes precedence over server)
+      # Resolve the active role; role exclusivity is checked in roles.nix.
       roleName =
         if config.sys.role.desktop.enable then
           "desktop"
@@ -92,16 +91,12 @@ let
       ++ lib.toList (override.extraConfig.imports or [ ])
     );
 
-  # Build user configuration by merging all sources
+  # Compose module definitions so lists and priorities retain native semantics.
   buildUserConfig =
     username: userAttrs:
     let
-      override = lib.attrByPath [ username ] cfg.users { };
-      systemUserHome =
-        let
-          systemUser = lib.attrByPath [ username ] config.users.users null;
-        in
-        if systemUser != null && systemUser ? home then systemUser.home else null;
+      override = cfg.users.${username} or { };
+      systemUserHome = config.users.users.${username}.home or null;
       preferredHomes = [
         (userAttrs.home or null)
         (userAttrs.homeDirectory or null)
@@ -110,17 +105,18 @@ let
       homeDir = lib.findFirst (home: home != null) "/home/${username}" preferredHomes;
     in
     {
-      imports = collectImports username userAttrs;
-    }
-    // lib.foldl' lib.recursiveUpdate { } [
-      (builtins.removeAttrs cfg.template [ "imports" ])
-      (builtins.removeAttrs (override.extraConfig or { }) [ "imports" ])
-      autoDesktopConfig
-      {
-        home.username = lib.mkDefault username;
-        home.homeDirectory = lib.mkDefault homeDir;
-      }
-    ];
+      imports = collectImports username userAttrs ++ [
+        (builtins.removeAttrs cfg.template [ "imports" ])
+        (builtins.removeAttrs (override.extraConfig or { }) [ "imports" ])
+      ];
+      config = lib.mkMerge [
+        autoDesktopConfig
+        {
+          home.username = lib.mkDefault username;
+          home.homeDirectory = lib.mkDefault homeDir;
+        }
+      ];
+    };
 
   # Check for users defined in cfg.users but not in system users
   missingUsers = lib.filter (username: !(lib.hasAttr username systemUsers)) (
@@ -138,7 +134,7 @@ in
     home-manager.users = lib.mapAttrs (
       username: userAttrs:
       let
-        override = lib.attrByPath [ username ] cfg.users { };
+        override = cfg.users.${username} or { };
         userEnabled = override.enable or true;
       in
       lib.mkIf userEnabled (buildUserConfig username userAttrs)

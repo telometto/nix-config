@@ -177,6 +177,28 @@
           hmMaster = inputs.hm-master;
         };
 
+        package-scopes =
+          let
+            cases = import ./tests/package-scopes.nix {
+              inherit nixpkgs system;
+              hmStable = inputs.hm-stable;
+            };
+            failures = nixpkgs.lib.concatLists (
+              nixpkgs.lib.mapAttrsToList (
+                group: tests:
+                map (name: "${group}.${name}") (
+                  builtins.attrNames (nixpkgs.lib.filterAttrs (_: passed: !passed) tests)
+                )
+              ) cases
+            );
+          in
+          assert nixpkgs.lib.assertMsg (
+            failures == [ ]
+          ) "Package scope contracts failed: ${nixpkgs.lib.concatStringsSep ", " failures}";
+          nixpkgs.legacyPackages.${system}.runCommand "package-scopes-tests" { } ''
+            touch "$out"
+          '';
+
         beets-import = import ./tests/beets-import.nix {
           inherit nixpkgs system;
           hmStable = inputs.hm-stable;

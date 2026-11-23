@@ -68,6 +68,13 @@ Tailscale, Home Manager.
 `role-server.nix` enables: Secure Boot, networkd, auto-upgrade, Tailscale,
 Home Manager.
 
+Role-wide system package lists can be declared directly inside the role's
+conditional configuration. The desktop role installs `asdf-vm` for laptops
+and desktops. `modules/core/packages.nix` supplies common system packages;
+`hosts/<hostname>/packages.nix` adds host-specific packages. See the
+[package placement table](../home/README.md#package-placement) for the
+corresponding Home Manager scopes.
+
 ______________________________________________________________________
 
 ### Adding a new module

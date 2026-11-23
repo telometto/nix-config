@@ -104,6 +104,12 @@ All `.nix` files are auto-imported recursively by [host-loader.nix](../host-load
 `imports` list needed for local files. External modules (e.g. `nixos-hardware`) still
 require an `imports` block.
 
+`packages.nix` adds system-wide packages only for that host. Packages shared by
+a role belong in `modules/role-<role>.nix`. To add Home Manager packages for
+every managed user on a host, use `home/overrides/host/<hostname>.nix` instead.
+The [package placement table](../home/README.md#package-placement) lists every
+scope; all these native package lists combine.
+
 ### Configuration Pattern
 
 All `.nix` files under `hosts/<hostname>/` are auto-imported by

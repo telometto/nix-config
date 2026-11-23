@@ -1,7 +1,14 @@
 # Rootless Podman containers on kaizer (managed via quadlet-nix + Home Manager)
-{ VARS, consts, ... }:
+{
+  lib,
+  config,
+  VARS,
+  consts,
+  ...
+}:
 let
   username = VARS.users.luke.user;
+  homeEnabled = config.sys.home.enable && (config.sys.home.users.${username}.enable or true);
 in
 {
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
@@ -17,7 +24,7 @@ in
     ];
   };
 
-  home-manager.users.${username} = {
+  home-manager.users.${username} = lib.mkIf homeEnabled {
     imports = [
       ../../containers/immich-machine-learning.nix
     ];

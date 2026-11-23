@@ -1,7 +1,6 @@
 {
   lib,
   config,
-  pkgs,
   ...
 }:
 let
@@ -18,7 +17,11 @@ in
     };
 
     zellij = {
-      enable = lib.mkEnableOption "zellij multiplexer";
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Enable the zellij multiplexer with the terminal tools.";
+      };
 
       attachToExisting = lib.mkOption {
         type = lib.types.bool;
@@ -42,6 +45,8 @@ in
 
   config = lib.mkIf cfg.enable {
     hm.programs.fastfetch.enable = lib.mkDefault true;
+
+    home.packages = cfg.extraPackages;
 
     programs = {
       atuin = {
@@ -131,7 +136,7 @@ in
       };
 
       zellij = {
-        enable = lib.mkDefault true;
+        enable = lib.mkDefault cfg.zellij.enable;
         enableBashIntegration = lib.mkDefault false;
         enableZshIntegration = lib.mkDefault true;
         attachExistingSession = cfg.zellij.attachToExisting;
