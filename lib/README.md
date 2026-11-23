@@ -6,6 +6,26 @@ Reusable Nix functions and data shared across the configuration.
 
 ______________________________________________________________________
 
+### user-registry.nix
+
+Normalizes role-keyed `VARS.users` metadata for the user-option, account, and
+Home Manager modules. It accepts `{ lib, users }` and returns `records`,
+`byUsername`, and `isValidUsername`.
+
+`records` retains every original payload and role key, raw login, and optional
+UID in attribute-name order. Account validation uses this complete list so
+duplicates and malformed entries cannot disappear before assertions run.
+`byUsername` uses nonempty string logins, falls back to the original role key
+otherwise, and retains the first payload on a collision. It does not force
+credential fields or change their values.
+
+Host enablement, normal-user filtering, credential validation, and UID policy
+remain in the consuming modules. The public-only `user-registry` flake check
+uses synthetic metadata; its evaluation command is in
+[tests/user-registry.nix](../tests/user-registry.nix).
+
+______________________________________________________________________
+
 ### `matrixRoutes` in traefik.nix
 
 Defines the MAS and Synapse Nginx route locations used by the Matrix MicroVM,

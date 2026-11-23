@@ -357,6 +357,10 @@
           inherit VARS;
           pkgs = nixpkgs.legacyPackages.${system};
         };
+
+        user-registry = import ./tests/user-registry.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
       };
 
       devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {

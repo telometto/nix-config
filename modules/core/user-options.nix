@@ -2,6 +2,11 @@
 # Provides options to selectively enable/disable users from VARS on each host
 { lib, VARS, ... }:
 let
+  userRegistry = import ../../lib/user-registry.nix {
+    inherit lib;
+    users = VARS.users or { };
+  };
+
   # Generate an option for each user from VARS
   makeUserOption = username: _userData: {
     enable = lib.mkOption {
@@ -12,20 +17,7 @@ let
   };
 
   # Create a submodule for each user in VARS
-  userOptions = lib.mapAttrs makeUserOption (
-    lib.listToAttrs (
-      lib.mapAttrsToList (
-        roleName: userData:
-        let
-          username = userData.user or null;
-        in
-        {
-          name = if builtins.isString username && username != "" then username else roleName;
-          value = userData;
-        }
-      ) (VARS.users or { })
-    )
-  );
+  userOptions = lib.mapAttrs makeUserOption userRegistry.byUsername;
 in
 {
   options.sys.users = userOptions;
