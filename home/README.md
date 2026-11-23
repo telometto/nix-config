@@ -303,9 +303,13 @@ module definitions. Their package lists combine with each other and with
 imported modules. For overlapping scalar settings, use normal Nix priorities:
 put `lib.mkDefault` on a shared default if a user should be able to replace it.
 Conflicting plain assignments produce an evaluation error.
+Module attributes such as `disabledModules` stay at module scope, so a shared
+template or per-user `extraConfig` can disable an imported module.
 
 `sys.home.users.<name>.extraModules` adds modules to that user's profile.
 Setting `sys.home.users.<name>.enable = false` skips generation of that profile.
+Host-owned container profiles on Snowfall, Blizzard, and Kaizer honor this
+per-user switch and the global `sys.home.enable` switch as well.
 Integrated profiles use the NixOS account's home directory. The builder's
 fallback defaults also support user metadata and `/home/<name>`, but those
 defaults do not override Home Manager's NixOS account integration.
@@ -315,8 +319,10 @@ defaults do not override Home Manager's NixOS account integration.
 ### Package and Composition Checks
 
 The `package-scopes` flake check covers role package membership, the shared
-package list, per-user composition and opt-out, home-directory selection,
-desktop opt-out, and terminal package/Zellij controls:
+package list, per-user composition, module disabling, home-directory selection,
+desktop opt-out, and terminal package/Zellij controls. It also checks global
+and per-user opt-outs against the actual container profile declarations on
+Snowfall, Blizzard, and Kaizer with synthetic users and minimal external schemas:
 
 ```bash
 nix build .#checks.x86_64-linux.package-scopes

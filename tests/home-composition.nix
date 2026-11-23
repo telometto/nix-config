@@ -13,6 +13,8 @@ let
       userHome ? null,
       systemHome ? "/srv/alice",
       username ? "alice",
+      templateModule ? { },
+      userModule ? { },
     }:
     let
       cfg = {
@@ -22,14 +24,16 @@ let
           imports = [ { home.packages = [ pkgs.jq ]; } ];
           home.packages = [ pkgs.hello ];
           hm.desktop.kde.enable = false;
-        };
+        }
+        // templateModule;
         users.${username} = {
           enable = !disabled;
           extraModules = [ { home.packages = [ pkgs.tree ]; } ];
           extraConfig = {
             imports = [ { home.packages = [ pkgs.ripgrep ]; } ];
             home.packages = [ pkgs.cowsay ];
-          };
+          }
+          // userModule;
         };
       };
       result = import ../modules/core/home-users.nix {
@@ -129,7 +133,11 @@ let
   # Include the actual NixOS/HM bridge: it supplies account identity/home at
   # ordinary priority, above the builder's fallback defaults.
   integrated =
-    disabled:
+    {
+      disabled ? false,
+      templateModule ? { },
+      userModule ? { },
+    }:
     (import "${pkgs.path}/nixos/lib/eval-config.nix" {
       inherit pkgs;
       system = pkgs.stdenv.hostPlatform.system;
@@ -156,13 +164,26 @@ let
             users =
               lib.mapAttrs (_: withoutBase)
                 (make {
-                  inherit disabled;
+                  inherit disabled templateModule userModule;
                   userHome = "/srv/metadata-home";
                 }).profiles;
           };
         }
       ];
     }).config.home-manager.users;
+  templateImport = {
+    imports = [ ../home/packages.nix ];
+  };
+  importedPackages = integrated { templateModule = templateImport; };
+  templateDisabledPackages = integrated {
+    templateModule = templateImport // {
+      disabledModules = [ ../home/packages.nix ];
+    };
+  };
+  userDisabledPackages = integrated {
+    templateModule = templateImport;
+    userModule.disabledModules = [ ../home/packages.nix ];
+  };
 in
 {
   templatePackagesPreserved = lib.elem "hello" (names alice);
@@ -183,8 +204,8 @@ in
     (make { systemHome = null; }).users.alice.home.homeDirectory == "/home/alice";
   explicitDesktopOptOutRespected = !alice.hm.desktop.kde.enable;
   accountHomeOverridesMetadataDefault =
-    (integrated false).alice.home.homeDirectory == "/srv/account-home";
-  integratedPackageListsCombine = lib.all (name: lib.elem name (names (integrated false).alice)) [
+    (integrated { }).alice.home.homeDirectory == "/srv/account-home";
+  integratedPackageListsCombine = lib.all (name: lib.elem name (names (integrated { }).alice)) [
     "hello"
     "cowsay"
     "git"
@@ -192,7 +213,14 @@ in
     "tree"
     "ripgrep"
   ];
-  integratedUserOptOutRespected = !((integrated true) ? alice);
+  integratedUserOptOutRespected = !((integrated { disabled = true; }) ? alice);
+  templateCanDisableImportedModule =
+    lib.elem "dupe-krill" (names importedPackages.alice)
+    && !(lib.elem "dupe-krill" (names templateDisabledPackages.alice));
+  userConfigCanDisableImportedModule =
+    lib.elem "dupe-krill" (names importedPackages.alice)
+    && !(lib.elem "dupe-krill" (names userDisabledPackages.alice));
+  userDisabledModuleDoesNotLeak = lib.elem "dupe-krill" (names userDisabledPackages.bob);
   desktopRoleSelected = lib.elem ../home/overrides/role/desktop.nix snowfall;
   serverRoleNotSelectedForDesktop = !(lib.elem ../home/overrides/role/server.nix snowfall);
   hostOverrideSelected = lib.elem ../home/overrides/host/snowfall.nix snowfall;

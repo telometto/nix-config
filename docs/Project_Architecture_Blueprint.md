@@ -134,9 +134,10 @@ modules/
 
 home/
 ├── base.nix          shared mkDefaults for all users
+├── packages.nix      shared home.packages for all managed users
 ├── desktop/          gnome, kde, hyprland, xdg modules
 ├── files/            managed dotfiles and themes
-├── programs/         browsers, development, terminal, media, social, gaming, gpg, tools, beets, fastfetch, packages
+├── programs/         browsers, development, terminal, media, social, gaming, gpg, tools, beets, fastfetch
 ├── security/         sops HM integration
 ├── services/         gpgAgent, sshAgent
 └── overrides/
@@ -206,7 +207,7 @@ flowchart LR
     subgraph "hm.* (Home Manager — home/)"
         HL[hm.langs]
         HD[hm.desktop\ngnome / kde / hyprland / xdg]
-        HPR[hm.programs\nbrowsers / development / terminal\nmedia / social / gaming\ngpg / tools / beets / fastfetch / packages / gitea]
+        HPR[hm.programs\nbrowsers / development / terminal\nmedia / social / gaming\ngpg / tools / beets / fastfetch / gitea]
         HSV[hm.services\ngpgAgent / sshAgent]
         HSEC[hm.security.sops]
         HA[hm.accounts\nemail / calendar / contact]
@@ -333,11 +334,16 @@ not named after a hostname and therefore bypasses the auto-override path.
 |----------|----------|
 | `hm.langs` | regional formatting locale |
 | `hm.desktop` | gnome, kde, hyprland, xdg |
-| `hm.programs` | browsers, development, terminal, media, social, gaming, gpg, tools, beets, fastfetch, packages, gitea |
+| `hm.programs` | browsers, development, terminal, media, social, gaming, gpg, tools, beets, fastfetch, gitea |
 | `hm.services` | gpgAgent, sshAgent |
 | `hm.security` | sops |
 | `hm.accounts` | email, calendar, contact |
 | `hm.files` | managed dotfiles |
+
+Shared user packages are declared with `home.packages` in
+[`home/packages.nix`](../home/packages.nix). Role, host, and per-user additions
+use the same native option; see the
+[package placement table](../home/README.md#package-placement).
 
 ______________________________________________________________________
 

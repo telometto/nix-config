@@ -105,10 +105,11 @@ let
       homeDir = lib.findFirst (home: home != null) "/home/${username}" preferredHomes;
     in
     {
-      imports = collectImports username userAttrs;
-      config = lib.mkMerge [
+      imports = collectImports username userAttrs ++ [
         (builtins.removeAttrs cfg.template [ "imports" ])
         (builtins.removeAttrs (override.extraConfig or { }) [ "imports" ])
+      ];
+      config = lib.mkMerge [
         autoDesktopConfig
         {
           home.username = lib.mkDefault username;

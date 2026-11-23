@@ -58,6 +58,7 @@ let
 in
 {
   composition = import ./home-composition.nix { inherit pkgs hmStable; };
+  containers = import ./home-container-optout.nix { inherit pkgs hmStable; };
   terminal = import ./terminal-options.nix { inherit pkgs hmStable; };
   packages = {
     desktopGetsAsdf = has "asdf-vm" (rolePackages "desktop");

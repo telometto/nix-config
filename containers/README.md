@@ -165,13 +165,15 @@ in
 
 2. Wire into the host NixOS config by adding the import to
    `home-manager.users.<name>.imports` (typically in
-   `hosts/<hostname>/virtualisation/containers.nix`):
+   `hosts/<hostname>/virtualisation/containers.nix`). Guard the profile with
+   the global and per-user Home Manager switches:
 
 ```nix
 # hosts/<hostname>/virtualisation/containers.nix
-{ VARS, ... }:
+{ lib, config, VARS, ... }:
 let
   username = VARS.users.zeno.user;
+  homeEnabled = config.sys.home.enable && (config.sys.home.users.${username}.enable or true);
 in
 {
   users.users.${username} = {
@@ -179,7 +181,7 @@ in
     autoSubUidGidRange = true;
   };
 
-  home-manager.users.${username} = {
+  home-manager.users.${username} = lib.mkIf homeEnabled {
     imports = [ ../../../containers/<name>.nix ];
     services.<name>.enable = true;
   };
