@@ -166,19 +166,26 @@ without contacting the registry; initial provisioning still needs HTTPS.
 On Blizzard, keep this running:
 
 ```bash
-pilot -n actual-pilot port-forward --address=127.0.0.1 service/actual-pilot 15006:5006
+sudo actual-pilot-virtctl -n actual-pilot port-forward \
+  --address=127.0.0.1 vmi/actual-pilot 15006:5006
 ```
 
 On the client computer, keep a second terminal running:
 
 ```bash
-ssh -N -L 127.0.0.1:15006:127.0.0.1:15006 blizzard
+ssh -N -o ExitOnForwardFailure=yes \
+  -L 127.0.0.1:15006:127.0.0.1:15006 blizzard
 ```
 
 Open `http://127.0.0.1:15006` and use disposable pilot data. The loopback
 browser origin also avoids requiring a public HTTPS endpoint for the web
 client. A port-forward is a temporary authenticated admin connection; an
 in-cluster HTTP probe is a separate NetworkPolicy test.
+
+The forwarder connects through KubeVirt's `virt-api` pods. The Actual HTTP
+ingress peer must combine the `kubevirt` namespace selector with the pod
+label `kubevirt.io: virt-api`, limited to TCP 5006. See the companion
+`homelab-apps` policy and private-access instructions for that allowance.
 
 ### GitOps and VM lifecycle
 
