@@ -34,21 +34,21 @@ approved platform. This document adds the service-specific staging boundary.
    Searx storage/application Flux layers and a `searx-preview` namespace. The
    application and storage layers are suspended by default, so publishing their
    definitions does not start a VM or importer.
-2. Add a Nix host preview option, disabled by default. When explicitly enabled,
+1. Add a Nix host preview option, disabled by default. When explicitly enabled,
    it adds only the new root directory to the existing retained-disk guard and
    creates its parent directories. The normal configuration keeps the existing
    guard inputs and production service definitions unchanged.
-3. Use a separate retained 20 GiB root PV/PVC rooted at
+1. Use a separate retained 20 GiB root PV/PVC rooted at
    `/flash/enc/vms/kubevirt-pilot/searx-preview/root`. Import the same pinned Debian
    base using CDI node pulling. Never reference an existing MicroVM image or the
    Actual root/data paths. Reject symlinks and refuse automatic import when a
    fresh cluster database coincides with retained preview images.
-4. Give the preview one vCPU and 2 GiB guest memory, matching the current Searx
+1. Give the preview one vCPU and 2 GiB guest memory, matching the current Searx
    allocation. Keep Valkey inside this guest on loopback, with disposable cache
    data. Keep the preview signing key on its retained root; generate it locally
    once without publishing it in Git, guest-console output or Kubernetes data.
    Existing production signing keys and secret-bearing files remain untouched.
-5. Run the official SearxNG container pinned by digest. First-boot cloud-init
+1. Run the official SearxNG container pinned by digest. First-boot cloud-init
    installs the generic service runner, named-NIC DHCP profile and guest agent.
    Deliver the desired image reference and public application settings in a
    separate ConfigMap-backed, read-only VM configuration disk, consumed on every
@@ -59,7 +59,7 @@ approved platform. This document adds the service-specific staging boundary.
    image proxying, POST search and the intended engine preferences from the public
    Nix service settings. Validate those settings against the pinned image rather
    than silently disabling unsupported controls.
-6. Declare only private HTTP access, initially TCP 8080. Use a ClusterIP Service
+1. Declare only private HTTP access, initially TCP 8080. Use a ClusterIP Service
    and a policy selecting only this preview. Permit HTTP from the probe namespace
    and from `virt-api` pods within `kubevirt`, with both selectors in one peer.
    Allow DNS and public web requests needed by the configured engines; retain the
