@@ -1,6 +1,6 @@
 # SearxNG: first private KubeVirt migration preview
 
-Status: proposed for implementation approval. Production cutover is a later gate.
+Status: approved for autonomous implementation. Production cutover is a later gate.
 
 ## Intent and first target
 
@@ -68,9 +68,12 @@ approved platform. This document adds the service-specific staging boundary.
 
 ## Implementation scope and validation
 
-The Nix changes belong on `dev-kubevirt` in PR #5894. Companion application
-manifests belong on a separate homelab-apps feature branch and draft PR. Preserve
-unrelated local work.
+The umbrella uses `dev/kubevirt`, with `dev-kubevirt` retained as its synchronized
+compatibility head for PR #5894. Shared host preparation belongs on
+`dev/kubevirt-base`; the SearxNG host branch `dev/kubevirt-searxng` stacks on it.
+Companion application manifests use `dev/kubevirt-searxng` in homelab-apps.
+Commit with co-author attribution, push finished branches and open draft PRs;
+do not merge. Preserve unrelated local work.
 
 Add regression coverage for default suspension, disjoint retained storage,
 private policy peers/ports, guest startup dependencies, per-boot configuration

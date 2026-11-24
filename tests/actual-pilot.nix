@@ -26,10 +26,56 @@ let
     };
   off = (make false).config;
   on = (make true).config;
+  preview =
+    ((make true).extendModules {
+      modules = [ { sys.virtualisation.actualPilot.previewVMs.searx-preview.enable = true; } ];
+    }).config;
+  disabled =
+    ((make true).extendModules {
+      modules = [ { sys.virtualisation.actualPilot.previewVMs.searx-preview = { }; } ];
+    }).config;
+  invalid =
+    name: disks:
+    ((make true).extendModules {
+      modules = [
+        {
+          sys.virtualisation.actualPilot.previewVMs.${name} = {
+            enable = true;
+            inherit disks;
+          };
+        }
+      ];
+    }).config;
+  invalidPreview = name: disks: builtins.any (a: !a.assertion) (invalid name disks).assertions;
   settings = builtins.fromJSON (
     builtins.unsafeDiscardStringContext on.environment.etc."k3s-actual-pilot/config.json".text
   );
 in
+assert
+  preview.sys.virtualisation.actualPilot.preflightConfig.previewDiskDirs
+  == [ "/flash/enc/vms/kubevirt-pilot/searx-preview/root" ];
+assert
+  preview.sys.virtualisation.actualPilot.preflightConfig.diskDirs
+  == on.sys.virtualisation.actualPilot.preflightConfig.diskDirs
+  ++ preview.sys.virtualisation.actualPilot.preflightConfig.previewDiskDirs;
+assert !(on.sys.virtualisation.actualPilot.preflightConfig ? previewDiskDirs);
+assert
+  disabled.sys.virtualisation.actualPilot.preflightConfig
+  == on.sys.virtualisation.actualPilot.preflightConfig;
+assert disabled.systemd.services.k3s.preStart == on.systemd.services.k3s.preStart;
+assert preview.services.traefik == on.services.traefik;
+assert
+  preview.systemd.services."microvm@production-probe".serviceConfig
+  == on.systemd.services."microvm@production-probe".serviceConfig;
+assert invalidPreview "../actual" [ "root" ];
+assert invalidPreview "actual" [ "root" ];
+assert invalidPreview "restore-tests" [ "root" ];
+assert invalidPreview "safe-preview" [ "../data" ];
+assert invalidPreview "safe-preview" [
+  "root"
+  "root"
+];
+assert invalidPreview "safe-preview" [ ];
 assert !off.services.k3s.enable;
 assert !(off.systemd.services ? actual-pilot-bootstrap);
 assert !(off.systemd.services ? actual-pilot-firewall);
@@ -81,7 +127,7 @@ assert lib.hasInfix "fib daddr type local" on.sys.virtualisation.actualPilot.fir
 assert !(on.systemd.services.actual-pilot-firewall.serviceConfig ? ExecStop);
 {
   passed = true;
-  checks = 41;
+  checks = 54;
   configFile = on.environment.etc."k3s-actual-pilot/config.json".source;
   bootstrap = on.systemd.services.actual-pilot-bootstrap.serviceConfig.ExecStart;
   k3sExecStart = on.systemd.services.k3s.serviceConfig.ExecStart;
