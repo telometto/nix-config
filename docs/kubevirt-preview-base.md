@@ -35,8 +35,10 @@ cluster database. Recovery/adoption requires a separate reviewed procedure.
 
 The canonical umbrella branch is `dev/kubevirt`; `dev-kubevirt` remains the
 compatibility head of PR #5894. Keep them at the same reviewed commit when
-advancing the umbrella. Service branches stack on `dev/kubevirt-base` and retain
-independent draft PRs until review and deployment gates are met.
+advancing the umbrella. Service PRs all target the actual umbrella head
+`dev-kubevirt` directly and retain independent drafts until review and deployment
+gates are met. The former `dev/kubevirt-base` ref is historical after its shared
+support is absorbed into #5894.
 
 Public verification (use the stable nixpkgs revision locked by this repository):
 
