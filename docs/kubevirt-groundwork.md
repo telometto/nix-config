@@ -9,12 +9,18 @@ PRs; Actual remains the accepted reference.
 
 ## Stack and ownership
 
-Host changes stack as `dev/kubevirt` (compatibility PR #5894 head
-`dev-kubevirt`) → `dev/kubevirt-base` → `dev/kubevirt-groundwork` → independent
-`dev/kubevirt-ID`. Application changes stack as `dev/kubevirt-searxng` →
-`dev/kubevirt-groundwork` → independent `dev/kubevirt-ID`. The individual service
-PRs are siblings, not a sequence. Stack their disjoint service directories after
-review; merging or deploying any part requires separate authorization.
+The host umbrella is PR #5894, whose actual head is `dev-kubevirt`.
+Canonical `dev/kubevirt` stays synchronized for checkouts and builds. Every host
+service PR, including SearxNG, targets `dev-kubevirt` directly. Shared support
+from #7320 and #7324 is incorporated into that umbrella; those old branch names
+are historical refs rather than bases for new work.
+
+In homelab-apps, the common umbrella is #14 (`dev/kubevirt-groundwork` → `main`).
+Every application service PR, including SearxNG #13, targets that same head.
+The common tree includes only shared infrastructure and empty reservation slots;
+SearxNG's implementation remains on its own service branch. Individual service
+PRs are independent siblings. Both umbrellas remain draft and unmerged to main.
+Service integration, runtime promotion and deployment require later authorization.
 
 Each service owns `hosts/blizzard/virtualisation/ID-preview.nix` and
 `clusters/blizzard-actual-pilot/migrations/ID/` in homelab-apps. The shared catalog,
@@ -75,7 +81,8 @@ production VM service unchanged. It also checks all sixteen hypothetical enabled
 path sets. Selective CI keeps global Nix evaluation for each registration file;
 unknown host/runtime changes use the full suite.
 
-See the [design](superpowers/specs/2026-11-25-kubevirt-service-groundwork-design.md)
+See the [current layout design](superpowers/specs/2026-11-25-kubevirt-one-base-design.md)
+and the original [groundwork design](superpowers/specs/2026-11-25-kubevirt-service-groundwork-design.md)
 and [execution plan](superpowers/plans/2026-11-25-kubevirt-service-groundwork.md).
 Per-service public plans live in the corresponding homelab-apps directory.
 Temporary handoffs reference those authoritative artifacts and carry an agent
