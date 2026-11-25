@@ -6,11 +6,17 @@ Flux storage/app layers, pinned Debian + app images, private access, a per-boot
 public configuration ISO and a guest-local identity. It does not introduce a
 universal guest operator or a production-data import tool.
 
-Only SearxNG has an implemented service branch at this stage. Create a separate
-`dev/kubevirt-<service>` branch when its concrete implementation begins; empty
-placeholder branches would not establish a tested migration. Each later service
-must keep its MicroVM/route as rollback and use fresh preview volumes until a
-separate data-migration gate is approved.
+SearxNG is the existing runtime-tested preview. The expanded batch prepares a
+separate `dev/kubevirt-<service>` branch and paired draft PRs for every other
+eligible enabled MicroVM, including services whose runtime implementation still
+needs live tests. Groundwork is explicitly halted, disabled and suspended; it is
+not application acceptance. Each service receives an owned implementation area
+and agent checklist. Keep each production MicroVM/route as rollback and use fresh
+preview volumes until a separate data-migration gate is approved.
+
+The user no longer uses Plex. Tautulli is excluded because it is Plex-only.
+Seerr remains eligible because it supports Jellyfin; preserve the legacy
+`overseerr` VM/state identity during eventual migration.
 
 This inventory comes from the public enabled VM declarations, not from reading
 running application data or secret files. A declared running VM does not prove
@@ -18,10 +24,10 @@ its application has already moved off the host; Jellyfin retains its own gate.
 
 | Order / workload | State and integration boundary | Next implementation or deployment prerequisite |
 |------------------|--------------------------------|-----------------------------------------------|
-| 1. SearxNG | Fresh root and signing key; disposable guest-local cache; public search egress | `dev/kubevirt-searxng` prepared in both repos. Deploy the private preview only after review; validate real Flux/CDI/config ISO and Git stop/start before expanding the pattern. |
-| 2. Tautulli | `/var/lib/tautulli` state, config and Plex authorization/history | Next small application candidate. Define the private Plex endpoint/policy and test account setup without copying its token; cold export/restore and ownership mapping are separate migration work. |
-| 3. Overseerr / Seerr | `/var/lib/overseerr`; existing automatic Seerr schema transition; Plex and Sonarr/Radarr access | Preserve the existing migration/version boundary, authorize isolated API peers, then test a stopped copy of state. Do not run a second writer against production state. |
-| 4. Prowlarr | Private state, indexer credentials, FlareSolverr and reciprocal Arr connections | Add two guest services, strict peer policies and a credential-delivery plan; validate a fresh private instance before copying any indexer state. |
+| 1. SearxNG | Fresh root and signing key; disposable guest-local cache; public search egress | `dev/kubevirt-searxng` prepared in both repos. Deploy the private preview only after review; validate real Flux/CDI/config ISO and Git stop/start before runtime acceptance of additional services. |
+| Tautulli — excluded | Plex-only monitoring | Skip its KubeVirt migration. This preparation does not retire or stop the existing VM. |
+| 2. Overseerr / Seerr | `/var/lib/overseerr`; existing automatic Seerr schema transition; Jellyfin and Sonarr/Radarr access | Preserve the existing migration/version boundary, authorize isolated API peers, then test a stopped copy of state. Do not run a second writer against production state. |
+| 3. Prowlarr | Private state, indexer credentials, FlareSolverr and reciprocal Arr connections | Add two guest services, strict peer policies and a credential-delivery plan; validate a fresh private instance before copying any indexer state. |
 | Sonarr | `/var/lib/sonarr`, media share, Prowlarr and download-client APIs | Prove media UID/GID/ACL and path parity, private peers and independent database restore. |
 | Radarr | `/var/lib/radarr`, media share, Prowlarr and download-client APIs | Same filesystem and API acceptance as Sonarr; prepare its own branch and volumes. |
 | Readarr | `/var/lib/readarr`, media share and download-client APIs | Validate supported application image/version and filesystem/API parity before state transfer. |
