@@ -89,6 +89,26 @@ class SelectionTests(unittest.TestCase):
                 self.assertFalse(plan["full"])
                 self.assertFalse(plan["evaluate"])
 
+    def test_groundwork_registration_paths_remain_targeted_and_evaluated(self):
+        catalog = json.loads(
+            (ROOT / "lib/kubevirt-groundwork/catalog.json").read_text()
+        )
+        for service in catalog["services"]:
+            path = f"hosts/blizzard/virtualisation/{service['id']}-preview.nix"
+            with self.subTest(service=service["id"]):
+                plan = self.selected(path)
+                self.assertFalse(plan["full"])
+                self.assertTrue(plan["evaluate"])
+                self.assertEqual(
+                    set(plan["checks"]), {"formatting", "kubevirt-groundwork"}
+                )
+        self.assertTrue(
+            self.selected("hosts/blizzard/virtualisation/new-preview.nix")["full"]
+        )
+        self.assertTrue(
+            self.selected("hosts/blizzard/virtualisation/wireguard-runtime.nix")["full"]
+        )
+
     def test_mapped_nix_keeps_global_evaluation(self):
         plan = self.selected("hosts/blizzard/monitoring/cloudflare-alerts.nix")
         self.assertTrue(plan["evaluate"])
