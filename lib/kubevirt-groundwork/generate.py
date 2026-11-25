@@ -52,14 +52,16 @@ def disk_names(profile):
 
 
 def render(profile):
-    disks = " ".join(json.dumps(d) for d in disk_names(profile))
+    disks = "".join(f"      {json.dumps(d)}\n" for d in disk_names(profile))
     return (
         "# Fresh preview disks only; runtime and Flux stay gated separately.\n"
         "{ lib, ... }:\n"
         "{\n"
         f"  sys.virtualisation.actualPilot.previewVMs.{profile['namespace']} = {{\n"
         "    enable = lib.mkDefault false;\n"
-        f"    disks = [ {disks} ];\n"
+        "    disks = [\n"
+        f"{disks}"
+        "    ];\n"
         "  };\n"
         "}\n"
     )

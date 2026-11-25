@@ -68,7 +68,8 @@ nix-build --no-out-link --expr \
 PYTHONDONTWRITEBYTECODE=1 python3 .github/tests/test_flake_ci.py
 ```
 
-The contract checks exact module equality, rejects host side effects and proves
+The contract requires exact canonical module source and regular file/parent
+directory metadata. It rejects context-dependent host side effects and proves
 that disabled registrations leave pilot preparation, firewall, Traefik and a
 production VM service unchanged. It also checks all sixteen hypothetical enabled
 path sets. Selective CI keeps global Nix evaluation for each registration file;

@@ -2,6 +2,8 @@
 
 import importlib.util
 import json
+import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -73,6 +75,75 @@ class RegistrationTests(unittest.TestCase):
             link.symlink_to(target)
             with self.assertRaises(FileExistsError):
                 groundwork.write(profile, link)
+
+
+class ModuleBoundaryTests(unittest.TestCase):
+    def inspect(self, root):
+        expression = (
+            'let lib = { mkDefault = content: { _type = "override"; priority = 1000; inherit content; }; }; '
+            f"catalog = builtins.fromJSON (builtins.readFile {json.dumps(str(groundwork.CATALOG))}); "
+            f"registry = import {json.dumps(str(ROOT / 'lib/kubevirt-groundwork/contract.nix'))} {{ inherit lib catalog; }}; "
+            f"in (registry.inspect (builtins.toPath {json.dumps(str(root))})).valid"
+        )
+        with tempfile.TemporaryDirectory() as state:
+            result = subprocess.run(
+                [
+                    "nix-instantiate",
+                    "--eval",
+                    "--strict",
+                    "--json",
+                    "--expr",
+                    expression,
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                env={
+                    **os.environ,
+                    "NIX_REMOTE": "local",
+                    "NIX_STATE_DIR": state,
+                    "NIX_CONF_DIR": state,
+                    "NIX_CONFIG": "build-users-group =",
+                },
+            )
+        return json.loads(result.stdout)
+
+    def test_context_dependent_host_side_effect_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            module = root / "hosts/blizzard/virtualisation/bazarr-preview.nix"
+            module.parent.mkdir(parents=True)
+            profile = groundwork.select(groundwork.load_catalog(), "bazarr")
+            module.write_text(groundwork.render(profile))
+            self.assertTrue(self.inspect(root))
+            text = module.read_text().replace("{ lib, ... }:", "{ lib, ... }@args:")
+            text += '\n// lib.optionalAttrs (args ? config) { environment.variables.HIDDEN_EFFECT = "active"; }\n'
+            # Supply optionalAttrs in the malicious function itself so the
+            # old lib-only call hides the same effect as a real NixOS context.
+            text = text.replace(
+                "lib.optionalAttrs (args ? config)",
+                "(if args ? config then (x: x) else (_: {}))",
+            )
+            module.write_text(text)
+            self.assertFalse(self.inspect(root))
+
+    def test_leaf_and_parent_symlinks_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            real = root / "real"
+            real.mkdir()
+            profile = groundwork.select(groundwork.load_catalog(), "bazarr")
+            target = real / "bazarr-preview.nix"
+            target.write_text(groundwork.render(profile))
+            parent = root / "hosts/blizzard/virtualisation"
+            parent.mkdir(parents=True)
+            link = parent / target.name
+            link.symlink_to(target)
+            self.assertFalse(self.inspect(root))
+            link.unlink()
+            parent.rmdir()
+            parent.symlink_to(real, target_is_directory=True)
+            self.assertFalse(self.inspect(root))
 
 
 if __name__ == "__main__":
