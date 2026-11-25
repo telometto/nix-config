@@ -195,32 +195,42 @@ in
 
       # An IP-bound socket survives tailscaled restarts. FreeBind lets it wait
       # for this exact address at boot without ever falling back to a wildcard.
-      systemd.sockets.sandfly-sshd = {
-        description = "Sandfly SSH on the target Tailscale IPv4";
-        wantedBy = [ "sockets.target" ];
-        after = [ "firewall.service" ];
-        requires = [ "firewall.service" ];
-        partOf = [ "firewall.service" ];
-        listenStreams = [ "${cfg.listenAddress}:${toString cfg.port}" ];
-        socketConfig = {
-          Accept = true;
-          FreeBind = true;
-          MaxConnections = 16;
+      systemd = {
+        sockets.sandfly-sshd = {
+          description = "Sandfly SSH on the target Tailscale IPv4";
+          wantedBy = [ "sockets.target" ];
+          after = [ "firewall.service" ];
+          requires = [ "firewall.service" ];
+          partOf = [ "firewall.service" ];
+          listenStreams = [ "${cfg.listenAddress}:${toString cfg.port}" ];
+          socketConfig = {
+            Accept = true;
+            FreeBind = true;
+            MaxConnections = 16;
+          };
         };
-      };
 
-      systemd.services."sandfly-sshd@" = {
-        description = "Sandfly SSH per-connection daemon";
-        after = [ "sshd-keygen.service" ];
-        requires = [ "sshd-keygen.service" ];
-        path = [ sshPackage ];
-        environment.LD_LIBRARY_PATH = config.system.nssModules.path;
-        serviceConfig = {
-          ExecStart = "${lib.getExe' sshPackage "sshd"} -i -e -f ${sshConfig}";
-          StandardInput = "socket";
-          StandardOutput = "socket";
-          StandardError = "journal";
+        services."sandfly-sshd@" = {
+          description = "Sandfly SSH per-connection daemon";
+          after = [ "sshd-keygen.service" ];
+          requires = [ "sshd-keygen.service" ];
+          path = [ sshPackage ];
+          environment.LD_LIBRARY_PATH = config.system.nssModules.path;
+          serviceConfig = {
+            ExecStart = "${lib.getExe' sshPackage "sshd"} -i -e -f ${sshConfig}";
+            StandardInput = "socket";
+            StandardOutput = "socket";
+            StandardError = "journal";
+          };
         };
+
+        # PAM creates a user manager for scan sessions. This account needs no
+        # desktop geolocation agent, even though its UID is in the normal range.
+        user.services.geoclue-agent =
+          lib.mkIf (config.services.geoclue2.enable && config.services.geoclue2.enableDemoAgent)
+            {
+              unitConfig.ConditionUser = lib.mkAfter [ "!sandfly" ];
+            };
       };
 
       users.users.sandfly = {
@@ -235,14 +245,6 @@ in
         # Dedicated listener authentication uses a root-managed key file.
         # Keep the home writable for Sandfly's temporary scanning binaries.
       };
-
-      # PAM creates a user manager for scan sessions. This account needs no
-      # desktop geolocation agent, even though its UID is in the normal range.
-      systemd.user.services.geoclue-agent =
-        lib.mkIf (config.services.geoclue2.enable && config.services.geoclue2.enableDemoAgent)
-          {
-            unitConfig.ConditionUser = lib.mkAfter [ "!sandfly" ];
-          };
 
       # Sandfly's forensic engine must inspect root-only areas. The reviewed
       # listener, key, source guard, and human Tailscale SSH policy protect

@@ -121,9 +121,16 @@ let
     assert cfg.users.users.sandfly.homeMode == "0700";
     assert
       cfg.services.geoclue2.enable && cfg.services.geoclue2.enableDemoAgent
-      -> lib.elem "!sandfly" (
-        lib.toList cfg.systemd.user.services.geoclue-agent.unitConfig.ConditionUser
-      );
+      ->
+        lib.all
+          (
+            condition:
+            lib.elem condition (lib.toList cfg.systemd.user.services.geoclue-agent.unitConfig.ConditionUser)
+          )
+          [
+            "!@system"
+            "!sandfly"
+          ];
     assert cfg.users.users.sandfly.extraGroups == [ ];
     assert cfg.users.users.sandfly.openssh.authorizedKeys.keys == [ ];
     assert cfg.users.users.sandfly.openssh.authorizedKeys.keyFiles == [ ];
