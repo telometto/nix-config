@@ -24,6 +24,7 @@ JELLYFIN = {"jellyfin-firewall", "jellyfin-microvm"}
 # This inventory supports selective mappings. Full builds discover Nix attributes.
 CHECKS = {
     "formatting",
+    "kubevirt-groundwork",
     "codex-adapter",
     "cloudflare-metrics",
     "microvm-publication",
@@ -50,6 +51,7 @@ CHECKS = {
 # Shared Traefik, Cloudflared, Prometheus, Grafana, loaders, lib helpers, and
 # common VM infrastructure deliberately remain unmapped.
 DEPENDENCIES = {
+    "tests/kubevirt-groundwork-check.nix": {"kubevirt-groundwork"},
     "modules/security/kwallet-tpm.nix": {"kwallet-tpm"},
     "hosts/kaizer/kwallet-tpm.nix": {"kwallet-tpm"},
     "packages/kwallet-tpm/default.nix": {"kwallet-tpm"},
@@ -108,7 +110,34 @@ for fixture in (
 ):
     DEPENDENCIES[f"tests/crowdsec_{fixture}.py"] = CROWDSEC
 
+# Reserved registration paths may not exist until their independent PR is stacked.
+# Their check requires the entire module value to equal a default-false disk-only
+# registration. Runtime wiring belongs in unmapped files and receives full CI.
+GROUNDWORK_IDS = (
+    "bazarr",
+    "cross-seed",
+    "firefox",
+    "gitea",
+    "immich",
+    "jellyfin",
+    "matrix-synapse",
+    "pocket-id",
+    "prowlarr",
+    "qbittorrent",
+    "radarr",
+    "readarr",
+    "sabnzbd",
+    "seerr",
+    "sonarr",
+    "wireguard",
+)
+GROUNDWORK_MODULES = {
+    f"hosts/blizzard/virtualisation/{name}-preview.nix" for name in GROUNDWORK_IDS
+}
+
 PREFIX_DEPENDENCIES = {
+    "lib/kubevirt-groundwork/": {"kubevirt-groundwork"},
+    "tests/kubevirt_groundwork/": {"kubevirt-groundwork"},
     "tests/fixtures/codex-plugin/": {"codex-adapter"},
     "tests/cloudflare_metrics/": {"cloudflare-metrics"},
     "packages/crowdsec-bouncer/": CROWDSEC | ARCHIVE,
@@ -167,7 +196,11 @@ def classify(paths):
         if path.endswith(".md"):
             # No checks consume Markdown as a runtime input.
             continue
-        mapped = DEPENDENCIES.get(path)
+        mapped = (
+            {"kubevirt-groundwork"}
+            if path in GROUNDWORK_MODULES
+            else DEPENDENCIES.get(path)
+        )
         if mapped is None:
             for prefix, dependencies in PREFIX_DEPENDENCIES.items():
                 if path.startswith(prefix):

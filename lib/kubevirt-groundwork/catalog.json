@@ -1,0 +1,1927 @@
+{
+  "schemaVersion": 1,
+  "scope": "currently-enabled-non-plex-only-microvms",
+  "sourceCommit": "c756f68a4ab5d3a4c33612dc0238458c9611a3ae",
+  "rootImage": "docker://quay.io/containerdisks/debian@sha256:90b09aed0bbca79adf4ebb2445b548332dee59a600de20038639747526a44ba7",
+  "services": [
+    {
+      "id": "bazarr",
+      "legacyVm": "bazarr",
+      "namespace": "bazarr-preview",
+      "cpu": 1,
+      "memoryMiB": 1024,
+      "port": 11023,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/bazarr",
+          "legacyImage": "bazarr-state.img",
+          "sources": [
+            {
+              "path": "vms/mkArrVm.nix",
+              "line": 21
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/bazarr.nix",
+        "vms/mkArrVm.nix",
+        "modules/services/bazarr.nix",
+        "lib/arr-service.nix",
+        "lib/arr-services.nix",
+        "modules/services/arr-exporter.nix",
+        "vms/media-storage.nix",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [
+        {
+          "protocol": "virtiofs",
+          "source_path": "/rpool/unenc/media/data",
+          "mount_point": "/data",
+          "tag": "media-data",
+          "read_only_declared": null,
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix",
+              "line": 25
+            },
+            {
+              "path": "vms/media-storage.nix",
+              "line": 2
+            }
+          ],
+          "derivation_note": "Imported mediaStorage.share. No readOnly attribute is declared."
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "monitoring",
+          "detail": "Enabled Arr exporter opens its own configured guest port; preserve scrape/credential behavior separately from the primary UI.",
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix"
+            },
+            {
+              "path": "modules/services/arr-exporter.nix"
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "detail": "Shared /data tree, static service account, supplementary users group and umask 002.",
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix"
+            },
+            {
+              "path": "vms/media-storage.nix"
+            },
+            {
+              "path": "lib/arr-service.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Prove exact /data paths and subtitle write ownership/ACLs using disposable content.",
+        "Deliver private Sonarr/Radarr credentials and authorize only those APIs; validate metadata and subtitle workflows.",
+        "Validate independent stopped state restore and keep unverified preview automation away from production."
+      ]
+    },
+    {
+      "id": "cross-seed",
+      "legacyVm": "cross-seed",
+      "namespace": "cross-seed-preview",
+      "cpu": 1,
+      "memoryMiB": 1024,
+      "port": 11032,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 2048,
+          "mountPoint": "/var/lib/cross-seed",
+          "legacyImage": "cross-seed-state.img",
+          "sources": [
+            {
+              "path": "vms/cross-seed.nix",
+              "line": 23
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/cross-seed.nix",
+        "modules/services/cross-seed.nix",
+        "vms/sops-base.nix",
+        "vms/media-storage.nix",
+        "docs/cross-seed.md",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [
+        {
+          "protocol": "virtiofs",
+          "source_path": "/rpool/unenc/media/data",
+          "mount_point": "/data",
+          "tag": "media-data",
+          "read_only_declared": null,
+          "provenance": [
+            {
+              "path": "vms/cross-seed.nix",
+              "line": 27
+            },
+            {
+              "path": "vms/media-storage.nix",
+              "line": 2
+            }
+          ],
+          "derivation_note": "Imported mediaStorage.share. No readOnly attribute is declared."
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "automation",
+          "detail": "Private Prowlarr/qBittorrent APIs; local API binds guest loopback only, with no public publication or host forward.",
+          "provenance": [
+            {
+              "path": "vms/cross-seed.nix"
+            },
+            {
+              "path": "modules/services/cross-seed.nix"
+            },
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            }
+          ]
+        },
+        {
+          "kind": "credentials",
+          "detail": "Private SOPS settings and startup ordering are declared; no values were read.",
+          "provenance": [
+            {
+              "path": "vms/cross-seed.nix"
+            },
+            {
+              "path": "modules/services/cross-seed.nix"
+            },
+            {
+              "path": "vms/sops-base.nix"
+            }
+          ]
+        },
+        {
+          "kind": "hardlinks",
+          "detail": "/data/cross-seed must share the same filesystem and users group as qBittorrent payloads; preserve setgid/umask.",
+          "provenance": [
+            {
+              "path": "modules/services/cross-seed.nix"
+            },
+            {
+              "path": "vms/media-storage.nix"
+            },
+            {
+              "path": "hosts/blizzard/storage/media.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Keep fresh preview daemon disabled until credential, hardlink/ACL and API gates pass; current MicroVM source enables it.",
+        "Prove complete-content-only injection, full recheck, zero-missing-byte resume and incomplete-candidate rejection with disposable content.",
+        "Validate independent stopped state restore; keep unverified automation disconnected from production APIs."
+      ]
+    },
+    {
+      "id": "firefox",
+      "legacyVm": "firefox",
+      "namespace": "firefox-preview",
+      "cpu": 4,
+      "memoryMiB": 4096,
+      "port": 11052,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/firefox",
+          "legacyImage": "firefox-state.img",
+          "sources": [
+            {
+              "path": "vms/firefox.nix",
+              "line": 28
+            }
+          ]
+        },
+        {
+          "name": "containers",
+          "sizeMiB": 4096,
+          "mountPoint": "/var/lib/containers",
+          "legacyImage": "containers-storage.img",
+          "sources": [
+            {
+              "path": "vms/firefox.nix",
+              "line": 33
+            }
+          ]
+        },
+        {
+          "name": "downloads",
+          "sizeMiB": 524288,
+          "mountPoint": "/home/admin/Downloads",
+          "legacyImage": "firefox-downloads.img",
+          "sources": [
+            {
+              "path": "vms/firefox.nix",
+              "line": 38
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/firefox.nix",
+        "modules/services/firefox.nix",
+        "lib/linuxserver-browser.nix",
+        "vms/media-storage.nix",
+        "vms/microvm-network-defaults.nix",
+        "modules/services/nfs.nix",
+        "hosts/blizzard/storage/nfs.nix",
+        "vms/sops-base.nix",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [
+        {
+          "protocol": "nfs",
+          "source_host_role": "Blizzard MicroVM gateway",
+          "source_path": "/rpool/unenc/media/data",
+          "mount_point": "/data",
+          "read_only_declared": false,
+          "provenance": [
+            {
+              "path": "vms/firefox.nix",
+              "line": 100
+            },
+            {
+              "path": "vms/media-storage.nix",
+              "line": 2
+            },
+            {
+              "path": "modules/services/nfs.nix",
+              "line": 68
+            }
+          ],
+          "derivation_note": "NFS export/target derive from mediaStorage; rw is NFS module default. This is not an extra virtiofs share."
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "vpn",
+          "detail": "Default gateway uses WireGuard VM; explicit LAN/shared-bridge return routes come from vpnReturnRoutes.",
+          "provenance": [
+            {
+              "path": "vms/firefox.nix"
+            },
+            {
+              "path": "vms/vm-registry.nix"
+            },
+            {
+              "path": "vms/microvm-network-defaults.nix"
+            }
+          ]
+        },
+        {
+          "kind": "container",
+          "detail": "Quadlet/Podman LinuxServer Firefox: profile maps to /config and dedicated Downloads maps to /downloads. Profile UID 911 remains separate from admin UID 1000; shared transfer GID is 1000.",
+          "provenance": [
+            {
+              "path": "vms/firefox.nix"
+            },
+            {
+              "path": "modules/services/firefox.nix"
+            },
+            {
+              "path": "lib/linuxserver-browser.nix"
+            }
+          ]
+        },
+        {
+          "kind": "credentials",
+          "detail": "Browser username/password SOPS declarations order credentials before startup.",
+          "provenance": [
+            {
+              "path": "vms/firefox.nix"
+            },
+            {
+              "path": "vms/sops-base.nix"
+            },
+            {
+              "path": "lib/linuxserver-browser.nix"
+            }
+          ]
+        },
+        {
+          "kind": "host-nfs",
+          "detail": "Host NFS server enabled; checked public exports block is commented and module default is empty. Working export cannot be assumed.",
+          "provenance": [
+            {
+              "path": "hosts/blizzard/storage/nfs.nix"
+            },
+            {
+              "path": "modules/services/nfs.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Choose/pin an immutable browser image and implement guest credentials and private browser isolation.",
+        "Design WireGuard egress and fail-closed reconnect/reboot/leak acceptance with required return routes.",
+        "Prove NFS availability, transfer ownership and exact path parity; plan capacity for explicit 512 GiB Downloads image.",
+        "Validate stopped independent profile/container/downloads restore and retain separate profile/transfer identities."
+      ]
+    },
+    {
+      "id": "gitea",
+      "legacyVm": "gitea",
+      "namespace": "gitea-preview",
+      "cpu": 2,
+      "memoryMiB": 2048,
+      "port": 11050,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 102400,
+          "mountPoint": "/var/lib/gitea",
+          "legacyImage": "gitea-state.img",
+          "sources": [
+            {
+              "path": "vms/gitea.nix",
+              "line": 25
+            }
+          ]
+        },
+        {
+          "name": "postgresql",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/postgresql",
+          "legacyImage": "postgresql-state.img",
+          "sources": [
+            {
+              "path": "vms/gitea.nix",
+              "line": 30
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/gitea.nix",
+        "modules/services/gitea.nix",
+        "vms/sops-base.nix",
+        "docs/gitea.md",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [],
+      "dependencies": [
+        {
+          "kind": "database",
+          "detail": "Local PostgreSQL, repositories under /var/lib/gitea/repositories, LFS enabled on local storage.",
+          "provenance": [
+            {
+              "path": "vms/gitea.nix"
+            },
+            {
+              "path": "modules/services/gitea.nix"
+            }
+          ]
+        },
+        {
+          "kind": "credentials",
+          "detail": "SOPS LFS signing secret and application identity require explicit private delivery/preservation.",
+          "provenance": [
+            {
+              "path": "vms/gitea.nix"
+            },
+            {
+              "path": "modules/services/gitea.nix"
+            }
+          ]
+        },
+        {
+          "kind": "ingress",
+          "detail": "Host Tunnel/Traefik gitea-compatible publication and existing HTTPS ROOT_URL. Built-in Gitea SSH is disabled.",
+          "provenance": [
+            {
+              "path": "vms/gitea.nix"
+            },
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            },
+            {
+              "path": "docs/gitea.md"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Pin compatible application/database components preserving the declared Gitea >=1.26 LFS requirement.",
+        "Prove database-consistent independent export/restore of repositories and LFS with preserved identity and no competing writer.",
+        "Validate private Git HTTP push/clone, LFS upload/download and CSP/nonce/auth/CSRF before public cutover."
+      ]
+    },
+    {
+      "id": "immich",
+      "legacyVm": "immich",
+      "namespace": "immich-preview",
+      "cpu": 4,
+      "memoryMiB": 8192,
+      "port": 11070,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 1048576,
+          "mountPoint": "/var/lib/immich",
+          "legacyImage": "immich-state.img",
+          "sources": [
+            {
+              "path": "vms/immich-storage.nix",
+              "line": 6
+            }
+          ]
+        },
+        {
+          "name": "postgresql",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/postgresql",
+          "legacyImage": "postgresql-state.img",
+          "sources": [
+            {
+              "path": "vms/immich-storage.nix",
+              "line": 12
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/immich-storage.nix",
+              "line": 20
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/immich.nix",
+        "vms/immich-storage.nix",
+        "modules/services/immich.nix",
+        "vms/sops-base.nix",
+        "docs/immich.md",
+        "docs/immich-backup.md",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [],
+      "dependencies": [
+        {
+          "kind": "database-library",
+          "detail": "Local PostgreSQL plus 1 TiB-declared library/state image; no external media virtiofs share.",
+          "provenance": [
+            {
+              "path": "vms/immich.nix"
+            },
+            {
+              "path": "vms/immich-storage.nix"
+            }
+          ]
+        },
+        {
+          "kind": "oidc",
+          "detail": "Pocket ID sole interactive login, restricted client group, stable subject linking and private client secret.",
+          "provenance": [
+            {
+              "path": "vms/immich.nix"
+            },
+            {
+              "path": "docs/immich.md"
+            }
+          ]
+        },
+        {
+          "kind": "ml",
+          "detail": "Local ML disabled; Blizzard host proxy on port 3003 relays requests to Kaizer over Tailscale.",
+          "provenance": [
+            {
+              "path": "vms/immich.nix"
+            },
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            }
+          ]
+        },
+        {
+          "kind": "ingress",
+          "detail": "Managed immich-web publication and direct LAN TCP 11070 host forward.",
+          "provenance": [
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Pin compatible server/database components; prove library/database-consistent independent restore, ownership and capacity.",
+        "Preserve Pocket ID issuer/client/subject identity and restricted admission; validate browser/mobile authentication privately.",
+        "Validate existing remote ML relay through narrow private access.",
+        "Prove upload/download/derived assets without duplicate production writes before route/data cutover."
+      ]
+    },
+    {
+      "id": "jellyfin",
+      "legacyVm": "jellyfin",
+      "namespace": "jellyfin-preview",
+      "cpu": 8,
+      "memoryMiB": 16384,
+      "port": 8096,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 131072,
+          "mountPoint": "/var/lib/jellyfin",
+          "legacyImage": "jellyfin-state.img",
+          "sources": [
+            {
+              "path": "vms/jellyfin.nix",
+              "line": 52
+            }
+          ]
+        },
+        {
+          "name": "cache",
+          "sizeMiB": 131072,
+          "mountPoint": "/var/cache/jellyfin",
+          "legacyImage": "jellyfin-cache.img",
+          "sources": [
+            {
+              "path": "vms/jellyfin.nix",
+              "line": 57
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/jellyfin.nix",
+        "vms/jellyfin-settings.nix",
+        "modules/services/jellyfin.nix",
+        "hosts/blizzard/services/media.nix",
+        "lib/jellyfin-vps-firewall.nix",
+        "docs/jellyfin-vps.md",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [
+        {
+          "protocol": "virtiofs",
+          "source_path": "/rpool/unenc/media/data/media",
+          "mount_point": "/rpool/unenc/media/data/media",
+          "tag": "jellyfin-media",
+          "read_only_declared": true,
+          "provenance": [
+            {
+              "path": "vms/jellyfin.nix",
+              "line": 19
+            },
+            {
+              "path": "vms/jellyfin.nix",
+              "line": 65
+            }
+          ]
+        },
+        {
+          "protocol": "virtiofs",
+          "source_path": "/var/lib/jellyfin",
+          "mount_point": "/mnt/host-jellyfin",
+          "tag": "jellyfin-host-state",
+          "read_only_declared": true,
+          "currently_selected_by_public_source": false,
+          "condition": "!jellyfinSettings.vmServiceReady",
+          "provenance": [
+            {
+              "path": "vms/jellyfin.nix",
+              "line": 70
+            },
+            {
+              "path": "vms/jellyfin-settings.nix",
+              "line": 4
+            }
+          ],
+          "derivation_note": "Staged import share selected only when vmServiceReady=false; current public setting is true."
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "service-location",
+          "detail": "Public vmServiceReady=true enables guest Jellyfin and disables host Jellyfin; runtime location was not inspected.",
+          "provenance": [
+            {
+              "path": "vms/jellyfin-settings.nix"
+            },
+            {
+              "path": "vms/jellyfin.nix"
+            },
+            {
+              "path": "hosts/blizzard/services/media.nix"
+            }
+          ]
+        },
+        {
+          "kind": "devices",
+          "detail": "GPU passthrough and hardware acceleration disabled; no PCI functions declared.",
+          "provenance": [
+            {
+              "path": "vms/jellyfin-settings.nix"
+            },
+            {
+              "path": "vms/jellyfin.nix"
+            }
+          ]
+        },
+        {
+          "kind": "ingress",
+          "detail": "Separate direct LAN host TCP 11072 forward to guest 8096 and guarded Tailscale/VPS relay; no local Traefik/Tunnel publication.",
+          "provenance": [
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            },
+            {
+              "path": "hosts/blizzard/services/media.nix"
+            },
+            {
+              "path": "docs/jellyfin-vps.md"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Confirm actual service/state location before planning transfer; public setting alone is not live evidence.",
+        "Validate independent stopped state/cache restore, read-only media path parity, capacity and private administrator setup.",
+        "Keep CPU-only behavior until any requested GPU passthrough has separate device/driver/IOMMU acceptance.",
+        "Prove direct-play/transcode capacity, LAN source preservation and guarded VPS/WebSocket ingress before cutover."
+      ]
+    },
+    {
+      "id": "matrix-synapse",
+      "legacyVm": "matrix-synapse",
+      "namespace": "matrix-synapse-preview",
+      "cpu": 4,
+      "memoryMiB": 4096,
+      "port": 11060,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 20480,
+          "mountPoint": "/var/lib/matrix-synapse",
+          "legacyImage": "matrix-synapse-state.img",
+          "sources": [
+            {
+              "path": "vms/matrix-storage.nix",
+              "line": 6
+            }
+          ]
+        },
+        {
+          "name": "postgresql",
+          "sizeMiB": 102400,
+          "mountPoint": "/var/lib/postgresql",
+          "legacyImage": "postgresql-state.img",
+          "sources": [
+            {
+              "path": "vms/matrix-storage.nix",
+              "line": 12
+            }
+          ]
+        },
+        {
+          "name": "mas",
+          "sizeMiB": 1024,
+          "mountPoint": "/var/lib/mas",
+          "legacyImage": "mas-state.img",
+          "sources": [
+            {
+              "path": "vms/matrix-storage.nix",
+              "line": 18
+            }
+          ]
+        },
+        {
+          "name": "whatsapp",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/mautrix-whatsapp",
+          "legacyImage": "mautrix-whatsapp-state.img",
+          "sources": [
+            {
+              "path": "vms/matrix-storage.nix",
+              "line": 33
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/matrix-storage.nix",
+              "line": 26
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/matrix-synapse.nix",
+        "vms/matrix-storage.nix",
+        "vms/matrix-whatsapp.nix",
+        "modules/services/matrix-synapse.nix",
+        "modules/services/matrix-authentication-service.nix",
+        "vms/sops-base.nix",
+        "docs/matrix-hardening-plan.md",
+        "docs/matrix-whatsapp-bridge.md",
+        "docs/matrix-backup.md",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [],
+      "dependencies": [
+        {
+          "kind": "stack",
+          "detail": "Synapse, MAS, local PostgreSQL and Nginx gateway share one VM; Synapse/MAS bind loopback.",
+          "provenance": [
+            {
+              "path": "vms/matrix-synapse.nix"
+            },
+            {
+              "path": "modules/services/matrix-synapse.nix"
+            },
+            {
+              "path": "modules/services/matrix-authentication-service.nix"
+            }
+          ]
+        },
+        {
+          "kind": "bridge",
+          "detail": "Flake constructor enables Mautrix-WhatsApp; dedicated bridge database is in PostgreSQL image and linked-device/crypto state in its own image.",
+          "provenance": [
+            {
+              "path": "vms/flake-microvms.nix"
+            },
+            {
+              "path": "vms/matrix-whatsapp.nix"
+            },
+            {
+              "path": "vms/matrix-storage.nix"
+            }
+          ]
+        },
+        {
+          "kind": "credentials",
+          "detail": "SOPS generators render runtime Synapse/MAS/bridge configs and coordinate rotation; signing/encryption identity needs explicit authorization.",
+          "provenance": [
+            {
+              "path": "vms/matrix-synapse.nix"
+            },
+            {
+              "path": "vms/matrix-whatsapp.nix"
+            },
+            {
+              "path": "vms/sops-base.nix"
+            }
+          ]
+        },
+        {
+          "kind": "network",
+          "detail": "Matrix-compatible host publication reaches Nginx; federation, SMTP and WhatsApp egress require independent acceptance.",
+          "provenance": [
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            },
+            {
+              "path": "vms/matrix-synapse.nix"
+            },
+            {
+              "path": "vms/matrix-whatsapp.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Preserve homeserver/signing/encryption identity and database-consistent Synapse/MAS/media/enabled WhatsApp bridge state via independent restore.",
+        "Implement private credential generation/rotation ordering without secrets in public provisioning.",
+        "Prove delegated login/recovery, federation and proxy/client-IP boundaries in isolation.",
+        "Prove bridge linked-device recovery, paired registration/config coordination and egress filtering; prevent competing bridge writers.",
+        "Review public endpoint cutover and rollback separately."
+      ]
+    },
+    {
+      "id": "pocket-id",
+      "legacyVm": "pocket-id",
+      "namespace": "pocket-id-preview",
+      "cpu": 1,
+      "memoryMiB": 1024,
+      "port": 11081,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 2048,
+          "mountPoint": "/var/lib/pocket-id",
+          "legacyImage": "pocket-id-state.img",
+          "sources": [
+            {
+              "path": "vms/pocket-id.nix",
+              "line": 24
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/pocket-id.nix",
+        "vms/sops-base.nix",
+        "docs/pocket-id.md",
+        "docs/pocket-id-migration-plan.md",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [],
+      "dependencies": [
+        {
+          "kind": "identity",
+          "detail": "SQLite database and uploads are in state image; encryption key is delivered privately through SOPS.",
+          "provenance": [
+            {
+              "path": "vms/pocket-id.nix"
+            }
+          ]
+        },
+        {
+          "kind": "isolation",
+          "detail": "Dedicated pocket-id-br0 bridge; backend/SSH accepted only from host proxy side; client-IP trust depends on this boundary.",
+          "provenance": [
+            {
+              "path": "vms/vm-registry.nix"
+            },
+            {
+              "path": "vms/pocket-id.nix"
+            },
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            }
+          ]
+        },
+        {
+          "kind": "oidc",
+          "detail": "Public issuer identity, registered clients/groups and downstream Immich authentication.",
+          "provenance": [
+            {
+              "path": "vms/pocket-id.nix"
+            },
+            {
+              "path": "docs/pocket-id.md"
+            },
+            {
+              "path": "docs/immich.md"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Pin supported version preserving callback enforcement; prove independent database/uploads export/import.",
+        "Preserve encryption/signing/passkey/issuer identity with explicit secret authorization; do not regenerate restored production identity.",
+        "Recreate restricted proxy/client-IP boundary and validate passkeys/discovery/callbacks/downstream admission privately.",
+        "Review public authentication cutover and rollback separately because all downstream logins may be affected."
+      ]
+    },
+    {
+      "id": "prowlarr",
+      "legacyVm": "prowlarr",
+      "namespace": "prowlarr-preview",
+      "cpu": 1,
+      "memoryMiB": 1024,
+      "port": 11020,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/prowlarr",
+          "legacyImage": "prowlarr-state.img",
+          "sources": [
+            {
+              "path": "vms/mkArrVm.nix",
+              "line": 21
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/prowlarr.nix",
+        "vms/mkArrVm.nix",
+        "modules/services/prowlarr.nix",
+        "lib/arr-service.nix",
+        "lib/arr-services.nix",
+        "modules/services/arr-exporter.nix",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [],
+      "dependencies": [
+        {
+          "kind": "monitoring",
+          "detail": "Enabled Arr exporter opens its own configured guest port; preserve scrape/credential behavior separately from the primary UI.",
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix"
+            },
+            {
+              "path": "modules/services/arr-exporter.nix"
+            }
+          ]
+        },
+        {
+          "kind": "companion",
+          "detail": "FlareSolverr runs in prowlarr-vm on 11013; no standalone FlareSolverr VM output.",
+          "provenance": [
+            {
+              "path": "vms/prowlarr.nix"
+            },
+            {
+              "path": "vms/vm-registry.nix"
+            },
+            {
+              "path": "vms/flake-microvms.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Implement both Prowlarr and embedded FlareSolverr with explicit private ports.",
+        "Deliver private indexer/API credentials and prove reciprocal Sonarr/Radarr/Readarr connectivity with narrow peer policies.",
+        "Validate fresh private operation and independent stopped state restore before copying indexer state."
+      ]
+    },
+    {
+      "id": "qbittorrent",
+      "legacyVm": "qbittorrent",
+      "namespace": "qbittorrent-preview",
+      "cpu": 1,
+      "memoryMiB": 2048,
+      "port": 11030,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/qbittorrent",
+          "legacyImage": "qbittorrent-state.img",
+          "sources": [
+            {
+              "path": "vms/qbittorrent.nix",
+              "line": 23
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/qbittorrent.nix",
+        "modules/services/qbittorrent.nix",
+        "vms/media-storage.nix",
+        "vms/microvm-network-defaults.nix",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [
+        {
+          "protocol": "virtiofs",
+          "source_path": "/rpool/unenc/media/data",
+          "mount_point": "/data",
+          "tag": "media-data",
+          "read_only_declared": null,
+          "provenance": [
+            {
+              "path": "vms/qbittorrent.nix",
+              "line": 27
+            },
+            {
+              "path": "vms/media-storage.nix",
+              "line": 2
+            }
+          ],
+          "derivation_note": "Imported mediaStorage.share. No readOnly attribute is declared."
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "vpn",
+          "detail": "WireGuard gateway/DNS, explicit return routes and incoming TCP/UDP torrent port 50820 forwarded by WireGuard.",
+          "provenance": [
+            {
+              "path": "vms/vm-registry.nix"
+            },
+            {
+              "path": "vms/qbittorrent.nix"
+            },
+            {
+              "path": "vms/wireguard.nix"
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "detail": "Shared /data payloads, primary users group, supplementary private group and umask 002 preserve media/hardlink access.",
+          "provenance": [
+            {
+              "path": "vms/qbittorrent.nix"
+            },
+            {
+              "path": "modules/services/qbittorrent.nix"
+            },
+            {
+              "path": "vms/media-storage.nix"
+            }
+          ]
+        },
+        {
+          "kind": "clients",
+          "detail": "Arr/cross-seed private API clients; VueTorrent enabled; host has TCP WebUI forward.",
+          "provenance": [
+            {
+              "path": "vms/qbittorrent.nix"
+            },
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Design VPN integration first; prove fail-closed DNS/IPv4/IPv6 behavior during tunnel loss/reconnect/firewall reload/reboot.",
+        "Prove torrent port forwarding, return routes and private authenticated API access.",
+        "Preserve exact payload paths, torrent/resume metadata, groups and hardlinks through independent stopped restore.",
+        "Keep preview isolated from trackers and production automation until explicit acceptance and migration approval."
+      ]
+    },
+    {
+      "id": "radarr",
+      "legacyVm": "radarr",
+      "namespace": "radarr-preview",
+      "cpu": 1,
+      "memoryMiB": 1024,
+      "port": 11022,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/radarr",
+          "legacyImage": "radarr-state.img",
+          "sources": [
+            {
+              "path": "vms/mkArrVm.nix",
+              "line": 21
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/radarr.nix",
+        "vms/mkArrVm.nix",
+        "modules/services/radarr.nix",
+        "lib/arr-service.nix",
+        "lib/arr-services.nix",
+        "modules/services/arr-exporter.nix",
+        "vms/media-storage.nix",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [
+        {
+          "protocol": "virtiofs",
+          "source_path": "/rpool/unenc/media/data",
+          "mount_point": "/data",
+          "tag": "media-data",
+          "read_only_declared": null,
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix",
+              "line": 25
+            },
+            {
+              "path": "vms/media-storage.nix",
+              "line": 2
+            }
+          ],
+          "derivation_note": "Imported mediaStorage.share. No readOnly attribute is declared."
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "monitoring",
+          "detail": "Enabled Arr exporter opens its own configured guest port; preserve scrape/credential behavior separately from the primary UI.",
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix"
+            },
+            {
+              "path": "modules/services/arr-exporter.nix"
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "detail": "Shared /data tree, static service account, supplementary users group and umask 002.",
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix"
+            },
+            {
+              "path": "vms/media-storage.nix"
+            },
+            {
+              "path": "lib/arr-service.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Prove /data path parity, media ownership/ACLs and movie import/hardlink behavior using disposable content.",
+        "Authorize only Prowlarr/qBittorrent/SABnzbd APIs and deliver credentials privately.",
+        "Validate independent stopped database/state restore and prevent duplicate writers before production cutover."
+      ]
+    },
+    {
+      "id": "readarr",
+      "legacyVm": "readarr",
+      "namespace": "readarr-preview",
+      "cpu": 1,
+      "memoryMiB": 1024,
+      "port": 11024,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/readarr",
+          "legacyImage": "readarr-state.img",
+          "sources": [
+            {
+              "path": "vms/mkArrVm.nix",
+              "line": 21
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/readarr.nix",
+        "vms/mkArrVm.nix",
+        "modules/services/readarr.nix",
+        "lib/arr-service.nix",
+        "lib/arr-services.nix",
+        "modules/services/arr-exporter.nix",
+        "vms/media-storage.nix",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [
+        {
+          "protocol": "virtiofs",
+          "source_path": "/rpool/unenc/media/data",
+          "mount_point": "/data",
+          "tag": "media-data",
+          "read_only_declared": null,
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix",
+              "line": 25
+            },
+            {
+              "path": "vms/media-storage.nix",
+              "line": 2
+            }
+          ],
+          "derivation_note": "Imported mediaStorage.share. No readOnly attribute is declared."
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "monitoring",
+          "detail": "Enabled Arr exporter opens its own configured guest port; preserve scrape/credential behavior separately from the primary UI.",
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix"
+            },
+            {
+              "path": "modules/services/arr-exporter.nix"
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "detail": "Shared /data tree, static service account, supplementary users group and umask 002.",
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix"
+            },
+            {
+              "path": "vms/media-storage.nix"
+            },
+            {
+              "path": "lib/arr-service.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Choose and pin a supported application image/version before implementing startup.",
+        "Prove book path, ownership/ACL and import parity; authorize only Prowlarr/qBittorrent/SABnzbd APIs with private credentials.",
+        "Validate independent stopped database/state restore and prevent duplicate writers before production cutover."
+      ]
+    },
+    {
+      "id": "sabnzbd",
+      "legacyVm": "sabnzbd",
+      "namespace": "sabnzbd-preview",
+      "cpu": 1,
+      "memoryMiB": 1024,
+      "port": 11031,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/sabnzbd",
+          "legacyImage": "sabnzbd-state.img",
+          "sources": [
+            {
+              "path": "vms/sabnzbd.nix",
+              "line": 17
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/sabnzbd.nix",
+        "modules/services/sabnzbd.nix",
+        "vms/media-storage.nix",
+        "vms/microvm-network-defaults.nix",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [
+        {
+          "protocol": "virtiofs",
+          "source_path": "/rpool/unenc/media/data",
+          "mount_point": "/data",
+          "tag": "media-data",
+          "read_only_declared": null,
+          "provenance": [
+            {
+              "path": "vms/sabnzbd.nix",
+              "line": 21
+            },
+            {
+              "path": "vms/media-storage.nix",
+              "line": 2
+            }
+          ],
+          "derivation_note": "Imported mediaStorage.share. No readOnly attribute is declared."
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "vpn",
+          "detail": "WireGuard gateway/DNS and explicit LAN/shared-bridge return routes.",
+          "provenance": [
+            {
+              "path": "vms/vm-registry.nix"
+            },
+            {
+              "path": "vms/sabnzbd.nix"
+            },
+            {
+              "path": "vms/microvm-network-defaults.nix"
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "detail": "Shared /data paths, primary users group, supplementary private group, umask 002.",
+          "provenance": [
+            {
+              "path": "vms/sabnzbd.nix"
+            },
+            {
+              "path": "modules/services/sabnzbd.nix"
+            },
+            {
+              "path": "vms/media-storage.nix"
+            }
+          ]
+        },
+        {
+          "kind": "credentials-ingress",
+          "detail": "Provider/API settings are private application state; host WebUI TCP forward and sabnzbd-ui managed publication.",
+          "provenance": [
+            {
+              "path": "modules/services/sabnzbd.nix"
+            },
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Deliver provider/API configuration privately and prove queue/config state via independent stopped restore.",
+        "Prove incomplete/temporary/complete download capacity, media ownership and Arr category/import behavior with disposable content.",
+        "Design controlled VPN egress and prove DNS/leak/reconnect/reboot behavior and private return routes.",
+        "Validate private UI/authentication and publication before route/data cutover."
+      ]
+    },
+    {
+      "id": "seerr",
+      "legacyVm": "overseerr",
+      "namespace": "seerr-preview",
+      "cpu": 1,
+      "memoryMiB": 1024,
+      "port": 11040,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/overseerr",
+          "legacyImage": "overseerr-state.img",
+          "sources": [
+            {
+              "path": "vms/overseerr.nix",
+              "line": 17
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/overseerr.nix",
+        "modules/services/seerr.nix",
+        "docs/seerr.md",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [],
+      "dependencies": [
+        {
+          "kind": "legacy-identity",
+          "detail": "seerr.service uses static seerr account; registry/output/state stay overseerr, overseerr-vm and /var/lib/overseerr.",
+          "provenance": [
+            {
+              "path": "vms/overseerr.nix"
+            },
+            {
+              "path": "docs/seerr.md"
+            }
+          ]
+        },
+        {
+          "kind": "api-ingress",
+          "detail": "Sonarr/Radarr API peers and requests publication; current compatibility policy name remains plex-compatible.",
+          "provenance": [
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            },
+            {
+              "path": "docs/seerr.md"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Preserve existing schema/version transition, legacy state path and static ownership; test an independent stopped state copy.",
+        "Configure/test the intended Jellyfin integration after leaving Plex; public declaration does not establish runtime media-server integration.",
+        "Deliver private Sonarr/Radarr credentials and validate request/history/notification workflows without duplicate writers.",
+        "Retain complete pre-migration state rollback; executable rollback cannot reverse database migrations."
+      ]
+    },
+    {
+      "id": "sonarr",
+      "legacyVm": "sonarr",
+      "namespace": "sonarr-preview",
+      "cpu": 1,
+      "memoryMiB": 1024,
+      "port": 11021,
+      "protocol": "TCP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [
+        {
+          "name": "data",
+          "sizeMiB": 10240,
+          "mountPoint": "/var/lib/sonarr",
+          "legacyImage": "sonarr-state.img",
+          "sources": [
+            {
+              "path": "vms/mkArrVm.nix",
+              "line": 21
+            }
+          ]
+        }
+      ],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/sonarr.nix",
+        "vms/mkArrVm.nix",
+        "modules/services/sonarr.nix",
+        "lib/arr-service.nix",
+        "lib/arr-services.nix",
+        "modules/services/arr-exporter.nix",
+        "vms/media-storage.nix",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [
+        {
+          "protocol": "virtiofs",
+          "source_path": "/rpool/unenc/media/data",
+          "mount_point": "/data",
+          "tag": "media-data",
+          "read_only_declared": null,
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix",
+              "line": 25
+            },
+            {
+              "path": "vms/media-storage.nix",
+              "line": 2
+            }
+          ],
+          "derivation_note": "Imported mediaStorage.share. No readOnly attribute is declared."
+        }
+      ],
+      "dependencies": [
+        {
+          "kind": "monitoring",
+          "detail": "Enabled Arr exporter opens its own configured guest port; preserve scrape/credential behavior separately from the primary UI.",
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix"
+            },
+            {
+              "path": "modules/services/arr-exporter.nix"
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "detail": "Shared /data tree, static service account, supplementary users group and umask 002.",
+          "provenance": [
+            {
+              "path": "vms/mkArrVm.nix"
+            },
+            {
+              "path": "vms/media-storage.nix"
+            },
+            {
+              "path": "lib/arr-service.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Prove /data path parity, media ownership/ACLs and import/hardlink behavior using disposable content.",
+        "Authorize only Prowlarr/qBittorrent/SABnzbd APIs and deliver credentials privately.",
+        "Validate independent stopped database/state restore and prevent duplicate writers before production cutover."
+      ]
+    },
+    {
+      "id": "wireguard",
+      "legacyVm": "wireguard",
+      "namespace": "wireguard-preview",
+      "cpu": 1,
+      "memoryMiB": 512,
+      "port": 56943,
+      "protocol": "UDP",
+      "rootSizeMiB": 20480,
+      "stateVolumes": [],
+      "legacyPersist": [
+        {
+          "image": "persist.img",
+          "mount_point": "/persist",
+          "size_mib": 64,
+          "size_is_explicit": true,
+          "provenance": [
+            {
+              "path": "vms/mkMicrovmConfig.nix",
+              "line": 33
+            }
+          ],
+          "derivation_note": "Appended by mkMicrovmConfig; storage helpers can explicitly supply the same persist layout."
+        }
+      ],
+      "sources": [
+        "vms/wireguard.nix",
+        "modules/services/wireguard.nix",
+        "vms/microvm-network-defaults.nix",
+        "vms/base.nix",
+        "vms/mkMicrovmConfig.nix",
+        "vms/vm-registry.nix",
+        "vms/flake-microvms.nix",
+        "hosts/blizzard/virtualisation/microvms.nix",
+        "lib/constants.nix"
+      ],
+      "externalShares": [],
+      "dependencies": [
+        {
+          "kind": "identity",
+          "detail": "Only persist.img declared; private WireGuard key is referenced beneath /persist and was not opened.",
+          "provenance": [
+            {
+              "path": "vms/wireguard.nix"
+            },
+            {
+              "path": "vms/mkMicrovmConfig.nix"
+            }
+          ]
+        },
+        {
+          "kind": "gateway",
+          "detail": "DNSmasq, NAT, atomic kill-switch chains and torrent TCP/UDP 50820 forwarding; host UDP 51820 maps to guest 56943.",
+          "provenance": [
+            {
+              "path": "vms/wireguard.nix"
+            },
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            },
+            {
+              "path": "lib/constants.nix"
+            }
+          ]
+        },
+        {
+          "kind": "clients",
+          "detail": "Enabled VPN clients are qBittorrent/SABnzbd/Firefox. Brave has a registry route but is disabled and outside batch.",
+          "provenance": [
+            {
+              "path": "vms/vm-registry.nix"
+            },
+            {
+              "path": "hosts/blizzard/virtualisation/microvms.nix"
+            }
+          ]
+        }
+      ],
+      "gates": [
+        "Design a dedicated gateway migration and explicit private-key delivery/identity authorization before runtime networking.",
+        "Prove DNS/NAT/torrent forwarding and fail-closed tunnel/firewall/interface failure, reconnect and reboot behavior including IPv4/IPv6/DNS leak checks.",
+        "Prove return routes and host identity/lateral-policy compatibility for every enabled VPN client.",
+        "Public-web-only preview egress is insufficient; keep production clients on the existing gateway until independent acceptance."
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "id": "tautulli",
+      "reason": "Plex-only; user retired Plex. No production removal is authorized."
+    }
+  ],
+  "existing": [
+    {
+      "id": "searxng",
+      "legacyVm": "searx",
+      "hostPR": "https://github.com/telometto/nix-config/pull/7321",
+      "appPR": "https://github.com/telometto/homelab-apps/pull/13"
+    },
+    {
+      "id": "actual",
+      "reason": "Existing validated pilot; legacy MicroVM disabled."
+    }
+  ],
+  "inactiveRegistryIds": [
+    "actual",
+    "adguard",
+    "brave",
+    "firefly",
+    "firefly-importer",
+    "lidarr",
+    "mealie",
+    "ombi",
+    "paperless",
+    "trigger"
+  ],
+  "commonGates": [
+    "Fresh preview disks only; do not copy/mount/adopt/mutate production application state as groundwork.",
+    "Host registry disabled, Flux storage/app layers suspended and VM halted until separate reviewed rollout.",
+    "Implement guest image/provisioning, private credentials and narrow network/storage policies before claiming runtime readiness.",
+    "Real CDI import, KubeVirt launch, Flux reconciliation, persistence and Git stop/start/update rollback require separately authorized live acceptance.",
+    "Assess activation against actual running generation and preserve production MicroVM rollback. No merge/activation/restart/reboot/apply authorized by this inventory.",
+    "Off-host backup implementation is deferred; revisit independent backup/restore before production-state migration or MicroVM retirement."
+  ],
+  "uncertainties": [
+    "Public declarations describe desired state, not live service status, measured capacity, private application settings or completed migration.",
+    "No private flake, secret/encrypted file, credential value or actual VM state was inspected.",
+    "Volume capacities are declarations, not measured use or automatic PVC requirements. Guest root/import/restore capacity requires separate design.",
+    "No full NixOS evaluation; literal public fields and shared constructor composition were inspected.",
+    "Matrix bridge is enabled by constructor despite default-disabled documentation.",
+    "Jellyfin public vmServiceReady=true; live service/state location still unverified.",
+    "Firefox NFS client is declared but checked public host export is commented/empty."
+  ],
+  "storageNotes": [
+    "All proposed state PVCs are fresh and blank; source images/mounts are provenance only.",
+    "Legacy /persist identity/credentials are not copied; the fresh retained root holds new guest OS state until a per-service identity design is approved.",
+    "External media/NFS/virtiofs paths are not mounted by groundwork.",
+    "Sizes mirror declared budgets, not observed usage. Review free space, filesystem overhead and restore needs before resuming storage."
+  ]
+}
