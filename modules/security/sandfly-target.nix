@@ -236,6 +236,14 @@ in
         # Keep the home writable for Sandfly's temporary scanning binaries.
       };
 
+      # PAM creates a user manager for scan sessions. This account needs no
+      # desktop geolocation agent, even though its UID is in the normal range.
+      systemd.user.services.geoclue-agent =
+        lib.mkIf (config.services.geoclue2.enable && config.services.geoclue2.enableDemoAgent)
+          {
+            unitConfig.ConditionUser = lib.mkAfter [ "!sandfly" ];
+          };
+
       # Sandfly's forensic engine must inspect root-only areas. The reviewed
       # listener, key, source guard, and human Tailscale SSH policy protect
       # this root-equivalent account. Command allowlists for user-writable
