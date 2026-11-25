@@ -1,5 +1,9 @@
 # Groundwork for independent MicroVM migration agents
 
+The original branch layout and no-integration boundary below are superseded by
+the user-approved [one-base correction](2026-11-25-kubevirt-one-base-design.md).
+Runtime and production safety constraints remain in force.
+
 Status: implementation scope authorized by the user's request for per-service
 branches/PRs, including partial wiring and agent handoffs. Implementation choices
 below are the builder's calls under that authorization; no runtime deployment is
