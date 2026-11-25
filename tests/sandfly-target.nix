@@ -119,6 +119,18 @@ let
     assert lib.elem target.port cfg.networking.firewall.interfaces.tailscale0.allowedTCPPorts;
     assert cfg.users.users.sandfly.hashedPassword == "!";
     assert cfg.users.users.sandfly.homeMode == "0700";
+    assert
+      cfg.services.geoclue2.enable && cfg.services.geoclue2.enableDemoAgent
+      ->
+        lib.all
+          (
+            condition:
+            lib.elem condition (lib.toList cfg.systemd.user.services.geoclue-agent.unitConfig.ConditionUser)
+          )
+          [
+            "!@system"
+            "!sandfly"
+          ];
     assert cfg.users.users.sandfly.extraGroups == [ ];
     assert cfg.users.users.sandfly.openssh.authorizedKeys.keys == [ ];
     assert cfg.users.users.sandfly.openssh.authorizedKeys.keyFiles == [ ];

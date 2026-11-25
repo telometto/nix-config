@@ -14,6 +14,12 @@ in
       description = "Host port to expose the Ollama API on.";
     };
 
+    listenAddresses = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "127.0.0.1" ];
+      description = "Host IP addresses on which to publish the Ollama API. Defaults to loopback; add explicit trusted-interface addresses for remote access.";
+    };
+
     dataDir = lib.mkOption {
       type = lib.types.str;
       default = "/rpool/unenc/apps/docker/ollama";
@@ -56,9 +62,16 @@ in
             "docker.io/ollama/ollama:rocm"
           else
             "docker.io/ollama/ollama:latest";
-        publishPorts = [
-          "${toString cfg.port}:11434"
-        ];
+        # Keep exact-address listeners alive before Tailscale assigns its IP.
+        # Freebind never falls back to publishing on a wildcard address.
+        networks = [ "pasta:--freebind" ];
+        publishPorts = map (
+          address:
+          let
+            host = if lib.hasInfix ":" address then "[${address}]" else address;
+          in
+          "${host}:${toString cfg.port}:11434"
+        ) cfg.listenAddresses;
         volumes = [
           "${cfg.dataDir}:/home/ollama/.ollama"
         ];
