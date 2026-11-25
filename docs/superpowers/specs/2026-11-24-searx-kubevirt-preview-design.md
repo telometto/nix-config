@@ -70,7 +70,9 @@ approved platform. This document adds the service-specific staging boundary.
 
 The umbrella uses `dev/kubevirt`, with `dev-kubevirt` retained as its synchronized
 compatibility head for PR #5894. Shared host preparation belongs on
-`dev/kubevirt-base`; the SearxNG host branch `dev/kubevirt-searxng` stacks on it.
+the umbrella itself; the SearxNG host PR for `dev/kubevirt-searxng` targets
+`dev-kubevirt` directly. The [approved one-base correction](2026-11-25-kubevirt-one-base-design.md)
+supersedes the earlier separate host-base layer.
 Companion application manifests use `dev/kubevirt-searxng` in homelab-apps.
 Commit with co-author attribution, push finished branches and open draft PRs;
 do not merge. Preserve unrelated local work.
