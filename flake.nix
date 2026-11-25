@@ -327,6 +327,10 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        ollama-bindings = import ./tests/ollama-bindings.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         scrutiny = import ./tests/scrutiny.nix {
           inherit (self.nixosConfigurations) blizzard;
           pkgs = nixpkgs.legacyPackages.${system};
