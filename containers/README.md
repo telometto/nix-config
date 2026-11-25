@@ -64,6 +64,9 @@ The API is published on loopback by default. Set `listenAddresses` to explicit
 host IP addresses when remote clients need access; Snowfall additionally uses
 its Tailscale IPv4. This restricts the host-side listener while keeping
 `OLLAMA_HOST=0.0.0.0` inside the container so port forwarding works.
+Rootless networking uses pasta with `--freebind`, so configured addresses can
+appear after startup or return after an outage without restarting the container.
+Publication remains restricted to `listenAddresses` throughout.
 
 **`immich-machine-learning.nix`** — Standalone Immich machine-learning worker.
 Supports CUDA (NVIDIA GPU) or CPU-only image selection. Intended for keeping

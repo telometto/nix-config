@@ -62,6 +62,9 @@ in
             "docker.io/ollama/ollama:rocm"
           else
             "docker.io/ollama/ollama:latest";
+        # Keep exact-address listeners alive before Tailscale assigns its IP.
+        # Freebind never falls back to publishing on a wildcard address.
+        networks = [ "pasta:--freebind" ];
         publishPorts = map (
           address:
           let

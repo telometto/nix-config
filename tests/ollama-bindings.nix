@@ -27,6 +27,8 @@ let
     ];
   };
 in
+assert (defaults.networks or [ ]) == [ "pasta:--freebind" ];
+assert (explicit.networks or [ ]) == [ "pasta:--freebind" ];
 assert defaults.publishPorts == [ "127.0.0.1:11434:11434" ];
 assert
   explicit.publishPorts == [
