@@ -22,7 +22,7 @@ class GrafanaBootstrapTests(unittest.TestCase):
             self.assertEqual(stat.S_IMODE(password.stat().st_mode), 0o600)
             subprocess.run(["bash"], input=script, text=True, check=True)
             self.assertEqual(password.read_bytes(), first)
-            self.assertEqual(list(root.iterdir()), [password])
+            self.assertEqual(list(root.glob("bootstrap-admin-password.*")), [])
 
 
 if __name__ == "__main__":

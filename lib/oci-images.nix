@@ -1,6 +1,6 @@
 # Public manifest identities resolved on 2026-11-12, with Immich 3.4.2
-# refreshed on 2026-11-24. These pins freeze bytes; availability,
-# vulnerability review and runtime acceptance remain update gates.
+# refreshed on 2026-11-24 and 2.7.5 on 2026-11-26. These pins freeze bytes;
+# availability, vulnerability review and runtime acceptance remain update gates.
 {
   firefox = "docker.io/linuxserver/firefox@sha256:6ef86d7663acd7d2ea490f2ae999683bfe60d6877e34ad773b0b246828ab1449"; # latest
   brave = "docker.io/linuxserver/brave@sha256:1db540c99996519f259cda767c41a73ccc575bf324a58e93fb1d10b23c060ecc"; # latest
@@ -16,6 +16,10 @@
     amd = "docker.io/mccloud/subgen@sha256:e8a209812ca92929d54a369ec794cce095d64046b84841444ad4a90dad3279b4";
   };
   immich = {
+    "2.7.5" = {
+      cpu = "ghcr.io/immich-app/immich-machine-learning@sha256:a2501141440f10516d329fdfba2c68082e19eb9ba6016c061ac80d23beadf7f3";
+      cuda = "ghcr.io/immich-app/immich-machine-learning@sha256:304142175e345f0155d7642f637cfdceae60e89075ff03938cb2886d52c65a62";
+    };
     "3.3.6" = {
       cpu = "ghcr.io/immich-app/immich-machine-learning@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2";
       cuda = "ghcr.io/immich-app/immich-machine-learning@sha256:2c2721c54c5e245b095eea3eb0cda743d112a3f537555b39e2e9a112879a50c1";

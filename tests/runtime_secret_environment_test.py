@@ -12,19 +12,23 @@ spec.loader.exec_module(helper)
 
 
 class RuntimeSecretEnvironmentTests(unittest.TestCase):
-    def test_searx_yaml_substitution_preserves_the_complete_key(self):
+    def test_searx_config_substitution_preserves_the_complete_key(self):
         import yaml
 
         for value in (
             "x8K6pqD3aZ # C9zvW1Q7sT",
             ": YAML value",
             '"quoted" \\ $HOME `literal` æ',
+            "unicode 🔐 tab\t # suffix",
+            "NEL \u0085 separators \u2028\u2029 DEL \x7f C1 \x9f",
         ):
             with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 source, output = root / "key", root / "environment"
                 source.write_text(value + "\n")
-                helper.render("SEARX_SECRET_KEY", source, output, json_scalar=True)
+                helper.render(
+                    "SEARX_SECRET_KEY", source, output, json_string_content=True
+                )
                 subprocess.run(
                     [
                         "bash",
@@ -72,11 +76,34 @@ class RuntimeSecretEnvironmentTests(unittest.TestCase):
             root = Path(directory)
             source, output = root / "key", root / "environment"
             output.write_text("previous")
-            for value in ("", "two\nlines", "two\rparts", "nul\0byte", "extra\n\n"):
+            for value in (
+                "",
+                "two\nlines",
+                "two\rparts",
+                "nul\0byte",
+                "extra\n\n",
+                "\ufdd0",
+                "\ufdef",
+                "\ufffe",
+                "\uffff",
+                "\U0001fffe",
+                "\U0010ffff",
+            ):
                 source.write_text(value)
-                with self.assertRaises(ValueError):
-                    helper.render("APP_SECRET", source, output)
-                self.assertEqual(output.read_text(), "previous")
+                for json_string_content in (False, True):
+                    with (
+                        self.subTest(
+                            value=value, json_string_content=json_string_content
+                        ),
+                        self.assertRaises(ValueError),
+                    ):
+                        helper.render(
+                            "APP_SECRET",
+                            source,
+                            output,
+                            json_string_content=json_string_content,
+                        )
+                    self.assertEqual(output.read_text(), "previous")
 
 
 if __name__ == "__main__":

@@ -65,6 +65,13 @@ let
     from pathlib import Path
     assert os.environ["APP_SECRET"] == Path("/etc/fixture-key").read_text().removesuffix("\n")
   '';
+  checkJsonSecret = pkgs.writeText "check-runtime-json-secret.py" ''
+    import json
+    import os
+    from pathlib import Path
+    value = json.loads('"' + os.environ["SEARX_SECRET_KEY"] + '"')
+    assert value == Path("/etc/fixture-key").read_text().removesuffix("\n")
+  '';
   mlFirewall = import ../lib/immich-ml-firewall.nix {
     blizzardIPv4 = "100.100.0.2";
     port = 3003;
@@ -101,7 +108,7 @@ pkgs.testers.runNixOSTest {
     virtualisation.memorySize = 512;
     # Synthetic public test data, never a deployment credential.
     environment.etc."fixture-key".text = ''
-      fixture "quoted" \\ key $HOME $(touch pwned) `touch pwned`
+      fixture "quoted" \\ key $HOME $(touch pwned) `touch pwned` unicode 🔐
     '';
   };
   testScript = ''
@@ -198,5 +205,7 @@ pkgs.testers.runNixOSTest {
         machine.succeed("install -d -m 0700 /run/secret-fixture")
         machine.succeed("${pkgs.python3}/bin/python3 ${../lib/runtime-secret-environment.py} APP_SECRET /etc/fixture-key /run/secret-fixture/environment")
         machine.succeed("systemd-run --wait --pipe --unit secret-fixture -p EnvironmentFile=/run/secret-fixture/environment ${pkgs.python3}/bin/python3 ${checkSecret}")
+        machine.succeed("${pkgs.python3}/bin/python3 ${../lib/runtime-secret-environment.py} --json-string-content SEARX_SECRET_KEY /etc/fixture-key /run/secret-fixture/json-environment")
+        machine.succeed("systemd-run --wait --pipe --unit secret-json-fixture -p EnvironmentFile=/run/secret-fixture/json-environment ${pkgs.python3}/bin/python3 ${checkJsonSecret}")
   '';
 }

@@ -1,9 +1,12 @@
 # Deliberately avoid evaluating the repository flake or its private inputs.
 let
-  inherit (builtins.fromJSON (builtins.readFile ../../flake.lock)) nodes;
+  lock = builtins.fromJSON (builtins.readFile ../../flake.lock);
+  inherit (lock) nodes;
+  # Lock node names can belong to transitive inputs. Follow the root's edges.
+  rootInputs = nodes.${lock.root}.inputs;
   publicPkgs =
     name:
-    import (builtins.fetchTree nodes.${name}.locked) {
+    import (builtins.fetchTree nodes.${rootInputs.${name}}.locked) {
       system = "x86_64-linux";
       config.allowUnfree = true;
       overlays = [ ];

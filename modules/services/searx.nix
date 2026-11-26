@@ -13,7 +13,7 @@ let
     variable = "SEARX_SECRET_KEY";
     source = config.sys.secrets.searxSecretKeyFile;
     group = "searx";
-    jsonScalar = true;
+    jsonStringContent = true;
     requiredBy = [ "searx-init.service" ];
   };
 in

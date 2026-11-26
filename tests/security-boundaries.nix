@@ -5,8 +5,8 @@
 let
   inherit (pkgs) lib;
   python = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
-  mkService =
-    name: settings: secrets:
+  mkServiceWith =
+    name: settings: secrets: extraModules:
     (import "${pkgs.path}/nixos/lib/eval-config.nix" {
       system = pkgs.stdenv.hostPlatform.system;
       modules = [
@@ -18,8 +18,12 @@ let
           sys.services.${name} = settings;
           sys.secrets = secrets;
         }
-      ];
+      ]
+      ++ extraModules;
     }).config;
+  mkService =
+    name: settings: secrets:
+    mkServiceWith name settings secrets [ ];
   scrutiny = mkService "scrutiny" { enable = true; } {
     scrutinyTokenEnvironmentFile = "/fixture/scrutiny.env";
   };
@@ -30,6 +34,20 @@ let
     enable = true;
     secretKeyFile = "/fixture/paperless-key";
   } { };
+  paperlessAuto = mkService "paperless" {
+    enable = true;
+    secretKeyFile = null;
+  } { };
+  paperlessExporter = mkServiceWith "paperless" {
+    enable = true;
+    secretKeyFile = "/fixture/paperless-key";
+  } { } [ { services.paperless.exporter.enable = true; } ];
+  paperlessConsumers = [
+    "paperless-scheduler"
+    "paperless-web"
+    "paperless-consumer"
+    "paperless-task-queue"
+  ];
   grafana = mkService "grafana" { enable = true; } {
     grafanaSecretKeyFile = "/fixture/grafana-key";
   };
@@ -148,6 +166,12 @@ let
       searx.systemd.services.searx-init.script
   );
   grafanaBootstrap = pkgs.writeShellScript "grafana-bootstrap-fixture" grafana.systemd.services.grafana.preStart;
+  paperlessWeb = pkgs.writeShellScript "paperless-web-fixture" (
+    lib.replaceStrings
+      [ (lib.getExe paperless.services.paperless.package.python.pkgs.granian) ]
+      [ "@@PAPERLESS_FIXTURE@@/granian" ]
+      paperless.systemd.services.paperless-web.script
+  );
 in
 assert storeShare.source == "/nix/store" && storeShare.readOnly;
 assert lib.all (a: a.assertion) baseMl.assertions;
@@ -176,8 +200,22 @@ assert lib.elem "searx-init.service" searx.systemd.services.searx-secret-environ
 assert !(paperless.services.paperless.settings ? PAPERLESS_SECRET_KEY);
 assert
   paperless.services.paperless.environmentFile == "/run/paperless-secret-environment/environment";
-assert lib.elem "paperless-secret-key.service"
-  paperless.systemd.services.paperless-secret-environment.requiredBy;
+assert lib.all (
+  name:
+  lib.elem "${name}.service" paperless.systemd.services.paperless-secret-environment.requiredBy
+  && lib.elem "${name}.service" paperless.systemd.services.paperless-secret-environment.before
+  &&
+    paperless.systemd.services.${name}.serviceConfig.EnvironmentFile
+    == paperless.services.paperless.environmentFile
+) paperlessConsumers;
+assert paperless.systemd.services.paperless-secret-environment.partOf == [ ];
+assert lib.elem "paperless-exporter.service"
+  paperlessExporter.systemd.services.paperless-secret-environment.requiredBy;
+assert paperlessExporter.systemd.services.paperless-secret-environment.partOf == [ ];
+assert !(builtins.hasAttr "paperless-secret-environment" paperlessAuto.systemd.services);
+assert paperlessAuto.services.paperless.environmentFile == null;
+assert lib.hasInfix "nixos-paperless-secret-key"
+  paperlessAuto.systemd.services.paperless-web.script;
 assert
   grafana.services.grafana.settings.security.admin_password
   == "$__file{/var/lib/grafana/bootstrap-admin-password}";
@@ -205,11 +243,13 @@ pkgs.runCommand "security-boundaries"
     cp ${./safe_extract_test.py} source/tests/safe_extract_test.py
     cp ${./cloudflare_access_updater_test.py} source/tests/cloudflare_access_updater_test.py
     cp ${./grafana_bootstrap_test.py} source/tests/grafana_bootstrap_test.py
+    cp ${./paperless_runtime_key_test.py} source/tests/paperless_runtime_key_test.py
     export BSDTAR=${pkgs.libarchive}/bin/bsdtar
     export UPDATER_SCRIPT=${cloudflare.systemd.services.cloudflare-access-ip-updater.serviceConfig.ExecStart}
     export CURL_BIN=${pkgs.curl}/bin/curl
     export SEARX_INIT_SCRIPT=${searxInit}
     export GRAFANA_BOOTSTRAP_SCRIPT=${grafanaBootstrap}
+    export PAPERLESS_WEB_SCRIPT=${paperlessWeb}
     python3 -B -m unittest discover -s source/tests -p '*_test.py' -v
     touch "$out"
   ''

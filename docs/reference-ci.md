@@ -19,6 +19,8 @@ runs `nix fmt` (formatting only, no evaluation), and `update-dashboards.yml` use
 (pushes, schedules and manual runs on `main`). PRs run parsing, classifier/gate
 unit tests, and the public-input `security-boundaries` and `microvm-egress`
 checks, including base/master Immich image contracts. They do not evaluate private host/user data or the full flake.
+The public harness resolves these sources through the root inputs in
+`flake.lock`; similarly named transitive lock nodes can select different packages.
 
 Before accepting this CI boundary, create a `trusted-main` GitHub environment,
 restrict it to `main`, require independent reviewers, and move `SSH_DEPLOY_KEY`

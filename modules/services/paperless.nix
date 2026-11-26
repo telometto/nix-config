@@ -7,13 +7,20 @@
 let
   cfg = config.sys.services.paperless;
   traefikLib = import ../../lib/traefik.nix { inherit lib; };
+  secretConsumers = [
+    "paperless-scheduler"
+    "paperless-web"
+    "paperless-consumer"
+    "paperless-task-queue"
+  ]
+  ++ lib.optional config.services.paperless.exporter.enable "paperless-exporter";
   secretEnvironment = import ../../lib/runtime-secret-environment.nix {
     inherit lib pkgs;
     name = "paperless";
     variable = "PAPERLESS_SECRET_KEY";
     source = cfg.secretKeyFile;
     group = config.services.paperless.group;
-    requiredBy = [ "paperless-secret-key.service" ];
+    requiredBy = map (name: "${name}.service") secretConsumers;
   };
 in
 {
@@ -121,9 +128,23 @@ in
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 
-    systemd.services.paperless-secret-environment = lib.mkIf (
-      cfg.secretKeyFile != null
-    ) secretEnvironment.service;
+    systemd.services = lib.mkIf (cfg.secretKeyFile != null) {
+      paperless-secret-environment = secretEnvironment.service // {
+        # Exporting stops the app units. Keep their shared runtime environment
+        # available for the exporter and management wrapper while they stop.
+        partOf = [ ];
+      };
+      # The pinned upstream launcher always replaces the environment's key
+      # with a generated file. Preserve its launch command and all other unit
+      # settings, using the supplied runtime key when one is configured.
+      paperless-web.script = lib.mkForce ''
+        if [[ -z "''${PAPERLESS_SECRET_KEY:-}" ]]; then
+          echo "PAPERLESS_SECRET_KEY is empty, refusing to start." >&2
+          exit 1
+        fi
+        exec ${lib.getExe config.services.paperless.package.python.pkgs.granian} --interface asginl --ws "paperless.asgi:application"
+      '';
+    };
 
     assertions = [
       {

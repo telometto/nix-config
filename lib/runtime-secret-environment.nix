@@ -6,7 +6,7 @@
   source,
   group,
   requiredBy,
-  jsonScalar ? false,
+  jsonStringContent ? false,
 }:
 let
   directory = "${name}-secret-environment";
@@ -31,7 +31,7 @@ in
       UMask = "0077";
     };
     script = ''
-      ${lib.getExe pkgs.python3} ${./runtime-secret-environment.py} ${lib.optionalString jsonScalar "--json-scalar"} ${
+      ${lib.getExe pkgs.python3} ${./runtime-secret-environment.py} ${lib.optionalString jsonStringContent "--json-string-content"} ${
         lib.escapeShellArgs [
           variable
           (if source == null then "" else source)

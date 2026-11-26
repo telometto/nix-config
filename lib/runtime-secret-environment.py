@@ -9,16 +9,26 @@ import tempfile
 from pathlib import Path
 
 
-def render(variable, source, destination, *, json_scalar=False):
+def render(variable, source, destination, *, json_string_content=False):
     if not re.fullmatch(r"[A-Z][A-Z0-9_]*", variable):
         raise ValueError("Invalid environment variable name")
     value = Path(source).read_text().removesuffix("\n").removesuffix("\r")
     if not value or any(char in value for char in "\n\r\0"):
         raise ValueError("Secret must be a nonempty single line")
-    if json_scalar:
-        # JSON strings are YAML scalars. Searx's envsubst inserts this value
-        # into an unquoted YAML placeholder, after EnvironmentFile parsing.
-        value = json.dumps(value)
+    if any(
+        0xFDD0 <= ord(char) <= 0xFDEF or ord(char) & 0xFFFF in (0xFFFE, 0xFFFF)
+        for char in value
+    ):
+        raise ValueError("Secret contains a Unicode noncharacter")
+    if json_string_content:
+        # The pinned Searx init script substitutes inside a quoted JSON string.
+        # Escape YAML-sensitive characters too, since Searx reads it as YAML.
+        value = json.dumps(value, ensure_ascii=False)[1:-1]
+        value = re.sub(
+            r"[\x7f-\x9f\u2028\u2029]",
+            lambda match: f"\\u{ord(match[0]):04x}",
+            value,
+        )
     for char in ("\\", '"', "$", "`"):
         value = value.replace(char, "\\" + char)
     destination = Path(destination)
@@ -40,14 +50,17 @@ def render(variable, source, destination, *, json_scalar=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--json-scalar", action="store_true")
+    parser.add_argument("--json-string-content", action="store_true")
     parser.add_argument("variable")
     parser.add_argument("source")
     parser.add_argument("destination")
     args = parser.parse_args()
     try:
         render(
-            args.variable, args.source, args.destination, json_scalar=args.json_scalar
+            args.variable,
+            args.source,
+            args.destination,
+            json_string_content=args.json_string_content,
         )
     except (ValueError, OSError, UnicodeError):
         sys.exit("Cannot render runtime secret environment")
