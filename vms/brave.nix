@@ -8,7 +8,6 @@
 }:
 let
   reg = (import ./vm-registry.nix { inherit consts; }).brave;
-  mediaStorage = import ./media-storage.nix;
   networkDefaults = import ./microvm-network-defaults.nix;
 in
 {
@@ -63,7 +62,6 @@ in
     };
 
     tmpfiles.rules = [
-      "d ${mediaStorage.guestPath} 0750 root root -"
       "d /var/lib/containers/tmp 0750 root root -"
     ];
 
@@ -79,16 +77,6 @@ in
     virtualisation.enable = true;
 
     services = {
-      nfs = {
-        enable = true;
-
-        mounts.media = {
-          server = "10.100.0.1";
-          export = mediaStorage.hostPath;
-          target = mediaStorage.guestPath;
-        };
-      };
-
       brave = {
         enable = true;
 

@@ -260,6 +260,8 @@ in
       device = "${consts.tailscale.hosts.blizzard.ipv4}:/rpool/enc/transfers";
       fsType = "nfs";
       options = [
+        "vers=4"
+        "proto=tcp"
         "nofail"
         "x-systemd.automount"
         "x-systemd.idle-timeout=600"
@@ -270,6 +272,8 @@ in
       device = "${consts.tailscale.hosts.blizzard.ipv4}:/rpool/unenc/media/data/media";
       fsType = "nfs";
       options = [
+        "vers=4"
+        "proto=tcp"
         "nofail"
         "x-systemd.automount"
         "x-systemd.idle-timeout=600"

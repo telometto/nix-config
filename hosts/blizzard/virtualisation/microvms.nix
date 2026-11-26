@@ -2,6 +2,7 @@
   self,
   VARS,
   jellyfinSettings,
+  config,
   lib,
   pkgs,
   consts,
@@ -248,6 +249,10 @@ let
     paperless = {
       enable = false;
       portForwards = [ (mkPortForward "tcp" consts.ports.vm.paperless null) ];
+      networkPolicy.hostServices = {
+        tcpPorts = [ 2049 ];
+        reason = "Read, ingest, and remove documents in the Paperless NFS consumption export";
+      };
       publication = {
         hostname = "docs";
         policy = "csrf-compatible";
@@ -328,7 +333,16 @@ in
 
   networking.firewall.extraCommands = ''
     iptables -A nixos-fw -i microvm-br0 -s ${reg.immich.ip}/32 -p tcp --dport ${toString consts.ports.secondary.immichMachineLearning.hostPort} -j nixos-fw-accept
-  '';
+  ''
+  +
+    lib.optionalString
+      (
+        config.sys.services.nfs.server.enable
+        && config.sys.virtualisation.microvm.instances.paperless.enable
+      )
+      ''
+        iptables -w -A nixos-fw -i microvm-br0 -s ${reg.paperless.ip}/32 -d 10.100.0.1/32 -p tcp --dport 2049 -j nixos-fw-accept
+      '';
 
   systemd.services.immich-ml-proxy = {
     description = "Proxy Immich MicroVM machine-learning requests to Kaizer";
