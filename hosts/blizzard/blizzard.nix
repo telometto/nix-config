@@ -39,23 +39,10 @@
     users.zeno.enable = true;
 
     nix.distributedBuilds = {
-      enable = true;
-
-      buildMachines = [
-        {
-          hostName = "snowfall";
-          systems = [ "x86_64-linux" ];
-          sshUser = "zeno";
-          sshKey = "/home/zeno/.ssh/nix-build-blizzard";
-          maxJobs = 16;
-          speedFactor = 3;
-          supportedFeatures = [
-            "kvm"
-            "big-parallel"
-            "benchmark"
-          ];
-        }
-      ];
+      # Resume only after a separate trusted builder has been reviewed.
+      enable = false;
+      server.enable = false;
+      buildMachines = [ ];
     };
 
     ## Pull specific packages from different nixpkgs inputs

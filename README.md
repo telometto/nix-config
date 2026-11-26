@@ -59,7 +59,7 @@ flowchart LR
 
 | Host | Role | Desktop | Description |
 |------|------|---------|-------------|
-| snowfall | Desktop | KDE | Primary workstation; AMD GPU, distributed builds, monitoring stack |
+| snowfall | Desktop | KDE | Primary workstation; AMD GPU, local builds, monitoring stack |
 | blizzard | Server | — | Home server; ZFS, NFS, MicroVM host, Tailscale subnet router |
 | avalanche | Desktop | GNOME | ThinkPad P51; nixos-hardware module, iwlwifi+BT workaround |
 | kaizer | Desktop | KDE | External access; NVIDIA GPU, multi-user (gianluca+frankie), Java |

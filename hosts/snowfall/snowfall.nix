@@ -54,34 +54,10 @@ in
     };
 
     nix.distributedBuilds = {
+      # Resume only after a separate trusted builder has been reviewed.
       enable = false;
-
-      # Expose Snowfall as a remote builder using the non-root zeno account.
-      server = {
-        enable = true;
-        write = true;
-        keys = [
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEQTcAYsH7h3NCcqoeivDFUQeVbxgLKwuyXL9zhgOYs6 nix-build-snowfall"
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7+oDYCwh1WRnSNBb9W3L1mJ6ym4IfoJhKu9+EFnIuf nix-build-blizzard"
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOkJDRVwne3l+YumnbTO9DSVnmaf0dmVEKbajEY6lDiA nix-build-avalanche"
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFwGM9ubmw5XIOeE9U0sp2p4co/xHDpbXcMIxrewL1js nix-build-kaizer"
-        ];
-      };
-
-      buildMachines = [
-        {
-          hostName = "blizzard";
-          systems = [ "x86_64-linux" ];
-          sshUser = "zeno";
-          sshKey = "/home/zeno/.ssh/id_ed25519";
-          maxJobs = 8;
-          speedFactor = 2;
-          supportedFeatures = [
-            "kvm"
-            "big-parallel"
-          ];
-        }
-      ];
+      server.enable = false;
+      buildMachines = [ ];
     };
 
     virtualisation.libvirtd.enable = true;
