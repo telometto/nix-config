@@ -1,5 +1,6 @@
-# Public manifest identities resolved on 2026-11-12. These pins freeze bytes;
-# availability, vulnerability review and runtime acceptance remain update gates.
+# Public manifest identities resolved on 2026-11-12, with Immich 3.4.2
+# refreshed on 2026-11-24. These pins freeze bytes; availability,
+# vulnerability review and runtime acceptance remain update gates.
 {
   firefox = "docker.io/linuxserver/firefox@sha256:6ef86d7663acd7d2ea490f2ae999683bfe60d6877e34ad773b0b246828ab1449"; # latest
   brave = "docker.io/linuxserver/brave@sha256:1db540c99996519f259cda767c41a73ccc575bf324a58e93fb1d10b23c060ecc"; # latest
@@ -22,6 +23,10 @@
     "3.4.1" = {
       cpu = "ghcr.io/immich-app/immich-machine-learning@sha256:8adebf414256f6e4f837bfbb66fa94f14f4da7260e3a1d65cbba49e4e35d8764";
       cuda = "ghcr.io/immich-app/immich-machine-learning@sha256:aaa7eb0f47e3815a1c575790085474e01c129df7c47ffbbcbfd80947d4c41339";
+    };
+    "3.4.2" = {
+      cpu = "ghcr.io/immich-app/immich-machine-learning@sha256:739405742a79bd7447227c553bb62ed5491aa36acf00bc667af7f9c93b6fae91";
+      cuda = "ghcr.io/immich-app/immich-machine-learning@sha256:0a8aeaeb6771da78c4f54bc00b429b113267db50aa121aa6e30f78ef86a31e33";
     };
   };
 }

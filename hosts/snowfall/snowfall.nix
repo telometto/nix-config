@@ -11,6 +11,11 @@ let
   grafanaDashboards = import ../../lib/grafana-dashboards.nix { inherit lib pkgs; };
 in
 {
+  imports = [
+    inputs.chaotic.nixosModules.nyx-cache
+    inputs.chaotic.nixosModules.nyx-overlay
+  ];
+
   programs.gamescope.enable = lib.mkForce false; # Issues on master with bubblewrap
   networking = {
     hostName = lib.mkForce "snowfall";
@@ -27,14 +32,7 @@ in
     };
   };
 
-  boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
-
-  # Match the upstream release builds provided by the pinned CachyOS overlay.
-  # WARNING! Disabled due to repository having been pwned
-  # nix.settings = {
-  #   substituters = [ "https://attic.xuyh0120.win/lantian" ];
-  #   trusted-public-keys = [ "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=" ];
-  # };
+  boot.kernelPackages = pkgs.linuxPackages_cachyos;
 
   sys = {
     role.desktop.enable = true;
@@ -111,8 +109,6 @@ in
         # nixpkgs-stable-small = [ "openblas" ];
       };
 
-      ## Add custom overlays
-      custom = [ inputs.nix-cachyos-kernel.overlays.pinned ];
     };
 
     services = {
@@ -129,14 +125,6 @@ in
       tailscale = {
         interface = "enp5s0";
         openFirewall = true;
-      };
-
-      cloudflareAccessIpUpdater = {
-        enable = true;
-        accountIdFile = config.sys.secrets.cloudflareAccountIdFile;
-        policyIdFile = config.sys.secrets.cloudflarePolicyIdFile;
-        apiTokenFile = config.sys.secrets.cloudflareAccessApiTokenFile;
-        interval = "30min";
       };
 
       # Enable RAPL power monitoring for CPU
@@ -282,10 +270,6 @@ in
     };
   };
 
-  users.users.${VARS.users.zeno.user}.extraGroups = VARS.users.zeno.extraGroups ++ [
-    "openrazer"
-  ];
-
   services = {
     stirling-pdf = {
       enable = false;
@@ -325,7 +309,10 @@ in
       powerOnBoot = true;
     };
 
-    openrazer.enable = lib.mkDefault true;
+    openrazer = {
+      enable = lib.mkDefault true;
+      users = [ VARS.users.zeno.user ];
+    };
 
     amdgpu.initrd.enable = lib.mkDefault true;
 

@@ -9,7 +9,7 @@ in
 
       boot = {
         lanzaboote.enable = true;
-        plymouth.enable = false;
+        plymouth.enable = lib.mkDefault false;
       };
 
       networking = {

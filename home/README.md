@@ -163,7 +163,52 @@ hm.desktop.kde.enable = true;
 > `modules/core/home-users.nix`. A `cosmic` host must enable any HM desktop
 > integration explicitly.
 
+#### KDE Configuration Migration
+
+`hm.desktop.kde.extraConfig` has been retired because it accepted settings but
+never applied them. Remove any explicit definition, including an empty `{ }`;
+definitions now produce a migration error even when the KDE module is disabled.
+Set native Home Manager options directly in the appropriate role, host or user
+override instead. There is no automatic mapping from the old attribute set.
+`hm.desktop.kde.extraPackages` continues to add packages when KDE is enabled.
+
 ### Override System
+
+#### Package Placement
+
+Use native package options at the scope that should receive the package:
+
+| Scope | File | Option |
+|-------|------|--------|
+| Every physical host | `modules/core/packages.nix` | `environment.systemPackages` |
+| Every managed user | `home/packages.nix` | `home.packages` |
+| Every host in a role | `modules/role-<role>.nix` | `environment.systemPackages` |
+| Every managed user in a role | `home/overrides/role/<role>.nix` | `home.packages` |
+| One host, system-wide | `hosts/<host>/packages.nix` | `environment.systemPackages` |
+| Every managed user on one host | `home/overrides/host/<host>.nix` | `home.packages` |
+| One user on every host | `home/overrides/user/<user>.nix` | `home.packages` |
+| One user on one host | `home/overrides/user/<user>-<host>.nix` | `home.packages` |
+
+The `desktop` role covers both desktops and laptops. For example, `asdf-vm`
+is declared once in `modules/role-desktop.nix`, so Snowfall, Avalanche, and
+Kaizer receive it; Blizzard uses the server role. `dupe-krill` is in
+`home/packages.nix`, so every managed user receives it on either role.
+
+System packages are available to all users. A managed user is an enabled
+normal user from `VARS.users` whose generated Home Manager profile is enabled.
+User package scopes apply to those profiles, not service accounts.
+
+Each file adds to the corresponding native list; it does not replace the
+other scopes. No separate package-list enable switch is needed. The former
+`hm.programs.packages.enable` and `additionalPackages` wrapper was removed;
+use `home.packages` directly for additions.
+
+```nix
+# home/overrides/host/<hostname>.nix: every managed user on this host
+{ pkgs, ... }: {
+  home.packages = [ pkgs.hello ];
+}
+```
 
 #### Host Overrides
 
@@ -262,7 +307,40 @@ As a numbered list:
 
 `autoDesktopConfig` (`hm.desktop.<flavor>.enable = lib.mkDefault true`) is merged separately — it uses `lib.mkDefault` so any explicit `hm.desktop.*.enable` setting in any layer takes precedence.
 
+`sys.home.template` and `sys.home.users.<name>.extraConfig` are composed as
+module definitions. Their package lists combine with each other and with
+imported modules. For overlapping scalar settings, use normal Nix priorities:
+put `lib.mkDefault` on a shared default if a user should be able to replace it.
+Conflicting plain assignments produce an evaluation error.
+Module attributes such as `disabledModules` stay at module scope, so a shared
+template or per-user `extraConfig` can disable an imported module.
+
+`sys.home.users.<name>.extraModules` adds modules to that user's profile.
+Setting `sys.home.users.<name>.enable = false` skips generation of that profile.
+Host-owned container profiles on Snowfall, Blizzard, and Kaizer honor this
+per-user switch and the global `sys.home.enable` switch as well.
+Integrated profiles use the NixOS account's home directory. The builder's
+fallback defaults also support user metadata and `/home/<name>`, but those
+defaults do not override Home Manager's NixOS account integration.
+
 `lib.mkForce` overrides everything regardless of layer.
+
+### Package and Composition Checks
+
+The `package-scopes` flake check covers role package membership, the shared
+package list, per-user composition, module disabling, home-directory selection,
+desktop opt-out, and terminal package/Zellij controls. It also checks global
+and per-user opt-outs against the actual container profile declarations on
+Snowfall, Blizzard, and Kaizer with synthetic users and minimal external schemas:
+
+```bash
+nix build .#checks.x86_64-linux.package-scopes
+```
+
+For a public-only evaluation without the private input, use the command in
+[tests/package-scopes.nix](../tests/package-scopes.nix). It reports the same
+cases as JSON; every result should be `true`. It uses synthetic users and
+does not activate Home Manager or read user files.
 
 ### Related Documentation
 

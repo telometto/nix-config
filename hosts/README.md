@@ -7,7 +7,7 @@ Per-machine NixOS configurations defining hardware, roles, users, and services.
 | Host | Role | Desktop | Standout Features |
 |------|------|---------|------------------|
 | [snowfall/](snowfall/) | Desktop | KDE | AMD GPU, distributed builds server, openrazer (RGB), Prometheus+Grafana+Traefik+Cloudflare tunnel, RAPL + electricity-price exporters |
-| [blizzard/](blizzard/) | Server | None | ZFS+NFS+Samba, full observability stack, MicroVM host, Tailscale subnet router (192.168.2.0/24), CrowdSec, VictoriaMetrics |
+| [blizzard/](blizzard/) | Server | None | ZFS+NFS+Samba, full observability stack, MicroVM host, Tailscale subnet router (192.168.2.0/24 + 10.100.0.0/24), CrowdSec, VictoriaMetrics |
 | [avalanche/](avalanche/) | Desktop | GNOME | ThinkPad P51, nixos-hardware module, iwlwifi+BT coexistence workaround, VictoriaMetrics remote-write to blizzard |
 | [kaizer/](kaizer/) | Desktop | KDE | Two users (gianluca+luke; frankie disabled), Lanzaboote disabled, CachyOS kernel, NVIDIA GPU (open kernel modules), Java Temurin 8/17/21 for Minecraft, per-user localization |
 
@@ -19,18 +19,41 @@ privileged scanner account.
 
 ### CachyOS kernel cache
 
-Snowfall and Kaizer use the `nix-cachyos-kernel/release` input and its `pinned`
-overlay. Their host-local declarations for the
-[upstream binary cache](https://github.com/xddxdd/nix-cachyos-kernel#binary-cache)
-are currently commented out, so those blocks do not enable the cache. Cache
-misses and external kernel modules can still require builds.
+Snowfall and Kaizer use [Chaotic-Nyx](https://www.nyx.chaotic.cx/)'s
+`nyxpkgs-unstable` input, `nyx-cache` and `nyx-overlay` modules, and
+`pkgs.linuxPackages_cachyos`. Kaizer selects `pkgs.nvidia_cachyos` through
+`sys.hardware.nvidia.package` and keeps `sys.hardware.nvidia.open = true` to
+use its matching open kernel modules. Both hosts also enable OpenRazer.
 
-The former cache and signing authority were disabled after a compromise report.
-Do not re-enable those declarations or pass that endpoint and key as build
-options. Use local builds or an already trusted builder/cache. Reintroducing
-an upstream cache requires a reviewed replacement endpoint, key and provenance
-check. Inspect active daemon settings independently; a source change does not
-remove an already configured substituter.
+The `nyx-cache` module defaults `chaotic.nyx.cache.enable` to `true`, adding
+Nyx's substituter and signing key to `nix.settings`. These settings take effect
+in the running daemon after activating the host configuration.
+
+Keep Nyx's own dependency pins: making its `nixpkgs` input follow this
+repository's input, or customizing its kernel build, can change store hashes
+and require compilation. The previous upstream Attic cache is not used. Its former endpoint and signing authority remain incident-disabled; reintroducing them requires a separately reviewed replacement and provenance check.
+
+Before the new cache configuration is activated, pass its settings explicitly.
+This downloads the kernel outputs and external modules, refusing compilation
+if a required binary is missing:
+
+```bash
+nix build --no-link --max-jobs 0 --builders '' \
+  --option extra-substituters https://nyx-cache.chaotic.cx/ \
+  --option extra-trusted-public-keys 'nyx-cache.chaotic.cx:dJxTrgMC3V3cFfyIiBQDQorG6k1LsqurH/srpMSq7qk=' \
+  '.#nixosConfigurations.snowfall.config.boot.kernelPackages.kernel^*' \
+  '.#nixosConfigurations.kaizer.config.boot.kernelPackages.kernel^*' \
+  '.#nixosConfigurations.kaizer.config.hardware.nvidia.package.open' \
+  '.#nixosConfigurations.snowfall.config.boot.kernelPackages.openrazer' \
+  '.#nixosConfigurations.kaizer.config.boot.kernelPackages.openrazer'
+```
+
+This command needs the private `nix-secrets` input for host evaluation; see
+[the CI reference](../docs/reference-ci.md#introduction). It does not
+activate a configuration or persist the command-line cache settings. The first
+deployment also needs these explicit cache options; later rebuilds use the
+Nyx settings installed by that deployment. Inspect `nix config show substituters`
+and `/etc/nix/nix.conf` on the host when checking active daemon settings.
 
 ### Host Structure
 
@@ -80,6 +103,12 @@ hosts/blizzard/
 All `.nix` files are auto-imported recursively by [host-loader.nix](../host-loader.nix) — no explicit
 `imports` list needed for local files. External modules (e.g. `nixos-hardware`) still
 require an `imports` block.
+
+`packages.nix` adds system-wide packages only for that host. Packages shared by
+a role belong in `modules/role-<role>.nix`. To add Home Manager packages for
+every managed user on a host, use `home/overrides/host/<hostname>.nix` instead.
+The [package placement table](../home/README.md#package-placement) lists every
+scope; all these native package lists combine.
 
 ### Configuration Pattern
 

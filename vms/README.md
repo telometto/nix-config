@@ -44,6 +44,20 @@ Only the four VPN-routed guests select `vpnReturnRoutes` from
 
 ______________________________________________________________________
 
+### Guest compressed swap
+
+Service guests importing `base.nix` enable zram swap by default, using zstd
+and a logical swap size of 25% of guest RAM. Physical RAM is allocated to zram
+on demand; the logical size is not a reserved RAM allocation or a guaranteed
+increase in usable memory.
+
+Each guest can override `zramSwap.enable`, `zramSwap.algorithm`, or
+`zramSwap.memoryPercent`. Keep the RAM allocations in `vm-registry.nix` until
+workload measurements justify changing them. Guest zram is separate from the
+host's swap configuration.
+
+______________________________________________________________________
+
 ### Network topology
 
 ```mermaid

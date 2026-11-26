@@ -1,7 +1,13 @@
 # Rootless Podman containers on blizzard (managed via quadlet-nix + Home Manager)
-{ VARS, ... }:
+{
+  lib,
+  config,
+  VARS,
+  ...
+}:
 let
   username = VARS.users.zeno.user;
+  homeEnabled = config.sys.home.enable && (config.sys.home.users.${username}.enable or true);
 in
 {
   users.users.${username} = {
@@ -9,7 +15,7 @@ in
     autoSubUidGidRange = true;
   };
 
-  home-manager.users.${username} = {
+  home-manager.users.${username} = lib.mkIf homeEnabled {
     imports = [
       ../../../containers/subtitle-stack.nix
       ../../../containers/nominatim.nix

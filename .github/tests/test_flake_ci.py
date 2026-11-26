@@ -54,6 +54,28 @@ class SelectionTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertTrue(ci.ARCHIVE.issubset(self.selected(path)["checks"]))
 
+    def test_kwallet_paths_select_handoff_and_enrollment_checks(self):
+        for path in (
+            "modules/security/kwallet-tpm.nix",
+            "hosts/kaizer/kwallet-tpm.nix",
+            "packages/kwallet-tpm/default.nix",
+            "packages/kwallet-tpm/pam_kwallet_tpm.c",
+            "packages/kwallet-tpm/enroll.py",
+            "tests/kwallet-tpm.nix",
+            "tests/kwallet_tpm_test.py",
+            "tests/kwallet_tpm_pam_fixture.c",
+        ):
+            with self.subTest(path=path):
+                plan = self.selected(path)
+                expected = (
+                    {"kwallet-tpm"}
+                    if path.endswith(".c")
+                    else {"kwallet-tpm", "formatting"}
+                )
+                self.assertEqual(set(plan["checks"]), expected)
+                self.assertEqual(plan["evaluate"], path.endswith(".nix"))
+                self.assertFalse(plan["full"])
+
     def test_mapped_python_and_fixtures_avoid_global_evaluation(self):
         for path in (
             "modules/services/scripts/cloudflare_metrics.py",

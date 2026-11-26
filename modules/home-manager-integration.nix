@@ -20,7 +20,6 @@ in
 
       sharedModules = [
         inputs.sops-nix.homeManagerModules.sops
-        inputs.hyprland.homeManagerModules.default
         inputs.quadlet-nix.homeManagerModules.quadlet
       ];
 

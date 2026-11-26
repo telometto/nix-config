@@ -51,7 +51,7 @@ in
       pkgs.jamesdsp
       pkgs.spotify
       pkgs.protonmail-desktop
-      pkgs.plex-desktop
+      # pkgs.plex-desktop
     ]
     ++ cfg.extraPackages;
   };

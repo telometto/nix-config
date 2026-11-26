@@ -95,8 +95,22 @@ ______________________________________________________________________
 |-------------|--------------|-----------------|---------|
 | [traefik.nix](traefik.nix) | `sys.services.traefik` | Host (blizzard) | Reverse proxy and TLS termination |
 | [cloudflared.nix](cloudflared.nix) | `sys.services.cloudflared` | Host (blizzard) | Cloudflare Tunnel daemon |
-| [cloudflare-access-ip-updater.nix](cloudflare-access-ip-updater.nix) | `sys.services.cloudflareAccessIpUpdater` | Host | Updates Cloudflare Access IP lists |
+| [cloudflare-access-ip-updater.nix](cloudflare-access-ip-updater.nix) | `sys.services.cloudflareAccessIpUpdater` | Blizzard | Updates the shared Cloudflare Access home-IP rule |
 | [crowdsec.nix](crowdsec.nix) | `sys.services.crowdsec` | Host (blizzard) | Collaborative intrusion detection |
+
+Blizzard is the sole configured Access IP updater. Snowfall and Avalanche do
+not publish their current network addresses to the shared policy. The updater
+uses SOPS systemd activation so its required `sops-install-secrets.service`
+exists. It preserves policy security settings and verifies remote ownership
+even when the local IP has not changed.
+
+Before deploying this writer change, reconcile the live policy's IP rule and
+the reviewed ownership history in
+`/var/lib/cloudflare-access-ip-updater/last-ip`. Missing or inconsistent history
+with an existing different IP stops the update. The
+[`cloudflare-access-ip-updater` check](../../tests/cloudflare-access-ip-updater.nix)
+validates all four hosts and the real SOPS dependency in trusted CI; the public
+security checks exercise generated scripts without private inputs.
 
 #### Network and DNS
 

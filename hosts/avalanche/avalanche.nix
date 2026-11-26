@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   pkgs,
   VARS,
@@ -111,14 +110,6 @@ in
       tailscale = {
         interface = "wlp4s0";
         openFirewall = true;
-      };
-
-      cloudflareAccessIpUpdater = {
-        enable = true;
-        accountIdFile = config.sys.secrets.cloudflareAccountIdFile;
-        policyIdFile = config.sys.secrets.cloudflarePolicyIdFile;
-        apiTokenFile = config.sys.secrets.cloudflareAccessApiTokenFile;
-        interval = "30min";
       };
 
       # Enable RAPL power monitoring for CPU

@@ -39,13 +39,19 @@ let
       modules = [
         ../modules/services/cloudflare-access-ip-updater.nix
         {
-          system.stateVersion = "25.05";
-          sys.services.cloudflareAccessIpUpdater = {
-            enable = true;
-            accountIdFile = "@@FIXTURE@@/account";
-            policyIdFile = "@@FIXTURE@@/policy";
-            apiTokenFile = "@@FIXTURE@@/token";
-            ipService = "https://ip.fixture";
+          options.sops.useSystemdActivation = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+          };
+          config = {
+            system.stateVersion = "25.05";
+            sys.services.cloudflareAccessIpUpdater = {
+              enable = true;
+              accountIdFile = "@@FIXTURE@@/account";
+              policyIdFile = "@@FIXTURE@@/policy";
+              apiTokenFile = "@@FIXTURE@@/token";
+              ipService = "https://ip.fixture";
+            };
           };
         }
       ];
@@ -132,6 +138,11 @@ let
   baseMl = ml pkgs "cpu";
   kaizerMl = ml (pkgs // { inherit (masterPkgs) immich; }) "cuda";
   imagePins = (import ../lib/oci-images.nix).immich;
+  updaterDeclaration = "cloudflareAccessIpUpdater = {";
+  blizzardSystemSource = builtins.readFile ../hosts/blizzard/services/system.nix;
+  snowfallSource = builtins.readFile ../hosts/snowfall/snowfall.nix;
+  avalancheSource = builtins.readFile ../hosts/avalanche/avalanche.nix;
+  kaizerSource = builtins.readFile ../hosts/kaizer/kaizer.nix;
   searxInit = pkgs.writeShellScript "searx-init-fixture" (
     lib.replaceStrings [ "cd /run/searx" ] [ ''cd "$SEARX_FIXTURE_DIR"'' ]
       searx.systemd.services.searx-init.script
@@ -170,6 +181,15 @@ assert lib.elem "paperless-secret-key.service"
 assert
   grafana.services.grafana.settings.security.admin_password
   == "$__file{/var/lib/grafana/bootstrap-admin-password}";
+assert cloudflare.sops.useSystemdActivation;
+assert lib.elem "sops-install-secrets.service"
+  cloudflare.systemd.services.cloudflare-access-ip-updater.after;
+assert lib.elem "sops-install-secrets.service"
+  cloudflare.systemd.services.cloudflare-access-ip-updater.requires;
+assert lib.hasInfix updaterDeclaration blizzardSystemSource;
+assert !(lib.hasInfix updaterDeclaration snowfallSource);
+assert !(lib.hasInfix updaterDeclaration avalancheSource);
+assert !(lib.hasInfix updaterDeclaration kaizerSource);
 pkgs.runCommand "security-boundaries"
   {
     nativeBuildInputs = [

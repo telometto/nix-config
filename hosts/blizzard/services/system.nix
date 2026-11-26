@@ -1,6 +1,21 @@
-{ VARS, consts, ... }:
+{
+  config,
+  VARS,
+  consts,
+  ...
+}:
 {
   sys.services = {
+    # Keep the shared home-IP bypass under one always-on writer. Desktop writers
+    # can roam onto untrusted NATs and must not republish those addresses.
+    cloudflareAccessIpUpdater = {
+      enable = true;
+      accountIdFile = config.sys.secrets.cloudflareAccountIdFile;
+      policyIdFile = config.sys.secrets.cloudflarePolicyIdFile;
+      apiTokenFile = config.sys.secrets.cloudflareAccessApiTokenFile;
+      interval = "30min";
+    };
+
     scrutiny = {
       enable = true;
 

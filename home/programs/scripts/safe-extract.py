@@ -58,15 +58,12 @@ def extract(source, bsdtar, gzip_program="gzip"):
                             raise ValueError("Unsafe archive member path")
                         member = tarfile.data_filter(member, target)
                         path = destination / member.name
-                        if path.exists() or path.is_symlink():
-                            if not (
-                                member.isdir()
-                                and path.is_dir()
-                                and not path.is_symlink()
-                            ):
-                                raise ValueError(
-                                    "Archive member would overwrite another member"
-                                )
+                        if (path.exists() or path.is_symlink()) and not (
+                            member.isdir() and path.is_dir() and not path.is_symlink()
+                        ):
+                            raise ValueError(
+                                "Archive member would overwrite another member"
+                            )
                         return member
 
                     archive.extractall(destination, filter=contained)

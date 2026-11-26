@@ -5,8 +5,8 @@
   imports = [ ./zeno-desktop-ssh.nix ];
 
   home.packages = [
-    #pkgs.tuxguitar # Guitar tablature editor and player
-    pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
+    # pkgs.tuxguitar # Guitar tablature editor and player
+    # pkgs.pgadmin4-desktopmode # PostgreSQL administration tool; TODO: temporarily disabled due to build issues
     pkgs.vorta # Borg backup GUI
     # pkgs.logseq # issues with electron version
     pkgs.rendercv

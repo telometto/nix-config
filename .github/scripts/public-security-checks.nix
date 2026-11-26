@@ -3,18 +3,11 @@ let
   inherit (builtins.fromJSON (builtins.readFile ../../flake.lock)) nodes;
   publicPkgs =
     name:
-    import
-      (builtins.fetchTree {
-        type = "github";
-        owner = "NixOS";
-        repo = "nixpkgs";
-        inherit (nodes.${name}.locked) rev narHash;
-      })
-      {
-        system = "x86_64-linux";
-        config.allowUnfree = true;
-        overlays = [ ];
-      };
+    import (builtins.fetchTree nodes.${name}.locked) {
+      system = "x86_64-linux";
+      config.allowUnfree = true;
+      overlays = [ ];
+    };
   pkgs = publicPkgs "nixpkgs";
   masterPkgs = publicPkgs "nixpkgs-master";
 in

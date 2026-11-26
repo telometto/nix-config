@@ -23,7 +23,8 @@
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
-    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
+    # Keep Nyx's own dependency pins to match its precompiled kernels and modules.
+    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
 
     flake-compat = {
       url = "github:NixOS/flake-compat";
@@ -170,11 +171,37 @@
       checks.${system} = {
         formatting = treefmtEval.config.build.check inputs.self;
 
+        actual-pilot = import ./tests/actual-pilot-check.nix {
+          inherit nixpkgs system;
+        };
+
         codex-adapter = import ./tests/codex-check.nix {
           inherit nixpkgs system;
           hmStable = inputs.hm-stable;
           hmMaster = inputs.hm-master;
         };
+
+        package-scopes =
+          let
+            cases = import ./tests/package-scopes.nix {
+              inherit nixpkgs system;
+              hmStable = inputs.hm-stable;
+            };
+            failures = nixpkgs.lib.concatLists (
+              nixpkgs.lib.mapAttrsToList (
+                group: tests:
+                map (name: "${group}.${name}") (
+                  builtins.attrNames (nixpkgs.lib.filterAttrs (_: passed: !passed) tests)
+                )
+              ) cases
+            );
+          in
+          assert nixpkgs.lib.assertMsg (
+            failures == [ ]
+          ) "Package scope contracts failed: ${nixpkgs.lib.concatStringsSep ", " failures}";
+          nixpkgs.legacyPackages.${system}.runCommand "package-scopes-tests" { } ''
+            touch "$out"
+          '';
 
         beets-import = import ./tests/beets-import.nix {
           inherit nixpkgs system;
@@ -186,6 +213,16 @@
         };
 
         security-log-archive-runtime = import ./tests/security-log-archive-runtime.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        cloudflare-access-ip-updater = import ./tests/cloudflare-access-ip-updater.nix {
+          inherit (self.nixosConfigurations)
+            blizzard
+            snowfall
+            avalanche
+            kaizer
+            ;
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
@@ -280,6 +317,15 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        kwallet-tpm = import ./tests/kwallet-tpm.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        rustdesk-config = import ./tests/rustdesk-config.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          rustdeskPkgs = inputs.nixpkgs-rustdesk.legacyPackages.${system};
+        };
+
         sandfly-target = import ./tests/sandfly-target.nix {
           inherit (self.nixosConfigurations) snowfall blizzard;
           inherit consts;
@@ -289,6 +335,16 @@
         sandfly-runtime = import ./tests/sandfly-runtime.nix {
           inherit consts;
           pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        ollama-bindings = import ./tests/ollama-bindings.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        ollama-startup = import ./tests/ollama-startup.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          hmStable = inputs.hm-stable;
+          quadlet = inputs.quadlet-nix;
         };
 
         scrutiny = import ./tests/scrutiny.nix {
@@ -333,6 +389,19 @@
           inherit (self.nixosConfigurations) kaizer snowfall;
           inherit VARS;
           pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        user-registry = import ./tests/user-registry.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        role-defaults = import ./tests/role-defaults.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        kde-options = import ./tests/kde-options.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          hmStable = inputs.hm-stable;
         };
       };
 

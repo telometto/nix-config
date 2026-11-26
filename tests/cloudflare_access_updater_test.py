@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 class CloudflareUpdaterTests(unittest.TestCase):
-    def run_updater(self, include, previous=None):
+    def run_updater(self, include, previous=None, policy_settings=None):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -20,18 +20,19 @@ class CloudflareUpdaterTests(unittest.TestCase):
             ("token", "fixture-token"),
         ):
             (root / name).write_text(value)
-        (root / "response.json").write_text(
-            json.dumps(
-                {
-                    "result": {
-                        "name": "fixture",
-                        "decision": "allow",
-                        "precedence": 1,
-                        "include": include,
-                    }
-                }
-            )
-        )
+        policy = {
+            "id": "fixture-policy",
+            "account_id": "fixture-account",
+            "app_count": 1,
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-02T00:00:00Z",
+            "reusable": True,
+            "name": "fixture",
+            "decision": "allow",
+            "include": include,
+        }
+        policy.update(policy_settings or {})
+        (root / "response.json").write_text(json.dumps({"result": policy}))
         if previous:
             (root / "last-ip").write_text(previous)
         fake = root / "curl"
@@ -64,7 +65,9 @@ else:
         source = source.replace(
             "/var/lib/cloudflare-access-ip-updater/last-ip", str(root / "last-ip")
         )
-        result = subprocess.run(["bash"], input=source, text=True, capture_output=True)
+        result = subprocess.run(
+            ["bash"], input=source, text=True, capture_output=True, check=False
+        )
         self.assertNotIn("fixture-token", result.stdout + result.stderr)
         return root, result
 
@@ -80,6 +83,100 @@ else:
             [{"ip": {"ip": "203.0.113.20/32"}}, other, email],
         )
         self.assertEqual((root / "last-ip").read_text().strip(), "203.0.113.20")
+        self.assertNotIn("precedence", json.loads((root / "updated.json").read_text()))
+
+    def test_app_specific_precedence_is_preserved_when_present(self):
+        root, result = self.run_updater(
+            [{"ip": {"ip": "203.0.113.10/32"}}],
+            "203.0.113.10",
+            {"precedence": 7, "reusable": False},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            json.loads((root / "updated.json").read_text())["precedence"], 7
+        )
+
+    def test_rotation_preserves_all_writable_security_settings(self):
+        settings = {
+            "approval_groups": [
+                {"approvals_needed": 1, "email_list_uuid": "fixture-list"}
+            ],
+            "approval_required": True,
+            "connection_rules": {
+                "rdp": {
+                    "allowed_clipboard_local_to_remote_formats": ["text"],
+                    "allowed_clipboard_remote_to_local_formats": [],
+                }
+            },
+            "isolation_required": True,
+            "mfa_config": {
+                "allowed_authenticators": ["security_key"],
+                "mfa_disabled": False,
+                "session_duration": "12h",
+            },
+            "policy_resolution_account_id": "trusted-account",
+            "purpose_justification_prompt": "Explain why access is needed.",
+            "purpose_justification_required": True,
+            "session_duration": "2h",
+        }
+        root, result = self.run_updater(
+            [{"ip": {"ip": "203.0.113.10/32"}}],
+            "203.0.113.10",
+            settings,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        updated = json.loads((root / "updated.json").read_text())
+        for key, value in settings.items():
+            self.assertIn(key, updated)
+            self.assertEqual(updated[key], value)
+        for read_only in (
+            "id",
+            "account_id",
+            "app_count",
+            "created_at",
+            "updated_at",
+            "reusable",
+        ):
+            self.assertNotIn(read_only, updated)
+
+    def test_unknown_policy_setting_fails_closed(self):
+        root, result = self.run_updater(
+            [{"ip": {"ip": "203.0.113.10/32"}}],
+            "203.0.113.10",
+            {"future_security_control": True},
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("refusing to risk dropping policy settings", result.stderr)
+        self.assertFalse((root / "updated.json").exists())
+
+    def test_unchanged_ip_still_checks_remote_policy_drift(self):
+        root, result = self.run_updater(
+            [{"ip": {"ip": "203.0.113.10/32"}}], "203.0.113.20"
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Managed-IP history disagrees", result.stderr)
+        self.assertFalse((root / "updated.json").exists())
+
+    def test_consistent_unchanged_ip_verifies_policy_without_writing(self):
+        root, result = self.run_updater(
+            [{"ip": {"ip": "203.0.113.20/32"}}], "203.0.113.20"
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = [json.loads(line) for line in (root / "calls").read_text().splitlines()]
+        self.assertEqual(len(calls), 2)
+        self.assertIn("/access/policies/fixture-policy", calls[-1][-1])
+        self.assertFalse((root / "updated.json").exists())
+        self.assertEqual((root / "last-ip").read_text(), "203.0.113.20")
+
+    def test_unchanged_ip_still_rejects_unknown_security_settings(self):
+        root, result = self.run_updater(
+            [{"ip": {"ip": "203.0.113.20/32"}}],
+            "203.0.113.20",
+            {"future_security_control": True},
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("refusing to risk dropping policy settings", result.stderr)
+        self.assertFalse((root / "updated.json").exists())
 
     def test_missing_history_refuses_to_preserve_unknown_ip_rules(self):
         root, result = self.run_updater([{"ip": {"ip": "203.0.113.10/32"}}])

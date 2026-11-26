@@ -6,12 +6,6 @@
   pkgs,
   ...
 }:
-let
-  # TODO: temporary until Codex declares all required system-library build inputs.
-  codex = pkgs.codex.overrideAttrs {
-    dontCargoUseSystemLibs = true;
-  };
-in
 {
   imports = [ ./zeno-desktop-ssh.nix ];
 
@@ -19,7 +13,7 @@ in
   home.packages = [
     pkgs.polychromatic # Razer configuration tool
     pkgs.tuxguitar # Guitar tablature editor and player
-    pkgs.pgadmin4-desktopmode # PostgreSQL administration tool
+    # pkgs.pgadmin4-desktopmode # PostgreSQL administration tool; TODO: temporarily disabled due to build issues
     pkgs.vorta # Borg backup GUI
     pkgs.hugo # static website engine
     pkgs.signal-desktop
@@ -39,11 +33,7 @@ in
     pkgs.annotation-mono
     pkgs.jellyfin-desktop
     pkgs.bubblewrap
-    # TODO: temporary: use stable Tectonic until the unstable AWS-LC build is fixed.
-    (pkgs.chatgpt.override {
-      inherit codex;
-      inherit (pkgs) tectonic-unwrapped;
-    })
+    pkgs.chatgpt
   ]
   ++ (with pkgs.sweethome3d; [
     application
@@ -55,7 +45,6 @@ in
     programs = {
       codex = {
         enable = true;
-        package = codex;
         preferXdgDirectories = false;
         mutableSettings = true;
 

@@ -6,17 +6,14 @@
   ...
 }:
 let
-  varsUsers = VARS.users or { };
-
-  mkUserRecord = roleName: userData: {
-    inherit roleName userData;
-    username = userData.user or null;
-    uid = userData.uid or null;
+  userRegistry = import ../../lib/user-registry.nix {
+    inherit lib;
+    users = VARS.users or { };
   };
 
-  userRecords = lib.mapAttrsToList mkUserRecord varsUsers;
+  userRecords = userRegistry.records;
 
-  isValidUsername = username: builtins.isString username && username != "";
+  inherit (userRegistry) isValidUsername;
   isValidUid = uid: uid == null || (builtins.isInt uid && uid > 0);
 
   usernames = map (record: record.username) (
@@ -82,17 +79,13 @@ let
     ]
   ) userRecords;
 
-  # Filter users based on per-host enablement (sys.users.<username>.enable)
-  enabledUsers = lib.filterAttrs (
-    _roleName: userData:
-    let
-      username = userData.user or null;
-    in
-    isValidUsername username && (config.sys.users.${username}.enable or false)
-  ) varsUsers;
+  # Filter complete records before projecting accounts, retaining duplicates for
+  # the existing host-local UID assertion as well as registry-wide validation.
+  enabledUserRecords = lib.filter (
+    record: isValidUsername record.username && (config.sys.users.${record.username}.enable or false)
+  ) userRecords;
 
   # UID uniqueness is host-local; read the final user option so host overrides are honored.
-  enabledUserRecords = lib.mapAttrsToList mkUserRecord enabledUsers;
   enabledUids = map (record: config.users.users.${record.username}.uid or null) enabledUserRecords;
   duplicateEnabledUids = duplicateValues enabledUids;
 in
@@ -115,26 +108,29 @@ in
   users = {
     mutableUsers = false;
 
-    users = lib.mapAttrs' (
-      _roleName: userData:
-      let
-        gpgSshPubKey = userData.gpgSshPubKey or null;
-      in
-      lib.nameValuePair userData.user {
-        inherit (userData)
-          description
-          isNormalUser
-          hashedPassword
-          group
-          ;
-        uid = lib.mkIf (userData ? uid) userData.uid;
-        shell = lib.mkForce pkgs.zsh;
-        extraGroups = lib.mkDefault userData.extraGroups;
-        openssh.authorizedKeys.keys = [
-          userData.sshPubKey
-        ]
-        ++ lib.optional (gpgSshPubKey != null) gpgSshPubKey;
-      }
-    ) enabledUsers;
+    users = lib.listToAttrs (
+      map (
+        record:
+        let
+          inherit (record) userData;
+          gpgSshPubKey = userData.gpgSshPubKey or null;
+        in
+        lib.nameValuePair record.username {
+          inherit (userData)
+            description
+            isNormalUser
+            hashedPassword
+            group
+            ;
+          uid = lib.mkIf (userData ? uid) userData.uid;
+          shell = lib.mkForce pkgs.zsh;
+          extraGroups = lib.mkDefault userData.extraGroups;
+          openssh.authorizedKeys.keys = [
+            userData.sshPubKey
+          ]
+          ++ lib.optional (gpgSshPubKey != null) gpgSshPubKey;
+        }
+      ) enabledUserRecords
+    );
   };
 }

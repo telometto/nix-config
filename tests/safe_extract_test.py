@@ -1,5 +1,5 @@
-import importlib.util
 import gzip
+import importlib.util
 import io
 import os
 import shutil
@@ -47,12 +47,14 @@ class SafeExtractTests(unittest.TestCase):
             outside = root / "outside"
             outside.write_text("original")
             for name in (str(outside), "../outside", "a/../../outside"):
-                with self.subTest(name=name):
-                    with self.assertRaises((ValueError, tarfile.TarError)):
-                        helper.extract(
-                            self.archive(root, [(tarfile.TarInfo(name), b"bad")]),
-                            BSDTAR,
-                        )
+                with (
+                    self.subTest(name=name),
+                    self.assertRaises((ValueError, tarfile.TarError)),
+                ):
+                    helper.extract(
+                        self.archive(root, [(tarfile.TarInfo(name), b"bad")]),
+                        BSDTAR,
+                    )
             link = tarfile.TarInfo("link")
             link.type, link.linkname = tarfile.SYMTYPE, str(outside)
             special = tarfile.TarInfo("device")

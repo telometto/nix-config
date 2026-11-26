@@ -20,7 +20,7 @@ in
         # settings = {};
 
         vencord = {
-          useSystem = lib.mkDefault false; # TODO: temporary until upstream fixes this
+          useSystem = lib.mkDefault true;
 
           settings = {
             # These wrappers import mutable remote CSS. Keep them disabled

@@ -2,8 +2,8 @@
 # Home Manager module - runs rootless via quadlet-nix
 { lib, config, ... }:
 let
-  imagePins = import ../lib/oci-images.nix;
   cfg = config.services.ollama-container;
+  imagePins = import ../lib/oci-images.nix;
 in
 {
   options.services.ollama-container = {
@@ -13,6 +13,12 @@ in
       type = lib.types.port;
       default = 11434;
       description = "Host port to expose the Ollama API on.";
+    };
+
+    listenAddresses = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "127.0.0.1" ];
+      description = "Host IP addresses on which to publish the Ollama API. Defaults to loopback; add explicit trusted-interface addresses for remote access.";
     };
 
     dataDir = lib.mkOption {
@@ -57,9 +63,16 @@ in
             imagePins.ollama.rocm
           else
             imagePins.ollama.cpu;
-        publishPorts = [
-          "${toString cfg.port}:11434"
-        ];
+        # Keep exact-address listeners alive before Tailscale assigns its IP.
+        # Freebind never falls back to publishing on a wildcard address.
+        networks = [ "pasta:--freebind" ];
+        publishPorts = map (
+          address:
+          let
+            host = if lib.hasInfix ":" address then "[${address}]" else address;
+          in
+          "${host}:${toString cfg.port}:11434"
+        ) cfg.listenAddresses;
         volumes = [
           "${cfg.dataDir}:/home/ollama/.ollama"
         ];

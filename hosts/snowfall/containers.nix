@@ -1,7 +1,14 @@
 # Rootless Podman containers on snowfall (managed via quadlet-nix + Home Manager)
-{ VARS, pkgs, ... }:
+{
+  lib,
+  config,
+  VARS,
+  consts,
+  ...
+}:
 let
   username = VARS.users.zeno.user;
+  homeEnabled = config.sys.home.enable && (config.sys.home.users.${username}.enable or true);
 in
 {
   users.users.${username} = {
@@ -9,7 +16,7 @@ in
     autoSubUidGidRange = true;
   };
 
-  home-manager.users.${username} = {
+  home-manager.users.${username} = lib.mkIf homeEnabled {
     imports = [
       ../../containers/ollama.nix
       ../../containers/subgen.nix
@@ -18,6 +25,10 @@ in
     services = {
       ollama-container = {
         enable = true;
+        listenAddresses = [
+          "127.0.0.1"
+          consts.tailscale.hosts.snowfall.ipv4
+        ];
         dataDir = "/run/media/${username}/personal/container-models/ollama/";
         gpu.enable = true;
       };

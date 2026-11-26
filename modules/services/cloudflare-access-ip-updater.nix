@@ -55,13 +55,15 @@ let
 
     # Check if IP has changed
     LAST_IP=""
+    IP_UNCHANGED=false
     if [[ -f "$STATE_FILE" ]]; then
       LAST_IP=$(${pkgs.coreutils}/bin/cat "$STATE_FILE")
       if [[ "$CURRENT_IP" == "$LAST_IP" ]]; then
-        echo "IP unchanged ($CURRENT_IP), skipping update"
-        exit 0
+        IP_UNCHANGED=true
+        echo "IP unchanged ($CURRENT_IP), verifying remote policy"
+      else
+        echo "IP changed from $LAST_IP to $CURRENT_IP"
       fi
-      echo "IP changed from $LAST_IP to $CURRENT_IP"
     fi
 
     # Fetch current policy to preserve other settings
@@ -95,6 +97,45 @@ let
       --arg previous_ip "$LAST_IP_CIDR" \
       '
         .result as $policy
+        | [
+            "approval_groups",
+            "approval_required",
+            "connection_rules",
+            "isolation_required",
+            "mfa_config",
+            "policy_resolution_account_id",
+            "purpose_justification_prompt",
+            "purpose_justification_required",
+            "session_duration"
+          ] as $preserved_settings
+        | (
+            $policy
+            | keys_unsorted
+            | . - (
+                $preserved_settings
+                + [
+                    "name",
+                    "decision",
+                    "precedence",
+                    "include",
+                    "exclude",
+                    "require",
+                    "id",
+                    "account_id",
+                    "app_count",
+                    "created_at",
+                    "updated_at",
+                    "reusable"
+                  ]
+              )
+          ) as $unknown_settings
+        | if ($unknown_settings | length) != 0
+          then error(
+            "Cloudflare returned unsupported policy fields: "
+            + ($unknown_settings | join(", "))
+            + "; refusing to risk dropping policy settings"
+          )
+          else . end
         | ($policy.include // []) as $include
         | if $previous_ip == "" and any($include[]; (.ip.ip? // "") != "" and .ip.ip != $ip)
           then error("Managed-IP history is missing; reconcile existing IP rules before updating this policy")
@@ -109,15 +150,26 @@ let
                 and ($previous_ip == "" or $existing_ip != $previous_ip)
             )
           )) as $preserved_include
-        | {
+        | ($policy | with_entries(
+            .key as $key
+            | select($preserved_settings | index($key))
+          ))
+          + {
             name: $policy.name,
             decision: $policy.decision,
-            precedence: $policy.precedence,
             include: ([{ ip: { ip: $ip } }] + $preserved_include),
             exclude: ($policy.exclude // []),
             require: ($policy.require // [])
           }
+          + (if $policy | has("precedence")
+             then { precedence: $policy.precedence }
+             else {} end)
       ')
+
+    if [[ "$IP_UNCHANGED" == true ]]; then
+      echo "IP unchanged and remote policy is consistent ($CURRENT_IP), skipping update"
+      exit 0
+    fi
 
     echo "Updating policy with new IP..."
     UPDATE_RESPONSE=$(printf 'Authorization: Bearer %s\n' "$API_TOKEN" | ${pkgs.curl}/bin/curl -sf \
@@ -220,6 +272,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # The service explicitly orders itself after this unit. Force the sops-nix
+    # activation mode that actually creates it, independent of sysusers defaults.
+    sops.useSystemdActivation = true;
+
     # Create state directory
     systemd = {
       tmpfiles.rules = [
