@@ -17,18 +17,30 @@ runs `nix fmt` (formatting only, no evaluation), and `update-dashboards.yml` use
 
 **Private-input credentials:** Full evaluation runs only for trusted `main`
 (pushes, schedules and manual runs on `main`). PRs run parsing, classifier/gate
-unit tests, and the public-input `security-boundaries` and `microvm-egress`
-checks, including base/master Immich image contracts. They do not evaluate private host/user data or the full flake.
+unit tests, and public-input checks for service secrets, MicroVM egress,
+metrics authorization and restricted NFS, including base/master Immich image
+contracts. They do not evaluate private host/user data or the full flake.
 The public harness resolves these sources through the root inputs in
 `flake.lock`; similarly named transitive lock nodes can select different packages.
 
 Before accepting this CI boundary, create a `trusted-main` GitHub environment,
-restrict it to `main`, require independent reviewers, and move `SSH_DEPLOY_KEY`
-and `PAT_TOKEN` into that environment. Remove their repository-wide copies.
+restrict it to `main`, require manual approval by `telometto`, and move
+`SSH_DEPLOY_KEY` and `PAT_TOKEN` into that environment. Allow self approval for
+this solo-maintainer repository, but disable administrator bypass of the
+environment gate. Remove the repository-wide secret copies after confirming
+the environment copies are available. Remove the unused repository secret
+`SECRETS_PAT` and revoke its backing token after checking for external consumers.
 Otherwise a same-repository collaborator can change a PR workflow to request a
 repository secret directly, regardless of the conditions in this patch.
 Environment jobs will need these secrets before full validation can work.
 No external settings or credentials are changed by this repository patch.
+
+Protect `main` with the existing `format` and `flake-check` checks from GitHub
+Actions, require the branch to be current before merging, enforce protection for
+administrators, disable force pushes and deletions, and require pull requests
+and resolved review conversations. Set the required approving review count to
+zero for the selected solo-maintainer model; manual environment approval is
+the separate decision before private-input CI receives credentials.
 
 The SSH deploy key should read only `nix-secrets`. `PAT_TOKEN` is used only by
 lockfile discovery to open/update a PR; scope it to this repository's Contents

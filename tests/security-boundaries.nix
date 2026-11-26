@@ -24,6 +24,17 @@ let
   mkService =
     name: settings: secrets:
     mkServiceWith name settings secrets [ ];
+  victoriaAuthAssertions =
+    username: listenAddress: passwordFile:
+    (import ../modules/services/victoriametrics.nix {
+      inherit lib pkgs;
+      consts = import ../lib/constants.nix;
+      config.sys.services.victoriametrics = {
+        enable = true;
+        inherit listenAddress;
+        httpAuth = { inherit username passwordFile; };
+      };
+    }).config.content.assertions;
   scrutiny = mkService "scrutiny" { enable = true; } {
     scrutinyTokenEnvironmentFile = "/fixture/scrutiny.env";
   };
@@ -174,6 +185,10 @@ let
   );
 in
 assert storeShare.source == "/nix/store" && storeShare.readOnly;
+assert lib.all (a: a.assertion) (victoriaAuthAssertions "writer" "192.0.2.1" "/fixture/password");
+assert lib.all (a: a.assertion) (victoriaAuthAssertions null "127.0.0.1" null);
+assert lib.any (a: !a.assertion) (victoriaAuthAssertions "" "192.0.2.1" "/fixture/password");
+assert lib.any (a: !a.assertion) (victoriaAuthAssertions "" "127.0.0.1" "/fixture/password");
 assert lib.all (a: a.assertion) baseMl.assertions;
 assert lib.all (a: a.assertion) kaizerMl.assertions;
 assert

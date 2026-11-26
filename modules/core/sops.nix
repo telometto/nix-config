@@ -19,6 +19,9 @@ let
   hasGrafanaCloud = config.sys.services.grafanaCloud.enable or false;
   hasVictoriaMetrics = config.sys.services.victoriametrics.enable or false;
   hasVictoriaMetricsRemoteWrite = config.sys.services.victoriametricsRemoteWrite.enable or false;
+  hasMetricsAuthorization =
+    hasVictoriaMetrics && (config.sys.services.victoriametrics.authorization.enable or false);
+  metricsSopsFile = config.sys.secrets.victoriametricsSopsFile;
   hasCloudflared = config.sys.services.cloudflared.enable or false;
   hasCrowdsec = config.services.crowdsec.enable or false;
   hasCloudflareAccessIpUpdater = config.sys.services.cloudflareAccessIpUpdater.enable or false;
@@ -42,6 +45,13 @@ let
 in
 
 {
+  assertions = [
+    {
+      assertion = !hasMetricsAuthorization || metricsSopsFile != null;
+      message = "VictoriaMetrics authorization requires sys.secrets.victoriametricsSopsFile to select a host-scoped private bundle";
+    }
+  ];
+
   sops = {
     defaultSopsFile = lib.mkDefault inputs.nix-secrets.secrets.secretsFile;
     defaultSopsFormat = lib.mkDefault "yaml";
@@ -98,12 +108,40 @@ in
         };
       }
       // whenEnabled (hasVictoriaMetrics || hasVictoriaMetricsRemoteWrite) {
-        # Shared by the protected Blizzard endpoint and its Prometheus writers.
-        # The value itself lives in the private nix-secrets flake.
         "victoriametrics/remote_write_password" = {
           owner = "root";
           group = "monitoring-credentials";
           mode = "0440";
+          restartUnits =
+            lib.optionals hasMetricsAuthorization [
+              "victoriametrics.service"
+              "victoriametrics-vmauth.service"
+            ]
+            ++ lib.optional (config.services.prometheus.enable or false) "prometheus.service";
+        }
+        // lib.optionalAttrs (metricsSopsFile != null) { sopsFile = metricsSopsFile; };
+      }
+      // whenEnabled hasMetricsAuthorization {
+        "victoriametrics/query_password" = {
+          sopsFile = if metricsSopsFile != null then metricsSopsFile else config.sops.defaultSopsFile;
+          owner = "root";
+          group = "root";
+          mode = "0400";
+          restartUnits = [
+            "victoriametrics.service"
+            "victoriametrics-vmauth.service"
+            "grafana.service"
+          ];
+        };
+        "victoriametrics/backend_password" = {
+          sopsFile = if metricsSopsFile != null then metricsSopsFile else config.sops.defaultSopsFile;
+          owner = "root";
+          group = "root";
+          mode = "0400";
+          restartUnits = [
+            "victoriametrics.service"
+            "victoriametrics-vmauth.service"
+          ];
         };
       }
       // whenEnabled hasGrafanaCloud {

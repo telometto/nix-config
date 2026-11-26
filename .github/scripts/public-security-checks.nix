@@ -23,4 +23,16 @@ pkgs.linkFarm "public-security-checks" [
     name = "microvm-egress";
     path = import ../../tests/microvm-egress.nix { inherit pkgs; };
   }
+  {
+    name = "metrics-authorization";
+    path = import ../../tests/victoriametrics-auth.nix { inherit pkgs; };
+  }
+  {
+    name = "metrics-secrets";
+    path = import ../../tests/metrics-secrets.nix { inherit pkgs; };
+  }
+  {
+    name = "nfs-access";
+    path = import ../../tests/nfs-access.nix { inherit pkgs; };
+  }
 ]

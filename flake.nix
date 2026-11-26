@@ -361,6 +361,18 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        metrics-authorization = import ./tests/victoriametrics-auth.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        metrics-secrets = import ./tests/metrics-secrets.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        nfs-access = import ./tests/nfs-access.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         cross-seed = import ./tests/cross-seed.nix {
           inherit (self.nixosConfigurations) blizzard;
           crossSeedVm = self.nixosConfigurations.cross-seed-vm;

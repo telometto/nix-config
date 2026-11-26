@@ -1,6 +1,17 @@
 { lib, ... }:
 {
   options.sys.secrets = {
+    victoriametricsSopsFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = ''
+        Host-scoped encrypted SOPS document for metrics credentials. The
+        Blizzard document contains ingestion, query and backend passwords;
+        remote Prometheus hosts receive ingestion credentials only. Required
+        before enabling VictoriaMetrics authorization separation.
+      '';
+    };
+
     rustdeskServerPublicKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
