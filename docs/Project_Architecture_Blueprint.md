@@ -2,6 +2,8 @@
 
 > **Last verified: 2026-07-31**
 >
+> **Inventory facts refreshed: 2026-11-22**
+>
 > **Project Type:** NixOS Flake Configuration
 >
 > **Architecture Pattern:** Modular Auto-Loading with Role-Based Composition
@@ -10,7 +12,9 @@ ______________________________________________________________________
 
 ## 1. Executive Summary
 
-This repository implements a modular NixOS flake configuration for 4 physical hosts and 26 MicroVMs.
+This repository implements a modular NixOS flake configuration for physical hosts and MicroVM guests.
+See the [host overview](../hosts/README.md#hosts-overview) and [MicroVM inventory](../vms/README.md#inventory)
+for the current machines and allocation exceptions.
 The design centres on three auto-loading mechanisms that eliminate manual `imports` lists, a
 two-namespace option system (`sys.*` / `hm.*`), role files that bundle machine-class defaults,
 and layered Home Manager composition that allows fine-grained per-user overrides without
@@ -27,7 +31,7 @@ flowchart TD
     SL -->|"imports every .nix"| MOD["modules/**"]
     HL -->|"imports every .nix"| HOST["hosts/<hostname>/**"]
     HML -->|"imports every .nix\nexcluding overrides/"| HOME["home/**"]
-    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm\n(26 MicroVMs)"]
+    F -->|merged from vms/flake-microvms.nix| VMS["nixosConfigurations.*-vm"]
     F --> HOSTS["nixosConfigurations\nsnowfall · blizzard · avalanche · kaizer"]
 ```
 
@@ -35,11 +39,12 @@ ______________________________________________________________________
 
 ## 2. Flake Structure
 
-### Outputs
+### Selected outputs
 
 | Output | Value |
 |--------|-------|
-| `nixosConfigurations` | 4 named hosts + 26 `-vm` entries (merged from `vms/flake-microvms.nix`) |
+| `nixosConfigurations` | Physical hosts plus guest outputs from `vms/flake-microvms.nix`; see the [inventory](../vms/README.md#inventory) |
+| `packages.x86_64-linux.security-log-archive` | Security log archive tooling |
 | `formatter.x86_64-linux` | treefmt wrapper (nixfmt, shfmt, yamlfmt, mdformat, jsonfmt, ruff) |
 | `checks.x86_64-linux.formatting` | treefmt formatting check |
 | `checks.x86_64-linux.cloudflare-metrics` | Cloudflare metrics Python unit tests |
@@ -53,7 +58,8 @@ ______________________________________________________________________
 | `checks.x86_64-linux.victoriametrics` | VictoriaMetrics listener, firewall, authentication, client credentials, and startup-order contract tests |
 | `devShells.x86_64-linux.default` | nil, nixfmt, deadnix, statix, sops, ssh-to-age |
 
-There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
+There are no `homeConfigurations`, `apps`, or `templates` outputs. The table
+shows selected checks; the complete check inventory is declared in `flake.nix`.
 
 ### mkHost
 
@@ -72,7 +78,7 @@ There are no `homeConfigurations`, `packages`, `apps`, or `templates` outputs.
 
 `specialArgs` passed to every module: `inputs`, `system`, `VARS`, `consts`, `self`, `hostname`.
 
-### Flake input groups
+### Selected flake input groups
 
 ```mermaid
 flowchart LR
@@ -80,12 +86,12 @@ flowchart LR
         NP["nixpkgs nixos-26.05 (stable)"]
         NPB["nixpkgs-beta nixos-26.05 (symmetry alias)"]
         NPU[nixpkgs-unstable nixos-unstable]
-        NPS[nixpkgs-small nixos-unstable-small]
+        NPS[nixpkgs-unstable-small nixos-unstable-small]
         NHW[nixos-hardware]
     end
     subgraph Build
         HM[hm-stable home-manager/release-26.05]
-        HMU[hm-unstable home-manager/master]
+        HMU[hm-master home-manager/master]
         SOPS[sops-nix]
         LB[lanzaboote]
         MVM[microvm]
@@ -107,7 +113,7 @@ flowchart LR
     Build --> F
     Secrets --> F
     Dev --> F
-    F --> OUT1[nixosConfigurations\n4 hosts + 26 VMs]
+    F --> OUT1[nixosConfigurations\nphysical hosts + MicroVM guests]
     F --> OUT2[formatter / checks / devShells]
 ```
 

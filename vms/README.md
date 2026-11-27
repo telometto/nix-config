@@ -1,10 +1,37 @@
 ## MicroVM Configurations
 
 Isolated service VMs using [microvm.nix](https://github.com/microvm-nix/microvm.nix)
-for lightweight virtualization. The flake currently defines 28 MicroVM
-configurations for the `blizzard` host. Most use the shared `10.100.0.0/24`
+for lightweight virtualization on `blizzard`. Most guests use the shared `10.100.0.0/24`
 tap bridge behind a host-owned identity and lateral-access policy; Pocket ID
 uses a dedicated `10.100.1.0/30` host-to-VM bridge.
+
+______________________________________________________________________
+
+### Inventory
+
+[`flake-microvms.nix`](flake-microvms.nix) currently declares 28 buildable guest outputs.
+[`vm-registry.nix`](vm-registry.nix) contains 29 allocation records, including
+the intentionally reserved `flaresolverr` entry used by the service embedded
+in `prowlarr-vm`. That entry has no standalone flake output or Blizzard
+instance. The standalone `flaresolverr.nix` definition is not wired into
+the flake.
+
+Files under `vms/` also include shared helpers, so counting files does not
+give the guest inventory. A declared flake output is not evidence that a VM
+is running: [Blizzard's instance configuration](../hosts/blizzard/virtualisation/microvms.nix)
+controls host-side enablement.
+
+From the repository root, inspect the declared outputs and allocation keys:
+
+```bash
+nix eval --json .#nixosConfigurations --apply \
+  'configs: builtins.filter (name: builtins.match ".*-vm" name != null) (builtins.attrNames configs)'
+nix eval --impure --json --expr \
+  'builtins.attrNames (import ./vms/vm-registry.nix { consts = import ./lib/constants.nix; })'
+```
+
+Keep changing counts and allocation exceptions in this inventory section;
+other architecture documents link here rather than maintain separate counts.
 
 ______________________________________________________________________
 
