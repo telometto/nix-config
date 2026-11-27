@@ -171,6 +171,10 @@
       checks.${system} = {
         formatting = treefmtEval.config.build.check inputs.self;
 
+        kubevirt-groundwork = import ./tests/kubevirt-groundwork-check.nix {
+          inherit nixpkgs system;
+        };
+
         actual-pilot = import ./tests/actual-pilot-check.nix {
           inherit nixpkgs system;
         };

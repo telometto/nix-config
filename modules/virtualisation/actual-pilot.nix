@@ -15,27 +15,37 @@ let
   python = pkgs.python3.withPackages (p: [ p.pyyaml ]);
   providerBins = pkgs.runCommand "actual-pilot-empty-credential-providers" { } "mkdir $out";
   providerConfig = "/etc/k3s-actual-pilot/no-credential-providers.yaml";
-  preflightPaths = pkgs.writeText "actual-pilot-preflight.json" (
-    builtins.toJSON {
-      inherit stateDir;
-      diskDirs = [
-        "/flash/enc/vms/kubevirt-pilot/actual/root"
-        "/flash/enc/vms/kubevirt-pilot/actual/data"
-      ];
-      defaultKubeconfig = "/etc/rancher/k3s/k3s.yaml";
-      pilotKubeconfig = kubeconfig;
-      firstStartFiles = [
-        "/etc/rancher/node/password"
-        "/run/k3s/containerd/containerd.sock"
-        "/run/flannel/subnet.env"
-      ];
-      firstStartDirectories = [
-        "/var/lib/kubelet/device-plugins"
-        "/var/lib/cni/networks/cbr0"
-      ];
-      absentAlways = [ providerConfig ];
-    }
+  enabledPreviews = lib.filterAttrs (_: preview: preview.enable) cfg.previewVMs;
+  previewDiskDirs = lib.concatLists (
+    lib.mapAttrsToList (
+      name: preview: map (disk: "/flash/enc/vms/kubevirt-pilot/${name}/${disk}") preview.disks
+    ) enabledPreviews
   );
+  safeName =
+    name:
+    builtins.match "[a-z0-9]([a-z0-9-]*[a-z0-9])?" name != null && builtins.stringLength name <= 63;
+  preflightConfig = {
+    inherit stateDir;
+    diskDirs = [
+      "/flash/enc/vms/kubevirt-pilot/actual/root"
+      "/flash/enc/vms/kubevirt-pilot/actual/data"
+    ]
+    ++ previewDiskDirs;
+    defaultKubeconfig = "/etc/rancher/k3s/k3s.yaml";
+    pilotKubeconfig = kubeconfig;
+    firstStartFiles = [
+      "/etc/rancher/node/password"
+      "/run/k3s/containerd/containerd.sock"
+      "/run/flannel/subnet.env"
+    ];
+    firstStartDirectories = [
+      "/var/lib/kubelet/device-plugins"
+      "/var/lib/cni/networks/cbr0"
+    ];
+    absentAlways = [ providerConfig ];
+  }
+  // lib.optionalAttrs (previewDiskDirs != [ ]) { inherit previewDiskDirs; };
+  preflightPaths = pkgs.writeText "actual-pilot-preflight.json" (builtins.toJSON preflightConfig);
   firewallText = ''
     table inet actual_pilot_control
     delete table inet actual_pilot_control
@@ -116,6 +126,28 @@ in
       default = "main";
       description = "Initial public homelab-apps source branch. Existing Flux objects are managed in Git.";
     };
+    previewVMs = lib.mkOption {
+      default = { };
+      description = "Opt-in retained disks for independent private VM previews. Does not start a VM or resume Flux.";
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = {
+            enable = lib.mkEnableOption "host disk preparation for this private VM preview";
+            disks = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [ "root" ];
+              description = "Unique disk names below this preview's dedicated pilot directory.";
+            };
+          };
+        }
+      );
+    };
+    preflightConfig = lib.mkOption {
+      type = lib.types.attrs;
+      readOnly = true;
+      internal = true;
+      description = "Metadata-only retained disk/runtime guard inputs.";
+    };
     firewallRules = lib.mkOption {
       type = lib.types.lines;
       readOnly = true;
@@ -125,8 +157,32 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    sys.virtualisation.actualPilot.firewallRules = firewallText;
+    sys.virtualisation.actualPilot = {
+      firewallRules = firewallText;
+      inherit preflightConfig;
+    };
     assertions = [
+      {
+        assertion = lib.all (
+          name:
+          safeName name
+          && !(lib.elem name [
+            "actual"
+            "actual-pilot"
+            "restore-tests"
+          ])
+        ) (builtins.attrNames cfg.previewVMs);
+        message = "Preview names must be DNS labels distinct from Actual and restore-tests.";
+      }
+      {
+        assertion = lib.all (
+          preview:
+          preview.disks != [ ]
+          && lib.all safeName preview.disks
+          && builtins.length (lib.unique preview.disks) == builtins.length preview.disks
+        ) (builtins.attrValues cfg.previewVMs);
+        message = "Preview disk names must be nonempty, unique DNS labels.";
+      }
       {
         assertion =
           config.networking.hostName == "blizzard" && pkgs.stdenv.hostPlatform.system == "x86_64-linux";
