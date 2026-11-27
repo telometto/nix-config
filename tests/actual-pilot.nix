@@ -34,6 +34,10 @@ let
     ((make true).extendModules {
       modules = [ { sys.virtualisation.actualPilot.previewVMs.searx-preview = { }; } ];
     }).config;
+  searxHost =
+    ((make true).extendModules {
+      modules = [ ../hosts/blizzard/virtualisation/searx-preview.nix ];
+    }).config;
   invalid =
     name: disks:
     ((make true).extendModules {
@@ -66,6 +70,15 @@ assert disabled.systemd.services.k3s.preStart == on.systemd.services.k3s.preStar
 assert preview.services.traefik == on.services.traefik;
 assert
   preview.systemd.services."microvm@production-probe".serviceConfig
+  == on.systemd.services."microvm@production-probe".serviceConfig;
+assert !searxHost.sys.virtualisation.actualPilot.previewVMs.searx-preview.enable;
+assert searxHost.sys.virtualisation.actualPilot.previewVMs.searx-preview.disks == [ "root" ];
+assert
+  searxHost.sys.virtualisation.actualPilot.preflightConfig
+  == on.sys.virtualisation.actualPilot.preflightConfig;
+assert searxHost.services.traefik == on.services.traefik;
+assert
+  searxHost.systemd.services."microvm@production-probe".serviceConfig
   == on.systemd.services."microvm@production-probe".serviceConfig;
 assert invalidPreview "../actual" [ "root" ];
 assert invalidPreview "actual" [ "root" ];
@@ -127,7 +140,7 @@ assert lib.hasInfix "fib daddr type local" on.sys.virtualisation.actualPilot.fir
 assert !(on.systemd.services.actual-pilot-firewall.serviceConfig ? ExecStop);
 {
   passed = true;
-  checks = 54;
+  checks = 59;
   configFile = on.environment.etc."k3s-actual-pilot/config.json".source;
   bootstrap = on.systemd.services.actual-pilot-bootstrap.serviceConfig.ExecStart;
   k3sExecStart = on.systemd.services.k3s.serviceConfig.ExecStart;
