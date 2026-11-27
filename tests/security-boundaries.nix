@@ -1,0 +1,270 @@
+{
+  pkgs,
+  masterPkgs ? pkgs,
+}:
+let
+  inherit (pkgs) lib;
+  python = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
+  mkServiceWith =
+    name: settings: secrets: extraModules:
+    (import "${pkgs.path}/nixos/lib/eval-config.nix" {
+      system = pkgs.stdenv.hostPlatform.system;
+      modules = [
+        ../modules/services/${name}.nix
+        ../modules/services/traefik.nix
+        ../modules/security/secrets.nix
+        {
+          system.stateVersion = "25.05";
+          sys.services.${name} = settings;
+          sys.secrets = secrets;
+        }
+      ]
+      ++ extraModules;
+    }).config;
+  mkService =
+    name: settings: secrets:
+    mkServiceWith name settings secrets [ ];
+  victoriaAuthAssertions =
+    username: listenAddress: passwordFile:
+    (import ../modules/services/victoriametrics.nix {
+      inherit lib pkgs;
+      consts = import ../lib/constants.nix;
+      config.sys.services.victoriametrics = {
+        enable = true;
+        inherit listenAddress;
+        httpAuth = { inherit username passwordFile; };
+      };
+    }).config.content.assertions;
+  scrutiny = mkService "scrutiny" { enable = true; } {
+    scrutinyTokenEnvironmentFile = "/fixture/scrutiny.env";
+  };
+  searx = mkService "searx" { enable = true; } {
+    searxSecretKeyFile = "/fixture/searx-key";
+  };
+  paperless = mkService "paperless" {
+    enable = true;
+    secretKeyFile = "/fixture/paperless-key";
+  } { };
+  paperlessAuto = mkService "paperless" {
+    enable = true;
+    secretKeyFile = null;
+  } { };
+  paperlessExporter = mkServiceWith "paperless" {
+    enable = true;
+    secretKeyFile = "/fixture/paperless-key";
+  } { } [ { services.paperless.exporter.enable = true; } ];
+  paperlessConsumers = [
+    "paperless-scheduler"
+    "paperless-web"
+    "paperless-consumer"
+    "paperless-task-queue"
+  ];
+  grafana = mkService "grafana" { enable = true; } {
+    grafanaSecretKeyFile = "/fixture/grafana-key";
+  };
+  cloudflare =
+    (import "${pkgs.path}/nixos/lib/eval-config.nix" {
+      system = pkgs.stdenv.hostPlatform.system;
+      modules = [
+        ../modules/services/cloudflare-access-ip-updater.nix
+        {
+          options.sops.useSystemdActivation = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+          };
+          config = {
+            system.stateVersion = "25.05";
+            sys.services.cloudflareAccessIpUpdater = {
+              enable = true;
+              accountIdFile = "@@FIXTURE@@/account";
+              policyIdFile = "@@FIXTURE@@/policy";
+              apiTokenFile = "@@FIXTURE@@/token";
+              ipService = "https://ip.fixture";
+            };
+          };
+        }
+      ];
+    }).config;
+  constructorFor =
+    shares:
+    import ../vms/mkMicrovmConfig.nix
+      {
+        name = "fixture";
+        cid = 100;
+        mac = "02:00:00:00:00:01";
+        ip = "10.100.0.2";
+        mem = 256;
+      }
+      {
+        inherit lib;
+        config.microvm.shares = shares;
+      };
+  constructor = constructorFor [
+    {
+      source = "/nix/store";
+      readOnly = true;
+    }
+  ];
+  writableStore = constructorFor [
+    {
+      source = "/nix/store/";
+      readOnly = false;
+    }
+  ];
+  writableData = constructorFor [
+    {
+      source = "/data";
+      readOnly = false;
+    }
+  ];
+  storeShare = builtins.head constructor.microvm.shares;
+  libvirt =
+    (import "${pkgs.path}/nixos/lib/eval-config.nix" {
+      system = pkgs.stdenv.hostPlatform.system;
+      modules = [
+        ../modules/virtualisation/libvirtd.nix
+        {
+          system.stateVersion = "25.05";
+          sys.virtualisation.libvirtd.enable = true;
+        }
+      ];
+    }).config;
+  ml =
+    imagePkgs: acceleration:
+    (lib.evalModules {
+      specialArgs = {
+        pkgs = imagePkgs;
+        consts = import ../lib/constants.nix;
+      };
+      modules = [
+        ../containers/immich-machine-learning.nix
+        {
+          options = {
+            home.homeDirectory = lib.mkOption {
+              type = lib.types.str;
+              default = "/fixture";
+            };
+            assertions = lib.mkOption {
+              type = lib.types.listOf lib.types.attrs;
+              default = [ ];
+            };
+            systemd.user.tmpfiles.rules = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [ ];
+            };
+            virtualisation.quadlet.containers = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+            };
+          };
+          config.services.immich-machine-learning-container = {
+            enable = true;
+            inherit acceleration;
+          };
+        }
+      ];
+    }).config;
+  baseMl = ml pkgs "cpu";
+  kaizerMl = ml (pkgs // { inherit (masterPkgs) immich; }) "cuda";
+  imagePins = (import ../lib/oci-images.nix).immich;
+  updaterDeclaration = "cloudflareAccessIpUpdater = {";
+  blizzardSystemSource = builtins.readFile ../hosts/blizzard/services/system.nix;
+  snowfallSource = builtins.readFile ../hosts/snowfall/snowfall.nix;
+  avalancheSource = builtins.readFile ../hosts/avalanche/avalanche.nix;
+  kaizerSource = builtins.readFile ../hosts/kaizer/kaizer.nix;
+  searxInit = pkgs.writeShellScript "searx-init-fixture" (
+    lib.replaceStrings [ "cd /run/searx" ] [ ''cd "$SEARX_FIXTURE_DIR"'' ]
+      searx.systemd.services.searx-init.script
+  );
+  grafanaBootstrap = pkgs.writeShellScript "grafana-bootstrap-fixture" grafana.systemd.services.grafana.preStart;
+  paperlessWeb = pkgs.writeShellScript "paperless-web-fixture" (
+    lib.replaceStrings
+      [ (lib.getExe paperless.services.paperless.package.python.pkgs.granian) ]
+      [ "@@PAPERLESS_FIXTURE@@/granian" ]
+      paperless.systemd.services.paperless-web.script
+  );
+in
+assert storeShare.source == "/nix/store" && storeShare.readOnly;
+assert lib.all (a: a.assertion) (victoriaAuthAssertions "writer" "192.0.2.1" "/fixture/password");
+assert lib.all (a: a.assertion) (victoriaAuthAssertions null "127.0.0.1" null);
+assert lib.any (a: !a.assertion) (victoriaAuthAssertions "" "192.0.2.1" "/fixture/password");
+assert lib.any (a: !a.assertion) (victoriaAuthAssertions "" "127.0.0.1" "/fixture/password");
+assert lib.all (a: a.assertion) baseMl.assertions;
+assert lib.all (a: a.assertion) kaizerMl.assertions;
+assert
+  baseMl.virtualisation.quadlet.containers.immich-machine-learning.containerConfig.image
+  == imagePins.${pkgs.immich.version}.cpu;
+assert
+  kaizerMl.virtualisation.quadlet.containers.immich-machine-learning.containerConfig.image
+  == imagePins.${masterPkgs.immich.version}.cuda;
+assert lib.any (a: !a.assertion) writableStore.assertions;
+assert lib.all (a: a.assertion) writableData.assertions;
+assert !(lib.elem "virbr0" libvirt.networking.firewall.trustedInterfaces);
+assert libvirt.networking.firewall.interfaces.virbr0.allowedTCPPorts == [ 53 ];
+assert
+  libvirt.networking.firewall.interfaces.virbr0.allowedUDPPorts == [
+    53
+    67
+  ];
+assert scrutiny.services.scrutiny.settings.web.listen.host == "127.0.0.1";
+assert !scrutiny.services.scrutiny.openFirewall;
+assert scrutiny.services.scrutiny.collector.settings.api.endpoint == "http://127.0.0.1:8072";
+assert searx.services.searx.settings.server.secret_key == "$SEARX_SECRET_KEY";
+assert searx.services.searx.environmentFile == "/run/searx-secret-environment/environment";
+assert lib.elem "searx-init.service" searx.systemd.services.searx-secret-environment.requiredBy;
+assert !(paperless.services.paperless.settings ? PAPERLESS_SECRET_KEY);
+assert
+  paperless.services.paperless.environmentFile == "/run/paperless-secret-environment/environment";
+assert lib.all (
+  name:
+  lib.elem "${name}.service" paperless.systemd.services.paperless-secret-environment.requiredBy
+  && lib.elem "${name}.service" paperless.systemd.services.paperless-secret-environment.before
+  &&
+    paperless.systemd.services.${name}.serviceConfig.EnvironmentFile
+    == paperless.services.paperless.environmentFile
+) paperlessConsumers;
+assert paperless.systemd.services.paperless-secret-environment.partOf == [ ];
+assert lib.elem "paperless-exporter.service"
+  paperlessExporter.systemd.services.paperless-secret-environment.requiredBy;
+assert paperlessExporter.systemd.services.paperless-secret-environment.partOf == [ ];
+assert !(builtins.hasAttr "paperless-secret-environment" paperlessAuto.systemd.services);
+assert paperlessAuto.services.paperless.environmentFile == null;
+assert lib.hasInfix "nixos-paperless-secret-key"
+  paperlessAuto.systemd.services.paperless-web.script;
+assert
+  grafana.services.grafana.settings.security.admin_password
+  == "$__file{/var/lib/grafana/bootstrap-admin-password}";
+assert cloudflare.sops.useSystemdActivation;
+assert lib.elem "sops-install-secrets.service"
+  cloudflare.systemd.services.cloudflare-access-ip-updater.after;
+assert lib.elem "sops-install-secrets.service"
+  cloudflare.systemd.services.cloudflare-access-ip-updater.requires;
+assert lib.hasInfix updaterDeclaration blizzardSystemSource;
+assert !(lib.hasInfix updaterDeclaration snowfallSource);
+assert !(lib.hasInfix updaterDeclaration avalancheSource);
+assert !(lib.hasInfix updaterDeclaration kaizerSource);
+pkgs.runCommand "security-boundaries"
+  {
+    nativeBuildInputs = [
+      python
+      pkgs.bash
+    ];
+  }
+  ''
+    mkdir -p source/lib source/tests source/home/programs/scripts
+    cp ${../lib/runtime-secret-environment.py} source/lib/runtime-secret-environment.py
+    cp ${../home/programs/scripts/safe-extract.py} source/home/programs/scripts/safe-extract.py
+    cp ${./runtime_secret_environment_test.py} source/tests/runtime_secret_environment_test.py
+    cp ${./safe_extract_test.py} source/tests/safe_extract_test.py
+    cp ${./cloudflare_access_updater_test.py} source/tests/cloudflare_access_updater_test.py
+    cp ${./grafana_bootstrap_test.py} source/tests/grafana_bootstrap_test.py
+    cp ${./paperless_runtime_key_test.py} source/tests/paperless_runtime_key_test.py
+    export BSDTAR=${pkgs.libarchive}/bin/bsdtar
+    export UPDATER_SCRIPT=${cloudflare.systemd.services.cloudflare-access-ip-updater.serviceConfig.ExecStart}
+    export CURL_BIN=${pkgs.curl}/bin/curl
+    export SEARX_INIT_SCRIPT=${searxInit}
+    export GRAFANA_BOOTSTRAP_SCRIPT=${grafanaBootstrap}
+    export PAPERLESS_WEB_SCRIPT=${paperlessWeb}
+    python3 -B -m unittest discover -s source/tests -p '*_test.py' -v
+    touch "$out"
+  ''

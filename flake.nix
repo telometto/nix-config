@@ -216,6 +216,16 @@
           pkgs = nixpkgs.legacyPackages.${system};
         };
 
+        cloudflare-access-ip-updater = import ./tests/cloudflare-access-ip-updater.nix {
+          inherit (self.nixosConfigurations)
+            blizzard
+            snowfall
+            avalanche
+            kaizer
+            ;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         cloudflare-metrics =
           nixpkgs.legacyPackages.${system}.runCommand "cloudflare-metrics-tests"
             {
@@ -339,6 +349,27 @@
 
         scrutiny = import ./tests/scrutiny.nix {
           inherit (self.nixosConfigurations) blizzard;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        security-boundaries = import ./tests/security-boundaries.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+          masterPkgs = inputs.nixpkgs-master.legacyPackages.${system};
+        };
+
+        microvm-egress = import ./tests/microvm-egress.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        metrics-authorization = import ./tests/victoriametrics-auth.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        metrics-secrets = import ./tests/metrics-secrets.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
+        nfs-access = import ./tests/nfs-access.nix {
           pkgs = nixpkgs.legacyPackages.${system};
         };
 

@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   pkgs,
   VARS,
@@ -48,23 +47,10 @@ in
     };
 
     nix.distributedBuilds = {
-      enable = true;
-
-      buildMachines = [
-        {
-          hostName = "snowfall";
-          systems = [ "x86_64-linux" ];
-          sshUser = "zeno";
-          sshKey = "/home/zeno/.ssh/nix-build-avalanche";
-          maxJobs = 16;
-          speedFactor = 3;
-          supportedFeatures = [
-            "kvm"
-            "big-parallel"
-            "benchmark"
-          ];
-        }
-      ];
+      # Resume only after a separate trusted builder has been reviewed.
+      enable = false;
+      server.enable = false;
+      buildMachines = [ ];
     };
 
     programs = {
@@ -111,14 +97,6 @@ in
       tailscale = {
         interface = "wlp4s0";
         openFirewall = true;
-      };
-
-      cloudflareAccessIpUpdater = {
-        enable = true;
-        accountIdFile = config.sys.secrets.cloudflareAccountIdFile;
-        policyIdFile = config.sys.secrets.cloudflarePolicyIdFile;
-        apiTokenFile = config.sys.secrets.cloudflareAccessApiTokenFile;
-        interval = "30min";
       };
 
       # Enable RAPL power monitoring for CPU
@@ -198,6 +176,8 @@ in
       device = "${consts.tailscale.hosts.blizzard.ipv4}:/rpool/enc/transfers";
       fsType = "nfs";
       options = [
+        "vers=4"
+        "proto=tcp"
         "nofail"
         "x-systemd.automount"
         "x-systemd.idle-timeout=600"

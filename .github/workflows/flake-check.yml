@@ -25,7 +25,7 @@ jobs:
             crowdsec: ${{ steps.select.outputs.crowdsec }}
         steps:
             - name: Checkout complete history
-              uses: actions/checkout@v7.0.1
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   fetch-depth: 0
                   persist-credentials: false
@@ -38,28 +38,29 @@ jobs:
               run: python3 -B .github/scripts/flake_ci.py classify
 
     grouped:
+        environment: trusted-main
         needs: classify
-        if: needs.classify.outputs.grouped == 'true'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.classify.outputs.grouped == 'true'
         runs-on: ubuntu-latest
         timeout-minutes: 90
         env:
             PLAN: ${{ needs.classify.outputs.plan }}
         steps:
             - name: Access private repository
-              uses: webfactory/ssh-agent@v0.10.0
+              uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
               with:
                   ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
             - name: Checkout repository
-              uses: actions/checkout@v7.0.1
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
 
             - name: Install Nix
-              uses: DeterminateSystems/nix-installer-action@v23
+              uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
 
             - name: Setup Nix cache
-              uses: DeterminateSystems/magic-nix-cache-action@v15
+              uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
               with:
                   use-flakehub: false
 
@@ -100,41 +101,65 @@ jobs:
                   env -u SSH_AUTH_SOCK -u SSH_AGENT_PID python3 tests/crowdsec_appsec_runtime.py --package "$CROWDSEC" --settings "$SETTINGS"
 
     lifecycle:
+        environment: trusted-main
         needs: classify
-        if: needs.classify.outputs.lifecycle == 'true'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.classify.outputs.lifecycle == 'true'
         runs-on: ubuntu-latest
         timeout-minutes: 90
         steps:
             - name: Access private repository
-              uses: webfactory/ssh-agent@v0.10.0
+              uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
               with:
                   ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
             - name: Checkout repository
-              uses: actions/checkout@v7.0.1
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
 
             - name: Install Nix
-              uses: DeterminateSystems/nix-installer-action@v23
+              uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
 
             - name: Setup Nix cache
-              uses: DeterminateSystems/magic-nix-cache-action@v15
+              uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
               with:
                   use-flakehub: false
 
             - name: Build MicroVM lifecycle check
               run: python3 -B .github/scripts/flake_ci.py lifecycle
 
-    # Keep the name exactly: update-nix-lock waits for it on the PR head SHA.
+    pr-static:
+        if: github.event_name == 'pull_request'
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout without credentials
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Install Nix
+              uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+
+            - name: Check public source without private inputs
+              run: |
+                  python3 -B -m unittest discover -s .github/tests -v
+                  git ls-files -z '*.nix' | xargs -0 -r -n 1 nix-instantiate --parse >/dev/null
+                  git ls-files -z '*.sh' | xargs -0 -r -n 1 bash -n
+                  nix build --impure --file .github/scripts/public-security-checks.nix --no-link --print-build-logs
+                  {
+                      echo 'PR source checks passed without private inputs or write credentials.'
+                      echo 'Full host/private-input evaluation runs on trusted main/manual runs.'
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+    # Preserve the stable gate name, with explicit public/private validation modes.
     flake-check:
         name: flake-check
-        needs: [classify, grouped, lifecycle]
+        needs: [classify, grouped, lifecycle, pr-static]
         if: always()
         runs-on: ubuntu-latest
         steps:
             - name: Checkout gate
-              uses: actions/checkout@v7.0.1
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
 

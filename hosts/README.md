@@ -6,7 +6,7 @@ Per-machine NixOS configurations defining hardware, roles, users, and services.
 
 | Host | Role | Desktop | Standout Features |
 |------|------|---------|------------------|
-| [snowfall/](snowfall/) | Desktop | KDE | AMD GPU, distributed builds server, openrazer (RGB), Prometheus+Grafana+Traefik+Cloudflare tunnel, RAPL + electricity-price exporters |
+| [snowfall/](snowfall/) | Desktop | KDE | AMD GPU, remote builder paused, openrazer (RGB), Prometheus+Grafana+Traefik+Cloudflare tunnel, RAPL + electricity-price exporters |
 | [blizzard/](blizzard/) | Server | None | ZFS+NFS+Samba, full observability stack, MicroVM host, Tailscale subnet router (192.168.2.0/24 + 10.100.0.0/24), CrowdSec, VictoriaMetrics |
 | [avalanche/](avalanche/) | Desktop | GNOME | ThinkPad P51, nixos-hardware module, iwlwifi+BT coexistence workaround, VictoriaMetrics remote-write to blizzard |
 | [kaizer/](kaizer/) | Desktop | KDE | Two users (gianluca+luke; frankie disabled), Lanzaboote disabled, CachyOS kernel, NVIDIA GPU (open kernel modules), Java Temurin 8/17/21 for Minecraft, per-user localization |
@@ -31,7 +31,7 @@ in the running daemon after activating the host configuration.
 
 Keep Nyx's own dependency pins: making its `nixpkgs` input follow this
 repository's input, or customizing its kernel build, can change store hashes
-and require compilation. The previous upstream Attic cache is not used.
+and require compilation. The previous upstream Attic cache is not used. Its former endpoint and signing authority remain incident-disabled; reintroducing them requires a separately reviewed replacement and provenance check.
 
 Before the new cache configuration is activated, pass its settings explicitly.
 This downloads the kernel outputs and external modules, refusing compilation

@@ -10,8 +10,37 @@
 }:
 let
   cfg = config.sys.services.victoriametrics;
-  hasHttpAuth = cfg.httpAuth.username != null;
+  hasHttpAuth = cfg.httpAuth.username != null && cfg.httpAuth.username != "";
+  authorizationEnabled = cfg.authorization.enable or false;
   credentialGroup = "monitoring-credentials";
+  authRenderer = ../../lib/victoriametrics-auth.py;
+  frontendUnit = "victoriametrics-vmauth";
+  frontendRuntime = "/run/${frontendUnit}";
+  # The frontend and backend share a port on different interfaces. Local clients
+  # must use the frontend too; loopback carries the backend-only credential.
+  clientAddress = if authorizationEnabled then cfg.listenAddress else cfg.localAddress;
+  externalOctets = builtins.match "([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})" cfg.listenAddress;
+  hasExplicitExternalBind =
+    externalOctets != null
+    && lib.all (part: lib.toIntBase10 part <= 255) externalOctets
+    && (
+      let
+        first = lib.toIntBase10 (builtins.head externalOctets);
+      in
+      first > 0 && first != 127 && first < 224
+    );
+  validUsername = name: name != null && builtins.match "[A-Za-z0-9][A-Za-z0-9_.-]*" name != null;
+  protectedBackendFlag =
+    option:
+    let
+      flag = lib.removePrefix "-" (lib.removePrefix "-" option);
+    in
+    lib.any (name: flag == name || lib.hasPrefix "${name}=" flag) [
+      "httpListenAddr"
+      "httpAuth.username"
+      "httpAuth.password"
+      "http.pathPrefix"
+    ];
 in
 {
   options.sys.services.victoriametrics = {
@@ -30,8 +59,9 @@ in
         type = lib.types.nullOr lib.types.str;
         default = null;
         description = ''
-          Username for VictoriaMetrics HTTP Basic Authentication. Set this
-          together with passwordFile to protect every HTTP endpoint.
+          Nonempty username for VictoriaMetrics HTTP Basic Authentication. Set this
+          together with passwordFile to protect every HTTP endpoint. With
+          authorization enabled, this is the ingestion-only frontend identity.
         '';
       };
 
@@ -42,6 +72,47 @@ in
           SOPS-managed file containing the VictoriaMetrics HTTP Basic
           Authentication password. The password is loaded through systemd
           credentials and is never placed in the unit command line.
+          With authorization enabled, rotation must also restart VictoriaMetrics
+          and victoriametrics-vmauth so both revalidate all role passwords.
+        '';
+      };
+    };
+
+    authorization = {
+      enable = lib.mkEnableOption ''
+        separate ingestion, query and backend authority using vmauth. This requires
+        an explicit non-loopback IPv4 listenAddress; the backend uses loopback on
+        the same port. Credential rotation requires restarting the consuming units
+      '';
+
+      queryUsername = lib.mkOption {
+        type = lib.types.str;
+        default = "metrics-query";
+        description = "Frontend Basic Auth username for Grafana and PromQL reads";
+      };
+
+      queryPasswordFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = ''
+          SOPS-managed query password, loaded through systemd credentials by
+          VictoriaMetrics, victoriametrics-vmauth and Grafana. Restart all three
+          units when it changes; the backend rechecks role password separation.
+        '';
+      };
+
+      backendUsername = lib.mkOption {
+        type = lib.types.str;
+        default = "metrics-backend";
+        description = "Backend-only Basic Auth username, unavailable to frontend clients";
+      };
+
+      backendPasswordFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = ''
+          SOPS-managed backend password, loaded through systemd credentials by
+          VictoriaMetrics and victoriametrics-vmauth. Restart both units on rotation.
         '';
       };
     };
@@ -50,7 +121,9 @@ in
       type = lib.types.str;
       default = "127.0.0.1";
       description = ''
-        Address on which VictoriaMetrics listens.
+        Address on which the VictoriaMetrics HTTP endpoint listens. With
+        authorization enabled, vmauth owns this address and VictoriaMetrics
+        moves to the loopback backend.
         Remote clients require a reachable non-loopback address. Bind to the
         narrowest interface that serves the intended clients.
       '';
@@ -63,6 +136,8 @@ in
       description = ''
         Address used by local Prometheus and Grafana clients to reach VictoriaMetrics.
         Set this when listenAddress does not include the loopback interface.
+        With authorization enabled, both clients use listenAddress instead so
+        they pass through the frontend's role restrictions.
       '';
       example = "127.0.0.1";
     };
@@ -194,10 +269,14 @@ in
       enable = true;
       inherit (cfg) package retentionPeriod;
 
-      basicAuthUsername = cfg.httpAuth.username;
-      basicAuthPasswordFile = cfg.httpAuth.passwordFile;
+      basicAuthUsername =
+        if authorizationEnabled then cfg.authorization.backendUsername else cfg.httpAuth.username;
+      basicAuthPasswordFile =
+        if authorizationEnabled then cfg.authorization.backendPasswordFile else cfg.httpAuth.passwordFile;
 
-      listenAddress = "${cfg.listenAddress}:${toString cfg.port}";
+      listenAddress = "${
+        if authorizationEnabled then "127.0.0.1" else cfg.listenAddress
+      }:${toString cfg.port}";
 
       extraOptions =
         cfg.extraOptions
@@ -215,7 +294,7 @@ in
         [
           (
             {
-              url = "http://${cfg.localAddress}:${toString cfg.port}${cfg.prometheusRemoteWrite.path}";
+              url = "http://${clientAddress}:${toString cfg.port}${cfg.prometheusRemoteWrite.path}";
 
               queue_config = {
                 capacity = 10000;
@@ -271,7 +350,7 @@ in
               inherit (cfg.grafanaDatasource) name isDefault;
               type = "prometheus"; # VictoriaMetrics is PromQL-compatible
               access = "proxy";
-              url = "http://${cfg.localAddress}:${toString cfg.port}";
+              url = "http://${clientAddress}:${toString cfg.port}";
               editable = false;
               jsonData = {
                 # VictoriaMetrics supports Prometheus-compatible API
@@ -282,8 +361,13 @@ in
             }
             // lib.optionalAttrs hasHttpAuth {
               basicAuth = true;
-              basicAuthUser = cfg.httpAuth.username;
-              secureJsonData.basicAuthPassword = "$__file{${cfg.httpAuth.passwordFile}}";
+              basicAuthUser =
+                if authorizationEnabled then cfg.authorization.queryUsername else cfg.httpAuth.username;
+              secureJsonData.basicAuthPassword =
+                if authorizationEnabled then
+                  "$__file{/run/credentials/grafana.service/victoriametrics-query-password}"
+                else
+                  "$__file{${cfg.httpAuth.passwordFile}}";
             }
             // lib.optionalAttrs (cfg.grafanaDatasource.uid != null) {
               inherit (cfg.grafanaDatasource) uid;
@@ -300,9 +384,9 @@ in
           lib.mkAfter [ credentialGroup ]
         );
 
-        grafana.extraGroups = lib.mkIf (hasHttpAuth && (config.sys.services.grafana.enable or false)) (
-          lib.mkAfter [ credentialGroup ]
-        );
+        grafana.extraGroups = lib.mkIf (
+          hasHttpAuth && !authorizationEnabled && (config.sys.services.grafana.enable or false)
+        ) (lib.mkAfter [ credentialGroup ]);
       };
 
       groups.${credentialGroup} = lib.mkIf hasHttpAuth { };
@@ -312,6 +396,99 @@ in
       victoriametrics = lib.mkIf hasHttpAuth {
         after = [ "sops-install-secrets.service" ];
         requires = [ "sops-install-secrets.service" ];
+        preStart = lib.mkIf authorizationEnabled ''
+          ${pkgs.python3}/bin/python3 ${authRenderer} validate-password \
+            "$CREDENTIALS_DIRECTORY/writer-password" \
+            "$CREDENTIALS_DIRECTORY/query-password" \
+            "$CREDENTIALS_DIRECTORY/basic_auth_password"
+        '';
+        # Check all three values before opening the loopback backend. Otherwise
+        # reused passwords could bypass the frontend despite distinct usernames.
+        serviceConfig.LoadCredential = lib.mkIf authorizationEnabled [
+          "writer-password:${toString cfg.httpAuth.passwordFile}"
+          "query-password:${toString cfg.authorization.queryPasswordFile}"
+        ];
+      };
+
+      ${frontendUnit} = lib.mkIf authorizationEnabled {
+        description = "VictoriaMetrics ingestion and query authorization";
+        wantedBy = [ "multi-user.target" ];
+        after = [
+          "network-online.target"
+          "sops-install-secrets.service"
+          "victoriametrics.service"
+        ];
+        wants = [ "network-online.target" ];
+        requires = [
+          "sops-install-secrets.service"
+          "victoriametrics.service"
+        ];
+        partOf = [ "victoriametrics.service" ];
+        preStart = lib.escapeShellArgs [
+          "${pkgs.python3}/bin/python3"
+          "${authRenderer}"
+          "render"
+          "--writer-username"
+          (toString cfg.httpAuth.username)
+          "--query-username"
+          cfg.authorization.queryUsername
+          "--backend-username"
+          cfg.authorization.backendUsername
+          "--backend-url"
+          "http://127.0.0.1:${toString cfg.port}"
+          "--output"
+          "${frontendRuntime}/auth.json"
+          "--vmauth-bin"
+          "${cfg.package}/bin/vmauth"
+        ];
+        serviceConfig = {
+          ExecStart = lib.escapeShellArgs [
+            "${cfg.package}/bin/vmauth"
+            "-auth.config=${frontendRuntime}/auth.json"
+            "-httpListenAddr=${cfg.listenAddress}:${toString cfg.port}"
+            "-httpInternalListenAddr=unix:${frontendRuntime}/internal.sock"
+          ];
+          LoadCredential = [
+            "writer-password:${toString cfg.httpAuth.passwordFile}"
+            "query-password:${toString cfg.authorization.queryPasswordFile}"
+            "backend-password:${toString cfg.authorization.backendPasswordFile}"
+          ];
+          DynamicUser = true;
+          RuntimeDirectory = frontendUnit;
+          RuntimeDirectoryMode = "0700";
+          UMask = "0077";
+          Restart = "on-failure";
+          RestartSec = 2;
+          CapabilityBoundingSet = "";
+          LockPersonality = true;
+          MemoryDenyWriteExecute = true;
+          NoNewPrivileges = true;
+          PrivateDevices = true;
+          PrivateTmp = true;
+          ProtectClock = true;
+          ProtectControlGroups = true;
+          ProtectHome = true;
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          ProtectProc = "invisible";
+          ProtectSystem = "strict";
+          RemoveIPC = true;
+          RestrictAddressFamilies = [
+            "AF_INET"
+            "AF_INET6"
+            "AF_UNIX"
+          ];
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          SystemCallArchitectures = "native";
+          SystemCallFilter = [
+            "@system-service"
+            "~@privileged"
+          ];
+        };
       };
 
       prometheus = lib.mkIf (hasHttpAuth && (config.services.prometheus.enable or false)) {
@@ -322,10 +499,59 @@ in
       grafana = lib.mkIf (hasHttpAuth && (config.sys.services.grafana.enable or false)) {
         after = [ "sops-install-secrets.service" ];
         requires = [ "sops-install-secrets.service" ];
+        serviceConfig.LoadCredential = lib.mkIf authorizationEnabled [
+          "victoriametrics-query-password:${toString cfg.authorization.queryPasswordFile}"
+        ];
       };
     };
 
     assertions = [
+      {
+        assertion =
+          !authorizationEnabled
+          || (
+            hasHttpAuth
+            && cfg.authorization.queryPasswordFile != null
+            && cfg.authorization.backendPasswordFile != null
+          );
+        message = "sys.services.victoriametrics.authorization requires ingestion, query and backend password files";
+      }
+      {
+        assertion = !authorizationEnabled || hasExplicitExternalBind;
+        message = "sys.services.victoriametrics.authorization requires an explicit non-loopback IPv4 listenAddress";
+      }
+      {
+        assertion =
+          !authorizationEnabled
+          || (
+            lib.all validUsername [
+              cfg.httpAuth.username
+              cfg.authorization.queryUsername
+              cfg.authorization.backendUsername
+            ]
+            &&
+              builtins.length (
+                lib.unique [
+                  cfg.httpAuth.username
+                  cfg.authorization.queryUsername
+                  cfg.authorization.backendUsername
+                ]
+              ) == 3
+          );
+        message = "sys.services.victoriametrics.authorization requires distinct nonempty ingestion, query and backend usernames using letters, digits, dots, underscores or hyphens";
+      }
+      {
+        assertion = !authorizationEnabled || cfg.prometheusRemoteWrite.path == "/api/v1/write";
+        message = "sys.services.victoriametrics.authorization restricts ingestion to /api/v1/write";
+      }
+      {
+        assertion = !authorizationEnabled || !(lib.any protectedBackendFlag cfg.extraOptions);
+        message = "sys.services.victoriametrics.authorization forbids overriding backend HTTP listener, authentication or path prefix flags";
+      }
+      {
+        assertion = cfg.httpAuth.username == null || cfg.httpAuth.username != "";
+        message = "sys.services.victoriametrics.httpAuth.username must be nonempty when set";
+      }
       {
         assertion = (cfg.httpAuth.username == null) == (cfg.httpAuth.passwordFile == null);
         message = "sys.services.victoriametrics.httpAuth.username and passwordFile must both be set or both be null";

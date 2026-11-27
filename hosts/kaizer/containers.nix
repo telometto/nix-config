@@ -9,11 +9,13 @@
 let
   username = VARS.users.luke.user;
   homeEnabled = config.sys.home.enable && (config.sys.home.users.${username}.enable or true);
+  mlFirewall = import ../../lib/immich-ml-firewall.nix {
+    blizzardIPv4 = consts.tailscale.hosts.blizzard.ipv4;
+    port = consts.ports.secondary.immichMachineLearning.hostPort;
+  };
 in
 {
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
-    consts.ports.secondary.immichMachineLearning.hostPort
-  ];
+  networking.firewall = mlFirewall;
 
   users.users.${username} = {
     linger = true;

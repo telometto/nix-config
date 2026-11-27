@@ -3,6 +3,7 @@
 { lib, config, ... }:
 let
   cfg = config.services.ollama-container;
+  imagePins = import ../lib/oci-images.nix;
 in
 {
   options.services.ollama-container = {
@@ -59,9 +60,9 @@ in
           if cfg.image != null then
             cfg.image
           else if cfg.gpu.enable then
-            "docker.io/ollama/ollama:rocm"
+            imagePins.ollama.rocm
           else
-            "docker.io/ollama/ollama:latest";
+            imagePins.ollama.cpu;
         # Keep exact-address listeners alive before Tailscale assigns its IP.
         # Freebind never falls back to publishing on a wildcard address.
         networks = [ "pasta:--freebind" ];

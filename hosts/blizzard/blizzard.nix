@@ -39,23 +39,10 @@
     users.zeno.enable = true;
 
     nix.distributedBuilds = {
-      enable = true;
-
-      buildMachines = [
-        {
-          hostName = "snowfall";
-          systems = [ "x86_64-linux" ];
-          sshUser = "zeno";
-          sshKey = "/home/zeno/.ssh/nix-build-blizzard";
-          maxJobs = 16;
-          speedFactor = 3;
-          supportedFeatures = [
-            "kvm"
-            "big-parallel"
-            "benchmark"
-          ];
-        }
-      ];
+      # Resume only after a separate trusted builder has been reviewed.
+      enable = false;
+      server.enable = false;
+      buildMachines = [ ];
     };
 
     ## Pull specific packages from different nixpkgs inputs
@@ -87,6 +74,8 @@
     };
 
     services = {
+      # Promote a reviewed generation manually; dependency discovery is not deployment approval.
+      autoUpgrade.enable = lib.mkForce false;
       k3s.enable = false;
 
       resolved = {
@@ -104,7 +93,7 @@
         extraUpFlags = [
           "--reset"
           "--ssh"
-          "--advertise-routes=192.168.2.0/24,10.100.0.0/24"
+          "--advertise-routes=192.168.2.0/24"
         ];
       };
     };

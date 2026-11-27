@@ -10,6 +10,7 @@ let
   hasDefaultDatasource = lib.any (
     datasource: datasource.isDefault or false
   ) cfg.provision.datasources;
+  bootstrapPasswordFile = "${config.services.grafana.dataDir}/bootstrap-admin-password";
 in
 {
   options.sys.services.grafana = {
@@ -145,9 +146,12 @@ in
           serve_from_sub_path = true;
         };
 
-        security.secret_key = "$__file{${
-          config.sys.secrets.grafanaSecretKeyFile or "/run/secrets/grafana-secret-key"
-        }}";
+        security = {
+          secret_key = "$__file{${
+            config.sys.secrets.grafanaSecretKeyFile or "/run/secrets/grafana-secret-key"
+          }}";
+          admin_password = "$__file{${bootstrapPasswordFile}}";
+        };
 
         analytics.reporting_enabled = !cfg.disableTelemetry;
       } cfg.extraSettings;
@@ -197,6 +201,19 @@ in
       name = "grafana-dashboards/${name}.json";
       value.source = path;
     }) cfg.provision.dashboards;
+
+    # Each instance gets a persistent random bootstrap credential. Existing
+    # database passwords are not changed by Grafana's bootstrap setting.
+    systemd.services.grafana.preStart = ''
+      if [ ! -s ${lib.escapeShellArg bootstrapPasswordFile} ]; then
+        umask 077
+        bootstrap_tmp=$(mktemp ${lib.escapeShellArg "${bootstrapPasswordFile}.XXXXXXXX"})
+        trap 'rm -f "$bootstrap_tmp"' EXIT
+        ${lib.getExe pkgs.openssl} rand -hex 32 > "$bootstrap_tmp"
+        mv -T "$bootstrap_tmp" ${lib.escapeShellArg bootstrapPasswordFile}
+      fi
+      chmod 0600 ${lib.escapeShellArg bootstrapPasswordFile}
+    '';
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 

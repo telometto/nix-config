@@ -22,8 +22,9 @@ flowchart LR
 ```
 
 VictoriaMetrics is the long-term store for the local and remote Prometheus
-writers. On Blizzard it listens at
-`100.86.227.97:11008` (the Blizzard Tailscale address) and the firewall opens
+writers. On Blizzard it listens on the Tailscale address defined by
+`consts.tailscale.hosts.blizzard.ipv4` in `lib/constants.nix`, port `11008`.
+Tailnet clients can use `http://blizzard:11008`. The firewall opens
 that port only on `tailscale0`; it is not a general host-firewall opening.
 VictoriaMetrics HTTP Basic Authentication protects the complete API, including
 remote-write, query, and administrative endpoints. The username is a stable

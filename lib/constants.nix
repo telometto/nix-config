@@ -7,6 +7,7 @@
     hosts = {
       blizzard.ipv4 = "100.85.254.99";
       snowfall.ipv4 = "100.67.190.43";
+      avalanche.ipv4 = "100.67.10.89";
       sandfly.ipv4 = "100.116.146.113";
     };
   };

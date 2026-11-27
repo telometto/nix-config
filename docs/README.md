@@ -48,6 +48,9 @@ flowchart LR
 
 #### How-To Guides
 
+- [security-cutover.md](security-cutover.md) —
+  Coordinate restricted NFS, metrics credentials, builder trust and external security controls
+
 - [how-to-beets-import.md](how-to-beets-import.md) —
   Review and verify copied music imports on Blizzard
 

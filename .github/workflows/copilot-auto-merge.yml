@@ -9,9 +9,8 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  pull-requests: write
-  contents: write
-  issues: write
+  pull-requests: read
+  contents: read
 
 jobs:
   gate:
@@ -41,71 +40,20 @@ jobs:
             echo "clean=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Enable auto-merge
+      - name: Report review for human approval
         id: enable-auto-merge
         if: steps.count.outputs.clean == 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ github.event.pull_request.number }}
-        run: gh pr merge "$PR" --auto --merge
+        run: echo 'Copilot review is advisory. A human must review and merge this PR.' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Disable auto-merge
+      - name: Report review comments
         id: disable-auto-merge
         if: steps.count.outputs.clean == 'false'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ github.event.pull_request.number }}
-        run: gh pr merge "$PR" --disable-auto
-
-      - name: Upsert status comment
-        uses: actions/github-script@v9.0.0
-        env:
-          INLINE_COUNT: ${{ steps.count.outputs.count }}
-          CLEAN: ${{ steps.count.outputs.clean }}
-          REVIEW_SHA: ${{ github.event.review.commit_id }}
-          MERGE_OUTCOME: ${{ steps.enable-auto-merge.outcome }}
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const count = process.env.INLINE_COUNT;
-            const clean = process.env.CLEAN === 'true';
-            const sha = (process.env.REVIEW_SHA || '').slice(0, 7);
-            const mergeOutcome = process.env.MERGE_OUTCOME;
-
-            let verdict;
-            if (!clean) {
-              verdict = `:speech_balloon: Latest review on \`${sha}\` left **${count}** inline comment(s). Auto-merge not armed yet — push fixes and resolve threads.`;
-            } else if (mergeOutcome === 'success') {
-              verdict = `:white_check_mark: Latest review on \`${sha}\` left **no inline comments**. Auto-merge armed.`;
-            } else {
-              verdict = `:white_check_mark: Latest review on \`${sha}\` left **no inline comments**, but auto-merge could not be enabled — check repo settings or permissions.`;
-            }
-
-            const header = '🤖 **Copilot review status**';
-            const fullBody = [header, verdict, '', 'Merge still gated by branch protection: required checks and conversation resolution.'].join('\n\n');
-
-            const existing = await github.paginate(github.rest.issues.listComments, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              per_page: 100,
-            });
-            const prior = existing.find(c => c.user.id === 41898282 && c.body.startsWith(header));
-
-            if (prior) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: prior.id,
-                body: fullBody,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: fullBody,
-              });
-            }
+        run: echo 'Resolve review comments before requesting human approval.' >> "$GITHUB_STEP_SUMMARY"

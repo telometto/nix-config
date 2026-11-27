@@ -49,6 +49,13 @@ in
         mode = "0440";
         owner = "paperless";
         group = "paperless";
+        restartUnits = [
+          "paperless-secret-environment.service"
+          "paperless-consumer.service"
+          "paperless-task-queue.service"
+          "paperless-web.service"
+          "paperless-scheduler.service"
+        ];
       };
     };
   };
@@ -94,6 +101,8 @@ in
           target = "/var/lib/paperless/consume";
           # nolock avoids NFS lock contention; soft returns errors instead of hanging
           options = [
+            "vers=4"
+            "proto=tcp"
             "rw"
             "noatime"
             "nofail"
